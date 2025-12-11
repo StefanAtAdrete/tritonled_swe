@@ -1,0 +1,60 @@
+uuid: 2ebf61fb-1005-4ee7-9b91-dd9f5126bd0c
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.who_s_online
+  module:
+    - views
+active_version: 6ed83cdb0a11de10
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:who_s_online-who_s_online_block'
+        label: "Who's online"
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  c94129232c3a6703:
+    settings:
+      default_settings:
+        id: 'views_block:who_s_online-who_s_online_block'
+        label: 'Vilka är inloggade'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  6ed83cdb0a11de10:
+    settings:
+      default_settings:
+        id: 'views_block:who_s_online-who_s_online_block'
+        label: "Who's online"
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  ba9d4a7ddf016558:
+    settings:
+      default_settings:
+        id: 'views_block:who_s_online-who_s_online_block'
+        label: "Who's online"
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: "Who's online"
+id: block.views_block.who_s_online-who_s_online_block
+provider: views
+source: block
+source_local_id: 'views_block:who_s_online-who_s_online_block'
+category: 'Lists (Views)'

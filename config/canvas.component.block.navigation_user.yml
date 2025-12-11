@@ -1,0 +1,41 @@
+uuid: 7610725e-39ff-47be-ad54-b266fa0af9aa
+langcode: en
+status: true
+dependencies:
+  module:
+    - navigation
+active_version: f96f397d71e82b5a
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: navigation_user
+        label: User
+        label_display: '0'
+        provider: navigation
+    fallback_metadata:
+      slot_definitions: null
+  021eb9b3b7b74cb4:
+    settings:
+      default_settings:
+        id: navigation_user
+        label: Användare
+        label_display: '0'
+        provider: navigation
+    fallback_metadata:
+      slot_definitions: null
+  f96f397d71e82b5a:
+    settings:
+      default_settings:
+        id: navigation_user
+        label: User
+        label_display: '0'
+        provider: navigation
+    fallback_metadata:
+      slot_definitions: null
+label: User
+id: block.navigation_user
+provider: navigation
+source: block
+source_local_id: navigation_user
+category: Navigation

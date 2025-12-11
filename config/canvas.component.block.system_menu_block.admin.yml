@@ -1,0 +1,40 @@
+uuid: 804dc04f-10b0-4f76-bbf1-550a28200ad5
+langcode: en
+status: true
+dependencies:
+  config:
+    - system.menu.admin
+  module:
+    - system
+active_version: 8c75392e9aab365c
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'system_menu_block:admin'
+        label: Administration
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  02b80c9f6cbacff5:
+    settings:
+      default_settings:
+        id: 'system_menu_block:admin'
+        label: Administration
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+label: Administration
+id: block.system_menu_block.admin
+provider: system
+source: block
+source_local_id: 'system_menu_block:admin'
+category: Menus

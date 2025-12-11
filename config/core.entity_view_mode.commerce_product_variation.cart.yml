@@ -1,0 +1,17 @@
+uuid: 0f1af3d2-f2fe-489f-8983-9abaf7323135
+langcode: sv
+status: true
+dependencies:
+  module:
+    - commerce_product
+  enforced:
+    module:
+      - commerce_cart
+      - commerce_product
+_core:
+  default_config_hash: xtrHHgI_SwA-1npf3GB0ntU65fMvm4mxImBtkbmZWSk
+id: commerce_product_variation.cart
+label: Varukorg
+description: null
+targetEntityType: commerce_product_variation
+cache: true

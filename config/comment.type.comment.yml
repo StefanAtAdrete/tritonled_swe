@@ -1,0 +1,10 @@
+uuid: 343a2e88-07fd-4088-b64a-f80a38b6f72c
+langcode: sv
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: bqZsN31T2n0UjcbyCpOPi9D2iO0sAOHR7FnEs9qMvaA
+id: comment
+label: Standardkommentarer
+target_entity_type_id: node
+description: 'Tillåter kommentering på innehåll'

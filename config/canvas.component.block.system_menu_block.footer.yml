@@ -1,0 +1,64 @@
+uuid: cd2bd9cd-bf9b-457a-a283-b17bdbd4e206
+langcode: en
+status: true
+dependencies:
+  config:
+    - system.menu.footer
+  module:
+    - system
+active_version: 52ff0cbc45acef46
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'system_menu_block:footer'
+        label: Footer
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  e7faa04af61f9c09:
+    settings:
+      default_settings:
+        id: 'system_menu_block:footer'
+        label: Sidfot
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  52ff0cbc45acef46:
+    settings:
+      default_settings:
+        id: 'system_menu_block:footer'
+        label: Footer
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  edacf59ecca4a7cd:
+    settings:
+      default_settings:
+        id: 'system_menu_block:footer'
+        label: Footer
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+label: Footer
+id: block.system_menu_block.footer
+provider: system
+source: block
+source_local_id: 'system_menu_block:footer'
+category: Menus

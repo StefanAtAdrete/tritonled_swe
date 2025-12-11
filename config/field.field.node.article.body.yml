@@ -1,0 +1,26 @@
+uuid: 19d589e9-3f01-4820-a3d2-43cd7ff94f7e
+langcode: sv
+status: true
+dependencies:
+  config:
+    - field.storage.node.body
+    - node.type.article
+  module:
+    - text
+_core:
+  default_config_hash: 4Wxs1LseZ8JsNwD9uJVIbzZqG35yQXN8Eo1Hub6NMuI
+id: node.article.body
+field_name: body
+entity_type: node
+bundle: article
+label: Brödtext
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  display_summary: true
+  required_summary: false
+  allowed_formats: {  }
+field_type: text_with_summary

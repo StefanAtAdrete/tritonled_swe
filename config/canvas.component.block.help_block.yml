@@ -1,0 +1,50 @@
+uuid: 7c0b6398-daba-43db-9abc-edf5326e0017
+langcode: en
+status: true
+dependencies:
+  module:
+    - help
+active_version: 2165fa6a5b572ec9
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: help_block
+        label: Help
+        label_display: '0'
+        provider: help
+    fallback_metadata:
+      slot_definitions: null
+  bfc75ae30d28f013:
+    settings:
+      default_settings:
+        id: help_block
+        label: Hjälp
+        label_display: '0'
+        provider: help
+    fallback_metadata:
+      slot_definitions: null
+  2165fa6a5b572ec9:
+    settings:
+      default_settings:
+        id: help_block
+        label: Help
+        label_display: '0'
+        provider: help
+    fallback_metadata:
+      slot_definitions: null
+  620979b5a309a407:
+    settings:
+      default_settings:
+        id: help_block
+        label: Help
+        label_display: '0'
+        provider: help
+    fallback_metadata:
+      slot_definitions: null
+label: Help
+id: block.help_block
+provider: help
+source: block
+source_local_id: help_block
+category: Help

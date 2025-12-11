@@ -1,0 +1,9 @@
+uuid: fed720bd-7dc4-4ee4-b69c-232c602041f2
+langcode: en
+status: true
+dependencies: {  }
+name: Commerce
+configEntityTypeId: component
+weight: 0
+items:
+  - block.commerce_checkout_progress

@@ -1,0 +1,27 @@
+uuid: 8f6200ad-d902-4441-972e-7c1d6347c4fc
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.commerce_activity
+  module:
+    - views
+active_version: 25ca072cdb7a9b5b
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:commerce_activity-block_1'
+        label: Activity
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: Activity
+id: block.views_block.commerce_activity-block_1
+provider: views
+source: block
+source_local_id: 'views_block:commerce_activity-block_1'
+category: 'Lists (Views)'

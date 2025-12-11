@@ -1,0 +1,64 @@
+uuid: 800a0f1a-4a09-448b-abb8-278e533b7db0
+langcode: en
+status: false
+dependencies:
+  config:
+    - system.menu.tools
+  module:
+    - system
+active_version: a7b9566536ef6686
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'system_menu_block:tools'
+        label: Tools
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  76efab1c32599713:
+    settings:
+      default_settings:
+        id: 'system_menu_block:tools'
+        label: Verktyg
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  a7b9566536ef6686:
+    settings:
+      default_settings:
+        id: 'system_menu_block:tools'
+        label: Tools
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+  413ab7aa51cd9ac9:
+    settings:
+      default_settings:
+        id: 'system_menu_block:tools'
+        label: Tools
+        label_display: '0'
+        provider: system
+        level: 1
+        depth: null
+        expand_all_items: false
+    fallback_metadata:
+      slot_definitions: null
+label: Tools
+id: block.system_menu_block.tools
+provider: system
+source: block
+source_local_id: 'system_menu_block:tools'
+category: Menus

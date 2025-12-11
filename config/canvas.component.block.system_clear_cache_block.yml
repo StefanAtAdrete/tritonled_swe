@@ -1,0 +1,50 @@
+uuid: af137961-cc8a-415c-b0f5-ec893f0ea7c2
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+active_version: 17d2566566c2e207
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: system_clear_cache_block
+        label: 'Clear cache'
+        label_display: '0'
+        provider: system
+    fallback_metadata:
+      slot_definitions: null
+  c224a0f7360b2496:
+    settings:
+      default_settings:
+        id: system_clear_cache_block
+        label: 'Töm cache'
+        label_display: '0'
+        provider: system
+    fallback_metadata:
+      slot_definitions: null
+  17d2566566c2e207:
+    settings:
+      default_settings:
+        id: system_clear_cache_block
+        label: 'Clear cache'
+        label_display: '0'
+        provider: system
+    fallback_metadata:
+      slot_definitions: null
+  06b3cc5fcc1086d4:
+    settings:
+      default_settings:
+        id: system_clear_cache_block
+        label: 'Clear cache'
+        label_display: '0'
+        provider: system
+    fallback_metadata:
+      slot_definitions: null
+label: 'Clear cache'
+id: block.system_clear_cache_block
+provider: system
+source: block
+source_local_id: system_clear_cache_block
+category: System
