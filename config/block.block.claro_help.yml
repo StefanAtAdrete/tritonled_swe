@@ -1,0 +1,22 @@
+uuid: e8e81132-9dc9-49d4-a63a-bd1dbfdf27a3
+langcode: sv
+status: true
+dependencies:
+  module:
+    - help
+  theme:
+    - claro
+_core:
+  default_config_hash: jccFSSVqV0WCDb6NtML1VWAWTtDbZ-zn5YgTRMgMrIM
+id: claro_help
+theme: claro
+region: help
+weight: 0
+provider: null
+plugin: help_block
+settings:
+  id: help_block
+  label: Hjälp
+  label_display: '0'
+  provider: help
+visibility: {  }

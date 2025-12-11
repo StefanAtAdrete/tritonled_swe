@@ -1,0 +1,13 @@
+uuid: 606aef19-d820-4a1a-aaff-b78de944bfb9
+langcode: sv
+status: true
+dependencies:
+  module:
+    - user
+_core:
+  default_config_hash: 1TFiplNN7Wmj_DtVLLLP-NLPYpZJdAswKY-vTrYgFyo
+id: user.register
+label: Registrera
+description: null
+targetEntityType: user
+cache: true

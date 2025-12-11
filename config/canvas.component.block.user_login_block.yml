@@ -1,0 +1,50 @@
+uuid: 504ec36e-707c-4ea0-9ad8-31664ecf6267
+langcode: en
+status: true
+dependencies:
+  module:
+    - user
+active_version: b97f14973683123f
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: user_login_block
+        label: 'User login'
+        label_display: '0'
+        provider: user
+    fallback_metadata:
+      slot_definitions: null
+  0093c99d983fb7b0:
+    settings:
+      default_settings:
+        id: user_login_block
+        label: Användarinloggning
+        label_display: '0'
+        provider: user
+    fallback_metadata:
+      slot_definitions: null
+  b97f14973683123f:
+    settings:
+      default_settings:
+        id: user_login_block
+        label: 'User login'
+        label_display: '0'
+        provider: user
+    fallback_metadata:
+      slot_definitions: null
+  327cdbb3ce86dda9:
+    settings:
+      default_settings:
+        id: user_login_block
+        label: 'User login'
+        label_display: '0'
+        provider: user
+    fallback_metadata:
+      slot_definitions: null
+label: 'User login'
+id: block.user_login_block
+provider: user
+source: block
+source_local_id: user_login_block
+category: Forms

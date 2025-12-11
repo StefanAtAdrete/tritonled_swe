@@ -1,0 +1,32 @@
+uuid: 47a16996-c96d-47b3-b68a-8f36865e6a29
+langcode: sv
+status: true
+dependencies:
+  module:
+    - search
+    - system
+  theme:
+    - claro
+  enforced:
+    config:
+      - search.page.help_search
+_core:
+  default_config_hash: 2ToeZLvlHKTeFY74gpgu1PejLoFyCECLO_gw6rAZwqw
+id: claro_help_search
+theme: claro
+region: help
+weight: -4
+provider: null
+plugin: search_form_block
+settings:
+  id: search_form_block
+  label: Sökhjälp
+  label_display: synlig
+  provider: search
+  page_id: help_search
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    context_mapping: {  }
+    pages: /admin/help
