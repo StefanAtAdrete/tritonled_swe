@@ -1,0 +1,31 @@
+uuid: 2f12ebf8-f7dd-4c9b-97dd-43ac23d3f161
+langcode: en
+status: true
+dependencies:
+  config:
+    - canvas.component.block.search_form_block
+    - canvas.component.block.system_menu_block.main
+  theme:
+    - olivero
+id: olivero.primary_menu
+region: primary_menu
+theme: olivero
+component_tree:
+  -
+    uuid: e1e142aa-8f0d-42f7-b651-98f557695a05
+    component_id: block.search_form_block
+    component_version: e743cd6a942159bc
+    inputs:
+      label: 'Search form (narrow)'
+      label_display: '0'
+      page_id: null
+  -
+    uuid: 4070cd1d-fd2a-4f77-9d59-96d56e42a7d5
+    component_id: block.system_menu_block.main
+    component_version: 78f5607c0e679cf9
+    inputs:
+      label: 'Main navigation'
+      label_display: '0'
+      level: 1
+      depth: 2
+      expand_all_items: true

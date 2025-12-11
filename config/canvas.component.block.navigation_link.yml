@@ -1,0 +1,50 @@
+uuid: d6164110-fe12-4109-90c7-729e8beacf06
+langcode: en
+status: true
+dependencies:
+  module:
+    - navigation
+active_version: fe779b8aa7d329e5
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: navigation_link
+        label: Link
+        label_display: '0'
+        provider: navigation
+        title: ''
+        uri: ''
+        icon_class: ''
+    fallback_metadata:
+      slot_definitions: null
+  6d75498a3f4275e6:
+    settings:
+      default_settings:
+        id: navigation_link
+        label: Länk
+        label_display: '0'
+        provider: navigation
+        title: ''
+        uri: ''
+        icon_class: ''
+    fallback_metadata:
+      slot_definitions: null
+  fe779b8aa7d329e5:
+    settings:
+      default_settings:
+        id: navigation_link
+        label: Link
+        label_display: '0'
+        provider: navigation
+        title: ''
+        uri: ''
+        icon_class: ''
+    fallback_metadata:
+      slot_definitions: null
+label: Link
+id: block.navigation_link
+provider: navigation
+source: block
+source_local_id: navigation_link
+category: Navigation

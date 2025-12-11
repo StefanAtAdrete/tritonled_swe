@@ -1,0 +1,10 @@
+uuid: 7c6c2bd7-f702-4dff-9371-0a3ff06c10f0
+langcode: en
+status: true
+dependencies:
+  theme:
+    - olivero
+id: olivero.footer_top
+region: footer_top
+theme: olivero
+component_tree: {  }

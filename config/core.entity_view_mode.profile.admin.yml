@@ -1,0 +1,16 @@
+uuid: 5d08ae3d-9cff-43f6-bc6e-c244c7e00089
+langcode: sv
+status: true
+dependencies:
+  module:
+    - profile
+  enforced:
+    module:
+      - commerce_order
+_core:
+  default_config_hash: rNBHCP7hJFMjP_iDe9-0AsSfkGC98V6Lh_oeOwmLos8
+id: profile.admin
+label: Administrera
+description: null
+targetEntityType: profile
+cache: true

@@ -1,0 +1,60 @@
+uuid: f46f911b-0da9-4f12-b4a6-2096d534392d
+langcode: en
+status: false
+dependencies:
+  config:
+    - views.view.content_recent
+  module:
+    - views
+active_version: 3bcb7fce9add5c7f
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:content_recent-block_1'
+        label: 'Recent content'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  6793d9e0d80fdfa3:
+    settings:
+      default_settings:
+        id: 'views_block:content_recent-block_1'
+        label: 'Nyligen uppdaterat innehåll'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  3bcb7fce9add5c7f:
+    settings:
+      default_settings:
+        id: 'views_block:content_recent-block_1'
+        label: 'Recent content'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+  214a845094b0b237:
+    settings:
+      default_settings:
+        id: 'views_block:content_recent-block_1'
+        label: 'Recent content'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'Recent content'
+id: block.views_block.content_recent-block_1
+provider: views
+source: block
+source_local_id: 'views_block:content_recent-block_1'
+category: 'Lists (Views)'

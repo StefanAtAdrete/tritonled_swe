@@ -1,0 +1,27 @@
+uuid: d166e056-308f-46c8-8a97-dd8e3d427500
+langcode: en
+status: true
+dependencies:
+  config:
+    - canvas.component.block.help_block
+    - canvas.component.block.page_title_block
+  theme:
+    - olivero
+id: olivero.content_above
+region: content_above
+theme: olivero
+component_tree:
+  -
+    uuid: c1fea7a6-40d6-424c-bb10-77667ae8e505
+    component_id: block.help_block
+    component_version: 2165fa6a5b572ec9
+    inputs:
+      label: Help
+      label_display: '0'
+  -
+    uuid: 58376810-7d4a-4bea-ad59-8ef8900dfe59
+    component_id: block.page_title_block
+    component_version: 7ce25803c442f942
+    inputs:
+      label: 'Page title'
+      label_display: '0'

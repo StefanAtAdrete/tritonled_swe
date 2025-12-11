@@ -1,0 +1,12 @@
+name: 'Tool - User'
+type: module
+description: 'Provides tools for user creation, modification and removal.'
+package: Tools
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - tool:tool
+
+# Information added by Drupal.org packaging script on 2025-12-06
+version: '1.0.0-alpha10'
+project: 'tool'
+datestamp: 1764991195

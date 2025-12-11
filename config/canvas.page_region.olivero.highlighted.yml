@@ -1,0 +1,46 @@
+uuid: b0b62711-acde-4f47-aa80-0f58e1a7ebfa
+langcode: en
+status: true
+dependencies:
+  config:
+    - canvas.component.block.local_actions_block
+    - canvas.component.block.local_tasks_block
+    - canvas.component.block.system_messages_block
+  theme:
+    - olivero
+id: olivero.highlighted
+region: highlighted
+theme: olivero
+component_tree:
+  -
+    uuid: c50ac27a-7056-424f-ae71-507b09af3f8a
+    component_id: block.local_actions_block
+    component_version: efc8fd92665da4e4
+    inputs:
+      label: 'Primary admin actions'
+      label_display: '0'
+  -
+    uuid: ee222aec-5de1-478a-ab22-7f6bcea58418
+    component_id: block.local_tasks_block
+    component_version: b481f5cc43e872da
+    inputs:
+      label: 'Primary tabs'
+      label_display: '0'
+      primary: true
+      secondary: false
+  -
+    uuid: def87134-0dfb-43bd-a611-bd20f527e91f
+    component_id: block.local_tasks_block
+    component_version: b481f5cc43e872da
+    inputs:
+      label: 'Secondary tabs'
+      label_display: '0'
+      primary: false
+      secondary: true
+  -
+    uuid: c9955ae4-b61d-4c61-9790-054c8452e58b
+    component_id: block.system_messages_block
+    component_version: f40a0b8ffe833dc7
+    inputs:
+      label: 'Status messages'
+      label_display: '0'
