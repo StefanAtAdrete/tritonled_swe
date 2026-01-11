@@ -1,0 +1,23 @@
+uuid: 6485241a-1ea3-4d97-b505-65b3dd7832a7
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_cct_nominal
+id: commerce_product_variation.luminaire_variation.field_cct_nominal
+field_name: field_cct_nominal
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'CCT nominal (K)'
+description: 'Color temperature'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ' K'
+field_type: integer

@@ -1,0 +1,21 @@
+uuid: 34100b55-8e7c-4a7e-af01-51a79b85b147
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_lens_material
+field_name: field_lens_material
+entity_type: commerce_product_variation
+type: string
+settings:
+  max_length: 255
+  case_sensitive: false
+  is_ascii: false
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

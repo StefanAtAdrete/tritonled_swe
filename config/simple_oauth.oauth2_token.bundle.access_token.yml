@@ -1,0 +1,10 @@
+uuid: e783473f-8ce0-4273-83e4-4fd665f7e430
+langcode: sv
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: f7Fq1Sh24P1luZf4RRdeDs4be4diwuU5P-XkpuxjyLk
+id: access_token
+label: Åtkomsttoken
+description: 'Typ av åtkomsttoken.'
+locked: true

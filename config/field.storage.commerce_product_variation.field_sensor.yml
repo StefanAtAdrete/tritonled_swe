@@ -1,0 +1,21 @@
+uuid: 4b14ce8a-1415-43b5-a2c3-15470825ceed
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - options
+id: commerce_product_variation.field_sensor
+field_name: field_sensor
+entity_type: commerce_product_variation
+type: list_string
+settings:
+  allowed_values: {  }
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

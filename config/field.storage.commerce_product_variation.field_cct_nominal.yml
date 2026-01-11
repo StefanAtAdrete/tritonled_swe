@@ -1,0 +1,20 @@
+uuid: 81949ab4-939d-481b-9c50-27fe1b471a06
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_cct_nominal
+field_name: field_cct_nominal
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

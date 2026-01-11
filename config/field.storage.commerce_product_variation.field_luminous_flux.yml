@@ -1,0 +1,20 @@
+uuid: 67a5212e-be72-45a3-83f4-b48f4d8fb2fb
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_luminous_flux
+field_name: field_luminous_flux
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false
