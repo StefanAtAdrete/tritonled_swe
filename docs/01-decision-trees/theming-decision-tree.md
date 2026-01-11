@@ -8,7 +8,7 @@ Detta träd kompletterar `/docs/DRUPAL-DECISION-TREE.md` med theming-specifika l
 - **Base theme**: Radix
 - **CSS**: Bootstrap 5.3 (via CDN)
 - **Layout**: Layout Builder + Bootstrap Layout Builder
-- **Display**: Display Suite för field management
+- **Field gruppering**: Field Group module
 
 ---
 
@@ -18,13 +18,13 @@ Detta träd kompletterar `/docs/DRUPAL-DECISION-TREE.md` med theming-specifika l
 
 #### ✅ Använd UI-baserat styling FÖRST:
 
-**Display Suite:**
+**Layout Builder:**
 ```
 Structure → Content types → [Type] → Manage Display
-→ Display Suite tab
-→ Välj layout (Bootstrap: 1col, 2col, etc)
-→ Dra fields till regions
-→ Field settings → CSS classes (Bootstrap)
+→ Enable Layout Builder
+→ Allow custom layouts (optional per content)
+→ Add section → Bootstrap Grid
+→ Dra fields/blocks till regioner
 ```
 
 **Bootstrap-klasser:**
@@ -54,6 +54,7 @@ Lägg till: "mb-4 shadow-sm" etc
 - Flexibel block-placering
 - Landing pages
 - Per-content-type layouts
+- Commerce produkter (ALLTID för dessa!)
 
 **Setup:**
 ```
@@ -63,19 +64,58 @@ Structure → Content types → [Type] → Manage Display
 ```
 
 **Bootstrap Layout Builder:**
+```bash
+ddev composer require drupal/bootstrap_layout_builder
+ddev drush en bootstrap_layout_builder -y
 ```
-composer require drupal/bootstrap_layout_builder
-drush en bootstrap_layout_builder -y
 
+**Användning:**
+```
 Layout Builder → Add section → Bootstrap Grid
 → Välj layout (1-col, 2-col, 3-col, etc)
-→ Drag blocks in
+→ Konfigurera breakpoints
+→ Drag blocks/fields in
 ```
 
 **Bootstrap Layout Builder ger:**
 - Responsive grids (automatic breakpoints)
 - Pre-made Bootstrap layouts
 - Column configuration via UI
+- Ingen CSS behövs!
+
+---
+
+### Steg 3: Field Groups för gruppering
+
+**Field Group module för semantic gruppering:**
+
+```bash
+ddev composer require drupal/field_group
+ddev drush en field_group -y
+```
+
+**Använd för:**
+```
+Structure → Content types → Manage Display
+→ Add field group
+→ Välj format: Fieldset, Details, Div, HTML element
+→ Dra fields in i grupp
+→ CSS classes på grupp
+```
+
+**Field Group format:**
+- **Fieldset**: `<fieldset>` med legend
+- **Details**: Collapsible `<details>` element
+- **Div**: Wrapper `<div>` med klasser
+- **HTML element**: Valfri tag (section, article, etc)
+- **Accordion**: Bootstrap accordion
+- **Tabs**: Horisontella tabs
+
+**Fördelar:**
+- Semantic HTML
+- Ingen template nödvändig
+- Bootstrap-klasser via UI
+- Accessibility built-in
 
 ---
 
@@ -144,35 +184,41 @@ Configuration → Media → Responsive image styles
 
 **Använd dessa FÖRST** via HTML + Bootstrap-klasser.
 
-### Steg 2: Display Suite Layouts?
+### Steg 2: Layout Builder Blocks?
+
+**För återanvändbara sektioner:**
+```
+Structure → Block layout → Custom block library
+→ Add custom block type
+→ Lägg till fields
+→ Använd i Layout Builder
+```
+
+**Fördelar:**
+- Återanvändbart innehåll
+- Versionshanterat
+- Översättningsbart
+- Placera var som helst via Layout Builder
+
+### Steg 3: Field Groups för struktur
 
 **För field-grupper:**
 ```
-Structure → Content types → Manage Display
-→ Add field group
+Manage Display → Add field group
 → Välj layout: Div, Fieldset, Accordion, Tab, etc
 → Lägg fields i grupp
 → CSS classes på grupp
 ```
 
-### Steg 3: Custom Twig Template
-
-**Endast efter godkännande!**
-
-**När template verkligen behövs:**
-- Mycket specifik HTML-struktur
-- Bootstrap-komponenter som kräver exakt markup
-- Komplex nästling
-- Efter att UI-alternativ testats
-
-**Process:**
-1. Hitta default template (twig debug)
-2. Kopiera till tema: `/themes/custom/tritonled/templates/[category]/`
-3. Ändra **minimalt**
-4. Kommentera varför template behövdes
-5. Testa att ingen funktionalitet förstörts
-
-**Se**: `/docs/DRUPAL-DECISION-TREE.md` steg 7
+**Exempel: Product Specifications**
+```
+Field Group: "Technical Specs" (Accordion)
+├── Field: Wattage
+├── Field: CCT
+├── Field: CRI
+├── Field: IP Rating
+└── Field: Dimensions
+```
 
 ---
 
@@ -380,32 +426,30 @@ drush generate radix-subtheme
 
 ---
 
-## Display Suite - Best Practices
+## Layout Builder - Best Practices
 
 ### Rätt användning:
 
+✅ **Sidstruktur** via Layout Builder sections
 ✅ **Field placering** i layout-regions
-✅ **CSS-klasser** på fields via UI
-✅ **Field groups** för semantic grouping
-✅ **Field formatters** för rendering
+✅ **CSS-klasser** på blocks via Block Class
+✅ **Responsive grids** via Bootstrap Layout Builder
+✅ **Commerce products** (ALLTID för dessa - AJAX fungerar!)
 
-### Fel användning:
+### Viktigt för Commerce:
 
-❌ **Blockera Drupal rendering** (t.ex. Commerce AJAX)
-❌ **Komplexa DS templates** (använd Layout Builder)
-❌ **DS när core räcker** (overengineering)
+**ANVÄND Layout Builder för Commerce produkter:**
+- Bevara Commerce field injection
+- AJAX fungerar utan problem
+- Event Subscribers för custom beteende
+- Field Groups för gruppering
 
-### Testa om DS blockerar
+**UNDVIK templates för Commerce produkter:**
+- Templates förstör AJAX
+- Field injection slutar fungera
+- Variation switching bryter
 
-```bash
-# Inaktivera temporärt
-ddev drush pm:uninstall ds -y
-ddev drush cr
-
-# Funkar sidan fortfarande?
-# → Ja: DS var inte nödvändigt
-# → Nej: Konfiguration behöver justeras
-```
+**Se**: `/docs/03-solutions/commerce-ajax-solution.md`
 
 ---
 
@@ -510,8 +554,15 @@ ddev drush cr
 - https://www.drupal.org/project/radix
 - https://github.com/radixtheme/radix
 
+**Layout Builder:**
+- https://www.drupal.org/docs/8/core/modules/layout-builder
+
+**Bootstrap Layout Builder:**
+- https://www.drupal.org/project/bootstrap_layout_builder
+
 ---
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Skapad**: 2025-01-10  
+**Uppdaterad**: 2025-01-11 (Display Suite ersatt med Layout Builder)  
 **Författare**: Stefan + Claude
