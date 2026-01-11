@@ -1,0 +1,19 @@
+uuid: e92cd3d9-a8d5-4439-84be-cbc85b92de85
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_socket
+id: commerce_product_variation.luminaire_variation.field_socket
+field_name: field_socket
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: Socket
+description: 'E.g. E27, GU10, G9'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

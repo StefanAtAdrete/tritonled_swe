@@ -21,8 +21,6 @@ module:
   block: 0
   block_content: 0
   breakpoint: 0
-  canvas: 0
-  canvas_dev_mode: 0
   ckeditor5: 0
   comment: 0
   commerce: 0
@@ -38,6 +36,7 @@ module:
   commerce_tax: 0
   config: 0
   config_translation: 0
+  consumers: 0
   contact: 0
   contextual: 0
   datetime: 0
@@ -49,6 +48,7 @@ module:
   entity: 0
   entity_reference_revisions: 0
   field: 0
+  field_group: 0
   field_ui: 0
   file: 0
   filter: 0
@@ -57,6 +57,7 @@ module:
   image: 0
   inline_entity_form: 0
   inline_form_errors: 0
+  jsonapi: 0
   jsonrpc: 0
   key: 0
   language: 0
@@ -83,10 +84,11 @@ module:
   phpass: 0
   profile: 0
   responsive_image: 0
+  rest: 0
   search: 0
   serialization: 0
-  settings_tray: 0
   shortcut: 0
+  simple_oauth: 0
   state_machine: 0
   syslog: 0
   system: 0
@@ -95,8 +97,13 @@ module:
   text: 0
   token: 0
   tool: 0
+  tool_ai_connector: 0
+  tool_content: 0
   tool_content_translation: 0
-  toolbar: 0
+  tool_entity: 0
+  tool_explorer: 0
+  tool_system: 0
+  tool_user: 0
   update: 0
   user: 0
   views_ui: 0
@@ -107,4 +114,5 @@ theme:
   olivero: 0
   claro: 0
   canvas_stark: 0
+  stark: 0
 profile: standard

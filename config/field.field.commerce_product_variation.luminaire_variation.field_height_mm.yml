@@ -1,0 +1,23 @@
+uuid: 5c0c0676-c37b-4406-ac28-4b934978d11c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_height_mm
+id: commerce_product_variation.luminaire_variation.field_height_mm
+field_name: field_height_mm
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Height (mm)'
+description: null
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ' mm'
+field_type: integer

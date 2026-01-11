@@ -1,0 +1,65 @@
+uuid: ed184f75-e22c-4a7a-a6d4-b38e13bbdf0a
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.luminaire
+    - field.field.commerce_product.luminaire.field_additional_info
+    - field.field.commerce_product.luminaire.field_main_image
+    - field.field.commerce_product.luminaire.field_product_status
+  module:
+    - commerce_product
+    - image
+    - options
+    - text
+id: commerce_product.luminaire.default
+targetEntityType: commerce_product
+bundle: luminaire
+mode: default
+content:
+  field_additional_info:
+    type: text_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 50
+    region: content
+  field_main_image:
+    type: image
+    label: above
+    settings:
+      image_link: ''
+      image_style: ''
+      image_loading:
+        attribute: lazy
+    third_party_settings: {  }
+    weight: 50
+    region: content
+  field_product_status:
+    type: list_default
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+    weight: 50
+    region: content
+  title:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: -5
+    region: content
+  variations:
+    type: commerce_add_to_cart
+    label: above
+    settings:
+      combine: true
+    third_party_settings: {  }
+    weight: 10
+    region: content
+hidden:
+  created: true
+  langcode: true
+  stores: true
+  uid: true

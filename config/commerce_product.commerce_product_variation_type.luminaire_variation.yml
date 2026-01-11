@@ -1,0 +1,10 @@
+uuid: 7587cbbd-5e77-46fb-8922-61401ee734d9
+langcode: sv
+status: true
+dependencies: {  }
+id: luminaire_variation
+label: 'Luminaire variation'
+traits: {  }
+locked: false
+orderItemType: default
+generateTitle: true

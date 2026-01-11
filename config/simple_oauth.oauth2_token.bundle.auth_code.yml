@@ -1,0 +1,10 @@
+uuid: b88abf41-b7ec-4d32-9385-d87cf2b371a0
+langcode: sv
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: zlxpI1nUDS46lrOkyHiD-72D5OFvlADLiyXT5B1iErk
+id: auth_code
+label: Authentiseringskod
+description: Autentiseringskodstypen
+locked: true

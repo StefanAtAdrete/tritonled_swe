@@ -1,0 +1,21 @@
+uuid: 802550d2-4084-494c-a95b-b2761b8fe357
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_sensor
+  module:
+    - options
+id: commerce_product_variation.luminaire_variation.field_sensor
+field_name: field_sensor
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: Sensor
+description: null
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string
