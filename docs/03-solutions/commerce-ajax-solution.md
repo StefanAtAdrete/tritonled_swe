@@ -78,6 +78,7 @@ Structure → Content types → Product → Manage Display
 - Bevara Commerce rendering
 - Flexibel layout per produkt
 - Inga templates att underhålla
+- Commerce AJAX fungerar perfekt!
 
 #### 2. Bootstrap Layout Builder för grid
 
@@ -93,19 +94,35 @@ drush en bootstrap_layout_builder -y
 
 **Resultat**: Responsive grid **utan** att förstöra Commerce DOM.
 
-#### 3. Display Suite för field-ordning
+#### 3. Field Groups för field-gruppering
 
+```bash
+composer require drupal/field_group
+drush en field_group -y
 ```
-Manage Display → Enable Display Suite
-→ Välj DS layout (ex: Bootstrap 2-col)
-→ Dra fields till regions
-→ CSS classes på fields via UI
+
+**Användning:**
+```
+Manage Display → Add field group
+→ Välj format: Fieldset, Details, Accordion
+→ Dra fields in i grupp
+→ CSS classes på grupp
 ```
 
 **Fördelar:**
-- Field placering utan template
+- Semantic gruppering av fields
 - Bootstrap-klasser via UI
 - Behåller Commerce rendering
+- Accordion/tabs utan templates
+
+**Exempel: Product Specifications**
+```
+Field Group: "Technical Specs" (Accordion)
+├── Field: Wattage
+├── Field: CCT  
+├── Field: CRI
+└── Field: IP Rating
+```
 
 #### 4. Event Subscriber för custom AJAX-beteende
 
@@ -231,8 +248,8 @@ När du arbetar med Commerce produkter med varianter:
 - [ ] Använd **INTE** custom `commerce-product-variation--[type].html.twig`
 - [ ] Använd Layout Builder för layout
 - [ ] Använd Bootstrap Layout Builder för grids
-- [ ] Använd Display Suite för field-ordning
-- [ ] CSS-klasser via Block Class / DS field settings
+- [ ] Använd Field Groups för field-gruppering
+- [ ] CSS-klasser via Block Class / Field Group settings
 - [ ] Custom AJAX beteende via Event Subscriber
 - [ ] Testa AJAX efter varje ändring
 
@@ -256,7 +273,7 @@ Commerce's rendering är **mycket** komplext:
 ### Safe zone:
 
 ✅ Layout Builder  
-✅ Display Suite  
+✅ Field Groups  
 ✅ Bootstrap classes via UI  
 ✅ Event Subscribers  
 ✅ Preprocess hooks (minimal)  
@@ -288,8 +305,9 @@ Commerce's rendering är **mycket** komplext:
 
 ---
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Skapad**: 2025-01-08  
+**Uppdaterad**: 2025-01-11 (Display Suite ersatt med Field Groups)  
 **Testad**: 2025-01-08  
 **Verifierad**: ✅  
 **Författare**: Stefan + Claude

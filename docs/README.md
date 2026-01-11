@@ -117,7 +117,7 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 ## 🚨 Kritiska Regler
 
 **ALLTID:**
-- ✅ Följ beslutsträdet: Config > Moduler > Themes > Custom Code
+- ✅ Följ beslutsträdet: Config > Moduler > Layout Builder > Custom Code
 - ✅ Layout Builder för layouts
 - ✅ Bootstrap för styling
 - ✅ Testa på mobil + desktop
@@ -139,7 +139,7 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 1. Finns i Core?        → Använd Core
 2. Finns contrib-modul? → Använd modul
 3. Kan Views lösa det?  → Skapa View
-4. Kan Layout Builder?  → Använd LB
+4. Kan Layout Builder?  → Använd Layout Builder
 5. → STOPP → Fråga Stefan
 6. Preprocess hook?     → (med tillstånd)
 7. Template?            → (med tillstånd)
@@ -149,7 +149,7 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 ```
 Produkter med varianter?
   → JA:  Layout Builder + Event Subscriber (EJ templates!)
-  → NEJ: Display Suite OK
+  → NEJ: Layout Builder OK
 
 Produktlistor?
   → Views först
@@ -164,7 +164,7 @@ Quote-system?
 ```
 1. Bootstrap-klasser via UI?   → Använd UI
 2. Layout Builder?              → Ja för struktur
-3. Display Suite?               → Ja för fields
+3. Field Groups?                → Ja för gruppering
 4. Custom CSS?                  → Minimal, efter OK
 5. Template?                    → Sista utväg, efter OK
 ```
@@ -181,7 +181,7 @@ Quote-system?
 ### Layout Builder
 - Layout Builder för alla sidlayouter
 - Bootstrap Layout Builder för grids
-- Display Suite för field management
+- Field Groups för field gruppering
 
 ### Commerce AJAX
 - Använd ALDRIG custom product templates
@@ -285,13 +285,14 @@ Quote-system?
 - [x] Views field configuration lösning (Drupal 11)
 - [x] Design testing workflow
 - [x] SDC workflow
-- [x] **AI Agents workflow** ← NY!
+- [x] AI Agents workflow
 - [x] Testing checklist
 - [x] README (denna fil)
 
 ---
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Skapad**: 2025-01-10  
+**Uppdaterad**: 2025-01-11 (Display Suite ersatt med Layout Builder)  
 **Nästa review**: 2025-02-10  
 **Maintainers**: Stefan Carlsson + Claude

@@ -113,13 +113,14 @@ ddev drush cim -y
 
 | Problem | Modul |
 |---------|-------|
-| Layout och field placering | Display Suite |
+| Layout och sidstruktur | Layout Builder (core) |
 | Komplexa formulär | Webform |
 | Produktvariation field injection | Commerce (built-in) |
 | Block klasser | Block Class |
 | Field groups | Field Group |
 | Responsive bilder | Responsive Image (core) |
 | Media hantering | Media (core) |
+| Bootstrap grids i Layout Builder | Bootstrap Layout Builder |
 
 ### C) Aktivera och konfigurera
 ```bash
@@ -137,30 +138,47 @@ ddev drush pml | grep [module_name]
 
 ---
 
-## STEG 4: DISPLAY SUITE / LAYOUT
+## STEG 4: LAYOUT BUILDER
 
-**Display Suite är för layout - INTE för att blockera rendering**
+**Layout Builder är Drupal 11's standard för layout management**
 
-### Rätt användning av DS:
-- ✅ Välj layout (1col, 2col, etc)
-- ✅ Placera fields i regions
-- ✅ Lägg till CSS-klasser via field settings
-- ✅ Använd DS layouts för Visual design
-
-### Fel användning av DS:
-- ❌ Aktivera DS när core rendering fungerar bättre
-- ❌ Använda DS för att "fixa" problem (kan förvärra dem)
-- ❌ Skapa komplexa DS templates som återimplementerar core
-
-### Test: Blockerar DS funktionalitet?
-```bash
-# Inaktivera DS temporärt för test
-ddev drush pm:uninstall ds -y
-ddev drush cr
-
-# Om problemet försvinner = DS blockerade funktionalitet
-# Lösning: Använd annan approach eller konfigurera DS annorlunda
+### Aktivera Layout Builder:
 ```
+Structure → Content types → [Type] → Manage Display
+→ Enable Layout Builder
+→ Allow custom layouts (optional per content)
+```
+
+### Vad Layout Builder gör:
+- ✅ Placera fields i olika regioner
+- ✅ Skapa kolumnlayouter
+- ✅ Lägg till block och Views
+- ✅ Custom layouts per sida/content
+- ✅ Bevara Drupal rendering (Commerce AJAX fungerar!)
+
+### Bootstrap Layout Builder:
+```bash
+# Installera för Bootstrap grids
+ddev composer require drupal/bootstrap_layout_builder
+ddev drush en bootstrap_layout_builder -y
+```
+
+**Ger dig:**
+- Responsive 1-4 kolumn layouts
+- Bootstrap grid-klasser automatiskt
+- Breakpoint-kontroll via UI
+
+### Field Groups för gruppering:
+```bash
+# Installera Field Group
+ddev composer require drupal/field_group
+ddev drush en field_group -y
+```
+
+**Använd för:**
+- Gruppera relaterade fields
+- Semantic HTML (fieldset, details)
+- Accordion/tabs utan templates
 
 ---
 
@@ -217,7 +235,7 @@ ddev drush watchdog:show --count=20
 **Om steg 1-5 inte löste problemet:**
 
 **STOPP! Fråga användaren:**
-- "Jag har provat config, moduler och DS. Inget fungerade."
+- "Jag har provat config, moduler och Layout Builder. Inget fungerade."
 - "Ska jag kolla preprocess hooks eller behöver vi en annan approach?"
 - "Kan du verifiera att [specifik funktionalitet] verkligen inte finns i Drupal/Commerce?"
 
@@ -273,8 +291,9 @@ function tritonled_preprocess_commerce_product(&$variables) {
 **Templates ska ENDAST skapas när:**
 1. Alla config-alternativ testats
 2. Inga moduler kan lösa problemet
-3. Preprocess hooks inte räcker
-4. Användaren sagt "ok, skapa template"
+3. Layout Builder inte räcker
+4. Preprocess hooks inte räcker
+5. Användaren sagt "ok, skapa template"
 
 ### Template-skapande process:
 
@@ -355,6 +374,7 @@ Gå igenom denna VARJE gång:
 - [ ] **STEG 0:** Rätt filsystem-verktyg? (`Filesystem:*` för Drupal)
 - [ ] Har jag sökt efter contrib-modul?
 - [ ] Har jag kollat befintlig config i UI?
+- [ ] Har jag testat Layout Builder?
 - [ ] Har jag rensat cache?
 - [ ] Har jag frågat användaren om osäker?
 - [ ] Har jag fått godkännande för kod/template?
@@ -378,7 +398,7 @@ Gå igenom denna VARJE gång:
 
 3. **Separation of Concerns**
    - Content = Fields & Config
-   - Layout = Display Suite / Layout Builder
+   - Layout = Layout Builder
    - Styling = CSS
    - Beteende = JavaScript
    - Logik = Modules (INTE templates)
@@ -393,7 +413,7 @@ Gå igenom denna VARJE gång:
    - Contrib-moduler är testade och säkra
    - Rapportera bugs, contributa patches
 
-6. **Rätt Filsystem** ⭐ NYTT
+6. **Rätt Filsystem**
    - Drupal-filer → `Filesystem:*` (Capital F)
    - Temp-filer → `create_file` (Claude's dator)
    - Verifiera alltid med `ls -la`
@@ -405,7 +425,8 @@ Gå igenom denna VARJE gång:
 - **Drupal.org API**: https://api.drupal.org
 - **Module Search**: https://www.drupal.org/project/project_module
 - **Commerce Docs**: https://docs.drupalcommerce.org
-- **Display Suite**: https://www.drupal.org/project/ds
+- **Layout Builder**: https://www.drupal.org/docs/8/core/modules/layout-builder
+- **Bootstrap Layout Builder**: https://www.drupal.org/project/bootstrap_layout_builder
 - **Stack Exchange**: https://drupal.stackexchange.com
 
 ---
@@ -423,7 +444,7 @@ När något "inte fungerar":
 
 ---
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Skapad:** 2024-12-22  
-**Uppdaterad:** 2025-01-11 (Filsystem-regler tillagda)  
+**Uppdaterad:** 2025-01-11 (Display Suite ersatt med Layout Builder)  
 **Författare:** Stefan (med Claude's hjälp för struktur)
