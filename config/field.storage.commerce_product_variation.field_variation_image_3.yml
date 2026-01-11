@@ -1,0 +1,30 @@
+uuid: 813481b9-dd2a-4cd5-8378-117597a43e96
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - file
+    - image
+id: commerce_product_variation.field_variation_image_3
+field_name: field_variation_image_3
+entity_type: commerce_product_variation
+type: image
+settings:
+  target_type: file
+  display_field: false
+  display_default: true
+  uri_scheme: public
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+module: image
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

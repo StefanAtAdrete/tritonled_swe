@@ -1,0 +1,39 @@
+uuid: 67533ab8-b170-4ffb-9fa1-4f31893a01fb
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_variation_image_3
+    - image.style.large
+  module:
+    - image
+id: commerce_product_variation.luminaire_variation.field_variation_image_3
+field_name: field_variation_image_3
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Variation image 3'
+description: null
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  file_extensions: 'png gif jpg jpeg webp avif'
+  max_filesize: ''
+  max_resolution: ''
+  min_resolution: ''
+  alt_field: true
+  alt_field_required: true
+  title_field: false
+  title_field_required: false
+  default_image:
+    uuid: null
+    alt: ''
+    title: ''
+    width: null
+    height: null
+field_type: image

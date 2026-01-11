@@ -1,0 +1,19 @@
+uuid: b700dabb-6c20-4b9c-94c8-4a9aa5cb514b
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_article_number
+id: commerce_product_variation.luminaire_variation.field_article_number
+field_name: field_article_number
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Article number'
+description: 'Your main article number'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

@@ -1,0 +1,23 @@
+uuid: a0d562e8-879f-43b9-8b86-d8e2369e1388
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_diameter_mm
+id: commerce_product_variation.luminaire_variation.field_diameter_mm
+field_name: field_diameter_mm
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Diameter (mm)'
+description: 'For round luminaires'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ' mm'
+field_type: integer

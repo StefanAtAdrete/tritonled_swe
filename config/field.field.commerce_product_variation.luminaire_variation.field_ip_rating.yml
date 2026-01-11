@@ -1,0 +1,21 @@
+uuid: 4c48fd56-6779-4f77-94ac-c78e7e606ed6
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_ip_rating
+  module:
+    - options
+id: commerce_product_variation.luminaire_variation.field_ip_rating
+field_name: field_ip_rating
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'IP rating'
+description: null
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

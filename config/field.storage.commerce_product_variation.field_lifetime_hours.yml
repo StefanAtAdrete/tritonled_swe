@@ -1,0 +1,20 @@
+uuid: b7b3ddc2-8872-4ef6-88b3-36afd35abe3c
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_lifetime_hours
+field_name: field_lifetime_hours
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

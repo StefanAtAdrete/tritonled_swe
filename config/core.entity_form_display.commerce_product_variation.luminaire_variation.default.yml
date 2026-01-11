@@ -1,0 +1,325 @@
+uuid: b142a24f-53ca-43e1-b6dd-a716d75727ce
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.field.commerce_product_variation.luminaire_variation.attribute_cct
+    - field.field.commerce_product_variation.luminaire_variation.attribute_color
+    - field.field.commerce_product_variation.luminaire_variation.field_article_number
+    - field.field.commerce_product_variation.luminaire_variation.field_base_type
+    - field.field.commerce_product_variation.luminaire_variation.field_beam_angle
+    - field.field.commerce_product_variation.luminaire_variation.field_cct_nominal
+    - field.field.commerce_product_variation.luminaire_variation.field_cri
+    - field.field.commerce_product_variation.luminaire_variation.field_current_a
+    - field.field.commerce_product_variation.luminaire_variation.field_diameter_mm
+    - field.field.commerce_product_variation.luminaire_variation.field_dimmable
+    - field.field.commerce_product_variation.luminaire_variation.field_driver_power_w
+    - field.field.commerce_product_variation.luminaire_variation.field_energy_class
+    - field.field.commerce_product_variation.luminaire_variation.field_factory_sku
+    - field.field.commerce_product_variation.luminaire_variation.field_height_mm
+    - field.field.commerce_product_variation.luminaire_variation.field_housing_material
+    - field.field.commerce_product_variation.luminaire_variation.field_ip_rating
+    - field.field.commerce_product_variation.luminaire_variation.field_led_type
+    - field.field.commerce_product_variation.luminaire_variation.field_length_mm
+    - field.field.commerce_product_variation.luminaire_variation.field_lens_material
+    - field.field.commerce_product_variation.luminaire_variation.field_lifetime_hours
+    - field.field.commerce_product_variation.luminaire_variation.field_luminous_flux
+    - field.field.commerce_product_variation.luminaire_variation.field_mounting_type
+    - field.field.commerce_product_variation.luminaire_variation.field_power_factor
+    - field.field.commerce_product_variation.luminaire_variation.field_power_w
+    - field.field.commerce_product_variation.luminaire_variation.field_sensor
+    - field.field.commerce_product_variation.luminaire_variation.field_socket
+    - field.field.commerce_product_variation.luminaire_variation.field_variation_image_1
+    - field.field.commerce_product_variation.luminaire_variation.field_variation_image_2
+    - field.field.commerce_product_variation.luminaire_variation.field_variation_image_3
+    - field.field.commerce_product_variation.luminaire_variation.field_variation_status
+    - field.field.commerce_product_variation.luminaire_variation.field_voltage_max
+    - field.field.commerce_product_variation.luminaire_variation.field_voltage_min
+    - field.field.commerce_product_variation.luminaire_variation.field_weight_kg
+    - field.field.commerce_product_variation.luminaire_variation.field_width_mm
+    - image.style.thumbnail
+  module:
+    - commerce_price
+    - image
+id: commerce_product_variation.luminaire_variation.default
+targetEntityType: commerce_product_variation
+bundle: luminaire_variation
+mode: default
+content:
+  attribute_cct:
+    type: options_select
+    weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_color:
+    type: options_select
+    weight: 1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_article_number:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_base_type:
+    type: string_textfield
+    weight: 53
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_beam_angle:
+    type: number
+    weight: 34
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_cct_nominal:
+    type: number
+    weight: 32
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_cri:
+    type: number
+    weight: 33
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_current_a:
+    type: number
+    weight: 25
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_diameter_mm:
+    type: number
+    weight: 14
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_dimmable:
+    type: boolean_checkbox
+    weight: 54
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  field_driver_power_w:
+    type: number
+    weight: 22
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_energy_class:
+    type: options_select
+    weight: 42
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_factory_sku:
+    type: string_textfield
+    weight: 1
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_height_mm:
+    type: number
+    weight: 13
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_housing_material:
+    type: string_textfield
+    weight: 44
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_ip_rating:
+    type: options_select
+    weight: 45
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_led_type:
+    type: options_select
+    weight: 41
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_length_mm:
+    type: number
+    weight: 12
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_lens_material:
+    type: string_textfield
+    weight: 43
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_lifetime_hours:
+    type: number
+    weight: 56
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_luminous_flux:
+    type: number
+    weight: 31
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_mounting_type:
+    type: options_select
+    weight: 51
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_power_factor:
+    type: number
+    weight: 26
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_power_w:
+    type: number
+    weight: 21
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_sensor:
+    type: options_select
+    weight: 55
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_socket:
+    type: string_textfield
+    weight: 52
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_variation_image_1:
+    type: image_image
+    weight: 61
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+    third_party_settings: {  }
+  field_variation_image_2:
+    type: image_image
+    weight: 62
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+    third_party_settings: {  }
+  field_variation_image_3:
+    type: image_image
+    weight: 63
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: thumbnail
+    third_party_settings: {  }
+  field_variation_status:
+    type: options_select
+    weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_voltage_max:
+    type: number
+    weight: 24
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_voltage_min:
+    type: number
+    weight: 23
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_weight_kg:
+    type: number
+    weight: 15
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_width_mm:
+    type: number
+    weight: 11
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  langcode:
+    type: language_select
+    weight: 2
+    region: content
+    settings:
+      include_locked: true
+    third_party_settings: {  }
+  list_price:
+    type: commerce_list_price
+    weight: -1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  price:
+    type: commerce_price_default
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  sku:
+    type: string_textfield
+    weight: -4
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 90
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+hidden:
+  created: true
+  uid: true

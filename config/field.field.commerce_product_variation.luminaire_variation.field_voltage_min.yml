@@ -1,0 +1,23 @@
+uuid: 32077727-e3ba-4712-854b-63a83cffa190
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_voltage_min
+id: commerce_product_variation.luminaire_variation.field_voltage_min
+field_name: field_voltage_min
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Voltage min (V)'
+description: null
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 0
+  max: null
+  prefix: ''
+  suffix: ' V'
+field_type: integer

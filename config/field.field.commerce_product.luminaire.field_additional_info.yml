@@ -1,0 +1,22 @@
+uuid: 94d31b13-9ce0-4314-9ced-695b3c9e17aa
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.luminaire
+    - field.storage.commerce_product.field_additional_info
+  module:
+    - text
+id: commerce_product.luminaire.field_additional_info
+field_name: field_additional_info
+entity_type: commerce_product
+bundle: luminaire
+label: 'Additional info'
+description: 'Extra information, notes, special conditions'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long
