@@ -1,0 +1,142 @@
+{#
+/**
+ * @file
+ * TritonLED theme override to display a single page.
+ *
+ * Bootstrap 5 layout with full-width hero and contained content regions.
+ *
+ * Available variables:
+ *
+ * General utility variables:
+ * - base_path: The base URL path of the Drupal installation.
+ * - is_front: A flag indicating if the current page is the front page.
+ * - logged_in: A flag indicating if the user is registered and signed in.
+ * - is_admin: A flag indicating if the user has permission to access administration pages.
+ *
+ * Site identity:
+ * - front_page: The URL of the front page.
+ *
+ * Regions:
+ * - page.header: Items for the header region.
+ * - page.primary_menu: Items for the primary menu region.
+ * - page.secondary_menu: Items for the secondary menu region.
+ * - page.hero: Items for the full-width hero region (NO container).
+ * - page.breadcrumb: Items for the breadcrumb region.
+ * - page.highlighted: Items for the highlighted content region.
+ * - page.help: Dynamic help text, mostly for admin pages.
+ * - page.content: The main content of the current page.
+ * - page.sidebar_first: Items for the first sidebar.
+ * - page.sidebar_second: Items for the second sidebar.
+ * - page.footer: Items for the footer region.
+ *
+ * @see \Drupal\Core\Theme\ThemePreprocess::preprocessPage()
+ * @see html.html.twig
+ */
+#}
+
+{# Navbar with header + menus #}
+{% if page.header or page.primary_menu or page.secondary_menu %}
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-xl">
+      {# Logo/branding #}
+      {% if page.header %}
+        {{ page.header }}
+      {% endif %}
+      
+      {# Mobile toggle #}
+      {% if page.primary_menu or page.secondary_menu %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        {# Menus - both in same collapse div #}
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          {# Main navigation #}
+          {% if page.primary_menu %}
+            {{ page.primary_menu }}
+          {% endif %}
+          
+          {# Secondary/Account menu #}
+          {% if page.secondary_menu %}
+            {{ page.secondary_menu }}
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </nav>
+{% endif %}
+
+{# Hero region - FULL WIDTH, NO CONTAINER #}
+{% if page.hero %}
+  <div class="hero-region">
+    {{ page.hero }}
+  </div>
+{% else %}
+  <!-- DEBUG: Hero region is EMPTY -->
+{% endif %}
+
+{# Breadcrumb with container #}
+{% if page.breadcrumb %}
+  <div class="breadcrumb-wrapper">
+    <div class="container-xl">
+      {{ page.breadcrumb }}
+    </div>
+  </div>
+{% endif %}
+
+{# Highlighted with container #}
+{% if page.highlighted %}
+  <div class="highlighted-wrapper">
+    <div class="container-xl">
+      {{ page.highlighted }}
+    </div>
+  </div>
+{% endif %}
+
+{# Help with container #}
+{% if page.help %}
+  <div class="help-wrapper">
+    <div class="container-xl">
+      {{ page.help }}
+    </div>
+  </div>
+{% endif %}
+
+{# Main content area with container and Bootstrap grid for sidebars #}
+<main role="main" class="main-content">
+  <a id="main-content" tabindex="-1"></a>{# link is in html.html.twig #}
+  
+  <div class="container-xl">
+    <div class="row">
+      
+      {# Sidebar first - Bootstrap col-lg-3 #}
+      {% if page.sidebar_first %}
+        <aside class="col-lg-3 sidebar-first" role="complementary">
+          {{ page.sidebar_first }}
+        </aside>
+      {% endif %}
+
+      {# Main content - responsive width based on sidebars #}
+      <div class="{% if page.sidebar_first and page.sidebar_second %}col-lg-6{% elseif page.sidebar_first or page.sidebar_second %}col-lg-9{% else %}col-12{% endif %} content-region">
+        {{ page.content }}
+      </div>
+
+      {# Sidebar second - Bootstrap col-lg-3 #}
+      {% if page.sidebar_second %}
+        <aside class="col-lg-3 sidebar-second" role="complementary">
+          {{ page.sidebar_second }}
+        </aside>
+      {% endif %}
+
+    </div>{# /.row #}
+  </div>{# /.container-xl #}
+</main>
+
+{# Footer with container #}
+{% if page.footer %}
+  <footer role="contentinfo" class="site-footer bg-dark text-white py-5 mt-5">
+    <div class="container-xl">
+      {{ page.footer }}
+    </div>
+  </footer>
+{% endif %}

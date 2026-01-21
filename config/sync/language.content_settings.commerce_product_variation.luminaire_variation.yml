@@ -1,0 +1,16 @@
+uuid: 6a54ebfb-ad61-4333-b075-28f5b3efc75c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: commerce_product_variation.luminaire_variation
+target_entity_type_id: commerce_product_variation
+target_bundle: luminaire_variation
+default_langcode: site_default
+language_alterable: true

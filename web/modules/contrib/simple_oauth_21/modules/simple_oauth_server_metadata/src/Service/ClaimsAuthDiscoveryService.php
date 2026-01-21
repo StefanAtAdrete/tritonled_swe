@@ -1,0 +1,219 @@
+<?php
+
+namespace Drupal\simple_oauth_server_metadata\Service;
+
+use Drupal\Core\Config\ConfigFactoryInterface;
+
+/**
+ * Service for discovering claims, authentication methods, and algorithms.
+ */
+class ClaimsAuthDiscoveryService {
+
+  /**
+   * Constructs a ClaimsAuthDiscoveryService object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The configuration factory.
+   */
+  public function __construct(
+    private readonly ConfigFactoryInterface $configFactory,
+  ) {}
+
+  /**
+   * Gets supported claims.
+   *
+   * @return array
+   *   An array of supported claims.
+   */
+  public function getClaimsSupported(): array {
+    $claims = [];
+
+    if ($this->isOpenIdConnectEnabled()) {
+      // Standard OpenID Connect claims.
+      $claims = [
+        'sub',
+        'iss',
+        'aud',
+        'exp',
+        'iat',
+        'auth_time',
+        'name',
+        'given_name',
+        'family_name',
+        'preferred_username',
+        'email',
+        'email_verified',
+      ];
+    }
+
+    return $claims;
+  }
+
+  /**
+   * Gets supported token endpoint authentication methods.
+   *
+   * @return array
+   *   An array of supported authentication methods.
+   */
+  public function getTokenEndpointAuthMethodsSupported(): array {
+    // Simple OAuth supports these standard methods.
+    return [
+      'client_secret_post',
+      'client_secret_basic',
+    ];
+  }
+
+  /**
+   * Gets supported token endpoint authentication signing algorithms.
+   *
+   * @return array
+   *   An array of supported signing algorithms.
+   */
+  public function getTokenEndpointAuthSigningAlgValuesSupported(): array {
+    // Based on Simple OAuth's RSA key configuration.
+    return ['RS256'];
+  }
+
+  /**
+   * Gets supported ID token signing algorithms.
+   *
+   * @return array
+   *   An array of supported ID token signing algorithms.
+   */
+  public function getIdTokenSigningAlgValuesSupported(): array {
+    // Simple OAuth uses RS256 for JWT signing.
+    return ['RS256'];
+  }
+
+  /**
+   * Gets supported subject types.
+   *
+   * @return array
+   *   An array of supported subject types.
+   */
+  public function getSubjectTypesSupported(): array {
+    // Simple OAuth implements public subject identifier type.
+    return ['public'];
+  }
+
+  /**
+   * Gets supported code challenge methods for PKCE.
+   *
+   * @return array
+   *   An array of supported code challenge methods.
+   */
+  public function getCodeChallengeMethodsSupported(): array {
+    // Simple OAuth supports PKCE with these methods.
+    return ['S256', 'plain'];
+  }
+
+  /**
+   * Checks if request URI parameter is supported.
+   *
+   * @return bool
+   *   TRUE if request URI parameter is supported, FALSE otherwise.
+   */
+  public function getRequestUriParameterSupported(): bool {
+    // Simple OAuth does not currently support request URI parameter.
+    // This feature allows clients to pass request parameters by reference.
+    return FALSE;
+  }
+
+  /**
+   * Checks if request parameter is supported.
+   *
+   * @return bool
+   *   TRUE if request parameter is supported, FALSE otherwise.
+   */
+  public function getRequestParameterSupported(): bool {
+    // Request parameter support depends on the authorization endpoint's
+    // ability to handle request objects passed by value.
+    // For now, return FALSE as Simple OAuth doesn't explicitly support this.
+    return FALSE;
+  }
+
+  /**
+   * Checks if claims parameter is supported.
+   *
+   * @return bool
+   *   TRUE if claims parameter is supported, FALSE otherwise.
+   */
+  public function getClaimsParameterSupported(): bool {
+    // Claims parameter support is available when OpenID Connect is enabled
+    // and the authorization endpoint can process claims requests.
+    return $this->isOpenIdConnectEnabled();
+  }
+
+  /**
+   * Checks if request URI registration is required.
+   *
+   * @return bool
+   *   TRUE if request URI registration is required, FALSE otherwise.
+   */
+  public function getRequireRequestUriRegistration(): bool {
+    // Since request URI parameter is not supported, registration is not
+    // required.
+    return FALSE;
+  }
+
+  /**
+   * Gets supported claims locales.
+   *
+   * @return array|null
+   *   Array of supported claims locales, or NULL if not supported.
+   */
+  public function getClaimsLocalesSupported(): ?array {
+    // Claims locales support depends on internationalization capabilities.
+    // For now, return NULL as Simple OAuth doesn't explicitly support this.
+    return NULL;
+  }
+
+  /**
+   * Checks if authorization code flow is enabled.
+   *
+   * @return bool
+   *   TRUE if authorization code flow is enabled, FALSE otherwise.
+   */
+  public function getAuthorizationCodeFlowEnabled(): bool {
+    // Authorization code flow is the core OAuth 2.0 flow and should always
+    // be enabled in Simple OAuth.
+    return TRUE;
+  }
+
+  /**
+   * Checks if implicit flow is enabled.
+   *
+   * @return bool
+   *   TRUE if implicit flow is enabled, FALSE otherwise.
+   */
+  public function getImplicitFlowEnabled(): bool {
+    // Implicit flow support can be determined by checking if 'token' and
+    // 'id_token' response types are supported.
+    // For OAuth 2.1 compliance, implicit flow should be discouraged.
+    return TRUE;
+  }
+
+  /**
+   * Checks if scopes parameter is supported.
+   *
+   * @return bool
+   *   TRUE if scopes parameter is supported, FALSE otherwise.
+   */
+  public function getScopesParameterSupported(): bool {
+    // Scopes parameter is a fundamental part of OAuth 2.0 and should
+    // always be supported.
+    return TRUE;
+  }
+
+  /**
+   * Checks if OpenID Connect is enabled.
+   *
+   * @return bool
+   *   TRUE if OpenID Connect is enabled, FALSE otherwise.
+   */
+  protected function isOpenIdConnectEnabled(): bool {
+    $config = $this->configFactory->get('simple_oauth.settings');
+    return !(bool) $config->get('disable_openid_connect');
+  }
+
+}

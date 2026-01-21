@@ -1,0 +1,13 @@
+name: 'MCP Tools - Cache'
+type: module
+description: 'MCP Tools for cache management (clear, status, bin operations).'
+core_version_requirement: ^10.3 || ^11
+package: MCP Tools
+lifecycle: experimental
+dependencies:
+  - mcp_tools:mcp_tools
+
+# Information added by Drupal.org packaging script on 2026-01-10
+version: '1.0.0-beta1'
+project: 'mcp_tools'
+datestamp: 1768012130

@@ -1,0 +1,42 @@
+tritonled.xs:
+  label: Extra Small
+  mediaQuery: '(max-width: 575.98px)'
+  weight: 0
+  multipliers:
+    - 1x
+    - 2x
+tritonled.sm:
+  label: Small
+  mediaQuery: '(min-width: 576px)'
+  weight: 1
+  multipliers:
+    - 1x
+    - 2x
+tritonled.md:
+  label: Medium
+  mediaQuery: '(min-width: 768px)'
+  weight: 2
+  multipliers:
+    - 1x
+    - 2x
+tritonled.lg:
+  label: Large
+  mediaQuery: '(min-width: 992px)'
+  weight: 3
+  multipliers:
+    - 1x
+    - 2x
+tritonled.xl:
+  label: Extra Large
+  mediaQuery: '(min-width: 1200px)'
+  weight: 4
+  multipliers:
+    - 1x
+    - 2x
+tritonled.xxl:
+  label: Extra Extra Large
+  mediaQuery: '(min-width: 1400px)'
+  weight: 5
+  multipliers:
+    - 1x
+    - 2x

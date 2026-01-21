@@ -879,5 +879,6 @@ if (getenv('IS_DDEV_PROJECT') == 'true' && file_exists(__DIR__ . '/settings.ddev
 #   include $app_root . '/' . $site_path . '/settings.local.php';
 # }
 
-$settings['config_sync_directory'] = $app_root . '/../config';
+$settings['config_sync_directory'] = $app_root . '/../config/sync';
 $settings['file_private_path'] = $app_root . '/../private';
+# Disable Twig cache

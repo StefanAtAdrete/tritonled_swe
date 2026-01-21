@@ -1,0 +1,107 @@
+/**
+ * Commerce Product - Layout Rebuild Styles
+ */
+
+/* Hide original Commerce fields during rebuild */
+article.commerce-product.layout-rebuilding > .field,
+article.commerce-product.layout-rebuilding > h2 {
+  display: none !important;
+}
+
+/* Show fields after they're moved into custom layout */
+.product-custom-layout .field {
+  display: block !important;
+}
+
+/* Icon specs styling */
+.icon-specs .spec-item {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.icon-specs .spec-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.icon-specs .spec-icon {
+  font-size: 2rem;
+}
+
+.icon-specs .spec-value {
+  font-size: 1.1rem;
+  min-height: 1.5rem;
+}
+
+/* Variations container styling */
+#variations-container {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+/* Bootstrap tabs override */
+.nav-tabs {
+  border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #6c757d;
+  padding: 0.75rem 1.5rem;
+}
+
+.nav-tabs .nav-link:hover {
+  border-bottom-color: #0d6efd;
+  color: #0d6efd;
+}
+
+.nav-tabs .nav-link.active {
+  border-bottom-color: #0d6efd;
+  color: #0d6efd;
+  background: transparent;
+}
+
+/* Tab tables */
+.tab-content table {
+  margin-bottom: 0;
+}
+
+.tab-content table tr {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.tab-content table tr:last-child {
+  border-bottom: none;
+}
+
+.tab-content table td {
+  padding: 0.75rem 0.5rem;
+}
+
+/* Cards */
+.card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 767.98px) {
+  .icon-specs .spec-item {
+    padding: 1rem !important;
+  }
+  
+  .icon-specs .spec-icon {
+    font-size: 1.5rem;
+  }
+}

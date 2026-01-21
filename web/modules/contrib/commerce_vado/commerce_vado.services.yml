@@ -1,0 +1,38 @@
+services:
+  commerce_vado.field_manager:
+    class: Drupal\commerce_vado\VadoFieldManager
+    arguments: ['@entity_type.manager', '@entity_field.manager', '@config.factory']
+
+  commerce_vado.vado_event_subscriber:
+    class: Drupal\commerce_vado\EventSubscriber\VadoEventSubscriber
+    arguments: ['@entity_type.manager', '@commerce_price.rounder', '@commerce_price.chain_price_resolver', '@commerce_vado.field_manager', '@commerce_cart.order_item_matcher', '@config.factory']
+    tags:
+      - { name: event_subscriber }
+
+  commerce_vado.referenceable_plugin_types_subscriber:
+    class: Drupal\commerce_vado\EventSubscriber\ReferenceablePluginTypesSubscriber
+    tags:
+      - { name: event_subscriber }
+
+  commerce_vado.vado_order_processor:
+    class: Drupal\commerce_vado\VadoOrderProcessor
+    arguments: [ '@entity_type.manager', '@commerce_price.rounder', '@request_stack', '@commerce_price.chain_price_resolver', '@config.factory']
+    tags:
+      - { name: commerce_order.order_processor, priority: 600, adjustment_type: vado_discount }
+
+  commerce_vado.order_item_matcher:
+    class: Drupal\commerce_vado\OrderItemMatcher
+    arguments: ['@entity_type.manager', '@event_dispatcher']
+
+  commerce_vado.lazy_builders:
+    class: Drupal\commerce_vado\VadoGroupLazyBuilders
+    arguments: ['@entity_type.manager', '@form_builder', '@entity.repository']
+
+  plugin.manager.commerce_vado_group_widget:
+    class: Drupal\commerce_vado\VadoGroupWidgetManager
+    parent: default_plugin_manager
+
+  commerce_vado.route_subscriber:
+    class: Drupal\commerce_vado\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }

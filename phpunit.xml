@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="web/core/tests/bootstrap.php"
+         colors="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutChangesToGlobalState="true"
+         failOnWarning="true">
+  
+  <testsuites>
+    <testsuite name="unit">
+      <directory>./tests/Unit</directory>
+    </testsuite>
+    <testsuite name="functional">
+      <directory>./tests/Functional</directory>
+    </testsuite>
+  </testsuites>
+
+  <php>
+    <!-- Drupal test settings -->
+    <env name="SIMPLETEST_BASE_URL" value="http://tritonled.ddev.site"/>
+    <env name="SIMPLETEST_DB" value="mysql://db:db@db/db"/>
+    <env name="BROWSERTEST_OUTPUT_DIRECTORY" value="/tmp"/>
+    <env name="BROWSERTEST_OUTPUT_BASE_URL" value="http://tritonled.ddev.site"/>
+    
+    <!-- Disable deprecation notices during tests -->
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+  </php>
+
+  <coverage>
+    <include>
+      <directory suffix=".php">web/modules/custom</directory>
+      <directory suffix=".php">web/themes/custom</directory>
+    </include>
+    <exclude>
+      <directory>web/modules/custom/*/tests</directory>
+      <directory>web/themes/custom/*/tests</directory>
+    </exclude>
+  </coverage>
+
+</phpunit>

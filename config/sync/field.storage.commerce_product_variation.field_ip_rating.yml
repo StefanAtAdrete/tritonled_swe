@@ -1,0 +1,21 @@
+uuid: 7e08bcd3-a45d-458e-8264-1928d4f54445
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_ip_rating
+field_name: field_ip_rating
+entity_type: commerce_product_variation
+type: string
+settings:
+  max_length: null
+  case_sensitive: null
+  is_ascii: null
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

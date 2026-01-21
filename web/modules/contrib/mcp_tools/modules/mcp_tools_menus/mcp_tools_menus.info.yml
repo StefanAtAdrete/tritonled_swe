@@ -1,0 +1,14 @@
+name: 'MCP Tools - Menus'
+type: module
+description: 'Menu management: create, delete menus and manage menu links.'
+package: MCP Tools
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - mcp_tools:mcp_tools
+  - drupal:menu_link_content
+lifecycle: experimental
+
+# Information added by Drupal.org packaging script on 2026-01-10
+version: '1.0.0-beta1'
+project: 'mcp_tools'
+datestamp: 1768012130

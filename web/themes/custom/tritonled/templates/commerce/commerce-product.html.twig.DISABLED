@@ -1,0 +1,16 @@
+{#
+/**
+ * @file
+ * Theme override for Commerce Product - Luminaire bundle
+ * 
+ * STRATEGY: Render EVERYTHING from default Commerce,
+ * then use CSS + JS to reorganize into custom layout.
+ */
+#}
+
+{# Render EXACTLY as default Commerce does #}
+<article{{ attributes.addClass('product-luminaire') }}>
+  {{ title_prefix }}
+  {{ title_suffix }}
+  {{ content }}
+</article>

@@ -1,0 +1,75 @@
+simple_oauth_server_metadata.well_known:
+  path: '/.well-known/oauth-authorization-server'
+  defaults:
+    _controller: '\Drupal\simple_oauth_server_metadata\Controller\ServerMetadataController'
+    _title: 'OAuth 2.0 Authorization Server Metadata'
+  methods: [GET]
+  requirements:
+    # Public metadata endpoint - RFC 8414 requires this to be accessible.
+    _access: 'TRUE'
+  options:
+    _format: 'json'
+    no_cache: FALSE
+
+simple_oauth_server_metadata.resource_metadata:
+  path: '/.well-known/oauth-protected-resource'
+  defaults:
+    _controller: '\Drupal\simple_oauth_server_metadata\Controller\ResourceMetadataController'
+    _title: 'OAuth 2.0 Protected Resource Metadata'
+  methods: [GET]
+  requirements:
+    # Public metadata endpoint - RFC 9728 requires this to be accessible.
+    _access: 'TRUE'
+  options:
+    _format: 'json'
+    no_cache: FALSE
+
+simple_oauth_server_metadata.openid_configuration:
+  path: '/.well-known/openid-configuration'
+  defaults:
+    _controller: '\Drupal\simple_oauth_server_metadata\Controller\OpenIdConfigurationController::configuration'
+    _title: 'OpenID Connect Discovery'
+  methods: [GET]
+  requirements:
+    # OpenID Connect Discovery endpoint must be publicly accessible for client discovery.
+    _access: 'TRUE'
+  options:
+    _format: 'json'
+    no_cache: FALSE
+
+simple_oauth_server_metadata.revoke:
+  path: '/oauth/revoke'
+  defaults:
+    _controller: '\Drupal\simple_oauth_server_metadata\Controller\TokenRevocationController::revoke'
+    _title: 'OAuth 2.0 Token Revocation'
+  methods: [POST]
+  requirements:
+    # Client authentication handled by controller per RFC 7009.
+    _access: 'TRUE'
+
+simple_oauth_server_metadata.token_introspection:
+  path: '/oauth/introspect'
+  defaults:
+    _controller: '\Drupal\simple_oauth_server_metadata\Controller\TokenIntrospectionController::introspect'
+    _title: 'OAuth 2.0 Token Introspection'
+  # Temporary workaround: Accepting GET to bypass simple_oauth PathValidator bug
+  # with POST-only routes. GET requests are rejected in the controller.
+  # See: https://www.drupal.org/project/simple_oauth/issues/[TBD]
+  methods: [GET, POST]
+  requirements:
+    # Bearer token authentication enforced by oauth2 provider.
+    _access: 'TRUE'
+  options:
+    _auth: ['oauth2']
+    _format: 'json'
+    no_cache: TRUE
+
+simple_oauth_server_metadata.settings:
+  path: '/admin/config/people/simple_oauth/oauth-21/server-metadata'
+  defaults:
+    _form: '\Drupal\simple_oauth_server_metadata\Form\ServerMetadataSettingsForm'
+    _title: 'Server Metadata Settings'
+  requirements:
+    _permission: 'administer simple_oauth entities'
+  options:
+    _admin_route: TRUE

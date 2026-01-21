@@ -1,0 +1,15 @@
+uuid: 4d5fee39-a2f2-4be2-af4f-b403845c8bb9
+langcode: en
+status: true
+dependencies: {  }
+_core:
+  default_config_hash: _z3gRqT6raSp9842zsMlka4awElMiTaIMS4tZpjP3_E
+id: default
+label: Luminaire
+traits: {  }
+locked: false
+description: ''
+variationTypes:
+  - luminaire_variation
+multipleVariations: true
+injectVariationFields: true

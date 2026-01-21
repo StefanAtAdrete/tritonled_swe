@@ -1,0 +1,9 @@
+name: 'TritonLED Commerce Agent'
+type: module
+description: 'AI Agent för att skapa och hantera Commerce produkter och varianter'
+core_version_requirement: ^11
+package: TritonLED
+dependencies:
+  - ai_agents
+  - commerce_product
+  - commerce_store

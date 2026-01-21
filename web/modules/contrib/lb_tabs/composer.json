@@ -1,0 +1,19 @@
+{
+    "name": "drupal/lb_tabs",
+    "type": "drupal-module",
+    "description": "Implements an anchor menu using as reference the Layout Builder sections",
+    "keywords": [
+        "Drupal"
+    ],
+    "license": "GPL-2.0+",
+    "homepage": "https://www.drupal.org/project/lb_tabs",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/lb_tabs",
+        "source": "http://cgit.drupalcode.org/lb_tabs"
+    },
+    "require": {
+    }
+}
+

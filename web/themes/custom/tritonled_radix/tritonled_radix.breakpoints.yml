@@ -1,0 +1,26 @@
+# Breakpoints for TritonLED Radix theme
+# Used for responsive images and layout switching
+
+tritonled_radix.mobile:
+  label: Mobile
+  mediaQuery: 'all and (max-width: 767px)'
+  weight: 0
+  multipliers:
+    - 1x
+    - 2x
+
+tritonled_radix.tablet:
+  label: Tablet
+  mediaQuery: 'all and (min-width: 768px) and (max-width: 1199px)'
+  weight: 1
+  multipliers:
+    - 1x
+    - 2x
+
+tritonled_radix.desktop:
+  label: Desktop
+  mediaQuery: 'all and (min-width: 1200px)'
+  weight: 2
+  multipliers:
+    - 1x
+    - 2x

@@ -1,0 +1,31 @@
+/**
+ * Media components - Responsive video and images
+ */
+
+/* Video container med aspect ratio */
+.field--name-field-media-video-file,
+.field--name-field-product-media,
+.ds-media-video-container {
+  aspect-ratio: 1 / 1; /* 1:1 för mobil */
+  overflow: hidden;
+  width: 100%;
+}
+
+/* 16:9 för desktop */
+@media (min-width: 768px) {
+  .field--name-field-media-video-file,
+  .field--name-field-product-media,
+  .ds-media-video-container {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* Video fyller containern */
+.field--name-field-media-video-file video,
+.field--name-field-product-media video,
+.ds-media-video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

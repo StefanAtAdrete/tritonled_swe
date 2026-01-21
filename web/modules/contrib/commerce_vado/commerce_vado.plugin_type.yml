@@ -1,0 +1,5 @@
+commerce_vado.vado_group_widget:
+  label: Vado Group widget
+  provider: commerce_vado
+  plugin_manager_service_id: plugin.manager.commerce_vado_group_widget
+  plugin_definition_decorator_class: Drupal\plugin\PluginDefinition\ArrayPluginDefinitionDecorator

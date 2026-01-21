@@ -1,0 +1,12 @@
+uuid: e08cd170-8f11-4967-aa20-5a6c82e56ae3
+langcode: en
+status: true
+dependencies: {  }
+id: moms
+label: Moms
+plugin: european_union_vat
+configuration:
+  display_inclusive: true
+  display_tax_rate_in_label: true
+conditions: {  }
+conditionOperator: AND

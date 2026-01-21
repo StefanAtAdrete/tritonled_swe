@@ -1,0 +1,22 @@
+uuid: 95ce8650-b180-4ef9-a347-13a6f04ac04a
+langcode: en
+status: true
+dependencies:
+  theme:
+    - tritonled_radix
+_core:
+  default_config_hash: nGE3EoPQQaQCuqTUtZgw0-KIzmrqdKDzdNQf2JyPUt4
+id: tritonled_radix_primary_local_tasks
+theme: tritonled_radix
+region: navbar_branding
+weight: -4
+provider: null
+plugin: local_tasks_block
+settings:
+  id: local_tasks_block
+  label: 'Primary tabs'
+  label_display: '0'
+  provider: core
+  primary: true
+  secondary: false
+visibility: {  }

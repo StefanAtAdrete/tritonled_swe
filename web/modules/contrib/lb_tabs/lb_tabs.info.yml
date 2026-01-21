@@ -1,0 +1,12 @@
+name: Tabs And Accordion Layout
+type: module
+core_version_requirement: ^9 || ^10 || ^11
+package: Layout
+dependencies:
+  - jquery_ui_tabs:jquery_ui_tabs
+  - jquery_ui_accordion:jquery_ui_accordion
+
+# Information added by Drupal.org packaging script on 2024-11-22
+version: '3.0.4'
+project: 'lb_tabs'
+datestamp: 1732311027

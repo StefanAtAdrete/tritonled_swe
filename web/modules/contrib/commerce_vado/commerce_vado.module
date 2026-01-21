@@ -1,0 +1,186 @@
+<?php
+
+/**
+ * @file
+ * Defines the "meat and potatoes" of Vado, aka hooks to add addons to orders.
+ */
+
+use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\Entity\OrderItem;
+use Drupal\commerce_order\Entity\OrderItemInterface;
+use Drupal\commerce_vado\VadoHelper;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Form\ViewsForm;
+
+/**
+ * Custom function for verifying if we have a specific item already in order.
+ *
+ * Written because order->hasItem() is strict about the order item ID rather
+ * than checking the purchasable entity ID, which is what we really care about
+ * in this case.
+ *
+ * @param \Drupal\commerce_order\Entity\OrderInterface $order
+ *   Order entity to check against.
+ * @param \Drupal\commerce_order\Entity\OrderItem $orderItem
+ *   Custom order entity to check presence of.
+ *
+ * @return bool
+ *   FALSE if the item is not found, or TRUE if it is.
+ */
+function commerce_vado_order_has_item(OrderInterface $order, OrderItem $orderItem) {
+  foreach ($order->getItems() as $item) {
+    if ($item->getPurchasedEntityId() == $orderItem->getPurchasedEntityId()) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_vado_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_state->getFormObject() instanceof ViewsForm) {
+    /** @var \Drupal\views\ViewExecutable $view */
+    $view = reset($form_state->getBuildInfo()['args']);
+    if ($view->storage->get('tag') == 'commerce_cart_form' && !empty($view->result)) {
+      foreach ($view->result as $row) {
+        if (!empty($row->_relationship_entities)) {
+          foreach ($row->_relationship_entities as $relationship_entity) {
+            if (!($relationship_entity instanceof OrderItemInterface)) {
+              continue;
+            }
+            $order_item = $relationship_entity;
+            if ($order_item->getData('commerce_vado_synced_child_order_item', FALSE)) {
+              // Disable the quantity field.
+              if (!empty($form['edit_quantity'][$row->index])) {
+                $form['edit_quantity'][$row->index]['#disabled'] = TRUE;
+              }
+              // Hide the remove button.
+              if (!empty($form['remove_button'][$row->index])) {
+                $form['remove_button'][$row->index]['#access'] = FALSE;
+              }
+            }
+
+            $parent_item = $order_item->getPurchasedEntity();
+            if (!$parent_item) {
+              continue;
+            }
+            // Set the remove button to "Remove Bundle" for parent if sync's on.
+            $sync_quantity = FALSE;
+            if ($parent_item->hasField('sync_quantity') && !$parent_item->get('sync_quantity')->isEmpty()) {
+              $sync_quantity = $parent_item->get('sync_quantity')->value;
+            }
+            if ($sync_quantity && $order_item->getData('commerce_vado_child_order_items')) {
+              if (!empty($form['remove_button'][$row->index])) {
+                $form['remove_button'][$row->index]['#value'] = t('Remove Bundle');
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook__preprocess_views_view_field().
+ */
+function commerce_vado_preprocess_views_view_field(&$variables) {
+  $hide_parent_zero_price = \Drupal::config('commerce_vado.settings')->get('hide_parent_zero_price');
+  if ($hide_parent_zero_price) {
+    $field = $variables['field'];
+    $row = $variables['row'];
+
+    $order_item = NULL;
+    // The views base table is order_item.
+    if ($row->_entity instanceof OrderItemInterface) {
+      $order_item = $row->_entity;
+    }
+
+    // The views base table is order.
+    if (!$order_item) {
+      foreach ($row->_relationship_entities as $relationship_entity) {
+        if ($relationship_entity instanceof OrderItemInterface) {
+          $order_item = $relationship_entity;
+          break;
+        }
+      }
+    }
+
+    // Remove price for VADO parent order items that are zero.
+    if (isset($order_item) && $order_item->getData('commerce_vado_child_order_items', FALSE)) {
+      if ($field->field === 'unit_price__number' && $order_item->getUnitPrice()->isZero()) {
+        $variables['output'] = '';
+      }
+      if ($field->field === 'total_price__number' && $order_item->getTotalPrice()->isZero()) {
+        $variables['output'] = '';
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function commerce_vado_views_data_alter(array &$data) {
+  $data['commerce_vado_group_item']['group_item_discounted_price'] = [
+    'title' => t('Group item discounted price'),
+    'field' => [
+      'title' => t('Group item discounted price'),
+      'help' => t('Displays the discounted price of the group item.'),
+      'id' => 'group_item_discounted_price',
+    ],
+  ];
+
+  $data['commerce_vado_group_item']['group_item_discount_amount'] = [
+    'title' => t('Group item discount amount'),
+    'field' => [
+      'title' => t('Group item discount amount'),
+      'help' => t('Displays the discount amount that is being applied to the group item.'),
+      'id' => 'group_item_discount_amount',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_entity_type_build().
+ */
+function commerce_vado_entity_type_build(array &$entity_types) {
+  $entity_types['commerce_order_item']->setFormClass('vado_group_add_to_cart', '\Drupal\commerce_vado\Form\VadoGroupAddToCartForm');
+}
+
+/**
+ * Add to cart form alter for static groups.
+ *
+ * Allows static groups to be added to the cart
+ * without using the group add to cart form.
+ *
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_vado_form_commerce_order_item_add_to_cart_form_alter(array &$form, FormStateInterface $form_state) {
+  $selected_variation_id = $form_state->get('selected_variation');
+  if (!$selected_variation_id) {
+    $selected_variation_id = $form['purchased_entity']['widget'][0]['variation']['#value'];
+  }
+  if ($selected_variation_id) {
+    $selected_variation = \Drupal::entityTypeManager()->getStorage('commerce_product_variation')->load($selected_variation_id);
+    if ($selected_variation && $selected_variation->hasField('variation_groups')) {
+      $selected_group_item_ids = [];
+      $groups = $selected_variation->get('variation_groups')->referencedEntities();
+      /** @var \Drupal\commerce_vado\Entity\VadoGroupInterface $group */
+      foreach ($groups as $group) {
+        $group_widget = $group->getGroupWidget();
+        if ($group_widget->getPluginId() === 'static_list') {
+          $selected_group_item_ids[] = $group_widget->getDefaultValue();
+        }
+      }
+    }
+    if (!empty($selected_group_item_ids)) {
+      $selected_group_item_ids = VadoHelper::processGroupSelections($selected_group_item_ids);
+      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
+      $order_item = $form_state->getFormObject()->getEntity();
+      $order_item->setData('selected_addon_group_items', $selected_group_item_ids);
+    }
+  }
+}

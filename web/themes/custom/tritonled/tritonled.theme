@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * Functions to support theming.
+ */
+
+/**
+ * Implements hook_preprocess_image_widget().
+ */
+function tritonled_preprocess_image_widget(array &$variables): void {
+  $data = &$variables['data'];
+
+  // This prevents image widget templates from rendering preview container HTML
+  // to users that do not have permission to access these previews.
+  // @todo revisit in https://drupal.org/node/953034
+  // @todo revisit in https://drupal.org/node/3114318
+  if (isset($data['preview']['#access']) && $data['preview']['#access'] === FALSE) {
+    unset($data['preview']);
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ */
+function tritonled_preprocess_views_view(&$variables) {
+  $view = $variables['view'];
+  
+  // Attach hero carousel library to hero_media view.
+  if ($view->id() === 'hero_media') {
+    $variables['#attached']['library'][] = 'tritonled/hero-carousel';
+  }
+}
+
+/**
+ * Implements hook_preprocess_commerce_product().
+ */
+function tritonled_preprocess_commerce_product(&$variables) {
+  // Attach product page styles.
+  $variables['#attached']['library'][] = 'tritonled/product';
+  
+  // Attach product gallery carousel library.
+  $variables['#attached']['library'][] = 'tritonled/product-gallery';
+  
+  // Attach product AJAX handler and Bootstrap Icons.
+  $variables['#attached']['library'][] = 'tritonled/product-ajax';
+  $variables['#attached']['library'][] = 'tritonled/bootstrap-icons';
+  
+  // Get product entity.
+  if (isset($variables['elements']['#commerce_product'])) {
+    /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
+    $product = $variables['elements']['#commerce_product'];
+    $variables['product_entity'] = $product;
+  }
+}
+
+/**
+ * Implements hook_preprocess_file_video().
+ */
+function tritonled_preprocess_file_video(&$variables) {
+  // Remove hardcoded width and height attributes for responsive video.
+  if (isset($variables['attributes']['width'])) {
+    unset($variables['attributes']['width']);
+  }
+  if (isset($variables['attributes']['height'])) {
+    unset($variables['attributes']['height']);
+  }
+}
+
+/**
+ * Implements hook_preprocess_responsive_image().
+ */
+function tritonled_preprocess_responsive_image(&$variables) {
+  // Remove width/height from source elements.
+  if (isset($variables['sources'])) {
+    foreach ($variables['sources'] as &$source) {
+      unset($source['width']);
+      unset($source['height']);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_image().
+ */
+function tritonled_preprocess_image(&$variables) {
+  // Remove width/height attributes from all images for CSS control.
+  if (isset($variables['attributes']['width'])) {
+    unset($variables['attributes']['width']);
+  }
+  if (isset($variables['attributes']['height'])) {
+    unset($variables['attributes']['height']);
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function tritonled_preprocess_page(&$variables) {
+  // Add theme settings to page variables.
+  $variables['container_width'] = theme_get_setting('tritonled_container_width') ?? 'container';
+  $variables['primary_color'] = theme_get_setting('tritonled_primary_color') ?? '#0066cc';
+  $variables['accent_color'] = theme_get_setting('tritonled_accent_color') ?? '#00cc66';
+}
+
+/**
+ * Implements hook_preprocess_html().
+ */
+function tritonled_preprocess_html(&$variables) {
+  // Add custom CSS variables for theme colors.
+  $primary_color = theme_get_setting('tritonled_primary_color') ?? '#0066cc';
+  $accent_color = theme_get_setting('tritonled_accent_color') ?? '#00cc66';
+  
+  $variables['#attached']['html_head'][] = [
+    [
+      '#tag' => 'style',
+      '#value' => ":root { --tritonled-primary: {$primary_color}; --tritonled-accent: {$accent_color}; }",
+    ],
+    'tritonled_colors',
+  ];
+}

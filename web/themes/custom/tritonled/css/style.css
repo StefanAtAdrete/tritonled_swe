@@ -1,0 +1,117 @@
+/**
+ * Tritonled Custom Styles with Bootstrap 5.3
+ * Custom styling for Tritonled LED luminaire platform
+ */
+
+/* ==========================================================================
+   Bootstrap Variables Override
+   ========================================================================== */
+
+:root {
+  /* Brand Colors - Override Bootstrap defaults */
+  --bs-primary: #0066cc;
+  --bs-secondary: #6c757d;
+  --bs-success: #28a745;
+  --bs-info: #17a2b8;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  
+  /* Tritonled Custom Variables */
+  --tritonled-primary: #0066cc;
+  --tritonled-accent: #00cc66;
+  --tritonled-dark: #1a1a1a;
+  --tritonled-light: #f8f9fa;
+}
+
+/* ==========================================================================
+   General Overrides
+   ========================================================================== */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.site-header {
+  background-color: var(--tritonled-dark);
+  padding: 1rem 0;
+}
+
+.site-header .navbar-brand {
+  color: var(--tritonled-light);
+}
+
+/* ==========================================================================
+   Product Display - Using Bootstrap Grid
+   ========================================================================== */
+
+.product-hero {
+  margin-bottom: 2rem;
+}
+
+.product-hero video,
+.product-hero img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.product-specs {
+  padding: 1.5rem;
+  background-color: var(--bs-light);
+  border-radius: 0.5rem;
+}
+
+.product-specs .spec-item {
+  margin-bottom: 1rem;
+}
+
+.product-specs .spec-label {
+  font-weight: 600;
+  color: var(--bs-dark);
+}
+
+.product-specs .spec-value {
+  color: var(--bs-secondary);
+}
+
+/* ==========================================================================
+   Commerce Product Variations
+   ========================================================================== */
+
+.product-variations {
+  margin: 2rem 0;
+}
+
+.variation-attribute {
+  margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.site-footer {
+  background-color: var(--tritonled-dark);
+  color: var(--tritonled-light);
+  padding: 3rem 0;
+  margin-top: 4rem;
+}
+
+/* ==========================================================================
+   Responsive Utilities
+   ========================================================================== */
+
+/* Mobile optimizations */
+@media (max-width: 767.98px) {
+  .product-hero {
+    margin-bottom: 1rem;
+  }
+  
+  .site-header {
+    padding: 0.5rem 0;
+  }
+}

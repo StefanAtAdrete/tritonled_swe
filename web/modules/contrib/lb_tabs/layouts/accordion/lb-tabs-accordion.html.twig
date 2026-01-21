@@ -1,0 +1,31 @@
+{% if content.label_blocks %}
+  {% set inLayoutBuilder = content.content_blocks.layout_builder_add_block is defined %}
+  {% if inLayoutBuilder %}
+    {{ attach_library('lb_tabs/accordion_in_lb') }}
+  {% else %}
+    {{ attach_library('lb_tabs/accordion') }}
+  {% endif %}
+
+  <div {{ region_attributes["content_blocks"].addClass('lb-tabs-accordion').setAttribute('id', "#{settings.dom_id}") }}>
+    {# Iterate over both arrays. The build is guaranteed to have equal numberr of items. #}
+    {% set labelKeys = content.label_blocks|keys|filter(k => k|first != '#') %}
+    {% set contentKeys = content.content_blocks|keys|filter(k => k|first != '#') %}
+    {% for i, labelKey in labelKeys %}
+      {% set contentKey = contentKeys[i] %}
+      {% set labelBlock = content.label_blocks[labelKey] %}
+      {% set contentBlock = content.content_blocks[contentKey] %}
+      <h3>
+        {{ labelBlock }}
+      </h3>
+      <div>
+        {{ contentBlock }}
+      </div>
+    {% endfor %}
+    {# Output anything remaining #}
+    {% for i, contentKey in contentKeys %}
+      {% if labelKeys[i] is not defined %}
+        {{ content.content_blocks[contentKey] }}
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

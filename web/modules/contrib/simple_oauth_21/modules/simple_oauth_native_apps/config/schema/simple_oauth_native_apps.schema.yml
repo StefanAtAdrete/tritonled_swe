@@ -1,0 +1,145 @@
+# Configuration schema for Simple OAuth Native Apps module.
+#
+# This schema defines the canonical nested structure used throughout the
+# module: configuration storage, form elements, validation, and services.
+# All configuration uses nested arrays (e.g., webview.detection,
+# allow.custom_uri_schemes, native.enhanced_pkce) consistently.
+#
+# Structure groups:
+# - webview.*: WebView detection and handling settings
+# - allow.*: Redirect URI type permissions
+# - native.*: Native app specific security settings
+# - log.*: Logging and debugging options
+simple_oauth_native_apps.settings:
+  type: config_object
+  label: 'Simple OAuth Native Apps Settings'
+  mapping:
+    enforce_native_security:
+      type: boolean
+      label: 'Enforce native app security'
+      description: 'Apply RFC 8252 security requirements for native applications'
+    webview:
+      type: mapping
+      label: 'WebView detection settings'
+      mapping:
+        detection:
+          type: string
+          label: 'WebView detection policy'
+          description: 'How to handle WebView-based authorization requests'
+          constraints:
+            Choice:
+              choices: ['off', 'warn', 'block']
+        custom_message:
+          type: string
+          label: 'Custom webview warning message'
+          description: 'Custom message to display when embedded webview is detected'
+        whitelist:
+          type: sequence
+          label: 'Webview whitelist patterns'
+          description: 'List of user-agent patterns to whitelist (bypass webview detection)'
+          sequence:
+            type: string
+        patterns:
+          type: sequence
+          label: 'Custom webview detection patterns'
+          description: 'Additional user-agent patterns to detect as embedded webviews'
+          sequence:
+            type: string
+    require_exact_redirect_match:
+      type: boolean
+      label: 'Require exact redirect URI match'
+      description: 'Require exact redirect URI matching (disable partial matches)'
+    allow:
+      type: mapping
+      label: 'Allowed redirect types'
+      mapping:
+        custom_uri_schemes:
+          type: string
+          label: 'Allow custom URI schemes'
+          # cspell:ignore myapp
+          description: 'Allow custom URI schemes for native app redirects (e.g., myapp://callback)'
+          required: true
+          constraints:
+            Choice:
+              choices: ['auto-detect', 'native', 'web', '1', '0']
+            NotBlank: ~
+        loopback_redirects:
+          type: string
+          label: 'Allow loopback redirects'
+          description: 'Allow loopback IP redirects for native applications (RFC 8252)'
+          required: true
+          constraints:
+            Choice:
+              choices: ['auto-detect', 'native', 'web', '1', '0']
+            NotBlank: ~
+    native:
+      type: mapping
+      label: 'Native app specific settings'
+      mapping:
+        enhanced_pkce:
+          type: string
+          label: 'Enhanced PKCE for native apps'
+          description: 'Apply enhanced PKCE requirements for native applications'
+          required: true
+          constraints:
+            Choice:
+              choices: ['auto-detect', 'enhanced', 'not-enhanced']
+            NotBlank: ~
+        enforce:
+          type: string
+          label: 'Enforce challenge method for native apps'
+          description: 'Require specific challenge method for native applications'
+          required: true
+          constraints:
+            Choice:
+              choices: ['off', 'S256', 'plain']
+            NotBlank: ~
+    log:
+      type: mapping
+      label: 'Logging settings'
+      mapping:
+        pkce_validations:
+          type: boolean
+          label: 'Log PKCE validations'
+          description: 'Log PKCE validation attempts and results'
+        detection_decisions:
+          type: boolean
+          label: 'Log detection decisions'
+          description: 'Log native app and WebView detection decisions'
+
+simple_oauth_native_apps.consumer.*:
+  type: config_object
+  label: 'Consumer-specific Native Apps Settings'
+  mapping:
+    client_detection:
+      type: mapping
+      label: 'Client detection results'
+      description: 'Automatically detected client characteristics'
+    webview_detection_override:
+      type: string
+      label: 'WebView detection policy override'
+      description: 'Override global WebView detection policy for this consumer'
+      constraints:
+        Choice:
+          choices: ['', 'off', 'warn', 'block']
+    allow_custom_schemes_override:
+      type: string
+      label: 'Allow custom URI schemes override'
+      description: 'Override global custom URI schemes setting for this consumer'
+      constraints:
+        Choice:
+          choices: ['', 'auto-detect', 'native', 'web']
+    allow_loopback_override:
+      type: string
+      label: 'Allow loopback redirects override'
+      description: 'Override global loopback redirects setting for this consumer'
+      constraints:
+        Choice:
+          choices: ['', 'auto-detect', 'native', 'web']
+    enhanced_pkce_override:
+      type: string
+      label: 'Enhanced PKCE override'
+      description: 'Override global enhanced PKCE setting for this consumer'
+      constraints:
+        Choice:
+          choices: ['', 'auto-detect', 'enhanced', 'not-enhanced']

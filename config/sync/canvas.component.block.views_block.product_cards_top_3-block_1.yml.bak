@@ -1,0 +1,27 @@
+uuid: a145a893-71b3-4022-bab1-ac421cf5a0df
+langcode: en
+status: true
+dependencies:
+  config:
+    - views.view.product_cards_top_3
+  module:
+    - views
+active_version: b5925c7dd6ee5285
+versioned_properties:
+  active:
+    settings:
+      default_settings:
+        id: 'views_block:product_cards_top_3-block_1'
+        label: 'Top 3'
+        label_display: '0'
+        provider: views
+        views_label: ''
+        items_per_page: null
+    fallback_metadata:
+      slot_definitions: null
+label: 'Top 3'
+id: block.views_block.product_cards_top_3-block_1
+provider: views
+source: block
+source_local_id: 'views_block:product_cards_top_3-block_1'
+category: 'Lists (Views)'

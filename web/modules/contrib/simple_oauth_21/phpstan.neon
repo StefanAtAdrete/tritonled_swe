@@ -1,0 +1,9 @@
+parameters:
+  level: 5
+  reportUnmatchedIgnoredErrors: false
+  paths:
+    - src/
+    - tests/
+  ignoreErrors:
+    - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
+    - '#Attribute class PHPUnit\\Framework\\Attributes\\Group does not exist#'
