@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "drupal-radix-cli": "^1.0.8",
+    "slick-carousel": "^1.8.1"
+  }
+}

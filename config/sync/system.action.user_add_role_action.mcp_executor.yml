@@ -1,0 +1,14 @@
+uuid: f20a6a9c-f64d-4819-b450-341f84e09a29
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.mcp_executor
+  module:
+    - user
+id: user_add_role_action.mcp_executor
+label: 'Add the MCP Executor role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: mcp_executor

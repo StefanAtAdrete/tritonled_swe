@@ -1,0 +1,34 @@
+/**
+ * @file
+ * Global styles for TritonLED Radix theme.
+ * 
+ * Bootstrap 5.3 is provided by Radix base theme.
+ * Add minimal custom styling here.
+ */
+
+/* ========================================
+   Custom variables (if needed)
+   ======================================== */
+
+/* Use Bootstrap variables when possible:
+   var(--bs-primary)
+   var(--bs-gutter-x)
+   var(--bs-spacer)
+*/
+
+/* ========================================
+   Global overrides (minimal!)
+   ======================================== */
+
+/* Keep custom CSS to minimum
+   Use Bootstrap utilities instead:
+   .mt-3, .p-4, .text-primary, etc.
+*/
+
+/* ========================================
+   TritonLED specific
+   ======================================== */
+
+/* Add brand-specific styles here
+   when Bootstrap utilities are insufficient
+*/

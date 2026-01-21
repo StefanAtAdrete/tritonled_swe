@@ -1,0 +1,53 @@
+{#
+/**
+ * @file
+ * DEBUG: Commerce Product Template for Luminaire bundle
+ */
+#}
+
+<article{{ attributes.addClass('product-luminaire') }}>
+
+  {# DEBUG: RAW CONTENT DUMP #}
+  <details style="margin: 20px; padding: 20px; background: #ff6b6b; color: white;">
+    <summary style="font-size: 20px; font-weight: bold; cursor: pointer;">🔴 DEBUG: RAW {{ content }} RENDER</summary>
+    <div style="margin-top: 10px; background: white; color: black; padding: 10px; overflow: auto;">
+      {{ content }}
+    </div>
+  </details>
+
+  {# DEBUG: What keys exist in content? #}
+  <details style="margin: 20px; padding: 20px; background: #4ecdc4;">
+    <summary style="font-size: 20px; font-weight: bold; cursor: pointer;">🔵 DEBUG: CONTENT KEYS</summary>
+    <div style="margin-top: 10px; background: white; padding: 10px;">
+      <pre>{{ dump(content|keys) }}</pre>
+    </div>
+  </details>
+
+  {# DEBUG: Product entity fields #}
+  <details style="margin: 20px; padding: 20px; background: #ffe66d;">
+    <summary style="font-size: 20px; font-weight: bold; cursor: pointer;">🟡 DEBUG: PRODUCT ENTITY</summary>
+    <div style="margin-top: 10px; background: white; padding: 10px;">
+      {% if product_entity %}
+        <p><strong>Title:</strong> {{ product_entity.title.value }}</p>
+        <p><strong>Bundle:</strong> {{ product_entity.bundle() }}</p>
+        <p><strong>ID:</strong> {{ product_entity.id() }}</p>
+        <p><strong>Has variations:</strong> {{ product_entity.hasVariations() ? 'YES' : 'NO' }}</p>
+        {% if product_entity.hasVariations() %}
+          <p><strong>Variation count:</strong> {{ product_entity.getVariations()|length }}</p>
+          <p><strong>Default variation ID:</strong> {{ product_entity.getDefaultVariation().id() }}</p>
+        {% endif %}
+      {% else %}
+        <p>❌ No product_entity available</p>
+      {% endif %}
+    </div>
+  </details>
+
+  {# DEBUG: Elements array #}
+  <details style="margin: 20px; padding: 20px; background: #a8dadc;">
+    <summary style="font-size: 20px; font-weight: bold; cursor: pointer;">🔷 DEBUG: ELEMENTS ARRAY</summary>
+    <div style="margin-top: 10px; background: white; padding: 10px;">
+      <pre>{{ dump(elements|keys) }}</pre>
+    </div>
+  </details>
+
+</article>

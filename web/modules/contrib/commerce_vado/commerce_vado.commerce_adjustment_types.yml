@@ -1,0 +1,6 @@
+vado_discount:
+  label: 'Vado discount'
+  singular_label: 'vado discount'
+  plural_label: 'vado discounts'
+  has_ui: true
+  weight: 10

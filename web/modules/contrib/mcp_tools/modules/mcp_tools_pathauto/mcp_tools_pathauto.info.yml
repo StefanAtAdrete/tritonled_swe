@@ -1,0 +1,14 @@
+name: 'MCP Tools - Pathauto'
+type: module
+description: 'URL alias pattern management: create, update, delete, and generate URL aliases using Pathauto patterns.'
+package: MCP Tools
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - mcp_tools:mcp_tools
+  - pathauto:pathauto
+lifecycle: experimental
+
+# Information added by Drupal.org packaging script on 2026-01-10
+version: '1.0.0-beta1'
+project: 'mcp_tools'
+datestamp: 1768012130

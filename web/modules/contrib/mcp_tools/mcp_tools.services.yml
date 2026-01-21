@@ -1,0 +1,184 @@
+services:
+  logger.channel.mcp_tools:
+    class: Drupal\Core\Logger\LoggerChannel
+    factory: logger.factory:get
+    arguments: ['mcp_tools']
+
+  # Access Control
+  mcp_tools.access_manager:
+    class: Drupal\mcp_tools\Service\AccessManager
+    arguments:
+      - '@config.factory'
+      - '@current_user'
+      - '@request_stack'
+      - '@mcp_tools.rate_limiter'
+
+  # Rate Limiting
+  mcp_tools.rate_limiter:
+    class: Drupal\mcp_tools\Service\RateLimiter
+    arguments:
+      - '@config.factory'
+      - '@state'
+      - '@request_stack'
+      - '@private_key'
+
+  # Shared Audit Logger for all MCP write submodules
+  mcp_tools.audit_logger:
+    class: Drupal\mcp_tools\Service\AuditLogger
+    arguments:
+      - '@config.factory'
+      - '@current_user'
+      - '@logger.factory'
+      - '@mcp_tools.access_manager'
+      - '@request_stack'
+      - '@mcp_tools.tool_call_context'
+      - '@mcp_tools.rate_limiter'
+
+  # Tool Call Context (used for MCP-scoped side effects like config tracking).
+  mcp_tools.tool_call_context:
+    class: Drupal\mcp_tools\Service\McpToolCallContext
+
+  # Site Health Services
+  mcp_tools.site_health:
+    class: Drupal\mcp_tools\Service\SiteHealthService
+    arguments:
+      - '@extension.list.module'
+      - '@state'
+      - '@database'
+      - '@config.factory'
+      - '@module_handler'
+
+  mcp_tools.site_blueprint:
+    class: Drupal\mcp_tools\Service\SiteBlueprintService
+    arguments:
+      - '@entity_type.manager'
+      - '@entity_field.manager'
+      - '@module_handler'
+      - '@config.factory'
+
+  mcp_tools.security_update_checker:
+    class: Drupal\mcp_tools\Service\SecurityUpdateChecker
+    arguments:
+      - '@update.manager'
+      - '@update.processor'
+      - '@extension.list.module'
+
+  mcp_tools.watchdog_analyzer:
+    class: Drupal\mcp_tools\Service\WatchdogAnalyzer
+    arguments:
+      - '@database'
+
+  mcp_tools.system_status:
+    class: Drupal\mcp_tools\Service\SystemStatusService
+    arguments:
+      - '@module_handler'
+      - '@database'
+
+  # MCP Resources
+  mcp_tools.resource_registry:
+    class: Drupal\mcp_tools\Mcp\Resource\ResourceRegistry
+    arguments:
+      - !tagged_iterator mcp_tools.resource_provider
+
+  mcp_tools.resource_provider.core:
+    class: Drupal\mcp_tools\Mcp\Resource\CoreResourceProvider
+    arguments:
+      - '@mcp_tools.site_health'
+      - '@mcp_tools.system_status'
+      - '@mcp_tools.site_blueprint'
+      - '@mcp_tools.config_analysis'
+    tags:
+      - { name: mcp_tools.resource_provider }
+
+  # MCP Prompts
+  mcp_tools.prompt_registry:
+    class: Drupal\mcp_tools\Mcp\Prompt\PromptRegistry
+    arguments:
+      - !tagged_iterator mcp_tools.prompt_provider
+
+  mcp_tools.prompt_provider.core:
+    class: Drupal\mcp_tools\Mcp\Prompt\CorePromptProvider
+    arguments:
+      - '@mcp_tools.site_health'
+      - '@mcp_tools.system_status'
+    tags:
+      - { name: mcp_tools.prompt_provider }
+
+  # Content Services
+  mcp_tools.content_analysis:
+    class: Drupal\mcp_tools\Service\ContentAnalysisService
+    arguments:
+      - '@entity_type.manager'
+      - '@entity_field.manager'
+      - '@database'
+
+  mcp_tools.taxonomy:
+    class: Drupal\mcp_tools\Service\TaxonomyService
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+
+  # Configuration Services
+  mcp_tools.config_analysis:
+    class: Drupal\mcp_tools\Service\ConfigAnalysisService
+    arguments:
+      - '@config.factory'
+      - '@config.storage'
+      - '@config.storage.sync'
+
+  # User Services
+  mcp_tools.user_analysis:
+    class: Drupal\mcp_tools\Service\UserAnalysisService
+    arguments:
+      - '@entity_type.manager'
+      - '@user.permissions'
+
+  # Structure Services
+  mcp_tools.menu:
+    class: Drupal\mcp_tools\Service\MenuService
+    arguments:
+      - '@entity_type.manager'
+      - '@menu.link_tree'
+
+  # System Services
+  mcp_tools.queue:
+    class: Drupal\mcp_tools\Service\QueueService
+    arguments:
+      - '@queue'
+      - '@plugin.manager.queue_worker'
+      - '@database'
+
+  mcp_tools.file_system:
+    class: Drupal\mcp_tools\Service\FileSystemService
+    arguments:
+      - '@file_system'
+      - '@stream_wrapper_manager'
+      - '@entity_type.manager'
+      - '@database'
+
+  # Error Formatting
+  mcp_tools.error_formatter:
+    class: Drupal\mcp_tools\Service\ErrorFormatter
+
+  # Webhook Notifications
+  mcp_tools.webhook_notifier:
+    class: Drupal\mcp_tools\Service\WebhookNotifier
+    arguments:
+      - '@config.factory'
+      - '@http_client'
+      - '@logger.factory'
+      - '@current_user'
+
+  # MCP Server Profiles
+  mcp_tools.server_config_repository:
+    class: Drupal\mcp_tools\Mcp\ServerConfigRepository
+    arguments:
+      - '@config.factory'
+      - '@module_handler'
+      - '@service_container'
+      - '@logger.channel.mcp_tools'
+
+  mcp_tools.tool_error_handler:
+    class: Drupal\mcp_tools\Mcp\Error\DefaultToolErrorHandler
+    arguments:
+      - '@logger.channel.mcp_tools'

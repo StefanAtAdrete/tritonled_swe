@@ -1,0 +1,36 @@
+{% if content.label_blocks %}
+  {% set inLayoutBuilder = content.content_blocks.layout_builder_add_block is defined %}
+  {% if inLayoutBuilder %}
+    {{ attach_library('lb_tabs/tabs_in_lb') }}
+  {% else %}
+    {{ attach_library('lb_tabs/tabs') }}
+  {% endif %}
+
+  <div {{ attributes.addClass('lb-tabs-tabs').setAttribute('id', "#{settings.dom_id}") }}>
+    <div {{ region_attributes["content_blocks"] }}>
+      <ul>
+        {% for labelKey, labelBlock in content.label_blocks %}
+          {% if labelKey|first != '#' %}
+            <li>
+              {% if inLayoutBuilder %}
+                <a>
+              {% else %}
+                <a href="#{{ "#{settings.dom_id}-#{loop.index}" }}">
+              {% endif %}
+                {{ labelBlock }}
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+
+      {% for contentKey, contentBlock in content.content_blocks %}
+        {% if contentKey|first != '#' %}
+          <div id="{{ "#{settings.dom_id}-#{loop.index}" }}">
+            {{ contentBlock }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

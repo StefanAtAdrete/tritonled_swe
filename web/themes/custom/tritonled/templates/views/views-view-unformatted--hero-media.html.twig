@@ -1,0 +1,38 @@
+{#
+/**
+ * @file
+ * Theme override for hero_media view - carousel structure.
+ */
+#}
+
+<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+  
+  {# Carousel inner - MUST contain carousel-items #}
+  <div class="carousel-inner">
+    {% for key, row in rows %}
+      <div class="carousel-item {{ key == 0 ? 'active' : '' }} position-relative">
+        {{ row.content }}
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Carousel controls - always show #}
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+
+  {# Carousel indicators #}
+  {% if rows|length > 1 %}
+    <div class="carousel-indicators">
+      {% for key, row in rows %}
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ key }}" {{ key == 0 ? 'class="active" aria-current="true"' : '' }} aria-label="Slide {{ key + 1 }}"></button>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>

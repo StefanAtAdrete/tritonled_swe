@@ -8,17 +8,22 @@
         "docs": "https://www.drupal.org/docs/user_guide/en/index.html",
         "chat": "https://www.drupal.org/node/314178"
     },
-    "repositories": [
-        {
+    "repositories": {
+        "simple_oauth_21": {
+            "type": "vcs",
+            "url": "https://github.com/e0ipso/simple_oauth_21"
+        },
+        "0": {
             "type": "composer",
             "url": "https://packages.drupal.org/8"
         }
-    ],
+    },
     "require": {
         "composer/installers": "^2.3",
-        "drupal/ai": "^1.2",
-        "drupal/ai_agents": "^1.2",
-        "drupal/ai_provider_openai": "^1.2",
+        "drupal/ai": "^1.2.0",
+        "drupal/ai_agents": "^1.2.0",
+        "drupal/ai_provider_openai": "^1.2.0",
+        "drupal/backup_migrate": "^5.1",
         "drupal/canvas": "^1.0@beta",
         "drupal/commerce": "^3.0",
         "drupal/core-composer-scaffold": "^11.2",
@@ -30,10 +35,14 @@
         "drupal/gin": "^5.0",
         "drupal/inline_entity_form": "^3.0@RC",
         "drupal/mcp": "^1.2",
+        "drupal/mcp_tools": "^1.0@beta",
+        "drupal/pathauto": "^1.14",
+        "drupal/redirect": "^1.12",
         "drupal/simple_oauth": "^6.1",
         "drupal/symfony_mailer": "^1.6",
         "drupal/tool": "^1.0@alpha",
-        "drush/drush": "^13.7"
+        "drush/drush": "^13.7",
+        "e0ipso/simple_oauth_21": "^1.13"
     },
     "conflict": {
         "drupal/drupal": "*"

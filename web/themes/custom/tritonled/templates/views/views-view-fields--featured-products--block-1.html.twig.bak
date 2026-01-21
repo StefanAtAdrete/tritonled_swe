@@ -1,0 +1,35 @@
+{#
+/**
+ * @file
+ * Theme override for Featured Products view rows.
+ *
+ * Available variables:
+ * - view: The view object.
+ * - options: Options configured for the style.
+ * - row: The row content.
+ * - fields: Individual field output.
+ *
+ * @see template_preprocess_views_view_fields()
+ */
+#}
+<div class="card h-100 shadow-sm border-0">
+  {% if fields.field_product_media %}
+    {{ fields.field_product_media.content }}
+  {% endif %}
+  
+  <div class="card-body">
+    {% if fields.title %}
+      {{ fields.title.content }}
+    {% endif %}
+    
+    {% if fields.variations %}
+      <div class="text-primary fw-bold fs-5 mb-3">
+        {{ fields.variations.content }}
+      </div>
+    {% endif %}
+    
+    <a href="{{ path('entity.commerce_product.canonical', {'commerce_product': row._entity.id()}) }}" class="btn btn-primary w-100">
+      View Details
+    </a>
+  </div>
+</div>

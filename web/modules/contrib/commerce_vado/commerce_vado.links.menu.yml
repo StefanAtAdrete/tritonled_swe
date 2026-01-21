@@ -1,0 +1,12 @@
+commerce_vado.manage:
+  title: 'Variation add-on'
+  route_name: 'commerce_vado.manage'
+  parent: 'commerce_product.configuration'
+  description: 'Configure product variation add-on bundles.'
+  weight: 10
+
+entity.commerce_vado_group.collection:
+  title: 'Variation groups'
+  route_name: 'entity.commerce_vado_group.collection'
+  parent: 'commerce.admin_commerce'
+  description: 'Manage your vado groups.'

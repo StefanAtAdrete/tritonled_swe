@@ -127,11 +127,12 @@ final class BlockComponent extends ComponentSourceBase implements ContainerFacto
     return $this->getBlockPlugin() instanceof Broken;
   }
 
-  /**
-   * @todo Remove in https://www.drupal.org/project/canvas/issues/3561267.
-   */
-  public static function componentIdFromBlockPluginId(string $pluginId): string {
-    return BlockComponentDiscovery::getComponentConfigEntityId($pluginId);
+  public function determineDefaultFolder(): string {
+    $plugin_definition = $this->getBlockPlugin()->getPluginDefinition();
+    assert(is_array($plugin_definition));
+    assert(!empty($plugin_definition['category']));
+
+    return (string) $plugin_definition['category'];
   }
 
   /**

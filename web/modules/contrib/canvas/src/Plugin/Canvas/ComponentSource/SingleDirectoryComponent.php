@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\Canvas\ComponentSource;
 
+use Drupal\canvas\Attribute\ComponentSource;
+use Drupal\canvas\ComponentSource\UrlRewriteInterface;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
@@ -13,8 +15,6 @@ use Drupal\Core\Render\Component\Exception\ComponentNotFoundException;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Theme\ComponentPluginManager;
 use Drupal\Core\Theme\ExtensionType;
-use Drupal\canvas\Attribute\ComponentSource;
-use Drupal\canvas\ComponentSource\UrlRewriteInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Path;
@@ -65,6 +65,16 @@ final class SingleDirectoryComponent extends GeneratedFieldExplicitInputUxCompon
     //   broken/invalid. See
     //   https://www.drupal.org/project/canvas/issues/3532514
     return FALSE;
+  }
+
+  public function determineDefaultFolder(): string {
+    $plugin_definition = $this->getComponentPlugin()->getPluginDefinition();
+    assert(is_array($plugin_definition));
+    // TRICKY: SDCs metadata specifies `group`, but gets exposed as `category`.
+    // @see \Drupal\Core\Theme\ComponentPluginManager::processDefinitionCategory()
+    assert(!empty($plugin_definition['category']));
+
+    return (string) $plugin_definition['category'];
   }
 
   /**

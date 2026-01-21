@@ -1,0 +1,58 @@
+/**
+ * Responsive Tables
+ * Mobile-friendly table display
+ */
+
+/* Desktop: normal table */
+@media (min-width: 768px) {
+  .table-responsive {
+    overflow-x: visible;
+  }
+}
+
+/* Mobile: horizontal scroll */
+@media (max-width: 767.98px) {
+  .table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Product specs table on mobile */
+  .product-specs table {
+    min-width: 600px;
+  }
+
+  /* Stack table for very small screens */
+  .table-stacked {
+    border: 0;
+  }
+
+  .table-stacked thead {
+    display: none;
+  }
+
+  .table-stacked tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+  }
+
+  .table-stacked td {
+    display: block;
+    text-align: right;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem;
+  }
+
+  .table-stacked td:before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 600;
+  }
+
+  .table-stacked td:last-child {
+    border-bottom: 0;
+  }
+}

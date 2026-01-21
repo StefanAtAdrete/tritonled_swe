@@ -1,0 +1,14 @@
+name: Commerce Variation Add On
+type: module
+description: 'Allows product variations to be added as children of others.'
+package: Commerce (contrib)
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - commerce:commerce_cart
+  - commerce:commerce_product
+  - commerce_price
+
+# Information added by Drupal.org packaging script on 2025-02-24
+version: '3.0.2'
+project: 'commerce_vado'
+datestamp: 1740361050

@@ -1,0 +1,33 @@
+{#
+/**
+ * @file
+ * TritonLED theme implementation for the account menu.
+ *
+ * Bootstrap 5 nav styling.
+ */
+#}
+{% import _self as menus %}
+
+{{ menus.menu_links(items, attributes, 0) }}
+
+{% macro menu_links(items, attributes, menu_level) %}
+  {% import _self as menus %}
+  {% if items %}
+    <ul{{ attributes.addClass('nav', 'flex-column', 'flex-lg-row') }}>
+    {% for item in items %}
+      {%
+        set item_classes = [
+          'nav-item',
+          item.in_active_trail ? 'active',
+        ]
+      %}
+      <li{{ item.attributes.addClass(item_classes) }}>
+        {{ link(item.title, item.url, { 'class': ['nav-link', item.in_active_trail ? 'active'] }) }}
+        {% if item.below %}
+          {{ menus.menu_links(item.below, attributes, menu_level + 1) }}
+        {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}

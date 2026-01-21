@@ -1,0 +1,23 @@
+uuid: 495b9e72-90ac-4fff-9074-6444493605db
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_width
+id: commerce_product_variation.luminaire_variation.field_width
+field_name: field_width
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: 'Width (mm)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: null
+  suffix: null
+field_type: integer

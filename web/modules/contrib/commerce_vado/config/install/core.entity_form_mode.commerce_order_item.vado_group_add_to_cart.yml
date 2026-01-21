@@ -1,0 +1,13 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - commerce_vado
+  enforced:
+    module:
+      - commerce_vado
+id: commerce_order_item.vado_group_add_to_cart
+label: 'Vado group add to cart'
+targetEntityType: commerce_order_item
+cache: true

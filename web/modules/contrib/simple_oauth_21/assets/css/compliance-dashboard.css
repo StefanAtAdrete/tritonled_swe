@@ -1,0 +1,19 @@
+/**
+ * @file
+ * OAuth 2.1 Compliance Dashboard Global Styling
+ *
+ * Global styles for the OAuth 2.1 compliance dashboard.
+ * Component-specific styles are now located in each component's directory.
+ */
+
+/* Global Dashboard Container */
+.oauth21-dashboard {
+  margin: 1rem 0;
+}
+
+/* Basic responsive utility */
+@media (width <= 768px) {
+  .oauth21-dashboard {
+    margin: 0.5rem 0;
+  }
+}

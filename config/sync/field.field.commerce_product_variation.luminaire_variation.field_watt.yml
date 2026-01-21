@@ -1,0 +1,23 @@
+uuid: 06dad331-7ec3-49ce-8599-8eb39d1eb5d0
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.field_watt
+id: commerce_product_variation.luminaire_variation.field_watt
+field_name: field_watt
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: Watt
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: null
+  suffix: null
+field_type: integer

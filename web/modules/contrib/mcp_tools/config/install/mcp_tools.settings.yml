@@ -1,0 +1,113 @@
+# MCP Tools default configuration.
+
+# Configuration mode preset: development, staging, production, or custom.
+# Changing mode applies preset values for common settings.
+mode: development
+
+# Access control settings.
+access:
+  # Global read-only mode - blocks ALL write operations site-wide.
+  # Use this to quickly disable all writes without uninstalling modules.
+  read_only_mode: false
+
+  # Config-only mode - restricts write tools to configuration changes.
+  #
+  # When enabled, write tools that primarily mutate content (nodes, media,
+  # users, etc.) are blocked even if the connection has write scope.
+  #
+  # This is useful for safer environments (staging/production) and for a
+  # "config-as-code" workflow where you build locally and then export config
+  # and/or generate a Recipe for review.
+  config_only_mode: false
+
+  # Which kinds of write tools are allowed while config-only mode is enabled.
+  #
+  # Allowed values:
+  # - config: configuration changes (content types, fields, views, etc.)
+  # - content: content/entity changes (nodes, media, users, terms, etc.)
+  # - ops: operational actions (cache, cron, indexing, regeneration)
+  #
+  # Recommended: keep this as ['config'] for staging/production safety.
+  config_only_allowed_write_kinds:
+    - config
+
+  # Maximum scopes that can ever be granted to an MCP connection.
+  # Any requested scopes (header/query/env) are intersected with this list.
+  allowed_scopes:
+    - read
+    - write
+
+  # Default scopes for connections that don't specify a scope.
+  # Available scopes: read, write, admin
+  default_scopes:
+    - read
+
+  # Whether to trust scope overrides from various sources.
+  # SECURITY: HTTP header and query parameter scopes are untrusted by default.
+  trust_scopes_via_header: false
+  trust_scopes_via_query: false
+  trust_scopes_via_env: true
+
+  # Audit logging for all operations.
+  audit_logging: true
+
+# Rate limiting for expensive read operations.
+rate_limits:
+  broken_link_scan:
+    max_per_hour: 10
+    max_urls_per_scan: 500
+  content_search:
+    max_per_minute: 30
+
+# Rate limiting for write operations (production hardening).
+rate_limiting:
+  # Enable/disable rate limiting for write operations.
+  enabled: false
+  # Whether to include the (client-provided) X-MCP-Client-Id header in the
+  # rate-limit bucket identifier.
+  #
+  # SECURITY: Keep this disabled unless you fully control the clients. A
+  # malicious client can spoof this header to bypass per-client rate limits.
+  trust_client_id_header: false
+  # Maximum write operations per minute per client.
+  max_writes_per_minute: 30
+  # Maximum write operations per hour per client.
+  max_writes_per_hour: 500
+  # Maximum delete operations per hour per client.
+  max_deletes_per_hour: 50
+  # Maximum structure changes (content types, fields, roles) per hour.
+  max_structure_changes_per_hour: 100
+
+# SSRF protection - allowed hosts for URL fetching.
+allowed_hosts:
+  - localhost
+  - '*.local'
+
+# Output settings.
+output:
+  # Maximum items to return in list operations.
+  max_items: 100
+  # Include sensitive information (requires administer permission).
+  include_sensitive: false
+
+# Webhook notification settings.
+webhooks:
+  # Enable webhook notifications for MCP operations.
+  enabled: false
+  # Webhook URL to POST notifications to.
+  url: ''
+  # Secret for HMAC signing (recommended for security).
+  secret: ''
+  # Optional allowlist of destination hosts for webhook URLs.
+  # When empty, any public (non-private) host is allowed.
+  allowed_hosts: []
+  # Request timeout in seconds.
+  timeout: 5
+  # Batch notifications and send on shutdown (better performance).
+  batch_notifications: true
+  # Operations to notify on: create, update, delete, structure.
+  notify_on:
+    - create
+    - update
+    - delete
+    - structure

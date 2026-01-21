@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for Commerce Variation Add-on.
+ */
+
+use Drupal\Core\Field\BaseFieldDefinition;
+
+/**
+ * Remove the min restriction from bundle_discount field.
+ */
+function commerce_vado_update_8201() {
+  $bundle_discount_fields = \Drupal::entityTypeManager()->getStorage('field_config')->loadByProperties([
+    'field_name' => 'bundle_discount',
+    'entity_type' => 'commerce_product_variation',
+  ]);
+  /** @var \Drupal\field\Entity\FieldConfig $bundle_discount_field */
+  foreach ($bundle_discount_fields as $bundle_discount_field) {
+    $bundle_discount_field->setSetting('min', '');
+    $bundle_discount_field->save();
+  }
+}
+
+/**
+ * Enable the vado adjustment for calculated price formatter.
+ */
+function commerce_vado_update_8202() {
+  /** @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_bundle_info */
+  $entity_bundle_info = \Drupal::service('entity_type.bundle.info');
+  /** @var \Drupal\commerce_vado\VadoFieldManagerInterface $vado_field_manager */
+  $vado_field_manager = \Drupal::service('commerce_vado.field_manager');
+  $variation_bundles = $entity_bundle_info->getBundleInfo('commerce_product_variation');
+  $variation_bundles = array_keys($variation_bundles);
+
+  // Find all variation types that have vado fields enabled.
+  $variation_bundles = array_filter($variation_bundles, function ($variation_bundle) use ($vado_field_manager) {
+    return $vado_field_manager->isVadoEnabled($variation_bundle);
+  });
+
+  if (!empty($variation_bundles)) {
+    // Find all view displays for variation types with vado fields enabled.
+    $query = \Drupal::entityQuery('entity_view_display')
+      ->condition('targetEntityType', 'commerce_product_variation')
+      ->condition('bundle', $variation_bundles)
+      ->accessCheck(FALSE);
+    $variation_view_display_ids = $query->execute();
+
+    $view_display_storage = \Drupal::entityTypeManager()->getStorage('entity_view_display');
+    $view_displays = $view_display_storage->loadMultiple($variation_view_display_ids);
+    foreach ($view_displays as $view_display) {
+      /** @var \Drupal\Core\Entity\Display\EntityViewDisplayInterface $view_display */
+      if ($component = $view_display->getComponent('price')) {
+        if ($component['type'] === 'commerce_price_calculated' && isset($component['settings']['adjustment_types'])) {
+          $component['settings']['adjustment_types']['vado_discount'] = 'vado_discount';
+          $view_display->setComponent('price', $component);
+          $view_display->save();
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Add the 'changed' field to 'commerce_vado_group' entities.
+ */
+function commerce_vado_update_8203() {
+  $group_changed_definition = BaseFieldDefinition::create('changed')
+    ->setLabel(t('Changed'))
+    ->setDescription(t('The time when the variation add-on group was was last edited.'))
+    ->setTranslatable(TRUE)
+    ->setDisplayConfigurable('view', TRUE);
+
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $update_manager->installFieldStorageDefinition('changed', 'commerce_vado_group', 'commerce_vado', $group_changed_definition);
+}
+
+/**
+ * Add 'created' and 'changed' fields to 'commerce_vado_group_item' entities.
+ */
+function commerce_vado_update_8204() {
+  $item_created_definition = BaseFieldDefinition::create('created')
+    ->setLabel(t('Created'))
+    ->setDescription(t('The time when the group item was created.'))
+    ->setTranslatable(TRUE)
+    ->setDisplayConfigurable('form', TRUE);
+
+  $item_changed_definition = BaseFieldDefinition::create('changed')
+    ->setLabel(t('Changed'))
+    ->setDescription(t('The time when the group item was last edited.'))
+    ->setTranslatable(TRUE);
+
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $update_manager->installFieldStorageDefinition('created', 'commerce_vado_group_item', 'commerce_vado', $item_created_definition);
+  $update_manager->installFieldStorageDefinition('changed', 'commerce_vado_group_item', 'commerce_vado', $item_changed_definition);
+
+}

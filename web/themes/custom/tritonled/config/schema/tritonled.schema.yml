@@ -1,0 +1,22 @@
+tritonled.settings:
+  type: theme_settings
+  label: 'TritonLED theme settings'
+  mapping:
+    tritonled_primary_color:
+      type: string
+      label: 'Primary color'
+    tritonled_accent_color:
+      type: string
+      label: 'Accent color'
+    tritonled_container_width:
+      type: string
+      label: 'Container width'
+    tritonled_show_specs_default:
+      type: boolean
+      label: 'Show product specifications by default'
+    tritonled_enable_quick_view:
+      type: boolean
+      label: 'Enable quick view'
+    tritonled_lazy_load_images:
+      type: boolean
+      label: 'Lazy load images'

@@ -1,0 +1,21 @@
+uuid: 0374a414-b0ff-4966-8610-a667a854a0a3
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_cri
+field_name: field_cri
+entity_type: commerce_product_variation
+type: string
+settings:
+  max_length: null
+  case_sensitive: null
+  is_ascii: null
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Install/uninstall functions for Simple OAuth Client Registration module.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_schema().
+ */
+function simple_oauth_client_registration_schema() {
+  $schema = [];
+
+  $schema['simple_oauth_client_registration_tokens'] = [
+    'description' => 'Stores registration access tokens for dynamic client registration.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary key.',
+      ],
+      'client_id' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'description' => 'The client identifier.',
+      ],
+      'token_hash' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Hash of the registration access token.',
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The timestamp when the token was created.',
+      ],
+      'expires' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The timestamp when the token expires.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'unique keys' => [
+      'client_id' => ['client_id'],
+    ],
+    'indexes' => [
+      'expires' => ['expires'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function simple_oauth_client_registration_install($is_syncing): void {
+  if ($is_syncing) {
+    return;
+  }
+  // Configure the registration endpoint in server metadata.
+  $config = \Drupal::configFactory()->getEditable('simple_oauth_server_metadata.settings');
+  if (empty($config->get('registration_endpoint'))) {
+    try {
+      $registration_url = Url::fromRoute('simple_oauth_client_registration.register')->setAbsolute()->toString();
+      $config->set('registration_endpoint', $registration_url);
+      $config->save();
+    }
+    catch (\Exception $e) {
+      // If route doesn't exist, don't set it.
+    }
+  }
+
+  // Install base field storage definitions for RFC 7591 client metadata.
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type_manager = \Drupal::entityTypeManager();
+
+  // Get the consumer entity type definition.
+  $consumer_entity_type = $entity_type_manager->getDefinition('consumer');
+
+  // Get base field definitions from hook_entity_base_field_info().
+  $base_fields = simple_oauth_client_registration_entity_base_field_info($consumer_entity_type);
+
+  // Install each base field storage definition.
+  foreach ($base_fields as $field_name => $storage_definition) {
+    if (!$entity_definition_update_manager->getFieldStorageDefinition($field_name, 'consumer')) {
+      $entity_definition_update_manager->installFieldStorageDefinition(
+        $field_name,
+        'consumer',
+        'simple_oauth_client_registration',
+        $storage_definition
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function simple_oauth_client_registration_uninstall($is_syncing): void {
+  if ($is_syncing) {
+    return;
+  }
+  // Clear the registration endpoint from server metadata if it points to
+  // our endpoint.
+  $config = \Drupal::configFactory()->getEditable('simple_oauth_server_metadata.settings');
+  $registration_endpoint = $config->get('registration_endpoint');
+  if (!empty($registration_endpoint) && strpos($registration_endpoint, '/oauth/register') !== FALSE) {
+    $config->set('registration_endpoint', '');
+    $config->save();
+  }
+}
