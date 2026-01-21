@@ -1,0 +1,5 @@
+/* Vertically center the accordion item also with multiline labels. */
+.ui-accordion .ui-accordion-header {
+    display: flex;
+    align-items: center;
+}

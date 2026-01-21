@@ -25,9 +25,9 @@ use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponent;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
-use Drupal\canvas\PropExpressions\StructuredData\FieldTypePropExpression;
 use Drupal\canvas\PropSource\PropSource;
 use Drupal\canvas\PropSource\StaticPropSource;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
 use Drupal\file\Entity\File;
 use Drupal\link\LinkItemInterface;
 use Drupal\media\Entity\Media;
@@ -44,6 +44,7 @@ use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\TestFileCreationTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use Twig\Error\Error;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -66,6 +67,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
   use MediaTypeCreationTrait;
   use TestFileCreationTrait;
   use ContentTypeCreationTrait;
+  use UserCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -181,6 +183,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       ],
       'sdc.canvas_test_sdc.shoe_details' => [
         'Drupal Canvas does not know of a field type/widget to allow populating the <code>expand_icon</code> prop, with the shape <code>{"type":"object","$ref":"json-schema-definitions://canvas.module/shoe-icon"}</code>.',
+        'Drupal Canvas does not know of a field type/widget to allow populating the <code>collapse_icon</code> prop, with the shape <code>{"type":"object","$ref":"json-schema-definitions://canvas.module/shoe-icon"}</code>.',
       ],
       'sdc.canvas_test_sdc.shoe_icon' => [
         'Prop "size" has an empty enum value.',
@@ -216,6 +219,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       'sdc.canvas_test_sdc.component-mismatch-meta-enum',
       'sdc.canvas_test_sdc.component-no-meta-enum',
       'sdc.canvas_test_sdc.crash',
+      'sdc.canvas_test_sdc.date',
       'sdc.canvas_test_sdc.deprecated',
       'sdc.canvas_test_sdc.druplicon',
       'sdc.canvas_test_sdc.experimental',
@@ -378,7 +382,7 @@ HTML,
 <article class="card">
   <header>
     <h2>Card</h2>
-  </header>
+      </header>
 
   <img
    class="card--image"
@@ -411,7 +415,7 @@ HTML,
 <article class="card--with-local-image">
   <header>
     <h2>Card with local image</h2>
-  </header>
+      </header>
 
   <img
    class="card--image"
@@ -445,7 +449,7 @@ HTML,
 <article class="card--with-remote-image">
   <header>
     <h2>Card with remote image</h2>
-  </header>
+      </header>
 
   <img
    class="card--image"
@@ -653,6 +657,20 @@ HTML,
           'library' => [
             'core/components.canvas_test_sdc--crash',
             'core/components.canvas_test_sdc--crash',
+          ],
+        ],
+      ],
+      'sdc.canvas_test_sdc.date' => [
+        'html' => '<figure class="date">
+    <time datetime=""></time>
+      <figcaption>Birthday</figcaption>
+  </figure>
+',
+        'cacheability' => $default_cacheability,
+        'attachments' => [
+          'library' => [
+            'core/components.canvas_test_sdc--date',
+            'core/components.canvas_test_sdc--date',
           ],
         ],
       ],
@@ -1149,20 +1167,12 @@ HTML
       'component_id' => 'sdc.canvas_test_sdc.my-hero',
       'component_version' => '888412021fbcc837',
       'inputs' => [
-        'heading' => [
-          'sourceType' => 'static:field_item:string',
-          'value' => 'hello, world!',
-          'expression' => 'ℹ︎string␟value',
-        ],
+        'heading' => 'hello, world!',
         'subheading' => [
           'sourceType' => 'dynamic',
           'expression' => 'ℹ︎␜entity:node:article␝title␞␟value',
         ],
-        'cta1href' => [
-          'sourceType' => 'static:field_item:uri',
-          'value' => 'https://drupal.org',
-          'expression' => 'ℹ︎uri␟value',
-        ],
+        'cta1href' => ['uri' => 'https://drupal.org'],
         'cta1' => [
           'sourceType' => 'dynamic',
           'expression' => 'ℹ︎␜entity:node:article␝title␞␟value',
@@ -1237,6 +1247,50 @@ HTML
     return parent::generateCrashTestDummyComponentTree($component_id, $inputs);
   }
 
+  protected function alterEnvironmentForCrashTestDummyComponentTree(string $component_id, array $inputs): void {
+    // Register the private file stream.
+    $this->setSetting('file_private_path', 'private');
+    // Setup file entity.
+    $this->installEntitySchema('file');
+    $this->installSchema('file', 'file_usage');
+    $user = $this->setUpCurrentUser(permissions: ['access content', 'view media']);
+    // Create a private file.
+    /** @var \Drupal\Core\File\FileSystemInterface $fileSystem */
+    $fileSystem = \Drupal::service(FileSystemInterface::class);
+    $directory = 'private://test';
+    self::assertTrue($fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS));
+    $fileSystem->copy(\Drupal::root() . '/core/tests/fixtures/files/image-1.png', 'private://test/image.png');
+    $private_file = File::create([
+      'uid' => $user->id(),
+      'fid' => 3000,
+      'status' => 0,
+      'filename' => 'image.png',
+      'uri' => 'private://test/image.png',
+      'filesize' => \filesize('private://test/image.png'),
+      'filemime' => 'image/png',
+    ]);
+    $private_file->enforceIsNew();
+    $private_file->setPermanent();
+    $private_file->save();
+
+    // And a public file.
+    $directory = 'public://test';
+    self::assertTrue($fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS));
+    $fileSystem->copy(\Drupal::root() . '/core/tests/fixtures/files/image-1.png', 'public://test/image.png');
+    $public_file = File::create([
+      'uid' => $user->id(),
+      'fid' => 3001,
+      'status' => 0,
+      'filename' => 'image.png',
+      'uri' => 'public://test/image.png',
+      'filesize' => \filesize('public://test/image.png'),
+      'filemime' => 'image/png',
+    ]);
+    $public_file->enforceIsNew();
+    $public_file->setPermanent();
+    $public_file->save();
+  }
+
   public static function providerRenderComponentFailure(): \Generator {
     yield "SDC with valid props, without exception" => [
       'component_id' => 'sdc.canvas_test_sdc.crash',
@@ -1261,21 +1315,15 @@ HTML
       'expected_output_selector' => NULL,
     ];
 
-    yield "SDC with invalid prop, with exception" => [
+    yield "SDC with invalid prop type is cast by typed data, raises exception" => [
       'component_id' => 'sdc.canvas_test_sdc.crash',
       'inputs' => [
-        'crash' => [
-          'sourceType' => "static:field_item:string",
-          'value' => 'this is an invalid value for the SDC prop',
-          'expression' => (string) new FieldTypePropExpression('string', 'value'),
-        ],
+        'crash' => 'this is is not a boolean prop but gets cast to TRUE by \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::validateComponentInput',
       ],
-      'expected_validation_errors' => [
-        \sprintf('2.inputs.%s.crash', self::UUID_CRASH_TEST_DUMMY) => 'String value found, but a boolean or an object is required. The provided value is: "this is an invalid value for the SDC prop".',
-      ],
+      'expected_validation_errors' => [],
       'expected_exception' => [
-        'class' => RuntimeError::class,
-        'message' => 'An exception has been thrown during the rendering of a template ("[canvas_test_sdc:crash/crash] String value found, but a boolean or an object is required. The provided value is: "this is an invalid value for the SDC prop".") in "canvas_test_sdc:crash" at line 1.',
+        'class' => Error::class,
+        'message' => 'Intentional test exception in "canvas_test_sdc:crash" at line 2.',
       ],
       'expected_output_selector' => NULL,
     ];
@@ -1285,22 +1333,15 @@ HTML
       'component_id' => 'sdc.canvas_test_sdc.card-with-stream-wrapper-image',
       'inputs' => [
         'alt' => 'Majestic creature',
-        // Do not use the default StaticPropSource: the `image` field type. Use
-        // the `uri` field type so we can test what happens if an invalid value
-        // makes its way to the point where the SDC is rendered with a value not
-        // complying with the JSON Schema for the SDC prop.
-        'src' => [
-          'sourceType' => "static:field_item:uri",
-          'value' => 'https://example.com/llama.jpg',
-          'expression' => (string) new FieldTypePropExpression('uri', 'value'),
-        ],
+        // Use a private file, which isn't allowed here.
+        'src' => ['target_id' => 3000],
       ],
       'expected_validation_errors' => [
-        \sprintf('2.inputs.%s.src', self::UUID_CRASH_TEST_DUMMY) => 'The "https" URI scheme is not allowed. The provided value is: "https://example.com/llama.jpg".',
+        \sprintf('2.inputs.%s.src', self::UUID_CRASH_TEST_DUMMY) => 'The "private" URI scheme is not allowed. The provided value is: "private://test/image.png".',
       ],
       'expected_exception' => [
         'class' => RuntimeError::class,
-        'message' => 'An exception has been thrown during the rendering of a template ("[canvas_test_sdc:card-with-stream-wrapper-image/src] The "https" URI scheme is not allowed. The provided value is: "https://example.com/llama.jpg".") in "canvas_test_sdc:card-with-stream-wrapper-image" at line 1.',
+        'message' => 'An exception has been thrown during the rendering of a template ("[canvas_test_sdc:card-with-stream-wrapper-image/src] The "private" URI scheme is not allowed. The provided value is: "private://test/image.png".") in "canvas_test_sdc:card-with-stream-wrapper-image" at line 1.',
       ],
       'expected_output_selector' => NULL,
     ];
@@ -1334,20 +1375,10 @@ HTML
     yield "SDC with valid prop, but invalid Twig (due to printing an object-shaped prop)" => [
       'component_id' => 'sdc.canvas_broken_sdcs.malformed-image',
       'inputs' => [
-        'image' => [
-          // TRICKY: Intentionally use a StaticPropSource powered by the `uri`
-          // field type (instead of the `image` field type), because it allows
-          // this test to specify an arbitrary URL as the image URL, instead of
-          // having to create a File entity that is referenced by the `image`
-          // field. Hence also use a FieldTypeObjectPropsExpression to transform
-          // it to the `type: object` prop shape expected by the SDC.
-          'sourceType' => "static:field_item:uri",
-          'value' => 'https://example.com/llama.jpg',
-          'expression' => 'ℹ︎uri␟{src↠value}',
-        ],
+        'image' => ['target_id' => 3001],
       ],
-      // Note there's no validation error: the evaluated StaticPropSource yields
-      // a valid value for the SDC prop.
+      // Note there's no validation error - the file with fid 3001 is a valid
+      // public file.
       'expected_validation_errors' => [],
       'expected_exception' => [
         'class' => RuntimeError::class,
@@ -1456,6 +1487,17 @@ HTML
               ],
             ],
             'expression' => 'ℹ︎string␟value',
+          ],
+          'date' => [
+            'required' => FALSE,
+            'field_type' => 'datetime',
+            'field_storage_settings' => [
+              'datetime_type' => 'date',
+            ],
+            'field_instance_settings' => [],
+            'field_widget' => 'datetime_default',
+            'default_value' => NULL,
+            'expression' => 'ℹ︎datetime␟value',
           ],
           'image' => [
             'required' => TRUE,
@@ -1828,6 +1870,30 @@ HTML
             'field_widget' => 'boolean_checkbox',
             'default_value' => [0 => ['value' => FALSE]],
             'expression' => 'ℹ︎boolean␟value',
+          ],
+        ],
+      ],
+      'sdc.canvas_test_sdc.date' => [
+        'prop_field_definitions' => [
+          'date' => [
+            'required' => FALSE,
+            'field_type' => 'datetime',
+            'field_storage_settings' => [
+              'datetime_type' => DateTimeItem::DATETIME_TYPE_DATE,
+            ],
+            'field_instance_settings' => [],
+            'field_widget' => 'datetime_default',
+            'default_value' => NULL,
+            'expression' => 'ℹ︎datetime␟value',
+          ],
+          'caption' => [
+            'required' => FALSE,
+            'field_type' => 'string',
+            'field_storage_settings' => [],
+            'field_instance_settings' => [],
+            'field_widget' => 'string_textfield',
+            'default_value' => [0 => ['value' => 'Birthday']],
+            'expression' => 'ℹ︎string␟value',
           ],
         ],
       ],
@@ -2548,6 +2614,7 @@ HTML
         ],
         'module' => [
           'core',
+          'datetime',
           'file',
           'image',
           'options',
@@ -2615,6 +2682,13 @@ HTML
       'sdc.canvas_test_sdc.crash' => [
         'module' => [
           'core',
+          'canvas_test_sdc',
+        ],
+      ],
+      'sdc.canvas_test_sdc.date' => [
+        'module' => [
+          'core',
+          'datetime',
           'canvas_test_sdc',
         ],
       ],
@@ -3010,6 +3084,20 @@ HTML
                 ],
               ],
               'resolved' => 'I have a footer!',
+            ],
+          ],
+          'date' => [
+            'required' => FALSE,
+            'jsonSchema' => [
+              'type' => 'string',
+              'format' => 'date',
+            ],
+            'sourceType' => 'static:field_item:datetime',
+            'expression' => 'ℹ︎datetime␟value',
+            'sourceTypeSettings' => [
+              'storage' => [
+                'datetime_type' => 'date',
+              ],
             ],
           ],
           'image' => [
@@ -3660,6 +3748,42 @@ HTML
                 0 => ['value' => FALSE],
               ],
               'resolved' => FALSE,
+            ],
+          ],
+        ],
+        'transforms' => [],
+      ],
+      'sdc.canvas_test_sdc.date' => [
+        'expected_output_selectors' => [
+          'figure.date',
+        ],
+        'source' => 'Module component',
+        'metadata' => ['slots' => []],
+        'propSources' => [
+          'date' => [
+            'required' => FALSE,
+            'jsonSchema' => [
+              'type' => 'string',
+              'format' => 'date',
+            ],
+            'sourceType' => 'static:field_item:datetime',
+            'expression' => 'ℹ︎datetime␟value',
+            'sourceTypeSettings' => [
+              'storage' => [
+                'datetime_type' => DateTimeItem::DATETIME_TYPE_DATE,
+              ],
+            ],
+          ],
+          'caption' => [
+            'required' => FALSE,
+            'jsonSchema' => ['type' => 'string'],
+            'sourceType' => 'static:field_item:string',
+            'expression' => 'ℹ︎string␟value',
+            'default_values' => [
+              'source' => [
+                0 => ['value' => 'Birthday'],
+              ],
+              'resolved' => 'Birthday',
             ],
           ],
         ],
@@ -5218,11 +5342,12 @@ HTML
         ],
         'cta1href' => [
           'sourceType' => 'static:field_item:link',
-          'value' => 'https://example.com',
+          'value' => ['uri' => 'https://example.com', 'options' => []],
           'expression' => 'ℹ︎link␟url',
           'sourceTypeSettings' => [
             'instance' => [
               'title' => 0,
+              'link_type' => LinkItemInterface::LINK_GENERIC,
             ],
           ],
         ],
@@ -5240,7 +5365,7 @@ HTML
       'resolved' => [
         'heading' => 'Does not have to match',
         'cta1' => 'Is what server previously sent',
-        'cta1href' => 'https://example.com',
+        'cta1href' => ['uri' => 'https://example.com', 'options' => []],
         'cta2' => 'Click, or don\'t',
         'subheading' => NULL,
       ],
@@ -5252,17 +5377,8 @@ HTML
       ],
       'cta1' => 'Witty test value',
       'cta1href' => [
-        'sourceType' => 'static:field_item:link',
-        'value' => [
-          'uri' => 'https://example.com',
-          'options' => [],
-        ],
-        'expression' => 'ℹ︎link␟url',
-        'sourceTypeSettings' => [
-          'instance' => [
-            'title' => 0,
-          ],
-        ],
+        'uri' => 'https://example.com',
+        'options' => [],
       ],
       'cta2' => 'Inside developer joke',
       'subheading' => [

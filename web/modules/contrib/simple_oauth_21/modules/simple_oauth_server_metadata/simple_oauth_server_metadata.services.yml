@@ -1,0 +1,69 @@
+parameters:
+  simple_oauth.openid.claims:
+    - 'sub'
+    - 'iss'
+    - 'aud'
+    - 'exp'
+    - 'iat'
+    - 'auth_time'
+    - 'nonce'
+    - 'acr'
+    - 'amr'
+    - 'azp'
+
+services:
+  simple_oauth_server_metadata.client_authentication:
+    class: Drupal\simple_oauth_server_metadata\Service\ClientAuthenticationService
+    arguments: ['@simple_oauth.repositories.client']
+  simple_oauth_server_metadata.token_revocation:
+    class: Drupal\simple_oauth_server_metadata\Service\TokenRevocationService
+    arguments: ['@entity_type.manager']
+  simple_oauth_server_metadata.endpoint_discovery:
+    class: Drupal\simple_oauth_server_metadata\Service\EndpointDiscoveryService
+    arguments: ['@language_manager', '@module_handler']
+  simple_oauth_server_metadata.grant_type_discovery:
+    class: Drupal\simple_oauth_server_metadata\Service\GrantTypeDiscoveryService
+    arguments: ['@plugin.manager.oauth2_grant.processor', '@config.factory']
+  simple_oauth_server_metadata.scope_discovery:
+    class: Drupal\simple_oauth_server_metadata\Service\ScopeDiscoveryService
+    arguments:
+      [
+        '@simple_oauth.oauth2_scope.provider',
+        '@config.factory',
+        '@logger.factory',
+      ]
+  simple_oauth_server_metadata.claims_auth_discovery:
+    class: Drupal\simple_oauth_server_metadata\Service\ClaimsAuthDiscoveryService
+    arguments: ['@config.factory']
+  simple_oauth_server_metadata.server_metadata:
+    class: Drupal\simple_oauth_server_metadata\Service\ServerMetadataService
+    arguments:
+      - '@config.factory'
+      - '@simple_oauth_server_metadata.endpoint_discovery'
+      - '@simple_oauth_server_metadata.grant_type_discovery'
+      - '@simple_oauth_server_metadata.scope_discovery'
+      - '@simple_oauth_server_metadata.claims_auth_discovery'
+  simple_oauth_server_metadata.resource_metadata:
+    class: Drupal\simple_oauth_server_metadata\Service\ResourceMetadataService
+    arguments:
+      - '@config.factory'
+      - '@simple_oauth_server_metadata.endpoint_discovery'
+      - '@event_dispatcher'
+  simple_oauth_server_metadata.openid_configuration:
+    class: Drupal\simple_oauth_server_metadata\Service\OpenIdConfigurationService
+    arguments:
+      - '@config.factory'
+      - '@simple_oauth_server_metadata.endpoint_discovery'
+      - '@simple_oauth_server_metadata.scope_discovery'
+      - '@simple_oauth_server_metadata.grant_type_discovery'
+      - '@simple_oauth_server_metadata.claims_auth_discovery'
+      - '%simple_oauth.openid.claims%'
+  simple_oauth_server_metadata.route_subscriber:
+    class: Drupal\simple_oauth_server_metadata\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  simple_oauth_server_metadata.introspection_exception_subscriber:
+    class: Drupal\simple_oauth_server_metadata\EventSubscriber\IntrospectionExceptionSubscriber
+    arguments: ['@logger.channel.simple_oauth']
+    tags:
+      - { name: event_subscriber }

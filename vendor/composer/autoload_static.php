@@ -4,15 +4,15 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
+class ComposerStaticInite1d246a6ac9cd9288b6614bbd015b665
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
-        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        '606a39d89246991a373564698c2d8383' => __DIR__ . '/..' . '/symfony/polyfill-php85/bootstrap.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '9d2b9fc6db0f153a0a149fefb182415e' => __DIR__ . '/..' . '/symfony/polyfill-php84/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
@@ -23,9 +23,11 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'c7baa00073ee9c61edf148c51917cfb4' => __DIR__ . '/..' . '/twig/twig/src/Resources/escaper.php',
         'f844ccf1d25df8663951193c3fc307c8' => __DIR__ . '/..' . '/twig/twig/src/Resources/string_loader.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
         'def43f6c87e4f8dfd0c9e1b1bab14fe8' => __DIR__ . '/..' . '/symfony/polyfill-iconv/bootstrap.php',
         '2f69d3914119f042cca9e44442d5ce95' => __DIR__ . '/../..' . '/web/core/includes/bootstrap.inc',
         '23c18046f52bef3eea034657bafda50f' => __DIR__ . '/..' . '/symfony/polyfill-php81/bootstrap.php',
+        '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         '61ba3e92ef91a7a0f1cc260ebd9290e4' => __DIR__ . '/..' . '/openai-php/client/src/OpenAI.php',
         '47e1160838b5e5a10346ac4084b58c23' => __DIR__ . '/..' . '/laravel/prompts/src/helpers.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
@@ -35,12 +37,17 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'p' => 
         array (
             'phpowermove\\docblock\\' => 21,
+            'phpDocumentor\\Reflection\\' => 25,
             'phootwork\\lang\\' => 15,
             'phootwork\\collection\\' => 21,
         ),
         'Y' => 
         array (
             'Yethee\\Tiktoken\\' => 16,
+        ),
+        'W' => 
+        array (
+            'Webmozart\\Assert\\' => 17,
         ),
         'T' => 
         array (
@@ -49,6 +56,8 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         ),
         'S' => 
         array (
+            'Symfony\\Polyfill\\Uuid\\' => 22,
+            'Symfony\\Polyfill\\Php85\\' => 23,
             'Symfony\\Polyfill\\Php84\\' => 23,
             'Symfony\\Polyfill\\Php83\\' => 23,
             'Symfony\\Polyfill\\Php81\\' => 23,
@@ -65,6 +74,7 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
             'Symfony\\Component\\VarExporter\\' => 30,
             'Symfony\\Component\\VarDumper\\' => 28,
             'Symfony\\Component\\Validator\\' => 28,
+            'Symfony\\Component\\Uid\\' => 22,
             'Symfony\\Component\\String\\' => 25,
             'Symfony\\Component\\Serializer\\' => 29,
             'Symfony\\Component\\Routing\\' => 26,
@@ -103,14 +113,19 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
             'PhpTuf\\ComposerStager\\' => 22,
             'PhpParser\\' => 10,
             'Peast\\' => 6,
+            'PHPStan\\PhpDocParser\\' => 21,
         ),
         'O' => 
         array (
+            'Opis\\Uri\\' => 9,
+            'Opis\\String\\' => 12,
+            'Opis\\JsonSchema\\' => 16,
             'OpenIDConnectServer\\' => 20,
             'OpenAI\\' => 7,
         ),
         'M' => 
         array (
+            'Mcp\\' => 4,
             'Masterminds\\' => 12,
             'MabeEnum\\' => 9,
         ),
@@ -161,7 +176,6 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
             'Doctrine\\Deprecations\\' => 22,
             'Doctrine\\Common\\Lexer\\' => 22,
             'Doctrine\\Common\\Collections\\' => 28,
-            'Doctrine\\Common\\Annotations\\' => 28,
             'Doctrine\\Common\\' => 16,
             'Dflydev\\DotAccessData\\' => 22,
             'Defuse\\Crypto\\' => 14,
@@ -179,6 +193,11 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
             'Composer\\Installers\\' => 20,
             'CommerceGuys\\Intl\\' => 18,
             'CommerceGuys\\Addressing\\' => 24,
+            'CodeWheel\\McpToolGateway\\' => 25,
+            'CodeWheel\\McpSecurity\\' => 22,
+            'CodeWheel\\McpSchemaBuilder\\' => 27,
+            'CodeWheel\\McpEvents\\' => 20,
+            'CodeWheel\\McpErrorCodes\\' => 24,
         ),
         'A' => 
         array (
@@ -190,6 +209,12 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'phpowermove\\docblock\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpowermove/docblock/src',
+        ),
+        'phpDocumentor\\Reflection\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
+            1 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+            2 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
         ),
         'phootwork\\lang\\' => 
         array (
@@ -203,6 +228,10 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         array (
             0 => __DIR__ . '/..' . '/yethee/tiktoken/src',
         ),
+        'Webmozart\\Assert\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/webmozart/assert/src',
+        ),
         'Twig\\' => 
         array (
             0 => __DIR__ . '/..' . '/twig/twig/src',
@@ -210,6 +239,14 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'TijsVerkoyen\\CssToInlineStyles\\' => 
         array (
             0 => __DIR__ . '/..' . '/tijsverkoyen/css-to-inline-styles/src',
+        ),
+        'Symfony\\Polyfill\\Uuid\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-uuid',
+        ),
+        'Symfony\\Polyfill\\Php85\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php85',
         ),
         'Symfony\\Polyfill\\Php84\\' => 
         array (
@@ -274,6 +311,10 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'Symfony\\Component\\Validator\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/validator',
+        ),
+        'Symfony\\Component\\Uid\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/uid',
         ),
         'Symfony\\Component\\String\\' => 
         array (
@@ -405,6 +446,22 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         array (
             0 => __DIR__ . '/..' . '/mck89/peast/lib/Peast',
         ),
+        'PHPStan\\PhpDocParser\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpstan/phpdoc-parser/src',
+        ),
+        'Opis\\Uri\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/opis/uri/src',
+        ),
+        'Opis\\String\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/opis/string/src',
+        ),
+        'Opis\\JsonSchema\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/opis/json-schema/src',
+        ),
         'OpenIDConnectServer\\' => 
         array (
             0 => __DIR__ . '/..' . '/steverhoades/oauth2-openid-connect-server/src',
@@ -412,6 +469,10 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'OpenAI\\' => 
         array (
             0 => __DIR__ . '/..' . '/openai-php/client/src',
+        ),
+        'Mcp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mcp/sdk/src',
         ),
         'Masterminds\\' => 
         array (
@@ -542,10 +603,6 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         array (
             0 => __DIR__ . '/..' . '/doctrine/collections/src',
         ),
-        'Doctrine\\Common\\Annotations\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/doctrine/annotations/lib/Doctrine/Common/Annotations',
-        ),
         'Doctrine\\Common\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/common/src',
@@ -602,6 +659,26 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'CommerceGuys\\Addressing\\' => 
         array (
             0 => __DIR__ . '/..' . '/commerceguys/addressing/src',
+        ),
+        'CodeWheel\\McpToolGateway\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/code-wheel/mcp-tool-gateway/src',
+        ),
+        'CodeWheel\\McpSecurity\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/code-wheel/mcp-http-security/src',
+        ),
+        'CodeWheel\\McpSchemaBuilder\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/code-wheel/mcp-schema-builder/src',
+        ),
+        'CodeWheel\\McpEvents\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/code-wheel/mcp-events/src',
+        ),
+        'CodeWheel\\McpErrorCodes\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/code-wheel/mcp-error-codes/src',
         ),
         'Asm89\\Stack\\' => 
         array (
@@ -661,6 +738,8 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'Drupal\\Core\\DrupalKernelInterface' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/DrupalKernelInterface.php',
         'Drupal\\Core\\Installer\\InstallerRedirectTrait' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/Installer/InstallerRedirectTrait.php',
         'Drupal\\Core\\Site\\Settings' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/Site/Settings.php',
+        'Drupal\\DrupalInstalled' => __DIR__ . '/..' . '/drupal/DrupalInstalled.php',
+        'NoDiscard' => __DIR__ . '/..' . '/symfony/polyfill-php85/Resources/stubs/NoDiscard.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'OS_Guess' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/OS/Guess.php',
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
@@ -668,6 +747,7 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'PEAR_Error' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/PEAR.php',
         'PEAR_ErrorStack' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/PEAR/ErrorStack.php',
         'PEAR_Exception' => __DIR__ . '/..' . '/pear/pear_exception/PEAR/Exception.php',
+        'Psr\\Container\\ContainerInterface' => __DIR__ . '/..' . '/psr/container/src/ContainerInterface.php',
         'ReflectionConstant' => __DIR__ . '/..' . '/symfony/polyfill-php84/Resources/stubs/ReflectionConstant.php',
         'ReturnTypeWillChange' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/ReturnTypeWillChange.php',
         'SQLite3Exception' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/SQLite3Exception.php',
@@ -688,16 +768,27 @@ class ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46
         'SebastianBergmann\\Diff\\Parser' => __DIR__ . '/..' . '/sebastian/diff/src/Parser.php',
         'SebastianBergmann\\Diff\\TimeEfficientLongestCommonSubsequenceCalculator' => __DIR__ . '/..' . '/sebastian/diff/src/TimeEfficientLongestCommonSubsequenceCalculator.php',
         'Stringable' => __DIR__ . '/..' . '/marc-mabe/php-enum/stubs/Stringable.php',
+        'Symfony\\Component\\DependencyInjection\\ContainerInterface' => __DIR__ . '/..' . '/symfony/dependency-injection/ContainerInterface.php',
+        'Symfony\\Component\\HttpFoundation\\FileBag' => __DIR__ . '/..' . '/symfony/http-foundation/FileBag.php',
+        'Symfony\\Component\\HttpFoundation\\HeaderBag' => __DIR__ . '/..' . '/symfony/http-foundation/HeaderBag.php',
+        'Symfony\\Component\\HttpFoundation\\HeaderUtils' => __DIR__ . '/..' . '/symfony/http-foundation/HeaderUtils.php',
+        'Symfony\\Component\\HttpFoundation\\ParameterBag' => __DIR__ . '/..' . '/symfony/http-foundation/ParameterBag.php',
+        'Symfony\\Component\\HttpFoundation\\Request' => __DIR__ . '/..' . '/symfony/http-foundation/Request.php',
+        'Symfony\\Component\\HttpFoundation\\RequestStack' => __DIR__ . '/..' . '/symfony/http-foundation/RequestStack.php',
+        'Symfony\\Component\\HttpFoundation\\ServerBag' => __DIR__ . '/..' . '/symfony/http-foundation/ServerBag.php',
+        'Symfony\\Component\\HttpKernel\\HttpKernel' => __DIR__ . '/..' . '/symfony/http-kernel/HttpKernel.php',
+        'Symfony\\Component\\HttpKernel\\HttpKernelInterface' => __DIR__ . '/..' . '/symfony/http-kernel/HttpKernelInterface.php',
+        'Symfony\\Component\\HttpKernel\\TerminableInterface' => __DIR__ . '/..' . '/symfony/http-kernel/TerminableInterface.php',
         'System' => __DIR__ . '/..' . '/pear/pear-core-minimal/src/System.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit9d559ab354f63dc7e9a3fc1a03ad7d46::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInite1d246a6ac9cd9288b6614bbd015b665::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInite1d246a6ac9cd9288b6614bbd015b665::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInite1d246a6ac9cd9288b6614bbd015b665::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInite1d246a6ac9cd9288b6614bbd015b665::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -1,0 +1,22 @@
+uuid: 97826caf-0390-4b03-8a4a-84f17ef184fb
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - tritonled_radix
+_core:
+  default_config_hash: VhBzWb7lMRtIOg9G7VSw_0uopi-7zXeHq4vXqqV1HFE
+id: tritonled_radix_breadcrumbs
+theme: tritonled_radix
+region: navbar_branding
+weight: 0
+provider: null
+plugin: system_breadcrumb_block
+settings:
+  id: system_breadcrumb_block
+  label: Breadcrumbs
+  label_display: '0'
+  provider: system
+visibility: {  }

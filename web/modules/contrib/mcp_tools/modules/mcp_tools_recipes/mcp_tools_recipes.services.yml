@@ -1,0 +1,17 @@
+services:
+  logger.channel.mcp_tools_recipes:
+    parent: logger.channel_base
+    arguments: ['mcp_tools_recipes']
+
+  mcp_tools_recipes.recipes:
+    class: Drupal\mcp_tools_recipes\Service\RecipesService
+    arguments:
+      - '@config.factory'
+      - '@extension.list.module'
+      - '@file_system'
+      - '%app.root%'
+      - '@mcp_tools.access_manager'
+      - '@mcp_tools.audit_logger'
+      - '@state'
+      - '@current_user'
+      - '@logger.channel.mcp_tools_recipes'

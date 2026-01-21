@@ -1,0 +1,23 @@
+commerce_vado.settings:
+  type: config_object
+  label: 'Vado Configuration'
+  mapping:
+    hide_parent_zero_price:
+      type: string
+      label: 'Hide zero price for parent in cart form.'
+    allow_unpublished_variations:
+      type: string
+      label: 'Allow unpublished child variations to be added to orders.'
+
+field.formatter.settings.commerce_vado_group_add_to_cart:
+  type: mapping
+  mapping:
+    show_quantity:
+      type: boolean
+      label: 'Whether to display a quantity input field on the add to cart form.'
+    default_quantity:
+      type: string
+      label: 'Default quantity'
+    combine:
+      type: boolean
+      label: 'Whether to attempt to combine order items containing the same product variation'

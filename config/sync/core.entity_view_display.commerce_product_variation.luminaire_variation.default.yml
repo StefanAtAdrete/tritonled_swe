@@ -1,0 +1,127 @@
+uuid: edfe879e-0abd-4752-8f8b-dd744f0c8a33
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.field.commerce_product_variation.luminaire_variation.attribute_cct
+    - field.field.commerce_product_variation.luminaire_variation.attribute_watt
+    - field.field.commerce_product_variation.luminaire_variation.field_cct
+    - field.field.commerce_product_variation.luminaire_variation.field_cri
+    - field.field.commerce_product_variation.luminaire_variation.field_height
+    - field.field.commerce_product_variation.luminaire_variation.field_ip_rating
+    - field.field.commerce_product_variation.luminaire_variation.field_length
+    - field.field.commerce_product_variation.luminaire_variation.field_lumen
+    - field.field.commerce_product_variation.luminaire_variation.field_mounting_type
+    - field.field.commerce_product_variation.luminaire_variation.field_watt
+    - field.field.commerce_product_variation.luminaire_variation.field_width
+  module:
+    - commerce_price
+id: commerce_product_variation.luminaire_variation.default
+targetEntityType: commerce_product_variation
+bundle: luminaire_variation
+mode: default
+content:
+  field_cct:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_cri:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_height:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 7
+    region: content
+  field_ip_rating:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 8
+    region: content
+  field_length:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_lumen:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_mounting_type:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 9
+    region: content
+  field_watt:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_width:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  list_price:
+    type: commerce_price_default
+    label: above
+    settings:
+      strip_trailing_zeroes: false
+      currency_display: symbol
+    third_party_settings: {  }
+    weight: -1
+    region: content
+  price:
+    type: commerce_price_default
+    label: above
+    settings:
+      strip_trailing_zeroes: false
+      currency_display: symbol
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  attribute_cct: true
+  attribute_watt: true
+  langcode: true
+  product_id: true
+  sku: true
+  title: true

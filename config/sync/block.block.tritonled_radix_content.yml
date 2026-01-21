@@ -1,0 +1,22 @@
+uuid: 98e086c9-c7a1-46b7-91ec-d5be7938887c
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - tritonled_radix
+_core:
+  default_config_hash: erQSEZF2XUjNmgTl0uNRBzmg18ZGXwUcw2FhApoeuHk
+id: tritonled_radix_content
+theme: tritonled_radix
+region: content
+weight: 0
+provider: null
+plugin: system_main_block
+settings:
+  id: system_main_block
+  label: 'Main page content'
+  label_display: '0'
+  provider: system
+visibility: {  }

@@ -1,0 +1,19 @@
+services:
+  chrome:
+    container_name: ddev-${DDEV_SITENAME}-chrome
+    image: seleniarm/standalone-chromium:latest
+    platform: linux/arm64
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    environment:
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_SESSION_TIMEOUT=300
+    shm_size: 2gb
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+    networks:
+      - default

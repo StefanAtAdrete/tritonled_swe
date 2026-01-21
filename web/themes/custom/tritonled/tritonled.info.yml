@@ -1,0 +1,23 @@
+name: TritonLED
+type: theme
+description: 'Custom theme for TritonLED e-commerce platform'
+package: Custom
+base theme: false
+core_version_requirement: ^11
+libraries:
+  - tritonled/global-styling
+  - tritonled/slick-commerce-ajax
+  - core/normalize
+
+regions:
+  header: Header
+  primary_menu: 'Primary menu'
+  secondary_menu: 'Secondary menu'
+  hero: 'Hero'
+  breadcrumb: Breadcrumb
+  highlighted: Highlighted
+  help: Help
+  content: Content
+  sidebar_first: 'Left sidebar'
+  sidebar_second: 'Right sidebar'
+  footer: Footer

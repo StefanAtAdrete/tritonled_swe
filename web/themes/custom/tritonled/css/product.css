@@ -1,0 +1,256 @@
+/**
+ * Product page styles
+ * Uses Bootstrap 5.3 breakpoints: md (≥768px), lg (≥992px), xl (≥1200px)
+ */
+
+/* ============================================
+   PRODUCT PAGE GRID LAYOUT (CSS-only, no Field Groups)
+   ============================================ */
+
+/* Main product article container - matchar faktisk HTML-struktur */
+.region-content article.contextual-region,
+.region-content article {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Mobile: Stack everything */
+@media (max-width: 767px) {
+  .region-content article.contextual-region > *,
+  .region-content article > * {
+    grid-column: 1;
+  }
+}
+
+/* Desktop: 50/50 layout för Sektion 1 (Product info) */
+@media (min-width: 768px) {
+  .region-content article.contextual-region,
+  .region-content article {
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2rem;
+  }
+  
+  /* SEKTION 1: Product-level fields - 50/50 layout */
+  
+  /* Vänster kolumn (50%) - Media carousel */
+  .region-content article > .field--name-field-product-media {
+    grid-column: 1 / 7; /* Kolumn 1-6 (6 av 12 = 50%) */
+  }
+  
+  /* Höger kolumn (50%) - Product info */
+  .region-content article > .field--name-title {
+    grid-column: 7 / 13; /* Kolumn 7-12 (6 av 12 = 50%) */
+  }
+  
+  .region-content article > .field--name-field-product-description {
+    grid-column: 7 / 13;
+  }
+  
+  .region-content article > .field--name-variations {
+    grid-column: 7 / 13;
+  }
+  
+  /* SEKTION 2: Variation fields - 75/25 layout */
+  
+  /* Variation fields som ska vara i huvudkolumn (75%) */
+  .region-content article > .product--variation-field--variation_title,
+  .region-content article > .product--variation-field--variation_sku,
+  .region-content article > .product--variation-field--variation_price,
+  .region-content article > .product--variation-field--variation_field_watt,
+  .region-content article > .product--variation-field--variation_field_lumen,
+  .region-content article > .product--variation-field--variation_field_cct,
+  .region-content article > .product--variation-field--variation_field_cri,
+  .region-content article > .product--variation-field--variation_field_length,
+  .region-content article > .product--variation-field--variation_field_width,
+  .region-content article > .product--variation-field--variation_field_height,
+  .region-content article > .product--variation-field--variation_field_lm_w,
+  .region-content article > .product--variation-field--variation_field_icon_specs_selection {
+    grid-column: 1 / 10; /* Kolumn 1-9 (9 av 12 = 75%) */
+  }
+  
+  /* Product-level fields i sidebar (25%) */
+  .region-content article > .field--name-field-ip-rating,
+  .region-content article > .field--name-field-ies-files,
+  .region-content article > .field--name-field-certificates,
+  .region-content article > .field--name-field-key-features,
+  .region-content article > .field--name-field-voltage,
+  .region-content article > .field--name-field-warranty,
+  .region-content article > .field--name-field-power-factor {
+    grid-column: 10 / 13; /* Kolumn 10-12 (3 av 12 = 25%) */
+  }
+  
+  /* Layout Builder placeholder (om finns) */
+  .region-content article > .product--variation-field--variation__layout_builder {
+    display: none;
+  }
+}
+
+/* SEKTION 3: Applications/Related products - Full width (läggs till senare) */
+.product-section-3 {
+  grid-column: 1 / -1;
+  margin-top: 3rem;
+}
+
+.product-media {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 0.5rem;
+}
+
+/* Responsive media container with aspect-ratio */
+.field--name-field-product-media,
+.media--type-image,
+.media--type-video {
+  aspect-ratio: 4/3; /* Product cards: 4:3 ratio on mobile and desktop */
+  overflow: hidden;
+}
+
+/* Hero carousel - responsive aspect ratio */
+.carousel-item {
+  aspect-ratio: 2/1 !important; /* Mobile: 2:1 landscape - optimized for above-the-fold */
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-media-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-media,
+.hero-media .field--name-field-product-media,
+.hero-media .media--type-image,
+.hero-media .media--type-video {
+  aspect-ratio: 2/1; /* Mobile: 2:1 landscape (<768px) - optimized for above-the-fold */
+  position: relative !important; /* Override Views position-absolute */
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  /* Product pages: landscape */
+  .commerce-product--view-mode-default .field--name-field-product-media,
+  .commerce-product--view-mode-default .media--type-image,
+  .commerce-product--view-mode-default .media--type-video {
+    aspect-ratio: 16/9;
+  }
+  
+  /* Hero carousel: landscape */
+  .carousel-item {
+    aspect-ratio: 16/9 !important;
+  }
+  
+  .hero-media,
+  .hero-media .field--name-field-product-media,
+  .hero-media .media--type-image,
+  .hero-media .media--type-video {
+    aspect-ratio: 16/9;
+  }
+  
+  /* Product cards: 4:3 aspect ratio - same on mobile and desktop */
+  .commerce-product-variation--view-mode-card .field--name-field-product-media,
+  .commerce-product-variation--view-mode-card .media--type-image,
+  .commerce-product-variation--view-mode-card .media--type-video {
+    aspect-ratio: 4/3;
+  }
+}
+
+/* Media elements fill container */
+.field--name-field-product-media img,
+.field--name-field-product-media video,
+.media--type-image img,
+.media--type-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Default: fill and crop */
+  display: block;
+}
+
+/* Hero media elements */
+.hero-media img,
+.hero-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Product cards: cover with focal point - same on mobile and desktop */
+.commerce-product-variation--view-mode-card .field--name-field-product-media,
+.commerce-product-variation--view-mode-card .media--type-image {
+  background: #f8f9fa; /* Light gray background */
+}
+
+/* CRITICAL: Mobile product cards need explicit width */
+img.image-style-product-card-4x3 {
+  width: 100%;
+}
+
+.commerce-product-variation--view-mode-card img,
+.commerce-product-variation--view-mode-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* Cover with focal point control */
+  object-position: center;
+  display: block;
+}
+
+.product-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.product-description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #6c757d;
+}
+
+/* Add to cart form styling */
+.commerce-order-item-add-to-cart-form {
+  margin: 0;
+}
+
+.commerce-order-item-add-to-cart-form .form-item {
+  margin-bottom: 1rem;
+}
+
+.commerce-order-item-add-to-cart-form label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.commerce-order-item-add-to-cart-form select {
+  width: 100%;
+}
+
+.commerce-order-item-add-to-cart-form .form-submit {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* Product specs */
+#product-specs table th {
+  font-weight: 600;
+  color: #495057;
+}
+
+#product-specs table td {
+  color: #212529;
+}
+
+/* Sticky media on scroll */
+@media (min-width: 992px) {
+  .product-media.sticky-top {
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+  }
+}

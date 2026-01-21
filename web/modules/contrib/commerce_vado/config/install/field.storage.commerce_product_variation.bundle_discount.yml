@@ -1,0 +1,23 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - commerce_vado
+  enforced:
+    module:
+      - commerce_vado
+id: commerce_product_variation.bundle_discount
+field_name: bundle_discount
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: true
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: true
+custom_storage: false

@@ -1,0 +1,22 @@
+{#
+/**
+ * @file
+ * TritonLED theme implementation to display a single local task link.
+ *
+ * Bootstrap 5 nav-item styling.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper element.
+ * - is_active: A boolean indicating whether the task is active.
+ * - link: A link to the task.
+ *
+ * @see template_preprocess_menu_local_task()
+ */
+#}
+<li{{ attributes.addClass('nav-item') }}>
+  {% if is_active %}
+    {{ link|merge({'#attributes': {'class': ['nav-link', 'active']}}) }}
+  {% else %}
+    {{ link|merge({'#attributes': {'class': ['nav-link']}}) }}
+  {% endif %}
+</li>

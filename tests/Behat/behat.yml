@@ -1,0 +1,46 @@
+default:
+  suites:
+    default:
+      paths:
+        - '%paths.base%/features'
+      contexts:
+        - FeatureContext:
+            parameters:
+              base_url: http://tritonled.ddev.site
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+      filters:
+        tags: "~@wip"
+  
+  extensions:
+    Behat\MinkExtension:
+      base_url: http://web
+      selenium2:
+        wd_host: "http://chrome:4444/wd/hub"
+      browser_name: chrome
+      sessions:
+        default:
+          selenium2:
+            wd_host: "http://chrome:4444/wd/hub"
+    
+    Drupal\DrupalExtension:
+      api_driver: "drupal"
+      drupal:
+        drupal_root: "/var/www/html/web"
+      region_map:
+        header: "#header"
+        navigation: "#navigation"
+        content: "#content"
+        footer: "#footer"
+        left_sidebar: "#sidebar-first"
+        right_sidebar: "#sidebar-second"
+      selectors:
+        message_selector: '.messages'
+        error_message_selector: '.messages--error'
+        success_message_selector: '.messages--status'
+        warning_message_selector: '.messages--warning'
+  
+  autoload:
+    '': '%paths.base%/features/bootstrap'

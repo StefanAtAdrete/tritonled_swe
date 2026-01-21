@@ -1,0 +1,33 @@
+{#
+/**
+ * @file
+ * TritonLED theme implementation to display primary and secondary local tasks.
+ *
+ * Bootstrap 5 nav tabs styling.
+ *
+ * Available variables:
+ * - primary: HTML list items representing primary tasks.
+ * - secondary: HTML list items representing secondary tasks.
+ *
+ * Each item in these lists contains:
+ * - attributes: HTML attributes to apply to the task link.
+ * - link: The task's link.
+ * - is_active: A boolean indicating whether the task is active.
+ *
+ * @see template_preprocess_menu_local_tasks()
+ */
+#}
+{% if primary %}
+  <nav class="tabs-wrapper mb-3" role="navigation" aria-label="Tabs">
+    <ul class="nav nav-tabs">
+      {{ primary }}
+    </ul>
+  </nav>
+{% endif %}
+{% if secondary %}
+  <nav class="tabs-wrapper-secondary mb-3" role="navigation" aria-label="Secondary tabs">
+    <ul class="nav nav-pills">
+      {{ secondary }}
+    </ul>
+  </nav>
+{% endif %}

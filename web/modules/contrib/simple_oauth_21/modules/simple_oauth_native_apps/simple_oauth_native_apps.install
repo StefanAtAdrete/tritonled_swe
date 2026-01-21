@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Update functions for Simple OAuth Native Apps module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function simple_oauth_native_apps_install(): void {
+  // Install base field storage definitions for native app fields.
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type_manager = \Drupal::entityTypeManager();
+
+  // Get the consumer entity type definition.
+  $consumer_entity_type = $entity_type_manager->getDefinition('consumer');
+
+  // Get base field definitions from hook_entity_base_field_info().
+  $base_fields = simple_oauth_native_apps_entity_base_field_info($consumer_entity_type);
+
+  // Install each base field storage definition.
+  foreach ($base_fields as $field_name => $storage_definition) {
+    if (!$entity_definition_update_manager->getFieldStorageDefinition($field_name, 'consumer')) {
+      $entity_definition_update_manager->installFieldStorageDefinition(
+        $field_name,
+        'consumer',
+        'simple_oauth_native_apps',
+        $storage_definition
+      );
+    }
+  }
+}

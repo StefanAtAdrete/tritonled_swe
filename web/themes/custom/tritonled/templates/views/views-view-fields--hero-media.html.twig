@@ -1,0 +1,31 @@
+{#
+/**
+ * @file
+ * Theme override for hero_media fields.
+ * 
+ * Structures media as background with text overlay.
+ */
+#}
+
+{# Media field as background (position-absolute, full size) #}
+{% if fields.field_product_media %}
+  <div class="hero-media-background position-absolute top-0 start-0 w-100 h-100">
+    {{ fields.field_product_media.content }}
+  </div>
+{% endif %}
+
+{# Text overlay (position-absolute, centered) #}
+<div class="carousel-caption">
+  {% if fields.title %}
+    <h2 class="hero-title display-4 text-white mb-3">
+      {{ fields.title.content }}
+    </h2>
+  {% endif %}
+  
+  {# Product description field #}
+  {% if fields.field_product_description %}
+    <div class="hero-description lead text-white mb-4">
+      {{ fields.field_product_description.content }}
+    </div>
+  {% endif %}
+</div>

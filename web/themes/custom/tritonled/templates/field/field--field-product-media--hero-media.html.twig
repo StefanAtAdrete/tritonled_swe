@@ -1,0 +1,23 @@
+{#
+/**
+ * @file
+ * Hero media field - video without controls, autoplay, loop.
+ */
+#}
+
+{% for item in items %}
+  {% if item.content['#media'] %}
+    {% set media = item.content['#media'] %}
+    {% if media.bundle() == 'video' %}
+      {% for file in media.field_media_video_file %}
+        <video autoplay muted loop playsinline class="hero-video">
+          <source src="{{ file.entity.uri.value|file_url }}" type="{{ file.entity.filemime.value }}">
+        </video>
+      {% endfor %}
+    {% else %}
+      {{ item.content }}
+    {% endif %}
+  {% else %}
+    {{ item.content }}
+  {% endif %}
+{% endfor %}

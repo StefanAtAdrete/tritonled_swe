@@ -1,0 +1,19 @@
+services:
+  logger.channel.mcp_tools_templates:
+    parent: logger.channel_base
+    arguments: ['mcp_tools_templates']
+
+  mcp_tools_templates.component_factory:
+    class: Drupal\mcp_tools_templates\Service\ComponentFactory
+    arguments:
+      - '@entity_type.manager'
+      - '@logger.channel.mcp_tools_templates'
+
+  mcp_tools_templates.template:
+    class: Drupal\mcp_tools_templates\Service\TemplateService
+    arguments:
+      - '@entity_type.manager'
+      - '@config.factory'
+      - '@mcp_tools.access_manager'
+      - '@mcp_tools.audit_logger'
+      - '@mcp_tools_templates.component_factory'

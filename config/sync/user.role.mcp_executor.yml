@@ -1,0 +1,30 @@
+uuid: 4b7051fd-1cd6-40f5-ad3e-ef046158a7ca
+langcode: en
+status: true
+dependencies:
+  module:
+    - mcp
+    - mcp_tools
+    - mcp_tools_recipes
+    - system
+id: mcp_executor
+label: 'MCP Executor'
+weight: 4
+is_admin: false
+permissions:
+  - 'access content'
+  - 'mcp_tools administer recipes'
+  - 'mcp_tools use analysis'
+  - 'mcp_tools use cache'
+  - 'mcp_tools use config'
+  - 'mcp_tools use config_tools'
+  - 'mcp_tools use content'
+  - 'mcp_tools use content_tools'
+  - 'mcp_tools use cron'
+  - 'mcp_tools use discovery'
+  - 'mcp_tools use moderation'
+  - 'mcp_tools use site_health'
+  - 'mcp_tools use site_tools'
+  - 'mcp_tools use user_tools'
+  - 'mcp_tools use users'
+  - 'use mcp server'

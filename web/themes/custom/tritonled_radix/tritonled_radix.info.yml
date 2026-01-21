@@ -1,0 +1,27 @@
+name: TritonLED Radix
+type: theme
+description: 'TritonLED custom theme based on Radix with Bootstrap 5.3'
+base theme: radix
+core_version_requirement: ^11
+screenshot: screenshot.png
+
+# Regions (inherited from Radix but can override)
+regions:
+  navbar_branding: 'Navbar branding'
+  navbar_left: 'Navbar left'
+  navbar_right: 'Navbar right'
+  header: 'Header'
+  content: 'Content'
+  sidebar_first: 'Sidebar first'
+  sidebar_second: 'Sidebar second'
+  footer: 'Footer'
+  page_bottom: 'Page bottom'
+
+# Libraries
+libraries:
+  - tritonled_radix/global-styling
+  - tritonled_radix/global-scripts
+
+# Theme settings
+# Radix provides Bootstrap 5.3 by default
+# SDC components in components/ directory will be auto-discovered

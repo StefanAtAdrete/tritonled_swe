@@ -1,0 +1,65 @@
+/**
+ * Print Styles
+ * Optimized for printing TritonLED pages
+ */
+
+@media print {
+  /* Hide navigation and non-essential elements */
+  .site-header,
+  .site-footer,
+  .breadcrumb,
+  nav,
+  .pager,
+  .tabs,
+  .action-links,
+  .contextual-links,
+  .hero-region,
+  button,
+  .btn {
+    display: none !important;
+  }
+
+  /* Optimize layout for print */
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+  }
+
+  /* Product specs - optimize for print */
+  .product-specs {
+    page-break-inside: avoid;
+    border: 1pt solid #000;
+    padding: 10pt;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1pt solid #000;
+    padding: 5pt;
+  }
+
+  /* Links - show URLs */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+  }
+
+  /* Avoid page breaks inside elements */
+  h1, h2, h3, h4, h5, h6,
+  .product-title {
+    page-break-after: avoid;
+  }
+
+  /* Images */
+  img {
+    max-width: 100% !important;
+  }
+}

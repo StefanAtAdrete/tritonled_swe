@@ -1,0 +1,53 @@
+# Global styling - loaded on all pages
+global-styling:
+  version: VERSION
+  css:
+    theme:
+      css/style.css: {}
+      https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css: { type: external, minified: true }
+  js:
+    https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js: { type: external, minified: true, attributes: { defer: true } }
+
+# Global scripts - loaded on all pages  
+global-scripts:
+  version: VERSION
+  js:
+    js/global.js: {}
+  dependencies:
+    - core/drupal
+    - core/once
+    - tritonled_radix/global-styling
+
+# Hero carousel (migrate from old theme)
+hero-carousel:
+  version: VERSION
+  css:
+    component:
+      css/hero.css: {}
+  js:
+    js/hero-carousel.js: {}
+  dependencies:
+    - core/drupal
+    - radix/bootstrap5
+
+# Product AJAX (migrate from old theme)
+product-ajax:
+  version: VERSION
+  js:
+    js/product-ajax.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.ajax
+
+# Component-specific CSS (loaded via preprocess when needed)
+component-media:
+  version: VERSION
+  css:
+    component:
+      css/components/media.css: {}
+
+component-product-gallery:
+  version: VERSION
+  css:
+    component:
+      css/components/product-gallery.css: {}

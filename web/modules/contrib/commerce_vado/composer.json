@@ -1,0 +1,15 @@
+{
+  "name": "drupal/commerce_vado",
+  "type": "drupal-module",
+  "description": "Drupal Commerce product variation addons",
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://www.drupal.org/project/commerce_vado",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/commerce_vado",
+    "source": "http://cgit.drupalcode.org/commerce_vado"
+  },
+  "require": {
+    "drupal/commerce": "~2.8 || ^3.0"
+  }
+}

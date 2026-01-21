@@ -1,0 +1,20 @@
+uuid: abb87946-46ba-4ba4-9bb1-66f5ec2cea1b
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_width
+field_name: field_width
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: null
+  size: null
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

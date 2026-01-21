@@ -1,0 +1,6 @@
+entity.commerce_vado_group.add_form:
+  route_name: entity.commerce_vado_group.add_form
+  title: 'Add group'
+  appears_on:
+    - entity.commerce_vado_group.collection
+    - view.commerce_vado_groups.page_1

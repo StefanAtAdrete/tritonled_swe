@@ -1,0 +1,5 @@
+PLACEHOLDER: Screenshot will be added
+
+Replace this file with an actual screenshot.png (585x438px recommended)
+
+Temporary file - theme will work without it.
