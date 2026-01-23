@@ -1,0 +1,21 @@
+uuid: b0a56d68-ae1b-4fe0-88cf-28734a1774ad
+langcode: en
+status: true
+dependencies:
+  module:
+    - mcp_tools
+id: mcp_tools_remote_executor
+label: 'MCP Tools Remote Executor'
+weight: 5
+is_admin: false
+permissions:
+  - 'mcp_tools use blocks'
+  - 'mcp_tools use config'
+  - 'mcp_tools use content'
+  - 'mcp_tools use discovery'
+  - 'mcp_tools use media'
+  - 'mcp_tools use menus'
+  - 'mcp_tools use site_health'
+  - 'mcp_tools use structure'
+  - 'mcp_tools use users'
+  - 'mcp_tools use views'

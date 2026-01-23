@@ -1,7 +1,11 @@
 _core:
   default_config_hash: G1fP_Viz2F-TkFxY_7EWluwPcwl7bL3ZziTHtxYS4Tk
-enable_auth: false
-auth_settings: {  }
+enable_auth: true
+auth_settings:
+  enable_token_auth: false
+  token_key: ''
+  token_user: ''
+  enable_basic_auth: true
 plugins:
   general:
     enabled: true
