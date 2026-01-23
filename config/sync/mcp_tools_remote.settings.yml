@@ -1,8 +1,8 @@
 _core:
   default_config_hash: LH6QA74JAD52dCmHN3huXFYAMYafwC1mTCragRPvWMA
 enabled: true
-uid: 2
-allow_uid1: true
+uid: 4
+allow_uid1: false
 allowed_ips: {  }
 allowed_origins: {  }
 server_name: 'Drupal MCP Tools'
