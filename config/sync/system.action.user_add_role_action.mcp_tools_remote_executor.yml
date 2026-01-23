@@ -1,0 +1,14 @@
+uuid: 7c06540c-cf84-4901-96e6-51d181aed2ae
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.mcp_tools_remote_executor
+  module:
+    - user
+id: user_add_role_action.mcp_tools_remote_executor
+label: 'Add the MCP Tools Remote Executor role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: mcp_tools_remote_executor

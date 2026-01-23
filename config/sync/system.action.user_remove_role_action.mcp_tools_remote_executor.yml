@@ -1,0 +1,14 @@
+uuid: 12512dae-a1cd-4ec6-aa86-a42f4d3463f1
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.mcp_tools_remote_executor
+  module:
+    - user
+id: user_remove_role_action.mcp_tools_remote_executor
+label: 'Remove the MCP Tools Remote Executor role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: mcp_tools_remote_executor
