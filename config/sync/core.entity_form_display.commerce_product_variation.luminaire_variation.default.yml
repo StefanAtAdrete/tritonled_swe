@@ -4,16 +4,23 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.field.commerce_product_variation.luminaire_variation.attribute_accessories
     - field.field.commerce_product_variation.luminaire_variation.attribute_cct
+    - field.field.commerce_product_variation.luminaire_variation.attribute_ip_rating
     - field.field.commerce_product_variation.luminaire_variation.attribute_watt
+    - field.field.commerce_product_variation.luminaire_variation.field_beam_angle
     - field.field.commerce_product_variation.luminaire_variation.field_cct
     - field.field.commerce_product_variation.luminaire_variation.field_cri
+    - field.field.commerce_product_variation.luminaire_variation.field_driver
+    - field.field.commerce_product_variation.luminaire_variation.field_efficiency
     - field.field.commerce_product_variation.luminaire_variation.field_height
     - field.field.commerce_product_variation.luminaire_variation.field_ip_rating
+    - field.field.commerce_product_variation.luminaire_variation.field_led_type
     - field.field.commerce_product_variation.luminaire_variation.field_length
     - field.field.commerce_product_variation.luminaire_variation.field_lumen
     - field.field.commerce_product_variation.luminaire_variation.field_mounting_type
     - field.field.commerce_product_variation.luminaire_variation.field_watt
+    - field.field.commerce_product_variation.luminaire_variation.field_weight
     - field.field.commerce_product_variation.luminaire_variation.field_width
   module:
     - commerce_price
@@ -22,9 +29,21 @@ targetEntityType: commerce_product_variation
 bundle: luminaire_variation
 mode: default
 content:
+  attribute_accessories:
+    type: options_select
+    weight: 4
+    region: content
+    settings: {  }
+    third_party_settings: {  }
   attribute_cct:
     type: options_select
     weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_ip_rating:
+    type: options_select
+    weight: 3
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -41,6 +60,13 @@ content:
     settings:
       display_label: true
     third_party_settings: {  }
+  field_beam_angle:
+    type: number
+    weight: 101
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
   field_cct:
     type: number
     weight: 93
@@ -56,6 +82,21 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  field_driver:
+    type: string_textfield
+    weight: 103
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_efficiency:
+    type: number
+    weight: 100
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
   field_height:
     type: number
     weight: 97
@@ -66,6 +107,14 @@ content:
   field_ip_rating:
     type: string_textfield
     weight: 98
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_led_type:
+    type: string_textfield
+    weight: 102
     region: content
     settings:
       size: 60
@@ -96,6 +145,13 @@ content:
   field_watt:
     type: number
     weight: 91
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  field_weight:
+    type: number
+    weight: 104
     region: content
     settings:
       placeholder: ''

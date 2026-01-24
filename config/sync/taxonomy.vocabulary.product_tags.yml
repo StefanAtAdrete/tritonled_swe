@@ -1,0 +1,9 @@
+uuid: ad2f575a-aeda-4a81-9933-063cdc0023b6
+langcode: en
+status: true
+dependencies: {  }
+name: 'Product Tags'
+vid: product_tags
+description: 'Flexible markers for status and campaigns'
+weight: 0
+new_revision: false

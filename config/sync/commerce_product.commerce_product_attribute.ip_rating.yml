@@ -1,0 +1,7 @@
+uuid: 0905e479-9f3a-4481-823c-c0fe5eca3a6c
+langcode: null
+status: null
+dependencies: {  }
+id: ip_rating
+label: 'IP Rating'
+elementType: select

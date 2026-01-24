@@ -69,28 +69,6 @@ module:
   layout_discovery: 0
   link: 0
   mcp: 0
-  mcp_studio: 0
-  mcp_tools: 0
-  mcp_tools_analysis: 0
-  mcp_tools_batch: 0
-  mcp_tools_blocks: 0
-  mcp_tools_cache: 0
-  mcp_tools_config: 0
-  mcp_tools_content: 0
-  mcp_tools_image_styles: 0
-  mcp_tools_jsonapi: 0
-  mcp_tools_layout_builder: 0
-  mcp_tools_media: 0
-  mcp_tools_menus: 0
-  mcp_tools_pathauto: 0
-  mcp_tools_recipes: 0
-  mcp_tools_redirect: 0
-  mcp_tools_remote: 0
-  mcp_tools_stdio: 0
-  mcp_tools_structure: 0
-  mcp_tools_templates: 0
-  mcp_tools_theme: 0
-  mcp_tools_views: 0
   media: 0
   media_library: 0
   media_library_form_element: 0
