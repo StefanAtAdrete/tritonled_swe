@@ -5,8 +5,15 @@ dependencies:
   config:
     - commerce_product.commerce_product_type.default
     - field.field.commerce_product.default.body
+    - field.field.commerce_product.default.field_application_areas
+    - field.field.commerce_product.default.field_certifications
+    - field.field.commerce_product.default.field_downloads
     - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_product_series
+    - field.field.commerce_product.default.field_product_tags
     - field.field.commerce_product.default.field_show_in_hero
+    - field.field.commerce_product.default.field_sku_prefix
+    - field.field.commerce_product.default.field_warranty
   module:
     - commerce_product
     - text
@@ -24,6 +31,30 @@ content:
     third_party_settings: {  }
     weight: 0
     region: content
+  field_application_areas:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_certifications:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 7
+    region: content
+  field_downloads:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 10
+    region: content
   field_hero_media:
     type: entity_reference_label
     label: above
@@ -31,6 +62,22 @@ content:
       link: true
     third_party_settings: {  }
     weight: 2
+    region: content
+  field_product_series:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_product_tags:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 8
     region: content
   field_show_in_hero:
     type: boolean
@@ -41,6 +88,23 @@ content:
       format_custom_true: ''
     third_party_settings: {  }
     weight: 3
+    region: content
+  field_sku_prefix:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_warranty:
+    type: number_integer
+    label: above
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+    weight: 9
     region: content
   title:
     type: string

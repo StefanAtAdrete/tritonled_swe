@@ -1,0 +1,7 @@
+uuid: a9df1e3c-ea10-4578-9603-ead18f92801c
+langcode: en
+status: true
+dependencies: {  }
+id: accessories
+label: Accessories
+elementType: select

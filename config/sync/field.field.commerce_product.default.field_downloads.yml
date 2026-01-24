@@ -1,0 +1,24 @@
+uuid: de58f29e-c33b-40e0-baac-da2fd90cfbf9
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.default
+    - field.storage.commerce_product.field_downloads
+    - media.type.document
+id: commerce_product.default.field_downloads
+field_name: field_downloads
+entity_type: commerce_product
+bundle: default
+label: Downloads
+description: 'Spec sheets, IES files, installation guides (PDF/ZIP)'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      document: document
+field_type: entity_reference

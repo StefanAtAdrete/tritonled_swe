@@ -1,0 +1,23 @@
+uuid: f840f4a0-22d8-4937-afe1-4286b21cfdd9
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.default
+    - field.storage.commerce_product.field_warranty
+id: commerce_product.default.field_warranty
+field_name: field_warranty
+entity_type: commerce_product
+bundle: default
+label: 'Warranty (Years)'
+description: 'Warranty period in years'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: 1
+  max: 20
+  prefix: ''
+  suffix: ' Years'
+field_type: integer
