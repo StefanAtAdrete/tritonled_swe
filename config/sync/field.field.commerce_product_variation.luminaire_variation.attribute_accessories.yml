@@ -1,0 +1,24 @@
+uuid: 560d6931-aeab-44a3-9531-1124165cf08e
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.accessories
+    - commerce_product.commerce_product_variation_type.luminaire_variation
+    - field.storage.commerce_product_variation.attribute_accessories
+id: commerce_product_variation.luminaire_variation.attribute_accessories
+field_name: attribute_accessories
+entity_type: commerce_product_variation
+bundle: luminaire_variation
+label: Accessories
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_product_attribute_value'
+  handler_settings:
+    target_bundles:
+      accessories: accessories
+field_type: entity_reference

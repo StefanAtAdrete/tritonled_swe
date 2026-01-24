@@ -5,8 +5,15 @@ dependencies:
   config:
     - commerce_product.commerce_product_type.default
     - field.field.commerce_product.default.body
+    - field.field.commerce_product.default.field_application_areas
+    - field.field.commerce_product.default.field_certifications
+    - field.field.commerce_product.default.field_downloads
     - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_product_series
+    - field.field.commerce_product.default.field_product_tags
     - field.field.commerce_product.default.field_show_in_hero
+    - field.field.commerce_product.default.field_sku_prefix
+    - field.field.commerce_product.default.field_warranty
   module:
     - commerce
     - path
@@ -33,9 +40,59 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_application_areas:
+    type: entity_reference_autocomplete
+    weight: 15
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_certifications:
+    type: entity_reference_autocomplete
+    weight: 16
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_downloads:
+    type: entity_reference_autocomplete
+    weight: 19
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_hero_media:
     type: entity_reference_autocomplete
     weight: 11
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_product_series:
+    type: entity_reference_autocomplete
+    weight: 14
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_product_tags:
+    type: entity_reference_autocomplete
+    weight: 17
     region: content
     settings:
       match_operator: CONTAINS
@@ -49,6 +106,21 @@ content:
     region: content
     settings:
       display_label: true
+    third_party_settings: {  }
+  field_sku_prefix:
+    type: string_textfield
+    weight: 13
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_warranty:
+    type: number
+    weight: 18
+    region: content
+    settings:
+      placeholder: ''
     third_party_settings: {  }
   langcode:
     type: language_select

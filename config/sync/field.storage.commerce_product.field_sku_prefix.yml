@@ -1,0 +1,21 @@
+uuid: dfabef51-b8e3-495b-aa42-b1892dbe2af0
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product.field_sku_prefix
+field_name: field_sku_prefix
+entity_type: commerce_product
+type: string
+settings:
+  max_length: 50
+  case_sensitive: false
+  is_ascii: false
+module: core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false
