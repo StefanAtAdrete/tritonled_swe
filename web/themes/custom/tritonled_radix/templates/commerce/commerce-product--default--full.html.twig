@@ -29,7 +29,11 @@
       {# LEFT COLUMN - Product Images (60% width on desktop) #}
       <div class="col-12 col-md-7 mb-4 mb-md-0">
         <div class="product-images">
+          {# Primary product images #}
           {{ content.field_images }}
+          
+          {# Additional media (videos, etc) #}
+          {{ content.field_product_media }}
         </div>
       </div>
 
@@ -40,59 +44,33 @@
           {# Series Badge #}
           {% if content.field_series %}
             <div class="product-series mb-2">
-              {{ content.field_series }}
+              <span class="badge bg-secondary">{{ content.field_series }}</span>
             </div>
           {% endif %}
 
           {# Product Title #}
           <h1 class="product-title mb-3">{{ title }}</h1>
 
-          {# Product Description #}
+          {# Short Description #}
+          {% if content.field_short_description %}
+            <div class="product-short-description text-muted mb-3">
+              {{ content.field_short_description }}
+            </div>
+          {% endif %}
+
+          {# Product Description (Body) #}
           {% if content.body %}
             <div class="product-description mb-4">
               {{ content.body }}
             </div>
           {% endif %}
 
-          {# Key Specifications Grid (4 items) #}
-          <div class="product-key-specs mb-4">
-            <div class="row g-3">
-              
-              {# Lumens #}
-              {% if content.field_lumens %}
-                <div class="col-6">
-                  <div class="spec-item p-3 border rounded">
-                    <div class="spec-icon mb-2">💡</div>
-                    <div class="spec-label small text-muted">Luminous Flux</div>
-                    <div class="spec-value fw-bold">{{ content.field_lumens }}</div>
-                  </div>
-                </div>
-              {% endif %}
-
-              {# Efficacy #}
-              {% if content.field_efficacy %}
-                <div class="col-6">
-                  <div class="spec-item p-3 border rounded">
-                    <div class="spec-icon mb-2">⚡</div>
-                    <div class="spec-label small text-muted">Efficiency</div>
-                    <div class="spec-value fw-bold">{{ content.field_efficacy }}</div>
-                  </div>
-                </div>
-              {% endif %}
-
-              {# Warranty #}
-              {% if content.field_warranty_years %}
-                <div class="col-6">
-                  <div class="spec-item p-3 border rounded">
-                    <div class="spec-icon mb-2">✓</div>
-                    <div class="spec-label small text-muted">Warranty</div>
-                    <div class="spec-value fw-bold">{{ content.field_warranty_years }}</div>
-                  </div>
-                </div>
-              {% endif %}
-
+          {# Brand/Manufacturer #}
+          {% if content.field_brand %}
+            <div class="product-brand mb-3">
+              {{ content.field_brand }}
             </div>
-          </div>
+          {% endif %}
 
           {# Product Variations - CRITICAL for AJAX #}
           <div class="product-variations mb-4">
@@ -105,9 +83,9 @@
               Request Quote
             </button>
             {% if content.field_datasheet %}
-              <button class="btn btn-outline-secondary w-100">
-                📄 Spec Sheet
-              </button>
+              <div class="datasheet-link">
+                {{ content.field_datasheet }}
+              </div>
             {% endif %}
           </div>
 
@@ -126,50 +104,17 @@
 
     </div>
 
-    {# Full Specifications Section (Below Images) #}
-    <div class="row mt-5">
-      <div class="col-12">
-        
-        {# Tabs for Specifications #}
-        <ul class="nav nav-tabs mb-4" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#specifications">Specifications</a>
-          </li>
-          {% if content.field_datasheet %}
-            <li class="nav-item">
-              <a class="nav-link" data-bs-toggle="tab" href="#downloads">Downloads</a>
-            </li>
-          {% endif %}
-        </ul>
-
-        <div class="tab-content">
-          
-          {# Specifications Tab #}
-          <div class="tab-pane fade show active" id="specifications">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                {{ content.field_cri }}
-                {{ content.field_mounting_type }}
-              </div>
-              <div class="col-md-6 mb-3">
-                {{ content.field_dimension_length }}
-                {{ content.field_dimension_width }}
-                {{ content.field_weight }}
-              </div>
-            </div>
+    {# Additional Features Section (Below Images) #}
+    {% if content.field_features %}
+      <div class="row mt-5">
+        <div class="col-12">
+          <div class="product-features">
+            <h2 class="h4 mb-3">Key Features</h2>
+            {{ content.field_features }}
           </div>
-
-          {# Downloads Tab #}
-          {% if content.field_datasheet %}
-            <div class="tab-pane fade" id="downloads">
-              {{ content.field_datasheet }}
-            </div>
-          {% endif %}
-
         </div>
-
       </div>
-    </div>
+    {% endif %}
 
   </div>
 </div>
