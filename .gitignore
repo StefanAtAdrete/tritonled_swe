@@ -1,0 +1,202 @@
+# Drupal + DDEV + Composer gitignore
+# ==================================
+# Baserat på drupal/recommended-project + DDEV best practices
+
+# ---------------------
+# 1. GENERATED FILES (ALDRIG COMMIT)
+# ---------------------
+
+# Composer dependencies
+/vendor/
+
+# Node dependencies  
+/node_modules/
+
+# Drupal generated files
+/web/sites/*/files/
+/web/sites/*/private/
+/private/
+/files_private/
+
+# Drupal settings (känslig info)
+/web/sites/*/settings.local.php
+/web/sites/*/services.local.yml
+/web/sites/development.services.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+*~
+
+# ---------------------
+# 2. SYSTEM FILES
+# ---------------------
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.directory
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---------------------
+# 3. IDE / EDITORS
+# ---------------------
+
+# PHPStorm / IntelliJ
+.idea/
+*.iml
+*.iws
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
+
+# ---------------------
+# 4. DRUPAL SPECIFIC
+# ---------------------
+
+# Core
+/core/
+/web/core/
+
+# Core composer scaffold files (auto-generated)
+/web/.csslintrc
+/web/.editorconfig
+/web/.eslintignore
+/web/.eslintrc.json
+/web/.gitattributes
+/web/.ht.router.php
+/web/.htaccess
+/web/autoload.php
+/web/index.php
+/web/robots.txt
+/web/update.php
+/web/web.config
+
+# Drupal console
+/.console/
+/.drupal/
+
+# Drush
+/drush/contrib/
+/drush/Commands/contrib/
+
+# PHPUnit cache
+/.phpunit.result.cache
+
+# Behat
+/behat.yml
+
+# ---------------------
+# 5. DDEV SPECIFIC
+# ---------------------
+
+# DDEV-generated database dumps
+/*.sql
+/*.sql.gz
+/*.mysql
+/*.mysql.gz
+
+# DDEV-generated backups
+/backups/
+
+# ---------------------
+# 6. SÄKERHET
+# ---------------------
+
+# SSH keys
+*.pem
+*.key
+*.pub
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Credentials
+.env
+.env.local
+.env.*.local
+settings.local.php
+services.local.yml
+
+# API keys / secrets
+secrets.yml
+secrets.json
+*.secret
+
+# ---------------------
+# 7. BUILD / CACHE
+# ---------------------
+
+# NPM
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sass
+.sass-cache/
+*.css.map
+
+# ---------------------
+# 8. BACKUP FILES
+# ---------------------
+
+*.bak
+*.backup
+*.old
+*~
+
+# ---------------------
+# 9. EXCEPTIONS (vad vi VILL ha i git)
+# ---------------------
+
+# Håll custom kod
+!/web/modules/custom/
+!/web/themes/custom/
+!/web/profiles/custom/
+
+# Håll sites/default struktur men inte files
+!/web/sites/default/
+/web/sites/default/files/
+
+# Håll config
+!/config/
+
+# Håll docs
+!/docs/
+
+# Håll scripts
+!/scripts/
+
+# Håll recipes
+!/recipes/
+
+# Håll root composer files
+!/.editorconfig
+!/.gitattributes
+!/composer.json
+!/composer.lock
+!/phpunit.xml
