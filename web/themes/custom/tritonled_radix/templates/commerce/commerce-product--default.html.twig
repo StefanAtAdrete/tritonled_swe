@@ -9,8 +9,8 @@
  * - product_entity: The product entity.
  * - product_url: The product URL.
  *
- * IMPORTANT: Use {{ product.field_name }} NOT {{ content.field_name }}
- * This preserves Commerce AJAX functionality for variations.
+ * IMPORTANT: Use {{ product }} NOT {{ content }}
+ * Commerce injects variation fields automatically via AJAX.
  *
  * Bootstrap classes are adjustable:
  * - mb-3, mb-4: margin-bottom
@@ -21,11 +21,11 @@
   <div class="container">
     <div class="row">
       
-      {# LEFT COLUMN - Product Images (60% width on desktop) #}
+      {# LEFT COLUMN - Images (60% width on desktop) #}
+      {# Commerce will inject variation images here via AJAX when available #}
       <div class="col-12 col-md-7 mb-4 mb-md-0">
         <div class="product-images">
-          {{ product.field_images }}
-          {{ product.field_product_media }}
+          {{ product|without('variations', 'field_series', 'title', 'field_short_description', 'body', 'field_brand', 'field_datasheet', 'field_features') }}
         </div>
       </div>
 
