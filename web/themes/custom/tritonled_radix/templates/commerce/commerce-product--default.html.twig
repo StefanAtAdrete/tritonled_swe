@@ -1,0 +1,112 @@
+{#
+/**
+ * @file
+ * Theme override for Commerce Product - Default
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper.
+ * - product: The rendered product fields.
+ * - product_entity: The product entity.
+ * - product_url: The product URL.
+ *
+ * IMPORTANT: Use {{ product.field_name }} NOT {{ content.field_name }}
+ * This preserves Commerce AJAX functionality for variations.
+ *
+ * Bootstrap classes are adjustable:
+ * - mb-3, mb-4: margin-bottom
+ * - col-md-7, col-md-5: grid columns
+ */
+#}
+<article{{ attributes.addClass('product-page', 'product--default', 'mb-5') }}>
+  <div class="container">
+    <div class="row">
+      
+      {# LEFT COLUMN - Product Images (60% width on desktop) #}
+      <div class="col-12 col-md-7 mb-4 mb-md-0">
+        <div class="product-images">
+          {{ product.field_images }}
+          {{ product.field_product_media }}
+        </div>
+      </div>
+
+      {# RIGHT COLUMN - Product Information (40% width on desktop) #}
+      <div class="col-12 col-md-5">
+        <div class="product-info">
+          
+          {# Series Badge #}
+          {% if product.field_series %}
+            <div class="product-series mb-2">
+              <span class="badge bg-secondary">{{ product.field_series }}</span>
+            </div>
+          {% endif %}
+
+          {# Product Title #}
+          <h1 class="product-title mb-3">{{ product_entity.title.value }}</h1>
+
+          {# Short Description #}
+          {% if product.field_short_description %}
+            <div class="product-short-description text-muted mb-3">
+              {{ product.field_short_description }}
+            </div>
+          {% endif %}
+
+          {# Body #}
+          {% if product.body %}
+            <div class="product-description mb-4">
+              {{ product.body }}
+            </div>
+          {% endif %}
+
+          {# Brand #}
+          {% if product.field_brand %}
+            <div class="product-brand mb-3">
+              <strong>Brand:</strong> {{ product.field_brand }}
+            </div>
+          {% endif %}
+
+          {# Product Variations - CRITICAL for AJAX #}
+          <div class="product-variations mb-4">
+            {{ product.variations }}
+          </div>
+
+          {# CTA Buttons #}
+          <div class="product-actions mb-3">
+            <button class="btn btn-primary btn-lg w-100 mb-2">
+              Request Quote
+            </button>
+            {% if product.field_datasheet %}
+              <div class="datasheet-link mt-2">
+                {{ product.field_datasheet }}
+              </div>
+            {% endif %}
+          </div>
+
+          {# Volume Pricing #}
+          <div class="volume-pricing-notice text-muted small text-center mb-3">
+            Volume Pricing Available
+          </div>
+
+          {# Free Shipping #}
+          <div class="shipping-notice text-muted small text-center">
+            Free shipping on orders over $5,000
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    {# Features Section #}
+    {% if product.field_features %}
+      <div class="row mt-5">
+        <div class="col-12">
+          <div class="product-features">
+            <h2 class="h4 mb-3">Key Features</h2>
+            {{ product.field_features }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</article>
