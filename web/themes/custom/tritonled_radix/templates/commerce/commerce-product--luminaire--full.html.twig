@@ -1,0 +1,225 @@
+{#
+/**
+ * @file
+ * Theme override for Commerce Product - Luminaire (Full view mode)
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper.
+ * - product: The product entity.
+ * - product_id: The product ID.
+ * - product_type: The product type (bundle).
+ * - url: Direct URL of the current product.
+ * - title: The product title.
+ * - content: All product fields.
+ *
+ * IMPORTANT: Do NOT override individual field templates to preserve Commerce AJAX.
+ * Use {{ content.field_name }} to render fields and maintain AJAX functionality.
+ *
+ * Bootstrap classes are used for spacing - edit these for design adjustments:
+ * - mb-3, mb-4, mb-5: margin-bottom (3=1rem, 4=1.5rem, 5=3rem)
+ * - mt-3, mt-4: margin-top
+ * - p-3, p-4: padding
+ * - col-md-7, col-md-5: grid columns (7+5=12, adjustable)
+ */
+#}
+<div{{ attributes.addClass('product-page', 'product--luminaire', 'mb-5') }}>
+  <div class="container">
+    <div class="row">
+      
+      {# LEFT COLUMN - Product Images (60% width on desktop) #}
+      <div class="col-12 col-md-7 mb-4 mb-md-0">
+        <div class="product-images">
+          {{ content.field_media_images }}
+        </div>
+      </div>
+
+      {# RIGHT COLUMN - Product Information (40% width on desktop) #}
+      <div class="col-12 col-md-5">
+        <div class="product-info">
+          
+          {# Series Badge #}
+          {% if content.field_product_series %}
+            <div class="product-series mb-2">
+              {{ content.field_product_series }}
+            </div>
+          {% endif %}
+
+          {# SKU #}
+          {% if content.field_sku_prefix %}
+            <div class="product-sku text-muted small mb-2">
+              SKU: {{ content.field_sku_prefix }}
+            </div>
+          {% endif %}
+
+          {# Product Title #}
+          <h1 class="product-title mb-3">{{ title }}</h1>
+
+          {# Product Description #}
+          {% if content.body %}
+            <div class="product-description mb-4">
+              {{ content.body }}
+            </div>
+          {% endif %}
+
+          {# Key Specifications Grid (4 items) #}
+          <div class="product-key-specs mb-4">
+            <div class="row g-3">
+              
+              {# Luminous Flux #}
+              {% if content.field_luminous_flux %}
+                <div class="col-6">
+                  <div class="spec-item p-3 border rounded">
+                    <div class="spec-icon mb-2">💡</div>
+                    <div class="spec-label small text-muted">Luminous Flux</div>
+                    <div class="spec-value fw-bold">{{ content.field_luminous_flux }}</div>
+                  </div>
+                </div>
+              {% endif %}
+
+              {# Efficiency #}
+              {% if content.field_efficiency %}
+                <div class="col-6">
+                  <div class="spec-item p-3 border rounded">
+                    <div class="spec-icon mb-2">⚡</div>
+                    <div class="spec-label small text-muted">Efficiency</div>
+                    <div class="spec-value fw-bold">{{ content.field_efficiency }}</div>
+                  </div>
+                </div>
+              {% endif %}
+
+              {# IP Rating #}
+              {% if content.field_ip_rating %}
+                <div class="col-6">
+                  <div class="spec-item p-3 border rounded">
+                    <div class="spec-icon mb-2">💧</div>
+                    <div class="spec-label small text-muted">Rating</div>
+                    <div class="spec-value fw-bold">{{ content.field_ip_rating }}</div>
+                  </div>
+                </div>
+              {% endif %}
+
+              {# Warranty #}
+              {% if content.field_warranty %}
+                <div class="col-6">
+                  <div class="spec-item p-3 border rounded">
+                    <div class="spec-icon mb-2">✓</div>
+                    <div class="spec-label small text-muted">Warranty</div>
+                    <div class="spec-value fw-bold">{{ content.field_warranty }}</div>
+                  </div>
+                </div>
+              {% endif %}
+
+            </div>
+          </div>
+
+          {# Product Variations - CRITICAL for AJAX #}
+          <div class="product-variations mb-4">
+            {{ content.variations }}
+          </div>
+
+          {# Stock Status #}
+          {% if content.field_stock_level %}
+            <div class="product-stock mb-3">
+              {{ content.field_stock_level }}
+            </div>
+          {% endif %}
+
+          {# Call to Action Buttons #}
+          <div class="product-actions mb-3">
+            <button class="btn btn-primary btn-lg w-100 mb-2">
+              Request Quote
+            </button>
+            {% if content.field_downloads %}
+              <button class="btn btn-outline-secondary w-100">
+                📄 Spec Sheet
+              </button>
+            {% endif %}
+          </div>
+
+          {# Volume Pricing Message #}
+          <div class="volume-pricing-notice text-muted small text-center mb-3">
+            Volume Pricing Available
+          </div>
+
+          {# Free Shipping Message #}
+          <div class="shipping-notice text-muted small text-center">
+            Free shipping on orders over $5,000
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    {# Full Specifications Section (Below Images) #}
+    <div class="row mt-5">
+      <div class="col-12">
+        
+        {# Tabs for Specifications, Certifications, Downloads #}
+        <ul class="nav nav-tabs mb-4" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#specifications">Specifications</a>
+          </li>
+          {% if content.field_certifications %}
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#certifications">Certifications</a>
+            </li>
+          {% endif %}
+          {% if content.field_downloads %}
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#downloads">Downloads</a>
+            </li>
+          {% endif %}
+        </ul>
+
+        <div class="tab-content">
+          
+          {# Specifications Tab #}
+          <div class="tab-pane fade show active" id="specifications">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ content.field_cri }}
+                {{ content.field_color_temperature_range }}
+                {{ content.field_beam_angle }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ content.field_dimensions }}
+                {{ content.field_weight }}
+                {{ content.field_mounting_type }}
+              </div>
+            </div>
+          </div>
+
+          {# Certifications Tab #}
+          {% if content.field_certifications %}
+            <div class="tab-pane fade" id="certifications">
+              {{ content.field_certifications }}
+            </div>
+          {% endif %}
+
+          {# Downloads Tab #}
+          {% if content.field_downloads %}
+            <div class="tab-pane fade" id="downloads">
+              {{ content.field_downloads }}
+            </div>
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+
+    {# Ideal Applications Section #}
+    {% if content.field_application_areas %}
+      <div class="row mt-5">
+        <div class="col-12">
+          <h2 class="mb-4">Ideal Applications</h2>
+          <div class="application-areas">
+            {{ content.field_application_areas }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
