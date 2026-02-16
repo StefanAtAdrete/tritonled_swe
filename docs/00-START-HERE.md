@@ -2,6 +2,57 @@
 
 ⚠️ **CLAUDE: LÄS DENNA FIL FÖRST VID VARJE SESSION**
 
+**DÄREFTER**: Läs `/docs/CURRENT-TASK.md` (om den finns) för pågående uppgift
+
+---
+
+## 🚨 KRITISKT: FILSYSTEM-REGLER (BRYTS ALDRIG!)
+
+### Claude har tillgång till 2 datorer:
+
+**1. STEFANS MAC (Drupal-projektet)** ← **ANVÄND ALLTID FÖR PROJEKTET**
+- Sökväg: `/Users/steffes/Projekt/tritonled/`
+- Verktyg: `Filesystem:*` (Capital F)
+
+**2. CLAUDES DATOR (temporära filer)**
+- Sökväg: `/home/claude/`
+- Verktyg: `bash_tool`, `create_file`
+
+### ✅ RÄTT för Drupal-projektet:
+```
+Filesystem:read_text_file     → Läsa filer
+Filesystem:write_file         → Skapa/uppdatera filer
+Filesystem:list_directory     → Lista kataloger
+Filesystem:search_files       → Söka filer
+Filesystem:move_file          → Flytta/byta namn
+Filesystem:create_directory   → Skapa kataloger
+```
+
+### ❌ FEL för Drupal-projektet:
+```
+bash_tool                     → Kör BARA på Claudes dator
+create_file                   → Skapar på Claudes dator
+ls, find, cat kommandon       → Fungerar INTE på Stefans Mac
+```
+
+### 🔧 För DDEV/Drush kommandon:
+```
+✅ GE Stefan kommandot att köra själv
+❌ ALDRIG försök köra ddev/drush själv
+```
+
+### Exempel:
+```bash
+# ❌ FEL (försöker på Claudes dator):
+bash_tool: ls /Users/steffes/Projekt/tritonled/web/themes
+
+# ✅ RÄTT (använder Stefans Mac):
+Filesystem:list_directory
+path: /Users/steffes/Projekt/tritonled/web/themes
+```
+
+**OM DU GLÖMMER DETTA = PROJEKTET FUNGERAR INTE!**
+
 ## 📋 Snabbfakta
 
 - **Projekt**: TritonLED E-commerce (LED luminaires)
@@ -12,12 +63,22 @@
 - **Commerce**: Drupal Commerce (quote-baserat system)
 - **Målgrupp**: Professionella köpare (installatörer, elektriker, projektledare)
 
-## 🎯 Före varje uppgift
+## 🎯 Task-Driven Workflow (ALLTID)
 
-1. ✅ Läs relevant fil från `01-decision-trees/`
-2. ✅ Kolla `03-solutions/` om problemet lösts tidigare
-3. ✅ Presentera **PLAN** innan implementation
-4. ✅ Vänta på **"OK"** från Stefan
+**Vid ny uppgift:**
+1. ✅ Skapa `/docs/tasks/task-NNN-beskrivning.md` från TASK-TEMPLATE.md
+2. ✅ Fyll i **DEFINE** (mål, syfte, acceptanskriterier) → Vänta på Stefan OK
+3. ✅ Fyll i **PLAN** (beslutsträd, lösning, motivering) → Vänta på Stefan OK
+4. ✅ **IMPLEMENT** steg-för-steg med git commits `[TASK-NNN] Message`
+5. ✅ **VERIFY** mot acceptanskriterier
+6. ✅ Om FAIL → Iteration 2 i samma task-fil
+7. ✅ Om PASS → Dokumentera i `/docs/03-solutions/` och markera task som Completed
+
+**Varje git commit:**
+```bash
+git commit -m "[TASK-NNN] Beskrivning av ändring"
+git commit -m "[TASK-NNN-01] Sub-task beskrivning"
+```
 
 ## 🚫 Arbetsregler - ALDRIG
 
@@ -47,7 +108,7 @@
 - **Base theme**: Radix
 - **CSS Framework**: Bootstrap 5.3 (via CDN)
 - **Layout**: Layout Builder + Bootstrap Layout Builder module
-- **Display**: Display Suite för field management
+
 - **Custom CSS**: Minimalt - endast i `css/components/` när absolut nödvändigt
 
 ### Commerce
@@ -79,7 +140,7 @@
 ### Layout Approach
 - ✅ Layout Builder för alla sidlayouter
 - ✅ Bootstrap Layout Builder för grids
-- ✅ Display Suite för field placering
+- ✅ Field formatters + view modes för field display
 - ❌ INTE Paragraphs (överdrivet)
 
 ## 🔍 När du är osäker
@@ -140,7 +201,7 @@ view /Users/steffes/Projekt/tritonled/docs/[fil]
 **KRITISK ORDNING (följ ALLTID):**
 1. **Bootstrap klasser FÖRST** - 80% kan lösas här
 2. **Core Drupal functions** - Responsive images, view modes, image styles
-3. **Kan core lösa det?** - Layout Builder, Views, Display Suite, formatters
+3. **Kan core lösa det?** - Layout Builder, Views, field formatters, view modes
 4. **Views + minimal templates** - Endast om nödvändigt
 5. **SDC** - Sista utväg (nästan aldrig behövs)
 
@@ -170,6 +231,7 @@ ddev drush watchdog:show --severity=Error
 ```
 /docs/
 ├── 00-START-HERE.md          ← Du är här
+├── CURRENT-TASK.md           ← Symlänk till aktiv task (läs efter 00-START-HERE)
 ├── DRUPAL-DECISION-TREE.md   ← Huvudbeslutsträd
 ├── 01-decision-trees/
 │   ├── commerce-decision-tree.md
@@ -178,14 +240,19 @@ ddev drush watchdog:show --severity=Error
 │   ├── coding-standards.md
 │   ├── module-preferences.md
 │   ├── approved-modules.md
-│   └── design-system.md       ← NY: Bootstrap + TritonLED standards
-├── 03-solutions/
+│   └── design-system.md
+├── 03-solutions/             ← Lärdomar från completade tasks
 │   ├── commerce-ajax-solution.md
 │   └── responsive-images.md
-└── 04-workflows/
-    ├── design-testing.md      ← NY: Design Testing Framework
-    ├── sdc-workflow.md        ← NY: SDC Component Workflow
-    └── testing-checklist.md
+├── 04-workflows/
+│   ├── design-testing.md
+│   ├── sdc-workflow.md
+│   └── testing-checklist.md
+└── tasks/                    ← Task-Driven Workflow
+    ├── TASK-TEMPLATE.md      ← Mall för alla tasks
+    ├── README.md
+    ├── task-001-hero-carousel.md
+    └── task-002-product-listing.md
 ```
 
 ## 🚀 Quick Commands
@@ -217,11 +284,12 @@ ddev snapshot restore [name]
 1. **Config > Modules > Themes > Custom Code**
 2. **Layout Builder för layouts**
 3. **Bootstrap för styling**
-4. **Display Suite för field management**
+4. **Field formatters + view modes för fields**
 5. **Fråga innan koda**
 
 ---
 
-**Version**: 1.0  
+**Version**: 2.0  
 **Skapad**: 2025-01-10  
+**Uppdaterad**: 2025-02-16 - Task-Driven Workflow  
 **Författare**: Stefan + Claude
