@@ -1,4 +1,4 @@
-uuid: 98e086c9-c7a1-46b7-91ec-d5be7938887c
+uuid: fae89236-dd6d-435d-a0e1-79a056ecb5f2
 langcode: en
 status: true
 dependencies:
@@ -11,7 +11,7 @@ _core:
 id: tritonled_radix_content
 theme: tritonled_radix
 region: content
-weight: 0
+weight: -3
 provider: null
 plugin: system_main_block
 settings:

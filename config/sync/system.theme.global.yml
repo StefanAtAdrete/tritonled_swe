@@ -4,13 +4,13 @@ favicon:
   mimetype: image/vnd.microsoft.icon
   path: ''
   url: ''
-  use_default: true
+  use_default: false
 features:
   comment_user_picture: true
   comment_user_verification: true
   favicon: true
   node_user_picture: true
 logo:
-  path: ''
+  path: 'public://triton_led_sweden.png'
   url: null
-  use_default: true
+  use_default: false

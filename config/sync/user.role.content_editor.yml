@@ -1,4 +1,4 @@
-uuid: c0d6e56c-c913-4349-b986-60b04c7f87c5
+uuid: f822266a-35e5-4524-9804-454bb1ff96ef
 langcode: en
 status: true
 dependencies:
@@ -14,6 +14,7 @@ dependencies:
     - path
     - system
     - taxonomy
+    - toolbar
 _core:
   default_config_hash: e_wG1u7SrGaJbY2-Szgbgl-c8T3kdirU3uTNq2c_QJQ
 id: content_editor
@@ -25,6 +26,7 @@ permissions:
   - 'access content overview'
   - 'access contextual links'
   - 'access files overview'
+  - 'access toolbar'
   - 'administer url aliases'
   - 'create article content'
   - 'create page content'

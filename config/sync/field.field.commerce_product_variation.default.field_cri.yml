@@ -1,0 +1,23 @@
+uuid: 82b330fd-d63b-4293-b9de-32bff77b6c44
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_cri
+id: commerce_product_variation.default.field_cri
+field_name: field_cri
+entity_type: commerce_product_variation
+bundle: default
+label: 'CRI (Color Rendering Index)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

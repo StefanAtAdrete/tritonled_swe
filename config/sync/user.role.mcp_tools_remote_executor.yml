@@ -1,9 +1,0 @@
-uuid: b0a56d68-ae1b-4fe0-88cf-28734a1774ad
-langcode: en
-status: true
-dependencies: {  }
-id: mcp_tools_remote_executor
-label: 'MCP Tools Remote Executor'
-weight: 5
-is_admin: false
-permissions: {  }

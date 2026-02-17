@@ -1,9 +1,0 @@
-uuid: 880e237d-b205-4248-a182-6e11d5dbed44
-langcode: en
-status: true
-dependencies: {  }
-name: 'Application Areas'
-vid: application_areas
-description: 'Användningsområden där produkten passar'
-weight: 0
-new_revision: false

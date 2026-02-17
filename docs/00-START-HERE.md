@@ -63,6 +63,52 @@ path: /Users/steffes/Projekt/tritonled/web/themes
 - **Commerce**: Drupal Commerce (quote-baserat system)
 - **Målgrupp**: Professionella köpare (installatörer, elektriker, projektledare)
 
+## 🧩 Huvuduppgifter delas ALLTID upp i sub-tasks
+
+**Innan du börjar med någon uppgift – identifiera sub-tasks och deras ordning.**
+
+En frontend-sektion i Drupal är aldrig bara en uppgift. Den består av lager som
+måste byggas i rätt ordning. Verifiera verktyg och regler per sub-task INNAN implementation.
+
+### Standardordning för frontend-sektioner:
+
+```
+1. Innehåll       → Finns rätt content type / media type? (produkter, noder, media)
+2. Image styles   → Rätt bildformat per breakpoint (MÅSTE finnas innan view modes)
+3. View modes     → Hur renderas innehållet i sin kontext? (hero, card, teaser...)
+4. Views          → Samlar och strukturerar (block/page) med contrib format-plugins
+5. Layout Builder → Placerar blocket på sidan
+6. Styling        → Bootstrap klasser FÖRST, sedan minimal CSS (kräver godkännande)
+7. SDC/Template   → Sista utväg, kräver EXPLICIT godkännande
+```
+
+### Viktigt om innehåll:
+- **Använd alltid befintliga content types/produkter** innan du föreslår nya
+- Produkter (Commerce) finns redan – använd dem för produktrelaterade sektioner
+- Skapa nytt content type ENDAST om befintligt verkligen inte passar
+
+### Vad kräver godkännande?
+
+| Åtgärd | Kräver godkännande? |
+|--------|---------------------|
+| Config via admin UI | NEJ |
+| Image styles, view modes, views | NEJ |
+| Bootstrap klasser | NEJ |
+| Preprocess hook | JA |
+| Custom CSS-fil | JA |
+| Template (.html.twig) | JA – explicit |
+| SDC-komponent | JA – explicit |
+| Custom modul | JA – explicit |
+
+### Commerce-undantag:
+- Drupal Commerce kräver templates som **inte stör AJAX**
+- Templates för produktsidor får ALDRIG blockera variation field injection
+- Se: `03-solutions/commerce-ajax-solution.md`
+
+**Läs mer**: `04-workflows/task-decomposition.md`
+
+---
+
 ## 🎯 Task-Driven Workflow (ALLTID)
 
 **Vid ny uppgift:**
@@ -255,13 +301,33 @@ ddev drush watchdog:show --severity=Error
     └── task-002-product-listing.md
 ```
 
+## ⚠️ KRITISKT: Config export INNAN import
+
+**ALDRIG kör `ddev drush cim -y` direkt efter att nya YAML-filer lagts till i config/sync.**
+
+Drupal jämför config/sync mot aktiv databas-config. Filer som finns i databasen men
+INTE i config/sync kommer att **raderas** vid import.
+
+### Rätt arbetsflöde för config-ändringar:
+
+```bash
+1. ddev drush cex -y       ← Exportera ALL aktiv config till config/sync FÖRST
+2. Lägg till/ändra YAML    ← Nu är alla befintliga filer redan där
+3. ddev drush cim -y       ← Importera — inget raderas, bara nytt läggs till
+4. ddev drush cr           ← Rensa cache
+```
+
+**Detta gäller ALLTID** — oavsett om du skriver YAML manuellt eller via admin UI.
+
+---
+
 ## 🚀 Quick Commands
 
 ```bash
 # Cache
 ddev drush cr
 
-# Config export/import
+# Config export/import — KÖR ALLTID cex INNAN cim!
 ddev drush cex -y
 ddev drush cim -y
 
@@ -289,7 +355,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.0  
+**Version**: 2.1  
 **Skapad**: 2025-01-10  
-**Uppdaterad**: 2025-02-16 - Task-Driven Workflow  
+**Uppdaterad**: 2026-02-17 - Lade till sub-task metodiken  
 **Författare**: Stefan + Claude

@@ -1,4 +1,4 @@
-uuid: 0273aadb-da6a-4a5a-ba57-5fe99be136ca
+uuid: bfe0344e-76e4-4427-a2ac-a680f2f6fdac
 langcode: en
 status: true
 dependencies:
@@ -6,6 +6,7 @@ dependencies:
     - commerce_order.commerce_order_item_type.default
     - core.entity_form_mode.commerce_order_item.add_to_cart
   module:
+    - commerce_price
     - commerce_product
   enforced:
     module:
@@ -21,14 +22,31 @@ content:
   purchased_entity:
     type: commerce_product_variation_attributes
     weight: 0
+    region: content
+    settings:
+      hide_single: false
+    third_party_settings: {  }
+  quantity:
+    type: number
+    weight: 2
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
+  total_price:
+    type: commerce_price_default
+    weight: 3
+    region: content
     settings: {  }
     third_party_settings: {  }
+  unit_price:
+    type: commerce_price_default
+    weight: 1
     region: content
+    settings: {  }
+    third_party_settings: {  }
 hidden:
   adjustments: true
   created: true
-  quantity: true
   status: true
-  total_price: true
   uid: true
-  unit_price: true

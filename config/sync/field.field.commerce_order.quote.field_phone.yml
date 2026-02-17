@@ -1,0 +1,21 @@
+uuid: 999ca021-10f5-498f-b547-9d6fffd95d67
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_type.quote
+    - field.storage.commerce_order.field_phone
+  module:
+    - telephone
+id: commerce_order.quote.field_phone
+field_name: field_phone
+entity_type: commerce_order
+bundle: quote
+label: Phone
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: telephone

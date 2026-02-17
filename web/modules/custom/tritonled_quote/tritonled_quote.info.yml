@@ -1,0 +1,8 @@
+name: 'TritonLED Quote'
+type: module
+description: 'Quote-specific customizations for Commerce Order checkout'
+package: TritonLED
+core_version_requirement: ^11
+dependencies:
+  - commerce:commerce_order
+  - inline_entity_form:inline_entity_form

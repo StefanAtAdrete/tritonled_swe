@@ -1,4 +1,4 @@
-uuid: 009ae0ac-a385-4dc9-a161-d5b6a4907166
+uuid: 2bb7d637-1a14-44db-95f7-69965e2968d3
 langcode: en
 status: true
 dependencies:
@@ -9,13 +9,13 @@ field_name: field_mounting_type
 entity_type: commerce_product_variation
 type: string
 settings:
-  max_length: null
-  case_sensitive: null
-  is_ascii: null
+  max_length: 255
+  case_sensitive: false
+  is_ascii: false
 module: core
 locked: false
 cardinality: 1
-translatable: false
+translatable: true
 indexes: {  }
 persist_with_no_fields: false
 custom_storage: false

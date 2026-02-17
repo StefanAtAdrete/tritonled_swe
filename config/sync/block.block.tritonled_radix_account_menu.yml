@@ -1,4 +1,4 @@
-uuid: 9af0eba6-7f72-44be-8349-6e47dad8b193
+uuid: c8293feb-4885-4888-a9eb-3942cabf354e
 langcode: en
 status: true
 dependencies:
@@ -12,8 +12,8 @@ _core:
   default_config_hash: gmxYWWHmgbe0Pnv8y48ZLSLH5mEHejOjAP6RLxUfdzU
 id: tritonled_radix_account_menu
 theme: tritonled_radix
-region: navbar_branding
-weight: -4
+region: navbar_right
+weight: -6
 provider: null
 plugin: 'system_menu_block:account'
 settings:

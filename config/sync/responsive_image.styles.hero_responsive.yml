@@ -1,0 +1,30 @@
+uuid: e046afd3-334d-48a7-b1c3-35496e96bd11
+langcode: en
+status: true
+dependencies:
+  config:
+    - image.style.hero_mobile
+    - image.style.hero_tablet
+    - image.style.hero_desktop
+  theme:
+    - tritonled_radix
+id: hero_responsive
+label: 'Hero Responsive'
+image_style_mappings:
+  -
+    image_mapping_type: image_style
+    image_mapping: hero_mobile
+    breakpoint_id: tritonled_radix.mobile
+    multiplier: 1x
+  -
+    image_mapping_type: image_style
+    image_mapping: hero_tablet
+    breakpoint_id: tritonled_radix.tablet
+    multiplier: 1x
+  -
+    image_mapping_type: image_style
+    image_mapping: hero_desktop
+    breakpoint_id: tritonled_radix.desktop
+    multiplier: 1x
+breakpoint_group: tritonled_radix
+fallback_image_style: hero_desktop
