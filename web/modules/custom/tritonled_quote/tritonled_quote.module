@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * @file
+ * Quote checkout customizations for TritonLED.
+ *
+ * This module removes unit_price field from Quote order checkout while
+ * preserving price data in the database for JSON/API exports.
+ *
+ * @see /docs/modules/custom/tritonled_quote-DECISION.md
+ */
+
+/**
+ * Implements hook_inline_entity_form_table_fields_alter().
+ *
+ * Remove unit_price field from Quote order items table in checkout.
+ *
+ * Business requirement:
+ * - Fas 1: Quote-based system with no public pricing in checkout UI
+ * - Prices must remain in database for future JSON/API exports to partners
+ * - Visual hiding via CSS is insufficient (prices would be in HTML source)
+ *
+ * Technical implementation:
+ * - Removes 'unit_price' from the fields array before table is built
+ * - Server-side removal ensures prices never render in HTML
+ * - Database values remain untouched for API/export functionality
+ *
+ * Future enhancement (Fas 2):
+ * When e-commerce is added alongside Quote system, this hook should be
+ * enhanced to conditionally remove unit_price only for Quote orders:
+ *
+ * @code
+ * // Get parent order from form state to check bundle
+ * if ($parent_order && $parent_order->bundle() === 'quote') {
+ *   unset($fields['unit_price']);
+ * }
+ * @endcode
+ *
+ * @param array $fields
+ *   The fields to be displayed in the IEF table, keyed by field name.
+ * @param array $context
+ *   Context array with keys:
+ *   - parent_entity_type: The type of the parent entity.
+ *   - parent_bundle: The bundle of the parent entity.
+ *   - field_name: The name of the reference field.
+ *   - entity_type: The type of the referenced entities.
+ *   - allowed_bundles: Bundles allowed on the reference field.
+ *
+ * @see \Drupal\commerce_order\Form\OrderItemInlineForm::getTableFields()
+ * @see \Drupal\inline_entity_form\Plugin\Field\FieldWidget\InlineEntityFormComplex::formElement()
+ */
+function tritonled_quote_inline_entity_form_table_fields_alter(array &$fields, array $context) {
+  // Only act on commerce_order_item entities.
+  if ($context['entity_type'] !== 'commerce_order_item') {
+    return;
+  }
+
+  // Only act when parent is a commerce_order.
+  // This ensures we're modifying checkout context, not admin forms.
+  if ($context['parent_entity_type'] !== 'commerce_order') {
+    return;
+  }
+
+  // Fas 1: Remove unit_price for all orders.
+  // Currently only Quote orders exist, so this is safe.
+  // Fas 2 TODO: Add conditional check for order bundle here.
+  if (isset($fields['unit_price'])) {
+    unset($fields['unit_price']);
+  }
+}

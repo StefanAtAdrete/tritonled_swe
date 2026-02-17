@@ -1,7 +1,7 @@
-uuid: 1437988f-69d6-4f82-aebb-3ab1d51cbf8c
+uuid: 9ada91b3-14f0-46df-bb56-52ce53d7b430
 langcode: en
 status: true
 dependencies: {  }
 id: cct
-label: CCT
+label: 'CCT (Color Temperature)'
 elementType: select

@@ -1,0 +1,18 @@
+uuid: b0fdd59d-c3ce-47e0-ba40-5f405aa14497
+langcode: en
+status: true
+dependencies:
+  module:
+    - focal_point
+name: hero_desktop
+label: 'Hero Desktop (1920x480)'
+effects:
+  736f1f25-5356-420d-9ebd-0794b0f9e242:
+    uuid: 736f1f25-5356-420d-9ebd-0794b0f9e242
+    id: focal_point_scale_and_crop
+    weight: 1
+    data:
+      width: 1920
+      height: 480
+      crop_type: focal_point
+pipeline: ''

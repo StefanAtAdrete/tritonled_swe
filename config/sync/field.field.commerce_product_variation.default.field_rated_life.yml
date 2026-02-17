@@ -1,0 +1,23 @@
+uuid: 08b28557-9cae-4ec7-997e-181fc60dbf28
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_rated_life
+id: commerce_product_variation.default.field_rated_life
+field_name: field_rated_life
+entity_type: commerce_product_variation
+bundle: default
+label: 'Rated Life (L70)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: hrs
+field_type: integer

@@ -1,0 +1,7 @@
+uuid: a0e8418b-8987-490d-a174-e2168f5553ef
+langcode: en
+status: true
+dependencies: {  }
+id: voltage
+label: Voltage
+elementType: select

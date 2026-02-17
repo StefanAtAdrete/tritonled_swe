@@ -1,0 +1,11 @@
+uuid: 75997dc0-db98-434a-85fc-d54faa9b9eb4
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+id: commerce_order.checkout
+label: Checkout
+description: null
+targetEntityType: commerce_order
+cache: true

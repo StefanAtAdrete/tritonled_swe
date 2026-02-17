@@ -1,21 +1,23 @@
-uuid: 666889ce-b029-4e52-b5a9-98fe319d5ded
+uuid: d8f6c723-2c67-4525-bdc5-5bce8f5f1832
 langcode: en
 status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.default
     - field.field.commerce_product.default.body
-    - field.field.commerce_product.default.field_application_areas
-    - field.field.commerce_product.default.field_certifications
-    - field.field.commerce_product.default.field_downloads
-    - field.field.commerce_product.default.field_hero_media
-    - field.field.commerce_product.default.field_product_series
-    - field.field.commerce_product.default.field_product_tags
-    - field.field.commerce_product.default.field_show_in_hero
-    - field.field.commerce_product.default.field_sku_prefix
-    - field.field.commerce_product.default.field_warranty
+    - field.field.commerce_product.default.field_brand
+    - field.field.commerce_product.default.field_datasheet
+    - field.field.commerce_product.default.field_features
+    - field.field.commerce_product.default.field_images
+    - field.field.commerce_product.default.field_product_media
+    - field.field.commerce_product.default.field_series
+    - field.field.commerce_product.default.field_short_description
+    - image.style.thumbnail
   module:
     - commerce
+    - file
+    - image
+    - media_library
     - path
     - text
 _core:
@@ -33,111 +35,79 @@ content:
       rows: 9
       summary_rows: 3
       placeholder: ''
+      show_summary: false
     third_party_settings: {  }
   created:
     type: datetime_timestamp
-    weight: 5
+    weight: 4
     region: content
     settings: {  }
     third_party_settings: {  }
-  field_application_areas:
-    type: entity_reference_autocomplete
-    weight: 15
+  field_brand:
+    type: string_textfield
+    weight: 8
     region: content
     settings:
-      match_operator: CONTAINS
-      match_limit: 10
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  field_certifications:
-    type: entity_reference_autocomplete
-    weight: 16
+  field_datasheet:
+    type: file_generic
+    weight: 9
     region: content
     settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
-      placeholder: ''
+      progress_indicator: throbber
     third_party_settings: {  }
-  field_downloads:
-    type: entity_reference_autocomplete
-    weight: 19
+  field_features:
+    type: text_textarea
+    weight: 10
     region: content
     settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
+      rows: 5
       placeholder: ''
     third_party_settings: {  }
-  field_hero_media:
-    type: entity_reference_autocomplete
+  field_images:
+    type: image_image
     weight: 11
     region: content
     settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
-      placeholder: ''
+      progress_indicator: throbber
+      preview_image_style: thumbnail
     third_party_settings: {  }
-  field_product_series:
-    type: entity_reference_autocomplete
-    weight: 14
+  field_product_media:
+    type: media_library_widget
+    weight: 10
     region: content
     settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
-      placeholder: ''
+      media_types:
+        - image
+        - video
     third_party_settings: {  }
-  field_product_tags:
-    type: entity_reference_autocomplete
-    weight: 17
-    region: content
-    settings:
-      match_operator: CONTAINS
-      match_limit: 10
-      size: 60
-      placeholder: ''
-    third_party_settings: {  }
-  field_show_in_hero:
-    type: boolean_checkbox
+  field_series:
+    type: string_textfield
     weight: 12
     region: content
     settings:
-      display_label: true
-    third_party_settings: {  }
-  field_sku_prefix:
-    type: string_textfield
-    weight: 13
-    region: content
-    settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  field_warranty:
-    type: number
-    weight: 18
+  field_short_description:
+    type: string_textarea
+    weight: 13
     region: content
     settings:
+      rows: 5
       placeholder: ''
-    third_party_settings: {  }
-  langcode:
-    type: language_select
-    weight: 2
-    region: content
-    settings:
-      include_locked: true
     third_party_settings: {  }
   path:
     type: path
-    weight: 7
+    weight: 5
     region: content
     settings: {  }
     third_party_settings: {  }
   status:
     type: boolean_checkbox
-    weight: 8
+    weight: 6
     region: content
     settings:
       display_label: true
@@ -160,14 +130,9 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-  translation:
-    weight: 10
-    region: content
-    settings: {  }
-    third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 4
+    weight: 3
     region: content
     settings:
       match_operator: CONTAINS
@@ -175,5 +140,14 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
-hidden:
-  variations: true
+  variations:
+    type: entity_reference_autocomplete
+    weight: 7
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden: {  }

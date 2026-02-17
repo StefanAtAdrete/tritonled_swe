@@ -1,4 +1,4 @@
-uuid: 727a27db-a2aa-4890-8c6d-c937c402782b
+uuid: 703657ff-a948-4576-8dd5-f77ebbaa3ee2
 langcode: en
 status: true
 dependencies:
@@ -25,7 +25,6 @@ hidden:
   created: true
   default_currency: true
   is_default: true
-  langcode: true
   mail: true
   name: true
   prices_include_tax: true

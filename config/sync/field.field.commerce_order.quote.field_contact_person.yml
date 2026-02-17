@@ -1,0 +1,19 @@
+uuid: 0973d866-fdaa-4795-904b-6378d0e4d453
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_type.quote
+    - field.storage.commerce_order.field_contact_person
+id: commerce_order.quote.field_contact_person
+field_name: field_contact_person
+entity_type: commerce_order
+bundle: quote
+label: 'Contact Person'
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

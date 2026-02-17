@@ -32,7 +32,10 @@ function tritonled_radix_theme_suggestions_form_alter(array &$suggestions, array
  * Implements hook_form_alter() to make alterations to existing forms.
  */
 function tritonled_radix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  // Form alterations if needed
+  // Debug: Log all checkout form IDs
+  if (strpos($form_id, 'commerce') !== FALSE || strpos($form_id, 'checkout') !== FALSE) {
+    \Drupal::logger('tritonled_radix')->notice('Form ID: @form_id', ['@form_id' => $form_id]);
+  }
 }
 
 /**
@@ -63,5 +66,26 @@ function tritonled_radix_preprocess_image(&$variables) {
   }
   if (isset($variables['attributes']['height'])) {
     unset($variables['attributes']['height']);
+  }
+}
+
+/**
+ * Implements hook_inline_entity_form_table_fields_alter().
+ */
+function tritonled_radix_inline_entity_form_table_fields_alter(array &$fields, array $context) {
+  // Debug logging
+  \Drupal::logger('tritonled_radix')->notice('IEF Table Fields Alter - Entity Type: @type, Context: @context, Fields: @fields', [
+    '@type' => $context['entity_type'],
+    '@context' => print_r($context, TRUE),
+    '@fields' => print_r(array_keys($fields), TRUE),
+  ]);
+  
+  // Only act on commerce_order_item entities
+  if ($context['entity_type'] == 'commerce_order_item') {
+    // Remove the unit_price field
+    if (isset($fields['unit_price'])) {
+      unset($fields['unit_price']);
+      \Drupal::logger('tritonled_radix')->notice('Removed unit_price field from IEF table');
+    }
   }
 }

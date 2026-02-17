@@ -1,0 +1,22 @@
+uuid: 38250a48-c819-4404-a7b0-5d8148b1f56e
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_cart
+  theme:
+    - tritonled_radix
+id: tritonled_radix_cart
+theme: tritonled_radix
+region: navbar_right
+weight: 0
+provider: null
+plugin: commerce_cart
+settings:
+  id: commerce_cart
+  label: 'Request a quote'
+  label_display: visible
+  provider: commerce_cart
+  dropdown: true
+  show_if_empty: true
+visibility: {  }

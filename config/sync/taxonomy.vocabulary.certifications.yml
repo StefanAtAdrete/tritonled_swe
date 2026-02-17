@@ -1,9 +1,0 @@
-uuid: 15b8b070-a057-485c-9ef9-ca2c49e6b51f
-langcode: en
-status: true
-dependencies: {  }
-name: Certifications
-vid: certifications
-description: 'Officiella certifieringar och standarder'
-weight: 0
-new_revision: false

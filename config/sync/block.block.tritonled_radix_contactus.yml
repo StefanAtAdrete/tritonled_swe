@@ -1,0 +1,23 @@
+uuid: 274938dc-1d34-4f12-992d-bdb1b43f3b06
+langcode: en
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
+  module:
+    - block_content
+  theme:
+    - tritonled_radix
+id: tritonled_radix_contactus
+theme: tritonled_radix
+region: footer
+weight: 0
+provider: null
+plugin: 'block_content:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
+settings:
+  id: 'block_content:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
+  label: 'Contact us'
+  label_display: visible
+  provider: block_content
+  view_mode: full
+visibility: {  }

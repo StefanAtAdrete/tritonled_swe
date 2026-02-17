@@ -1,0 +1,19 @@
+uuid: a9f6afbf-5d35-407a-a2a1-914b23ac0529
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_control_system
+id: commerce_product_variation.default.field_control_system
+field_name: field_control_system
+entity_type: commerce_product_variation
+bundle: default
+label: 'Control System'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

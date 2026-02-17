@@ -1,0 +1,23 @@
+/**
+ * @file
+ * Quote-specific styles for checkout flow.
+ *
+ * Hide price information in Quote checkout while preserving data for API exports.
+ */
+
+/**
+ * Hide Unit Price column in Quote checkout order items table.
+ * 
+ * Applied via preprocess_table hook in tritonled_radix.theme
+ * which adds .quote-hide-price-column class to header and cells.
+ */
+.quote-order-items-table .quote-hide-price-column {
+  display: none !important;
+}
+
+/**
+ * Hide "Show row weights" button in checkout.
+ */
+.layout-region-checkout-main .tabledrag-toggle-weight-wrapper {
+  display: none;
+}
