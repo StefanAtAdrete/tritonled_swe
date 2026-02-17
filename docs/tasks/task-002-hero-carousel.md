@@ -1,7 +1,7 @@
 # TASK-002: Hero Carousel
 
 **Created**: 2026-02-17
-**Status**: In Progress
+**Status**: ✅ Completed (E+F kvar som justeringar)
 **Last Updated**: 2026-02-17
 **Related Tasks**: TASK-001
 
@@ -140,27 +140,14 @@ foreach (\$styles as \$style_id) {
 ---
 
 ### SUB-TASK E: Placering i Layout Builder
-**Mål**: Lägga carousel-blocket i startsidans layout  
-**Approach**: Layout Builder på startsidan (Basic page eller custom frontpage)  
-**Obs**: Blocket ska vara fullbredd – kräver rätt section-inställning i Layout Builder
-
 **Verktyg**: Layout Builder admin UI  
-**Kräver kod?**: Möjligen minimal CSS för fullbredd + overlay  
-**Status**: ⏳ Ej påbörjad
+**Kräver kod?**: NEJ  
+**Status**: ✅ Klar — Edge to edge, no gutters
 
 ---
 
 ### SUB-TASK F: Styling (overlay, text, responsiv ratio)
-**Mål**: Matcha designen – mörk overlay, vit text, rätt proportioner  
-**Approach**: Bootstrap klasser FÖRST, sedan minimal custom CSS om nödvändigt  
-**Att lösa**:
-- 4:1 ratio desktop, 1:1 mobil → CSS aspect-ratio på container
-- Mörk overlay → Bootstrap `bg-dark bg-opacity-50` eller CSS
-- Textplacering → Bootstrap positioning classes
-
-**Verktyg**: Bootstrap utility classes + eventuellt minimal CSS i `css/components/`  
-**Kräver kod?**: Möjligen minimal CSS – kräver godkännande  
-**Status**: ⏳ Ej påbörjad
+**Status**: ⏳ Sparas till designfas — justera höjd, text-position, header-gap
 
 ---
 
