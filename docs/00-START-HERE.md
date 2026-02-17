@@ -161,7 +161,10 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - **System**: Quote-baserat (EJ direktköp)
 - **Produkter**: LED luminaires med varianter
 - **Attribut**: Watt, CCT (färgtemperatur), CRI, IP-rating, monteringstyp
-- **Import**: JSON-data ~2x dagligen
+- **Import**: CSV in (Excel → export), JSON ut (partner-API)
+- **Priser**: Lagras i databasen men renderas ALDRIG på frontend
+  - Ej gömda via CSS — bokstavligen ej i någon frontend view mode
+  - Exponeras via JSON-export för partners med API-access
 
 ### Verktyg
 - **MCP Tools**: Direkt Drupal entity-manipulation
