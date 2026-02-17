@@ -1,0 +1,24 @@
+uuid: 5fb65657-be3b-4f77-abc4-ebc6b92314a4
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.beam_angle
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.attribute_beam_angle
+id: commerce_product_variation.default.attribute_beam_angle
+field_name: attribute_beam_angle
+entity_type: commerce_product_variation
+bundle: default
+label: 'Beam angle'
+description: ''
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_product_attribute_value'
+  handler_settings:
+    target_bundles:
+      beam_angle: beam_angle
+field_type: entity_reference

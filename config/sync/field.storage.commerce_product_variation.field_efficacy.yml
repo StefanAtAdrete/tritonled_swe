@@ -1,0 +1,20 @@
+uuid: f3b8b56a-3a34-4d76-b660-eca29610dfd5
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_efficacy
+field_name: field_efficacy
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

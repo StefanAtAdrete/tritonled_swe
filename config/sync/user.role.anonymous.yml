@@ -1,4 +1,4 @@
-uuid: 7d4cacec-136f-41c3-8f3e-f935c8c8a340
+uuid: 0ad05c25-75f0-4794-b170-6173d39b603a
 langcode: en
 status: true
 dependencies:
@@ -8,13 +8,12 @@ dependencies:
     - comment
     - commerce_checkout
     - commerce_product
-    - contact
     - filter
     - media
     - search
     - system
 _core:
-  default_config_hash: 6WavjUYXIegP9AAg2zXGx54MWIVoomC3SZhNiqe-Dyk
+  default_config_hash: xLG41YbRo2NP-0SgRNTkMzLEuaeibanGXgUTbdIcIIg
 id: anonymous
 label: 'Anonymous user'
 weight: 0
@@ -23,7 +22,6 @@ permissions:
   - 'access checkout'
   - 'access comments'
   - 'access content'
-  - 'access site-wide contact form'
   - 'search content'
   - 'use text format restricted_html'
   - 'view commerce_product'

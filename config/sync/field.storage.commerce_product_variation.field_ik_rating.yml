@@ -1,0 +1,21 @@
+uuid: 3de59eb0-c60f-4c28-b206-67416d4b969d
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_ik_rating
+field_name: field_ik_rating
+entity_type: commerce_product_variation
+type: string
+settings:
+  max_length: 255
+  case_sensitive: false
+  is_ascii: false
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

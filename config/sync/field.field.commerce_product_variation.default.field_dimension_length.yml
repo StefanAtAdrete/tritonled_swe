@@ -1,0 +1,23 @@
+uuid: f8e55c3f-bbcd-48d6-be31-2c0eecda6a37
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_dimension_length
+id: commerce_product_variation.default.field_dimension_length
+field_name: field_dimension_length
+entity_type: commerce_product_variation
+bundle: default
+label: Length
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: mm
+field_type: integer

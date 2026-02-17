@@ -1,0 +1,19 @@
+uuid: 804a3fa8-9795-4d0a-8650-147c2d06be61
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - telephone
+id: commerce_order.field_phone
+field_name: field_phone
+entity_type: commerce_order
+type: telephone
+settings: {  }
+module: telephone
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

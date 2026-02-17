@@ -1,0 +1,18 @@
+uuid: ffa6580c-e112-4fff-b486-7dc00a854d64
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_dimmable
+field_name: field_dimmable
+entity_type: commerce_product_variation
+type: boolean
+settings: {  }
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

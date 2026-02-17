@@ -1,15 +1,18 @@
-uuid: 4d5fee39-a2f2-4be2-af4f-b403845c8bb9
+uuid: 4f6af3a4-c6de-459c-accb-1123d83b4bd5
 langcode: en
 status: true
 dependencies: {  }
+third_party_settings:
+  layout_builder:
+    enabled: 'false'
 _core:
   default_config_hash: _z3gRqT6raSp9842zsMlka4awElMiTaIMS4tZpjP3_E
 id: default
-label: Luminaire
+label: 'LED products'
 traits: {  }
 locked: false
 description: ''
 variationTypes:
-  - luminaire_variation
+  - default
 multipleVariations: true
 injectVariationFields: true

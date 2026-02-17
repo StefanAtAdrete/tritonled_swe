@@ -1,0 +1,20 @@
+uuid: bf6d58d5-59b2-4d07-b381-fc0af2812ad2
+langcode: en
+status: true
+dependencies:
+  config:
+    - image.style.large
+    - image.style.medium
+id: product_responsive
+label: 'Product Responsive'
+image_style_mappings:
+  -
+    image_mapping_type: sizes
+    image_mapping:
+      sizes: 100vw
+      sizes_image_styles:
+        - large
+    breakpoint_id: responsive_image.viewport_sizing
+    multiplier: 1x
+breakpoint_group: responsive_image
+fallback_image_style: medium

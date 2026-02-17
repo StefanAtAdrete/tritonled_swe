@@ -1,4 +1,4 @@
-uuid: 41396d08-56e9-413b-ab0d-c02a3e3adf1b
+uuid: 514ba92c-05ff-463c-afbb-8a0dceab5b91
 langcode: en
 status: true
 dependencies:
@@ -24,3 +24,4 @@ effects:
     weight: 2
     data:
       extension: webp
+pipeline: __default__

@@ -1,0 +1,12 @@
+features:
+  node_user_picture: 1
+  comment_user_picture: 1
+  comment_user_verification: 1
+  favicon: 1
+logo:
+  use_default: 0
+  path: 'public://Group 14_0.png'
+favicon:
+  use_default: 0
+  path: 'public://favicon-32x32.png'
+  mimetype: image/png

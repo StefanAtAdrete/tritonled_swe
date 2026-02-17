@@ -1,4 +1,4 @@
-uuid: 31a18c9c-a9ca-4176-87cd-846edba2a085
+uuid: 3364fc8a-f5d9-462d-816d-6c514beef44b
 langcode: en
 status: true
 dependencies:
@@ -8,8 +8,8 @@ _core:
   default_config_hash: ydSxdq7R66I8UMC460rOzlfzvlUL4VRbdwc6z9DWaUI
 id: tritonled_radix_secondary_local_tasks
 theme: tritonled_radix
-region: navbar_branding
-weight: -2
+region: content
+weight: -4
 provider: null
 plugin: local_tasks_block
 settings:

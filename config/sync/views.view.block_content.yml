@@ -1,4 +1,4 @@
-uuid: 95972d87-2ee9-4573-ae46-9e026742853b
+uuid: 8efa5a8e-a80d-456e-b940-641588878021
 langcode: en
 status: true
 dependencies:
@@ -6,7 +6,7 @@ dependencies:
     - block_content
     - user
 _core:
-  default_config_hash: M40v7fFSz1d3AWG7BVYgglHAfF2lD5dzrjcEUZO-9OM
+  default_config_hash: 04nFIsNzLdUjlangTCvxrNUJ9vRQldlR9gekgNrRsOM
 id: block_content
 label: 'Content blocks'
 module: views

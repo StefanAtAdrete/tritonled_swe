@@ -1,4 +1,4 @@
-uuid: d929c40b-56dc-467a-bf08-d69cb36e25f3
+uuid: dc27cf12-e3ed-4b65-8633-febdc04d7132
 langcode: en
 status: true
 dependencies:
@@ -7,14 +7,14 @@ dependencies:
 id: commerce_product_variation.field_weight
 field_name: field_weight
 entity_type: commerce_product_variation
-type: decimal
+type: integer
 settings:
-  precision: 10
-  scale: 2
+  unsigned: false
+  size: normal
 module: core
 locked: false
 cardinality: 1
-translatable: false
+translatable: true
 indexes: {  }
 persist_with_no_fields: false
 custom_storage: false

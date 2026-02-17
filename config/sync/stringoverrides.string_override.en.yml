@@ -1,0 +1,34 @@
+contexts:
+  -
+    context: ''
+    translations:
+      -
+        source: '%title added to your cart'
+        translation: '%title added to your quote request'
+      -
+        source: 'Add to cart'
+        translation: 'Request Quote'
+      -
+        source: Checkout
+        translation: 'Quote Request'
+      -
+        source: 'Continue to review'
+        translation: 'Continue to review quote'
+      -
+        source: 'Order summary'
+        translation: 'Quote summary'
+      -
+        source: 'Shopping cart'
+        translation: 'Quote Request'
+      -
+        source: 'View cart'
+        translation: 'View Quote'
+      -
+        source: 'Place order'
+        translation: 'Submit Quote Request'
+      -
+        source: 'Order information'
+        translation: 'Quote Information'
+      -
+        source: 'Review order'
+        translation: 'Review Quote'

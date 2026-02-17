@@ -1,0 +1,23 @@
+uuid: 211f1ae9-bcc5-48da-b690-463951a9e17a
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_current
+id: commerce_product_variation.default.field_current
+field_name: field_current
+entity_type: commerce_product_variation
+bundle: default
+label: Current
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: A
+field_type: decimal

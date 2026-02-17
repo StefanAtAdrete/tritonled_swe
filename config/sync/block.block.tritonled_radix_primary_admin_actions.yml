@@ -1,4 +1,4 @@
-uuid: 7c5fd29b-c166-43e0-8183-c81deabf8a47
+uuid: 8b15d8e8-6c43-4df7-8d65-803de52794c6
 langcode: en
 status: true
 dependencies:
@@ -8,8 +8,8 @@ _core:
   default_config_hash: Q9_2whdOj1YIomfvsIfopROW4FT_X5pY0DjdOiOaQ5U
 id: tritonled_radix_primary_admin_actions
 theme: tritonled_radix
-region: navbar_branding
-weight: -5
+region: footer
+weight: -6
 provider: null
 plugin: local_actions_block
 settings:

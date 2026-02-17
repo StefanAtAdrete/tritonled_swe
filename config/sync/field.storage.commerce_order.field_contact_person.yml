@@ -1,0 +1,21 @@
+uuid: ce8590ff-0a15-444b-9686-615c1f680867
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+id: commerce_order.field_contact_person
+field_name: field_contact_person
+entity_type: commerce_order
+type: string
+settings:
+  max_length: 255
+  case_sensitive: false
+  is_ascii: false
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

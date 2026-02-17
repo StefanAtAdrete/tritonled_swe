@@ -1,9 +1,0 @@
-uuid: 4ef83bb6-852f-4ffa-b8ec-1349ed1267d9
-langcode: en
-status: true
-dependencies: {  }
-name: 'Product Series'
-vid: product_series
-description: 'Gruppering av produkter i serier'
-weight: 0
-new_revision: false

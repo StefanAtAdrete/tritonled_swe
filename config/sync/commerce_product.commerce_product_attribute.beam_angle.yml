@@ -1,0 +1,7 @@
+uuid: b3dd7f7b-0685-4a8c-940b-717390af2596
+langcode: en
+status: true
+dependencies: {  }
+id: beam_angle
+label: 'Beam Angle'
+elementType: select

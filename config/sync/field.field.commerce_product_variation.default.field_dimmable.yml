@@ -1,0 +1,21 @@
+uuid: be7afe73-1f53-47b0-9c4c-e87b9fb3680c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_dimmable
+id: commerce_product_variation.default.field_dimmable
+field_name: field_dimmable
+entity_type: commerce_product_variation
+bundle: default
+label: Dimmable
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

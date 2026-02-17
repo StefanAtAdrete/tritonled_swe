@@ -1,0 +1,20 @@
+uuid: 11d6cccc-4e67-4db9-9772-cdfd6c803634
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_operating_temp_max
+field_name: field_operating_temp_max
+entity_type: commerce_product_variation
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false
