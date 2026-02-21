@@ -1,7 +1,7 @@
 # Task 004: Splide Thumbnail Navigation Styling
 
 **Created**: 2026-02-21  
-**Status**: Not Started  
+**Status**: Completed  
 **Last Updated**: 2026-02-21  
 **Related Tasks**: TASK-001 (product page layout)
 
@@ -27,7 +27,7 @@ Thumbnail-navigeringen visas för tillfället med svart bakgrund och ostylade th
 - [ ] Thumbnails är klickbara och byter huvudbild
 - [ ] Ser bra ut på desktop och mobil
 
-**Godkänt av Stefan**: ⏳ Väntar
+**Godkänt av Stefan**: ✅ 2026-02-21
 
 ---
 
@@ -44,22 +44,44 @@ Thumbnail-navigeringen visas för tillfället med svart bakgrund och ostylade th
 1. **Splide optionset config** – Justera `fixedHeight`, `gap`, `padding` i `product_nav` optionset via admin UI. Föredragen approach.
 2. **CSS** – Minimal CSS på `.splide__slide` i nav-slidern. Kräver godkännande.
 
-**Godkänt av Stefan**: ⏳ Väntar
+**Godkänt av Stefan**: ✅ 2026-02-21
 
 ---
 
 ## 3. IMPLEMENT
 
-*(Fylls i vid implementation)*
+### Ändringar
+
+1. **`config/sync/splide.optionset.product_nav.yml`**
+   - `fixedHeight: '80'`
+   - `gap: '8'`
+   - `cover: true`
+   - `slideFocus: true`
+
+2. **`config/sync/core.entity_view_display.commerce_product_variation.default.default.yml`**
+   - `thumbnail_style: max_325x325` (var tom — thumbnails renderades inte)
+
+3. **`css/components/product-gallery.css`**
+   - Lade till Splide-specifik CSS för transparent bakgrund, border på aktiv thumbnail, opacity-effekt
 
 ---
 
 ## 4. VERIFY
 
-*(Fylls i vid verifiering)*
+- ✅ Thumbnails renderas med produktbild
+- ✅ Svart bakgrund borttagen
+- ✅ Aktiv thumbnail markeras med blå border
+- ✅ Ser bra ut på desktop
+- ⚠️ Logotypbild i gallery (datakvalitetsproblem, ej styling)
 
 ---
 
 ## 5. COMPLETION
 
-*(Fylls i när task är klar)*
+**Datum**: 2026-02-21
+**Godkänt**: Stefan
+
+### Lärdomar
+- `thumbnail_style` måste sättas i field formatter — annars renderas inga thumbnails
+- Svart bakgrund kom från Splide default skin, fixades med minimal CSS
+- Konfiguration via config/sync-filer + `drush cim` är rätt workflow

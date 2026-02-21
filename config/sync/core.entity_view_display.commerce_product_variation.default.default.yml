@@ -56,12 +56,12 @@ content:
       optionset: product_main
       image: ''
       vanilla: false
-      view_mode: default
+      view_mode: splide
       loading: lazy
       preload: false
       image_style: ''
       media_switch: ''
-      thumbnail_style: ''
+      thumbnail_style: max_325x325
       svg_sanitize: true
       optionset_nav: product_nav
       thumbnail_effect: ''

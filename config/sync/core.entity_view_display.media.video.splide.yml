@@ -1,0 +1,38 @@
+uuid: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.media.splide
+    - field.field.media.video.field_media_image
+    - field.field.media.video.field_media_video_file
+    - media.type.video
+  module:
+    - file
+    - image
+id: media.video.splide
+targetEntityType: media
+bundle: video
+mode: splide
+content:
+  field_media_video_file:
+    type: file_video
+    label: visually_hidden
+    settings:
+      controls: true
+      autoplay: false
+      loop: false
+      multiple_file_display_type: tags
+      muted: false
+      playsinline: true
+      width: 1920
+      height: 1080
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  field_media_image: true
+  name: true
+  thumbnail: true
+  uid: true
