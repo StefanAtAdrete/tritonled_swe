@@ -176,6 +176,7 @@ Pinecone
 pinecone
 Pippi
 placesholders
+pdjohnson
 precode
 precodenum
 prenum
@@ -212,6 +213,7 @@ tada
 tanabata
 TCHA
 testsetestt
+textcolor
 texte
 Tiktoken
 tmgmt
@@ -340,3 +342,8 @@ valthebald
 wouters
 yautja
 zoocha
+topbar
+updb
+Lebensstandard
+Affluance
+litellm

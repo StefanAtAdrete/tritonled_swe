@@ -6,20 +6,16 @@ dependencies:
     - commerce_product.commerce_product_type.default
     - core.entity_view_mode.commerce_product.hero
     - field.field.commerce_product.default.body
+    - field.field.commerce_product.default.feeds_item
     - field.field.commerce_product.default.field_brand
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
-    - field.field.commerce_product.default.field_images
-    - field.field.commerce_product.default.field_product_media
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
-    - responsive_image.styles.hero_responsive
   module:
     - commerce_product
-    - fences
     - file
     - layout_builder
-    - responsive_image
     - text
 third_party_settings:
   layout_builder:
@@ -62,44 +58,6 @@ content:
     third_party_settings: {  }
     weight: 7
     region: content
-  field_images:
-    type: responsive_image
-    label: visually_hidden
-    settings:
-      responsive_image_style: hero_responsive
-      image_link: ''
-      image_loading:
-        attribute: lazy
-    third_party_settings:
-      fences:
-        fences_field_tag: div
-        fences_field_classes: ''
-        fences_field_items_wrapper_tag: none
-        fences_field_items_wrapper_classes: ''
-        fences_field_item_tag: div
-        fences_field_item_classes: ''
-        fences_label_tag: div
-        fences_label_classes: ''
-    weight: 8
-    region: content
-  field_product_media:
-    type: entity_reference_entity_view
-    label: visually_hidden
-    settings:
-      view_mode: hero
-      link: false
-    third_party_settings:
-      fences:
-        fences_field_tag: div
-        fences_field_classes: ''
-        fences_field_items_wrapper_tag: none
-        fences_field_items_wrapper_classes: ''
-        fences_field_item_tag: div
-        fences_field_item_classes: ''
-        fences_label_tag: div
-        fences_label_classes: ''
-    weight: 9
-    region: content
   field_series:
     type: string
     label: visually_hidden
@@ -133,5 +91,6 @@ content:
     region: content
 hidden:
   created: true
+  feeds_item: true
   stores: true
   uid: true

@@ -507,7 +507,7 @@ class PaymentInformation extends PaymentCheckoutPaneBase {
    */
   protected function noPaymentGatewayErrorMessage() {
     if ($this->currentUser->hasPermission('administer commerce_payment_gateway')) {
-      $message = $this->t('There are no <a href=":url"">payment gateways</a> available for this order.', [
+      $message = $this->t('There are no <a href=":url">payment gateways</a> available for this order.', [
         ':url' => Url::fromRoute('entity.commerce_payment_gateway.collection')->toString(),
       ]);
     }

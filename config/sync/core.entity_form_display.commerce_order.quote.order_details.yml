@@ -1,0 +1,48 @@
+uuid: 3538b4cc-8fa2-41e9-bc63-c12dd9915a0e
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_type.quote
+    - core.entity_form_mode.commerce_order.order_details
+    - field.field.commerce_order.quote.field_company_name
+    - field.field.commerce_order.quote.field_contact_person
+    - field.field.commerce_order.quote.field_desired_delivery_date
+    - field.field.commerce_order.quote.field_phone
+    - field.field.commerce_order.quote.field_project_description
+id: commerce_order.quote.order_details
+targetEntityType: commerce_order
+bundle: quote
+mode: order_details
+content:
+  cart:
+    type: boolean_checkbox
+    weight: 20
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  mail:
+    type: email_default
+    weight: 0
+    region: content
+    settings:
+      placeholder: ''
+      size: 60
+    third_party_settings: {  }
+hidden:
+  adjustments: true
+  billing_profile: true
+  coupons: true
+  customer_comments: true
+  field_company_name: true
+  field_contact_person: true
+  field_desired_delivery_date: true
+  field_phone: true
+  field_project_description: true
+  ip_address: true
+  order_items: true
+  order_number: true
+  state: true
+  store_id: true
+  uid: true

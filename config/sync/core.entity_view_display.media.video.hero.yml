@@ -24,14 +24,14 @@ content:
     type: file_video
     label: visually_hidden
     settings:
-      controls: true
-      autoplay: false
-      loop: false
+      controls: false
+      autoplay: true
+      loop: true
       multiple_file_display_type: tags
-      muted: false
-      playsinline: false
-      width: 640
-      height: 480
+      muted: true
+      playsinline: true
+      width: 1
+      height: 1
     third_party_settings: {  }
     weight: 0
     region: content

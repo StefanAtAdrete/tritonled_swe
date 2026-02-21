@@ -40,4 +40,25 @@
     }
   };
 
+  /**
+   * Make hero carousel slides clickable.
+   * Reads URL from hidden .hero-slide-url element and navigates on click.
+   */
+  Drupal.behaviors.tritonledHeroSlideLink = {
+    attach: function (context, settings) {
+      once('hero-slide-link', '.carousel-item', context).forEach(function (slide) {
+        var urlEl = slide.querySelector('.hero-slide-url');
+        if (!urlEl) return;
+        var url = urlEl.textContent.trim();
+        if (!url) return;
+        slide.style.cursor = 'pointer';
+        slide.addEventListener('click', function (e) {
+          // Don't navigate if clicking carousel controls
+          if (e.target.closest('.carousel-control-prev, .carousel-control-next, .carousel-indicators')) return;
+          window.location.href = url;
+        });
+      });
+    }
+  };
+
 })(Drupal, once);

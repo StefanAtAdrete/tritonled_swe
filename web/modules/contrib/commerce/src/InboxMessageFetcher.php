@@ -11,6 +11,7 @@ use Drupal\Core\State\StateInterface;
 use Drupal\commerce\Utility\Error;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Provides the InboxMessageFetcher service.
@@ -45,6 +46,7 @@ class InboxMessageFetcher implements InboxMessageFetcherInterface {
    */
   public function __construct(
     protected ClientInterface $httpClient,
+    #[Autowire(service: 'commerce.logger')]
     protected LoggerInterface $logger,
     protected ModuleHandlerInterface $moduleHandler,
     protected InboxMessageStorageInterface $inboxMessageStorage,
