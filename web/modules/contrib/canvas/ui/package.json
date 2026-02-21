@@ -3,7 +3,7 @@
   "description": "A React application powering the Drupal Canvas UI.",
   "homepage": "https://www.drupal.org/project/canvas",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.1.0",
   "engines": {
     "node": "^20.0.0"
   },
@@ -102,6 +102,7 @@
     "@storybook/test": "^8.4.2",
     "@testing-library/cypress": "^10.0.2",
     "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/babylon": "^6.16.9",

@@ -102,6 +102,10 @@ class OrderReassignForm extends FormBase {
       ]),
     ];
     $form += $this->buildCustomerForm($form, $form_state, $this->order);
+    $form['customer']['keep_existing_email'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Keep existing order email address'),
+    ];
 
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [
@@ -129,6 +133,9 @@ class OrderReassignForm extends FormBase {
     $values = $form_state->getValues();
     /** @var \Drupal\user\UserInterface $user */
     $user = $this->userStorage->load($values['uid']);
+    if ($values['keep_existing_email']) {
+      $this->order->setData('customer_email_overridden', TRUE);
+    }
     $this->orderAssignment->assign($this->order, $user);
     $this->messenger()->addMessage($this->t('The %label has been assigned to customer %customer.', [
       '%label' => $this->order->label(),

@@ -1,0 +1,116 @@
+<?php
+
+namespace Drupal\Tests\splide\Kernel;
+
+use Drupal\Core\Form\FormState;
+use Drupal\Tests\blazy\Kernel\BlazyKernelTestBase;
+use Drupal\Tests\splide\Traits\SplideKernelTrait;
+use Drupal\Tests\splide\Traits\SplideUnitTestTrait;
+use Drupal\blazy\Blazy;
+
+/**
+ * Tests the Splide field rendering using the text field type.
+ */
+/**
+ * A D12 compat, please update or ignore.
+ *
+ * @phpstan-ignore-next-line
+ */
+#[Group('blazy')]
+/**
+ * A D12 compat, please update or ignore.
+ *
+ * @phpstan-ignore-next-line
+ */
+#[RunTestsInSeparateProcesses]
+class SplideTextFormatterTest extends BlazyKernelTestBase {
+
+  use SplideUnitTestTrait;
+  use SplideKernelTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected static $modules = [
+    'system',
+    'user',
+    'field',
+    'file',
+    'image',
+    'filter',
+    'node',
+    'text',
+    'blazy',
+    'splide',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
+    $this->installConfig(static::$modules);
+    $this->installEntitySchema('splide');
+
+    $this->testFieldName   = 'field_text_multiple';
+    $this->testEmptyName   = 'field_text_multiple_empty';
+    $this->testFieldType   = 'text';
+    $this->testPluginId    = 'splide_text';
+    $this->maxItems        = 7;
+    $this->maxParagraphs   = 2;
+    $this->splideAdmin     = $this->container->get('splide.admin');
+    $this->splideManager   = $this->container->get('splide.manager');
+    $this->splideFormatter = $this->container->get('splide.formatter');
+
+    // Create contents.
+    $bundle = $this->bundle;
+
+    $data = [
+      'field_name' => $this->testEmptyName,
+      'field_type' => 'text',
+    ];
+
+    $this->setUpContentTypeTest($bundle, $data);
+    $this->setUpContentWithItems($bundle);
+
+    $this->display = $this->setUpFormatterDisplay($bundle);
+
+    $data['plugin_id'] = $this->testPluginId;
+    $this->displayEmpty = $this->setUpFormatterDisplay($bundle, $data);
+
+    $this->formatterInstance = $this->getFormatterInstance();
+  }
+
+  /**
+   * Tests the Splide formatters.
+   */
+  public function testSplideFormatter() {
+    $entity = $this->entity;
+
+    // Generate the render array to verify if the cache tags are as expected.
+    $build = $this->display->build($entity);
+    $build_empty = $this->displayEmpty->build($entity);
+
+    $component = $this->display->getComponent($this->testFieldName);
+    $this->assertEquals($this->testPluginId, $component['type']);
+
+    $render = $this->splideManager->renderer()->renderRoot($build);
+    $this->assertNotEmpty($render);
+
+    $render_empty = $this->splideManager->renderer()->renderRoot($build_empty[$this->testEmptyName]);
+    $this->assertEmpty($render_empty);
+
+    $build['#settings'] = Blazy::init();
+    // @todo refine the parameters, but not crucial for now.
+    /** @phpstan-ignore-next-line */
+    $scopes = $this->formatterInstance->buildSettings($build, NULL);
+    $this->assertEquals($this->testPluginId, $scopes['blazies']->get('field.plugin_id'));
+
+    $form = [];
+    $form_state = new FormState();
+    $element = $this->formatterInstance->settingsForm($form, $form_state);
+    $this->assertArrayHasKey('optionset', $element);
+  }
+
+}

@@ -84,11 +84,11 @@ class PaymentMethodAddForm extends PaymentMethodFormBase {
     }
     catch (DeclineException $e) {
       $this->logger->warning($e->getMessage());
-      throw DeclineException::createForPayment($payment_method, t('We encountered an error processing your payment method. Please verify your details and try again.'));
+      throw DeclineException::createForPayment($payment_method, t('We encountered an error processing your payment method. Please verify your details and try again.'), $e->getCode(), $e->getPrevious());
     }
     catch (PaymentGatewayException $e) {
       $this->logger->error($e->getMessage());
-      throw PaymentGatewayException::createForPayment($payment_method, t('We encountered an unexpected error processing your payment method. Please try again later.'));
+      throw PaymentGatewayException::createForPayment($payment_method, t('We encountered an unexpected error processing your payment method. Please try again later.'), $e->getCode(), $e->getPrevious());
     }
   }
 

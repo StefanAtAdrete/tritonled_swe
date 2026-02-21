@@ -52,6 +52,20 @@ class ProductLayoutBuilderIntegrationTest extends ProductWebDriverTestBase {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  protected function tearDown(): void {
+    // Workaround to the faulty deprecation check performed in the parent method
+    // Somehow, the $warnings array contain non string items causing the
+    // str_starts_with() check to trigger a TypeError.
+    // @see https://www.drupal.org/project/drupal/issues/3568635.
+    $this->getSession()->executeScript(
+      "sessionStorage.setItem('js_testing_log_test.warnings', '[]');"
+    );
+    parent::tearDown();
+  }
+
+  /**
    * Tests that enabling Layout Builder for a display disables field injection.
    */
   public function testFieldInjectionDisabled() {

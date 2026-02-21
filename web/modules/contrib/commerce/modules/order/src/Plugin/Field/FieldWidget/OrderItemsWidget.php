@@ -6,6 +6,7 @@ use Drupal\commerce\InlineFormManager;
 use Drupal\commerce\PurchasableEntityInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Entity\OrderItemInterface;
+use Drupal\commerce_order\Form\OrderFormBase;
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Utility\NestedArray;
@@ -22,6 +23,9 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Plugin implementation of the 'commerce_order_items' widget.
+ */
 #[FieldWidget(
   id: "commerce_order_items",
   label: new TranslatableMarkup("Order items (Experimental)"),
@@ -90,6 +94,7 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       'collapsed' => FALSE,
       'allow_new' => TRUE,
       'allow_duplicate' => FALSE,
+      'draggable' => TRUE,
     ];
     return $defaults;
   }
@@ -125,6 +130,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       '#title' => $this->t('Allow users to duplicate order items.'),
       '#default_value' => $this->getSetting('allow_duplicate'),
     ];
+    $element['draggable'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Draggable table'),
+      '#default_value' => $this->getSetting('draggable'),
+      '#description' => $this->t('Whether the order items table should be draggable.'),
+    ];
 
     return $element;
   }
@@ -149,6 +160,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     else {
       $summary[] = $this->t('Order items cannot be duplicated.');
     }
+    if ($this->getSetting('draggable')) {
+      $summary[] = $this->t('Order items table is draggable.');
+    }
+    else {
+      $summary[] = $this->t('Order items table is not draggable.');
+    }
     return $summary;
   }
 
@@ -165,9 +182,16 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state): array {
     /** @var \Drupal\Core\Field\EntityReferenceFieldItemListInterface $items */
-    $this->wrapperId = 'order-items-wrapper_' . $items->getName();
     $this->mainEntity = $items->getEntity();
 
+    // When no order item types are configured to be used in this order,
+    // return nothing.
+    $order_item_types = $this->getListOfBundles();
+    if (empty($order_item_types)) {
+      return [];
+    }
+
+    $this->wrapperId = 'order-items-wrapper_' . $items->getName();
     $this->prepareFormState($form_state, $items);
     $this->formState = $form_state;
     $this->parents = array_merge($element['#field_parents'], [
@@ -195,8 +219,6 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     $this->prepareTableFields();
     $element['table'] = $this->getOrderItemsTable($items);
     $settings = $this->getSettings();
-    $order_items_types = $this->getListOfBundles();
-    $allow_new = $settings['allow_new'] && !empty($order_items_types);
 
     // If no form is open, show buttons that open one.
     $open_form = $form_state->get([
@@ -205,12 +227,15 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       'form',
     ]);
 
-    if ($allow_new) {
+    if ($settings['allow_new']) {
       $element['add_new_item'] = match ($open_form) {
-        'add' => $this->buildAddNewItemForm($order_items_types),
-        default => $this->buildAddNewItemAction($order_items_types),
+        'add' => $this->buildAddNewItemForm($order_item_types),
+        default => $this->buildAddNewItemAction($order_item_types),
       };
     }
+
+    // Add library.
+    $element['#attached']['library'][] = 'commerce_order/order-items-widget';
 
     return $element;
   }
@@ -353,18 +378,23 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     }
 
     if (!empty($rows)) {
-      $tabledrag = [
-        [
-          'action' => 'order',
-          'relationship' => 'sibling',
-          'group' => 'order-item-delta',
-        ],
-      ];
+      if ($this->isOrderItemsTableDraggable()) {
+        $tabledrag = [
+          [
+            'action' => 'order',
+            'relationship' => 'sibling',
+            'group' => 'order-item-delta',
+          ],
+        ];
+      }
 
       return [
         '#type' => 'table',
         '#header' => $header,
-        '#tabledrag' => $tabledrag,
+        '#tabledrag' => $tabledrag ?? [],
+        '#attributes' => [
+          'class' => ['commerce-order-items-widget-table'],
+        ],
       ] + $rows;
     }
     return [];
@@ -400,27 +430,19 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     }
     foreach ($this->tableFields as $field_name => $field) {
       if ($field['type'] == 'label') {
-        $label = ['#markup' => $order_item->label()];
+        $label = [
+          '#theme' => 'commerce_order_item_title',
+          '#label' => $order_item->label(),
+        ];
         if ($order_item->getPurchasedEntity() instanceof ProductVariationInterface) {
-          $label = [
-            '#type' => 'inline_template',
-            '#template' => '{{ label }}<br /><span style="{{ style }}">SKU: {{ sku }}</span>',
-            '#context' => [
-              'label' => $order_item->label(),
-              'sku' => $order_item->getPurchasedEntity()->getSku(),
-              'style' => 'color: var(--commerce-color--neutral); font-size: .85em',
-            ],
-          ];
+          $label['#sku'] = $order_item->getPurchasedEntity()->getSku();
         }
         $cells[$field_name] = $label;
+        $cells[$field_name]['#wrapper_attributes'] = ['class' => ['commerce-order-items-widget-table__title']];
       }
       elseif ($field['type'] == 'field' && $order_item->hasField($field_name)) {
-        $display_options = ['label' => 'hidden'];
-        if (isset($field['display_options'])) {
-          $display_options += $field['display_options'];
-        }
-        $cells[$field_name] = $order_item->get($field_name)
-          ->view($display_options);
+        $cells[$field_name] = $order_item->get($field_name)->view($field['display_options'] ?? []);
+        $cells[$field_name]['#label_display'] = 'hidden';
       }
       else {
         $cells[$field_name] = ['#markup' => $this->t('N/A')];
@@ -435,6 +457,11 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       'form',
     ]))) {
       $cells['actions'] = $this->getRowActions($order_item, $delta);
+    }
+    if (!isset($cells['actions'])) {
+      $cells['actions'] = [
+        'data' => ['#plain_text' => ''],
+      ];
     }
 
     return $cells + ['#attributes' => ['class' => $row_classes]];
@@ -489,7 +516,7 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     if ($order_item->access('delete')) {
       $actions['remove'] = [
         '#type' => 'submit',
-        '#value' => $this->t('Remove'),
+        '#value' => $order_item->isNew() ? $this->t('Remove') : $this->t('Delete'),
         '#name' => "$name_prefix-remove-$delta",
         '#attributes' => ['class' => ['button--danger']],
         '#limit_validation_errors' => [],
@@ -764,6 +791,9 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       '#oiw_row_delta' => $delta,
       '#oiw_wrapper' => $this->wrapperId,
       '#oiw_field_name' => $this->fieldName,
+      '#attributes' => [
+        'class' => ['commerce-order-items-inline-form'],
+      ],
     ];
     return $inline_form->buildInlineForm($form['order_item'], $this->formState);
   }
@@ -785,6 +815,9 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       '#oiw_row_delta' => $delta,
       '#oiw_wrapper' => $this->wrapperId,
       '#oiw_field_name' => $this->fieldName,
+      '#attributes' => [
+        'class' => ['commerce-order-items-inline-form'],
+      ],
     ];
     return $inline_form->buildInlineForm($form['duplicate_order_item'], $this->formState);
   }
@@ -799,9 +832,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
    */
   protected function buildRemoveForm(OrderItemInterface $order_item, int $delta): array {
     $name_prefix = "order-item-remove-{$this->fieldName}";
+    $message = $order_item->isNew() ?
+      $this->t('Are you sure you want to remove %label?', ['%label' => $order_item->label()]) :
+      $this->t('Are you sure you want to delete %label?', ['%label' => $order_item->label()]);
     $form['message'] = [
       '#theme_wrappers' => ['container'],
-      '#markup' => $this->t('Are you sure you want to remove %label?', ['%label' => $order_item->label()]),
+      '#markup' => $message,
     ];
     $form['actions'] = [
       '#type' => 'container',
@@ -809,7 +845,7 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     ];
     $form['actions']['item_confirm_remove'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Remove'),
+      '#value' => $order_item->isNew() ? $this->t('Remove') : $this->t('Delete'),
       '#name' => "$name_prefix-confirm-$delta",
       '#attributes' => ['class' => ['button--danger']],
       '#limit_validation_errors' => [],
@@ -905,12 +941,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       $variation_types = $variation_type_storage->loadByProperties([
         'orderItemType' => $order_item_types,
       ]);
-      if (empty($variation_types)) {
-        return [];
-      }
-
-      foreach ($variation_types as $variation_type) {
-        $bundles[] = $variation_type->id();
+      // If no variation type is configured to target this order item type, we
+      // simply don't restrict the purchasable entities that can be referenced.
+      if (!empty($variation_types)) {
+        foreach ($variation_types as $variation_type) {
+          $bundles[] = $variation_type->id();
+        }
       }
     }
 
@@ -1001,6 +1037,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
     $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
     $new_item = $order_item_storage->createFromPurchasableEntity($purchasable_entity);
+
+    // Try to assign the order from the form context to the new order item.
+    $form_object = $this->formState->getFormObject();
+    if ($form_object instanceof OrderFormBase) {
+      $new_item->set('order_id', $form_object->getEntity());
+    }
     $inline_form = $this->inlineFormManager->createInstance('order_item', ['operation' => 'add'], $new_item);
     $items = $this->formState->get(['order_items_widget_state', $this->fieldName, 'items']);
     $delta = 0;
@@ -1013,6 +1055,9 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
       '#oiw_row_delta' => $delta,
       '#oiw_wrapper' => $this->wrapperId,
       '#oiw_field_name' => $this->fieldName,
+      '#attributes' => [
+        'class' => ['commerce-order-items-inline-form'],
+      ],
     ];
     return $inline_form->buildInlineForm($new_order_item, $this->formState);
   }
@@ -1025,7 +1070,7 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
    */
   public static function buildEntityFormActions(array $inline_form): array {
     $label = match ($inline_form['#op']) {
-      'edit' => t('Update order item'),
+      'edit' => t('Update'),
       'duplicate' => t('Duplicate order item'),
       default => t('Create order item'),
     };
@@ -1033,6 +1078,9 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     $inline_form['actions'] = [
       '#type' => 'container',
       '#weight' => 100,
+      '#attributes' => [
+        'class' => ['commerce-order-item-inline-form__actions'],
+      ],
     ];
     $field_name = $inline_form['#oiw_field_name'];
     $name_prefix = "oiw_$field_name-{$inline_form['#op']}";
@@ -1111,6 +1159,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
         'type' => 'field',
         'label' => $this->t('Quantity'),
         'weight' => 3,
+        'display_options' => [
+          'type' => 'commerce_quantity',
+          'settings' => [
+            'strip_trailing_zeroes' => TRUE,
+          ],
+        ],
       ];
     }
   }
@@ -1124,14 +1178,13 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
         return FALSE;
       }
     }
-    return TRUE;
+    return $this->getSetting('draggable');
   }
 
   /**
    * Return the bundle list of order items which user can create.
    */
   protected function getListOfBundles(): array {
-    $bundles = [];
     $order_item_type_storage = $this->entityTypeManager->getStorage('commerce_order_item_type');
     /** @var \Drupal\commerce_order\Entity\OrderItemTypeInterface[] $order_item_types */
     if ($this->mainEntity instanceof OrderInterface) {
@@ -1142,6 +1195,12 @@ class OrderItemsWidget extends WidgetBase implements ContainerFactoryPluginInter
     else {
       $order_item_types = $order_item_type_storage->loadMultiple();
     }
+
+    if (empty($order_item_types)) {
+      return [];
+    }
+
+    $bundles = [];
     $access_handled = $this->entityTypeManager->getAccessControlHandler('commerce_order_item');
     foreach ($order_item_types as $order_item_type) {
       if ($access_handled->createAccess($order_item_type->id())) {

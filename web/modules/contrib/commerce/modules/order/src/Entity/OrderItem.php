@@ -29,9 +29,14 @@ use Drupal\commerce_price\Price;
  *     "storage" = "Drupal\commerce_order\OrderItemStorage",
  *     "access" = "Drupal\commerce_order\OrderItemAccessControlHandler",
  *     "permission_provider" = "Drupal\commerce_order\OrderItemPermissionProvider",
+ *     "route_provider" = {
+ *       "default" = "Drupal\commerce_order\OrderItemRouteProvider",
+ *     },
  *     "views_data" = "Drupal\commerce_order\OrderItemViewsData",
  *     "form" = {
  *       "default" = "Drupal\Core\Entity\ContentEntityForm",
+ *       "edit" = "Drupal\commerce_order\Form\OrderItemEditForm",
+ *       "delete" = "Drupal\commerce_order\Form\OrderItemDeleteForm",
  *     },
  *     "inline_form" = "Drupal\commerce_order\Form\OrderItemInlineForm",
  *   },
@@ -42,6 +47,10 @@ use Drupal\commerce_price\Price;
  *     "uuid" = "uuid",
  *     "bundle" = "type",
  *     "label" = "title",
+ *   },
+ *   links = {
+ *     "edit-form" = "/admin/commerce/orders/{commerce_order}/items/{commerce_order_item}/edit",
+ *     "delete-form" = "/admin/commerce/orders/{commerce_order}/items/{commerce_order_item}/delete",
  *   },
  *   bundle_entity_type = "commerce_order_item_type",
  *   field_ui_base_route = "entity.commerce_order_item_type.edit_form",

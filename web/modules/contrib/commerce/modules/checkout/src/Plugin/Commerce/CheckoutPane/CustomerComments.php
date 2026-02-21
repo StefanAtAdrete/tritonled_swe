@@ -2,7 +2,6 @@
 
 namespace Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\commerce_checkout\Attribute\CommerceCheckoutPane;
@@ -51,8 +50,7 @@ class CustomerComments extends CheckoutPaneBase implements CheckoutPaneInterface
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
     parent::submitPaneForm($pane_form, $form_state, $complete_form);
     if (!empty($form_state->getValue('customer_comments')['comments'])) {
-      $comment = nl2br(Html::escape($form_state->getValue('customer_comments')['comments']));
-      $this->order->setCustomerComments($comment);
+      $this->order->setCustomerComments($form_state->getValue('customer_comments')['comments']);
     }
     else {
       $this->order->set('customer_comments', NULL);

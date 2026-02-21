@@ -174,6 +174,17 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 
 ## 📊 Senaste Viktiga Beslut
 
+### Feeds Item AJAX Bug (2026-02-21)
+- ⚠️ `feeds_item` på varianter orsakar 500-fel vid Media Library AJAX
+- ✅ Fix: Rensa `feeds_item` på alla varianter efter import
+- ⚠️ Måste upprepas efter varje CSV-import
+- Se: `03-solutions/feeds-item-ajax-bug.md`
+
+### File-fält vs Media-fält (2026-02-21)
+- ❌ ALDRIG File-fält på entiteter som har Media Library-widgets
+- ✅ Använd alltid Media-entiteter (image, document, video)
+- File + Media Library kolliderar vid AJAX-validering
+
 ### Commerce AJAX (2025-01-08)
 - ✅ Använd Event Subscribers för custom beteende
 - ❌ Använd INTE custom product templates (förstör AJAX)

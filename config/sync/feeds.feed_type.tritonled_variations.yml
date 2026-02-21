@@ -1,0 +1,564 @@
+uuid: e9b2c3d4-5f6a-7b8c-9d0e-1f2a3b4c5d6e
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.field.commerce_product_variation.default.attribute_accessories
+    - field.field.commerce_product_variation.default.attribute_beam_angle
+    - field.field.commerce_product_variation.default.attribute_cct
+    - field.field.commerce_product_variation.default.attribute_color
+    - field.field.commerce_product_variation.default.attribute_ip_rating
+    - field.field.commerce_product_variation.default.attribute_length
+    - field.field.commerce_product_variation.default.attribute_voltage
+    - field.field.commerce_product_variation.default.attribute_watt
+    - field.field.commerce_product_variation.default.field_ambient_temp
+    - field.field.commerce_product_variation.default.field_case_temp
+    - field.field.commerce_product_variation.default.field_ce_marking
+    - field.field.commerce_product_variation.default.field_control_system
+    - field.field.commerce_product_variation.default.field_cri
+    - field.field.commerce_product_variation.default.field_current
+    - field.field.commerce_product_variation.default.field_dimension_height
+    - field.field.commerce_product_variation.default.field_dimension_length
+    - field.field.commerce_product_variation.default.field_dimension_width
+    - field.field.commerce_product_variation.default.field_dimmable
+    - field.field.commerce_product_variation.default.field_dimming_protocol
+    - field.field.commerce_product_variation.default.field_efficacy
+    - field.field.commerce_product_variation.default.field_enec
+    - field.field.commerce_product_variation.default.field_energy_class
+    - field.field.commerce_product_variation.default.field_frequency
+    - field.field.commerce_product_variation.default.field_housing_color
+    - field.field.commerce_product_variation.default.field_ik_rating
+    - field.field.commerce_product_variation.default.field_installation_notes
+    - field.field.commerce_product_variation.default.field_lumens
+    - field.field.commerce_product_variation.default.field_material
+    - field.field.commerce_product_variation.default.field_mounting_type
+    - field.field.commerce_product_variation.default.field_operating_temp_max
+    - field.field.commerce_product_variation.default.field_operating_temp_min
+    - field.field.commerce_product_variation.default.field_power_factor
+    - field.field.commerce_product_variation.default.field_rated_life
+    - field.field.commerce_product_variation.default.field_rohs
+    - field.field.commerce_product_variation.default.field_warranty_years
+    - field.field.commerce_product_variation.default.field_weight
+  module:
+    - commerce_feeds
+    - commerce_product
+label: 'TritonLED Variations'
+id: tritonled_variations
+description: 'Importerar Commerce-varianter från CSV'
+help: null
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product_variation'
+processor_configuration:
+  values:
+    type: default
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  sku:
+    value: sku
+    label: sku
+    machine_name: sku
+    type: csv
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  product_title:
+    value: product_title
+    label: product_title
+    machine_name: product_title
+    type: csv
+  currency:
+    value: currency
+    label: currency
+    machine_name: currency
+    type: csv
+  price:
+    value: price
+    label: price
+    machine_name: price
+    type: csv
+  attribute_watt:
+    value: attribute_watt
+    label: attribute_watt
+    machine_name: attribute_watt
+    type: csv
+  attribute_cct:
+    value: attribute_cct
+    label: attribute_cct
+    machine_name: attribute_cct
+    type: csv
+  attribute_ip_rating:
+    value: attribute_ip_rating
+    label: attribute_ip_rating
+    machine_name: attribute_ip_rating
+    type: csv
+  attribute_beam_angle:
+    value: attribute_beam_angle
+    label: attribute_beam_angle
+    machine_name: attribute_beam_angle
+    type: csv
+  attribute_color:
+    value: attribute_color
+    label: attribute_color
+    machine_name: attribute_color
+    type: csv
+  attribute_length:
+    value: attribute_length
+    label: attribute_length
+    machine_name: attribute_length
+    type: csv
+  attribute_voltage:
+    value: attribute_voltage
+    label: attribute_voltage
+    machine_name: attribute_voltage
+    type: csv
+  attribute_accessories:
+    value: attribute_accessories
+    label: attribute_accessories
+    machine_name: attribute_accessories
+    type: csv
+  field_lumens:
+    value: field_lumens
+    label: field_lumens
+    machine_name: field_lumens
+    type: csv
+  field_efficacy:
+    value: field_efficacy
+    label: field_efficacy
+    machine_name: field_efficacy
+    type: csv
+  field_cri:
+    value: field_cri
+    label: field_cri
+    machine_name: field_cri
+    type: csv
+  field_power_factor:
+    value: field_power_factor
+    label: field_power_factor
+    machine_name: field_power_factor
+    type: csv
+  field_current:
+    value: field_current
+    label: field_current
+    machine_name: field_current
+    type: csv
+  field_frequency:
+    value: field_frequency
+    label: field_frequency
+    machine_name: field_frequency
+    type: csv
+  field_dimmable:
+    value: field_dimmable
+    label: field_dimmable
+    machine_name: field_dimmable
+    type: csv
+  field_dimming_protocol:
+    value: field_dimming_protocol
+    label: field_dimming_protocol
+    machine_name: field_dimming_protocol
+    type: csv
+  field_control_system:
+    value: field_control_system
+    label: field_control_system
+    machine_name: field_control_system
+    type: csv
+  field_rated_life:
+    value: field_rated_life
+    label: field_rated_life
+    machine_name: field_rated_life
+    type: csv
+  field_warranty_years:
+    value: field_warranty_years
+    label: field_warranty_years
+    machine_name: field_warranty_years
+    type: csv
+  field_energy_class:
+    value: field_energy_class
+    label: field_energy_class
+    machine_name: field_energy_class
+    type: csv
+  field_material:
+    value: field_material
+    label: field_material
+    machine_name: field_material
+    type: csv
+  field_housing_color:
+    value: field_housing_color
+    label: field_housing_color
+    machine_name: field_housing_color
+    type: csv
+  field_mounting_type:
+    value: field_mounting_type
+    label: field_mounting_type
+    machine_name: field_mounting_type
+    type: csv
+  field_weight:
+    value: field_weight
+    label: field_weight
+    machine_name: field_weight
+    type: csv
+  field_dimension_length:
+    value: field_dimension_length
+    label: field_dimension_length
+    machine_name: field_dimension_length
+    type: csv
+  field_dimension_width:
+    value: field_dimension_width
+    label: field_dimension_width
+    machine_name: field_dimension_width
+    type: csv
+  field_dimension_height:
+    value: field_dimension_height
+    label: field_dimension_height
+    machine_name: field_dimension_height
+    type: csv
+  field_operating_temp_min:
+    value: field_operating_temp_min
+    label: field_operating_temp_min
+    machine_name: field_operating_temp_min
+    type: csv
+  field_operating_temp_max:
+    value: field_operating_temp_max
+    label: field_operating_temp_max
+    machine_name: field_operating_temp_max
+    type: csv
+  field_ambient_temp:
+    value: field_ambient_temp
+    label: field_ambient_temp
+    machine_name: field_ambient_temp
+    type: csv
+  field_case_temp:
+    value: field_case_temp
+    label: field_case_temp
+    machine_name: field_case_temp
+    type: csv
+  field_ik_rating:
+    value: field_ik_rating
+    label: field_ik_rating
+    machine_name: field_ik_rating
+    type: csv
+  field_rohs:
+    value: field_rohs
+    label: field_rohs
+    machine_name: field_rohs
+    type: csv
+  field_ce_marking:
+    value: field_ce_marking
+    label: field_ce_marking
+    machine_name: field_ce_marking
+    type: csv
+  field_enec:
+    value: field_enec
+    label: field_enec
+    machine_name: field_enec
+    type: csv
+  field_installation_notes:
+    value: field_installation_notes
+    label: field_installation_notes
+    machine_name: field_installation_notes
+    type: csv
+  variation_status:
+    value: variation_status
+    label: variation_status
+    machine_name: variation_status
+    type: csv
+mappings:
+  -
+    target: sku
+    map:
+      value: sku
+    settings:
+      language: en
+    unique:
+      value: true
+  -
+    target: title
+    map:
+      value: sku
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: status
+    map:
+      value: variation_status
+    settings: {  }
+    unique: {  }
+  -
+    target: product_id
+    map:
+      target_id: product_title
+    settings:
+      reference_by: title
+      autocreate: false
+    unique: {  }
+  -
+    target: price
+    map:
+      number: price
+    settings:
+      currency_code: SEK
+    unique: {  }
+  -
+    target: attribute_watt
+    map:
+      target_id: attribute_watt
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_cct
+    map:
+      target_id: attribute_cct
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_ip_rating
+    map:
+      target_id: attribute_ip_rating
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_beam_angle
+    map:
+      target_id: attribute_beam_angle
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_color
+    map:
+      target_id: attribute_color
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_length
+    map:
+      target_id: attribute_length
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_voltage
+    map:
+      target_id: attribute_voltage
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: attribute_accessories
+    map:
+      target_id: attribute_accessories
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: field_lumens
+    map:
+      value: field_lumens
+    settings: {  }
+    unique: {  }
+  -
+    target: field_efficacy
+    map:
+      value: field_efficacy
+    settings: {  }
+    unique: {  }
+  -
+    target: field_cri
+    map:
+      value: field_cri
+    settings: {  }
+    unique: {  }
+  -
+    target: field_power_factor
+    map:
+      value: field_power_factor
+    settings: {  }
+    unique: {  }
+  -
+    target: field_current
+    map:
+      value: field_current
+    settings: {  }
+    unique: {  }
+  -
+    target: field_frequency
+    map:
+      value: field_frequency
+    settings: {  }
+    unique: {  }
+  -
+    target: field_dimmable
+    map:
+      value: field_dimmable
+    settings: {  }
+    unique: {  }
+  -
+    target: field_dimming_protocol
+    map:
+      value: field_dimming_protocol
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_control_system
+    map:
+      value: field_control_system
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_rated_life
+    map:
+      value: field_rated_life
+    settings: {  }
+    unique: {  }
+  -
+    target: field_warranty_years
+    map:
+      value: field_warranty_years
+    settings: {  }
+    unique: {  }
+  -
+    target: field_energy_class
+    map:
+      value: field_energy_class
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_material
+    map:
+      value: field_material
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_housing_color
+    map:
+      value: field_housing_color
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_mounting_type
+    map:
+      value: field_mounting_type
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_weight
+    map:
+      value: field_weight
+    settings: {  }
+    unique: {  }
+  -
+    target: field_dimension_length
+    map:
+      value: field_dimension_length
+    settings: {  }
+    unique: {  }
+  -
+    target: field_dimension_width
+    map:
+      value: field_dimension_width
+    settings: {  }
+    unique: {  }
+  -
+    target: field_dimension_height
+    map:
+      value: field_dimension_height
+    settings: {  }
+    unique: {  }
+  -
+    target: field_operating_temp_min
+    map:
+      value: field_operating_temp_min
+    settings: {  }
+    unique: {  }
+  -
+    target: field_operating_temp_max
+    map:
+      value: field_operating_temp_max
+    settings: {  }
+    unique: {  }
+  -
+    target: field_ambient_temp
+    map:
+      value: field_ambient_temp
+    settings: {  }
+    unique: {  }
+  -
+    target: field_case_temp
+    map:
+      value: field_case_temp
+    settings: {  }
+    unique: {  }
+  -
+    target: field_ik_rating
+    map:
+      value: field_ik_rating
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_rohs
+    map:
+      value: field_rohs
+    settings: {  }
+    unique: {  }
+  -
+    target: field_ce_marking
+    map:
+      value: field_ce_marking
+    settings: {  }
+    unique: {  }
+  -
+    target: field_enec
+    map:
+      value: field_enec
+    settings: {  }
+    unique: {  }
+  -
+    target: field_installation_notes
+    map:
+      value: field_installation_notes
+    settings:
+      language: en
+    unique: {  }

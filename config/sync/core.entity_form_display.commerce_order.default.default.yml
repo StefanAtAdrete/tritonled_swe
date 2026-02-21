@@ -16,31 +16,31 @@ content:
   adjustments:
     type: commerce_adjustment_default
     weight: 2
+    region: content
     settings: {  }
     third_party_settings: {  }
-    region: content
   billing_profile:
     type: commerce_billing_profile
     weight: 0
+    region: content
     settings: {  }
     third_party_settings: {  }
-    region: content
   cart:
     type: boolean_checkbox
-    settings:
-      display_label: true
     weight: 20
     region: content
+    settings:
+      display_label: true
     third_party_settings: {  }
   coupons:
     type: entity_reference_autocomplete
     weight: 5
+    region: content
     settings:
       match_operator: CONTAINS
-      placeholder: ''
       match_limit: 10
       size: 60
-    region: content
+      placeholder: ''
     third_party_settings: {  }
   mail:
     type: email_default
@@ -53,13 +53,13 @@ content:
   order_items:
     type: commerce_order_items
     weight: 1
+    region: content
     settings:
       allow_new: true
       collapsible: false
       collapsed: false
       allow_duplicate: false
     third_party_settings: {  }
-    region: content
 hidden:
   created: true
   customer_comments: true

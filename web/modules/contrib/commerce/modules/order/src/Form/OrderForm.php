@@ -2,15 +2,14 @@
 
 namespace Drupal\commerce_order\Form;
 
-use Drupal\Core\Entity\ContentEntityForm;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_order\Entity\OrderItemType;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Form controller for the commerce_order entity edit forms.
  */
-class OrderForm extends ContentEntityForm {
+class OrderForm extends OrderFormBase {
 
   /**
    * The date formatter.
@@ -56,6 +55,7 @@ class OrderForm extends ContentEntityForm {
 
     $form['#tree'] = TRUE;
     $form['#theme'] = 'commerce_order_edit_form';
+    $form['#attached']['library'][] = 'commerce_order/admin-order';
     // Changed must be sent to the client, for later overwrite error checking.
     $form['changed'] = [
       '#type' => 'hidden',

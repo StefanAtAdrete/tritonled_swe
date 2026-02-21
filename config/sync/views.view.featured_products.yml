@@ -1,16 +1,13 @@
 uuid: 6542a70e-9208-4276-8ca2-4e5304f6a1bd
 langcode: en
-status: true
+status: false
 dependencies:
   config:
     - commerce_product.commerce_product_type.default
-    - field.storage.commerce_product.field_images
     - field.storage.commerce_product.field_series
-    - responsive_image.styles.narrow
   module:
     - commerce
     - commerce_product
-    - responsive_image
     - views_bootstrap
 id: featured_products
 label: 'Featured Products'
@@ -84,72 +81,6 @@ display:
           settings:
             link_to_entity: false
           group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        field_images:
-          id: field_images
-          table: commerce_product__field_images
-          field: field_images
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: field
-          label: ''
-          exclude: true
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: responsive_image
-          settings:
-            responsive_image_style: narrow
-            image_link: ''
-            image_loading:
-              attribute: lazy
-          group_column: ''
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -234,7 +165,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card\">\r\n{{ field_product_media }} {{ field_images }}\r\n  <div class=\"card-body\">\r\n<p class=\"card-subtitle\">{{ field_series }} </p>\r\n<p class=\"card-title\">{{ title }}</p>\r\n    <p class=\"card-text\"></p>\r\n  </div>\r\n</div>"
+            text: "<div class=\"card\">\r\n{{ field_product_media }}\r\n  <div class=\"card-body\">\r\n<p class=\"card-subtitle\">{{ field_series }} </p>\r\n<p class=\"card-title\">{{ title }}</p>\r\n    <p class=\"card-text\"></p>\r\n  </div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -348,7 +279,6 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
       tags:
-        - 'config:field.storage.commerce_product.field_images'
         - 'config:field.storage.commerce_product.field_series'
   block_1:
     id: block_1
@@ -363,5 +293,4 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
       tags:
-        - 'config:field.storage.commerce_product.field_images'
         - 'config:field.storage.commerce_product.field_series'
