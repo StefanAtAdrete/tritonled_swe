@@ -20,10 +20,10 @@ content:
   quantity:
     type: number
     weight: 1
+    region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
-    region: content
 hidden:
   adjustments: true
   created: true

@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_voltage
     - field.field.commerce_product_variation.default.attribute_watt
+    - field.field.commerce_product_variation.default.feeds_item
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
@@ -39,7 +40,6 @@ dependencies:
     - field.field.commerce_product_variation.default.field_power_factor
     - field.field.commerce_product_variation.default.field_rated_life
     - field.field.commerce_product_variation.default.field_rohs
-    - field.field.commerce_product_variation.default.field_variation_images
     - field.field.commerce_product_variation.default.field_variation_media
     - field.field.commerce_product_variation.default.field_warranty_years
     - field.field.commerce_product_variation.default.field_weight
@@ -72,6 +72,7 @@ hidden:
   attribute_voltage: true
   attribute_watt: true
   commerce_variation_cart_form: true
+  feeds_item: true
   field_ambient_temp: true
   field_case_temp: true
   field_ce_marking: true
@@ -98,7 +99,6 @@ hidden:
   field_power_factor: true
   field_rated_life: true
   field_rohs: true
-  field_variation_images: true
   field_variation_media: true
   field_warranty_years: true
   field_weight: true

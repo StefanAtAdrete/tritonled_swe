@@ -91,6 +91,9 @@ class CartExpiration extends QueueWorkerBase implements ContainerFactoryPluginIn
       $expiration_date = $interval->subtract($current_date);
       $expiration_timestamp = $expiration_date->getTimestamp();
       // Make sure that the cart order still qualifies for expiration.
+      if (($cart_expiration['anonymous_only'] ?? FALSE) && $order->getCustomerId() > 0) {
+        continue;
+      }
       if ($order->get('cart')->value && $order->getChangedTime() <= $expiration_timestamp) {
         $orders[] = $order;
       }

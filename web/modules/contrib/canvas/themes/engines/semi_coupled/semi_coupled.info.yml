@@ -2,7 +2,7 @@ type: theme_engine
 name: Drupal Canvas's Semi-Coupled Theme Engine
 core_version_requirement: ^10 || ^11
 
-# Information added by Drupal.org packaging script on 2026-01-12
-version: '1.0.3'
+# Information added by Drupal.org packaging script on 2026-02-04
+version: '1.1.0'
 project: 'canvas'
-datestamp: 1768261169
+datestamp: 1770202956

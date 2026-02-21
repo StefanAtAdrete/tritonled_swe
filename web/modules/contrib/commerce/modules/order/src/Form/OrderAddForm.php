@@ -157,8 +157,8 @@ class OrderAddForm extends FormBase {
     $order->save();
     $values['order_id'] = $order->id();
     $form_state->setValues($values);
-    // Redirect to the edit form to complete the order.
-    $form_state->setRedirect('entity.commerce_order.edit_form', ['commerce_order' => $order->id()]);
+    // Redirect to the order view page to complete the order.
+    $form_state->setRedirect('entity.commerce_order.canonical', ['commerce_order' => $order->id()]);
   }
 
 }

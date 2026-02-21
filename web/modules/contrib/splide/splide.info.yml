@@ -1,0 +1,12 @@
+name: Splide
+type: module
+description: "Splide, the vanilla JavaScript Slider."
+core_version_requirement: '>=8.8'
+package: Splide
+dependencies:
+  - blazy:blazy (>= 2.17)
+
+# Information added by Drupal.org packaging script on 2026-01-10
+version: '2.0.13'
+project: 'splide'
+datestamp: 1768036660
