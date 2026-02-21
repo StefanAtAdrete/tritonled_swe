@@ -65,6 +65,46 @@ function tritonled_preprocess_file_video(&$variables) {
   if (isset($variables['attributes']['height'])) {
     unset($variables['attributes']['height']);
   }
+
+  // Set poster image from field_media_image if available.
+  $request = \Drupal::request();
+  $route_match = \Drupal::routeMatch();
+  $media = NULL;
+
+  // Debug: log files structure.
+  \Drupal::logger('tritonled')->debug('file_video files: @files', ['@files' => print_r($variables['files'], TRUE)]);
+
+  // Try to find the media entity from the current route or entity context.
+  foreach ($variables['files'] as $file) {
+    // $file may be a render array with #file or a file entity directly.
+    $file_entity = NULL;
+    if (!empty($file['#file'])) {
+      $file_entity = $file['#file'];
+    } elseif (!empty($file['file']) && is_object($file['file'])) {
+      $file_entity = $file['file'];
+    } elseif (is_object($file)) {
+      $file_entity = $file;
+    }
+
+    if ($file_entity && method_exists($file_entity, 'id')) {
+      $fid = $file_entity->id();
+      $media_items = \Drupal::entityTypeManager()
+        ->getStorage('media')
+        ->loadByProperties(['field_media_video_file' => $fid]);
+      if (!empty($media_items)) {
+        $media = reset($media_items);
+        break;
+      }
+    }
+  }
+
+  if ($media && $media->hasField('field_media_image') && !$media->get('field_media_image')->isEmpty()) {
+    $image_file = $media->get('field_media_image')->entity;
+    if ($image_file) {
+      $image_url = \Drupal::service('file_url_generator')->generateAbsoluteString($image_file->getFileUri());
+      $variables['attributes']['poster'] = $image_url;
+    }
+  }
 }
 
 /**

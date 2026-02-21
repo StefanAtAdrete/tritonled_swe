@@ -27,7 +27,7 @@ options:
     width: '0'
     height: '0'
     fixedWidth: '0'
-    fixedHeight: '0'
+    fixedHeight: '80'
     heightRatio: '0'
     autoWidth: false
     autoHeight: false
@@ -37,7 +37,7 @@ options:
     cloneStatus: true
     start: 0
     focus: '0'
-    gap: '0'
+    gap: '8'
     padding: ''
     easing: 'cubic-bezier(.42,.65,.27,.99)'
     arrows: 'true'
@@ -61,8 +61,8 @@ options:
     flickPower: 600
     flickMaxPages: 1
     direction: ltr
-    cover: false
-    slideFocus: false
+    cover: true
+    slideFocus: true
     focusableNodes: 'a, button, textarea, input, select, iframe'
     isNavigation: true
     trimSpace: 'true'

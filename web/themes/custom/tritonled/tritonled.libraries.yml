@@ -30,6 +30,12 @@ product:
       css/product.css: {}
       css/components/product-gallery.css: {}
 
+product-gallery:
+  version: VERSION
+  css:
+    theme:
+      css/components/product-gallery.css: {}
+
 product-ajax:
   version: 1.x
   js:

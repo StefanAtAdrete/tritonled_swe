@@ -30,7 +30,7 @@ options:
     fixedHeight: '0'
     heightRatio: '0'
     autoWidth: false
-    autoHeight: false
+    autoHeight: true
     perPage: 1
     perMove: 0
     clones: 0

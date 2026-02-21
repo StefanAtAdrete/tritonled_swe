@@ -56,6 +56,44 @@ function tritonled_radix_preprocess_field(&$variables) {
 }
 
 /**
+ * Implements hook_preprocess_file_video().
+ */
+function tritonled_radix_preprocess_file_video(&$variables) {
+  // Remove hardcoded width/height for responsive video.
+  unset($variables['attributes']['width']);
+  unset($variables['attributes']['height']);
+
+  // Set poster from field_media_image if available.
+  $media = NULL;
+  foreach ($variables['files'] as $file) {
+    $fid = NULL;
+    if (is_object($file) && method_exists($file, 'id')) {
+      $fid = $file->id();
+    } elseif (!empty($file['#file']) && is_object($file['#file'])) {
+      $fid = $file['#file']->id();
+    } elseif (!empty($file['file']) && is_object($file['file'])) {
+      $fid = $file['file']->id();
+    }
+    if ($fid) {
+      $items = \Drupal::entityTypeManager()->getStorage('media')
+        ->loadByProperties(['field_media_video_file' => $fid]);
+      if ($items) {
+        $media = reset($items);
+        break;
+      }
+    }
+  }
+
+  if ($media && $media->hasField('field_media_image') && !$media->get('field_media_image')->isEmpty()) {
+    $image = $media->get('field_media_image')->entity;
+    if ($image) {
+      $variables['attributes']['poster'] = \Drupal::service('file_url_generator')
+        ->generateAbsoluteString($image->getFileUri());
+    }
+  }
+}
+
+/**
  * Implements hook_preprocess_image() for image templates.
  */
 function tritonled_radix_preprocess_image(&$variables) {
