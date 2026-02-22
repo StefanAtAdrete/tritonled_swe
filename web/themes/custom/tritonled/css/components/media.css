@@ -20,6 +20,27 @@
   }
 }
 
+/* Remote video (Blazy/YouTube oEmbed) */
+.media--youtube,
+.media--bundle--remote-video {
+  position: relative !important;
+  aspect-ratio: 4 / 3 !important;
+  height: auto !important;
+  width: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+.media--youtube iframe,
+.media--bundle--remote-video iframe {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
+
 /* Video fyller containern */
 .field--name-field-media-video-file video,
 .field--name-field-product-media video,

@@ -1,7 +1,7 @@
 # Task 005: Visa unika produkter i Hero och Featured Products
 
 **Created**: 2026-02-22  
-**Status**: Not Started  
+**Status**: ✅ LÖST 2026-02-22  
 **Last Updated**: 2026-02-22  
 **Related Tasks**: TASK-002 (hero-carousel), TASK-004 (splide)
 
@@ -21,7 +21,7 @@ Commerce-produkter har varianter (watt, CCT etc.) med egna mediafält. Om man ko
 - [ ] Produktbild visas (från default-variation)
 - [ ] Inga dubletter oavsett antal varianter
 
-**Godkänt av Stefan**: ⏳ Väntar
+**Godkänt av Stefan**: ✅
 
 ---
 
@@ -43,7 +43,7 @@ Inbyggd Commerce-funktion, ingen custom kod. Löser dubblett-problemet på rätt
 2. **Aggregation** - Komplex, svår att underhålla
 3. **Custom preprocess** - Onödig custom kod när Views löser det
 
-**Godkänt av Stefan**: ⏳ Väntar
+**Godkänt av Stefan**: ✅
 
 ---
 
@@ -76,10 +76,10 @@ Inbyggd Commerce-funktion, ingen custom kod. Löser dubblett-problemet på rätt
 ## 4. VERIFY
 
 ### Testresultat
-- [ ] Featured Products: 3 produkter visas, inte 9+ rader
-- [ ] Hero: 3 slides, inte dubletter
-- [ ] Produktbild syns på varje kort/slide
-- [ ] Klick på produkt leder till rätt produktsida
+- [x] Featured Products: 3 produkter visas, inga dubletter
+- [x] Hero: 3 slides, inga dubletter
+- [x] Produktbild syns på varje kort/slide
+- [ ] Klick på produkt leder till rätt produktsida (ej testat)
 
 ---
 

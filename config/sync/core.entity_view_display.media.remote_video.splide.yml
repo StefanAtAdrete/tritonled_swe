@@ -1,0 +1,44 @@
+uuid: 35e56204-c4e9-4442-b80a-6832b06a7cfb
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.media.splide
+    - field.field.media.remote_video.field_media_oembed_video
+    - image.style.splide_media
+    - media.type.remote_video
+  module:
+    - blazy
+    - media
+id: media.remote_video.splide
+targetEntityType: media
+bundle: remote_video
+mode: splide
+content:
+  field_media_oembed_video:
+    type: blazy_oembed
+    label: hidden
+    settings:
+      caption: {  }
+      use_lb: false
+      background: false
+      box_caption: ''
+      box_caption_custom: ''
+      box_media_style: ''
+      loading: lazy
+      preload: false
+      responsive_image_style: ''
+      use_theme_field: false
+      box_style: ''
+      image_style: splide_media
+      media_switch: ''
+      ratio: '4:3'
+      thumbnail_style: ''
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  name: true
+  thumbnail: true
+  uid: true
