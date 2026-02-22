@@ -29,6 +29,13 @@
    TritonLED specific
    ======================================== */
 
+/* Logotyp */
+.navbar-brand img,
+.site-logo img {
+  width: auto !important;
+  height: 48px;
+}
+
 /* Add brand-specific styles here
    when Bootstrap utilities are insufficient
 */
