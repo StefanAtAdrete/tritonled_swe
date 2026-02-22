@@ -5,10 +5,13 @@ dependencies:
   config:
     - core.entity_view_mode.media.hero
     - field.field.media.remote_video.field_media_oembed_video
+    - image.style.splide_media
     - media.type.remote_video
+    - responsive_image.styles.product_responsive
   module:
+    - blazy
+    - fences
     - layout_builder
-    - media
 third_party_settings:
   layout_builder:
     enabled: false
@@ -21,14 +24,34 @@ bundle: remote_video
 mode: hero
 content:
   field_media_oembed_video:
-    type: oembed
+    type: blazy_oembed
     label: hidden
     settings:
-      max_width: 0
-      max_height: 0
-      loading:
-        attribute: lazy
-    third_party_settings: {  }
+      caption: {  }
+      use_lb: false
+      background: false
+      box_caption: ''
+      box_caption_custom: ''
+      box_media_style: ''
+      loading: ''
+      preload: false
+      responsive_image_style: product_responsive
+      use_theme_field: false
+      box_style: ''
+      image_style: splide_media
+      media_switch: ''
+      ratio: '4:3'
+      thumbnail_style: ''
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
     weight: 0
     region: content
 hidden:

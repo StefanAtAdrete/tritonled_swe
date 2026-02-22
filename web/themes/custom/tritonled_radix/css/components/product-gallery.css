@@ -3,60 +3,9 @@
  * Carousel med thumbnail navigation för produktbilder
  */
 
-/* Thumbnail grid layout */
-.thumbnails {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-.thumbnails .views-col {
-  flex: 0 0 auto;
-  width: 100px;
-}
-
-.thumbnails img {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  border: 2px solid transparent;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.thumbnails img:hover {
-  border-color: rgba(13, 110, 253, 0.5);
-}
-
-.thumbnails img.active {
-  border-color: var(--bs-primary, #0d6efd);
-}
-
-/* Carousel wrapper */
-.product-carousel-wrapper {
-  position: relative;
-}
-
-/* Säkerställ att slide__content fyller hela slidens höjd */
+/* slide__content följer sitt innehåll (autoHeight) */
 .splide--main .slide__content {
-  height: 100%;
-}
-
-/* Responsive adjustments */
-@media (max-width: 767.98px) {
-  .thumbnails {
-    gap: 0.5rem;
-  }
-  
-  .thumbnails .views-col {
-    width: 80px;
-  }
-  
-  .thumbnails img {
-    height: 80px;
-  }
+  display: block;
 }
 
 /* Splide thumbnail navigation */
@@ -133,13 +82,4 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-/* Slick Carousel - Förhindra thumbnail scrolling */
-.slick--thumbnail .slick-track {
-  transform: translate3d(0, 0, 0) !important;
-}
-
-.slick--thumbnail .slick-list {
-  padding: 0 !important;
 }
