@@ -1,33 +1,30 @@
 # Aktuell Task
 
-**Task**: TASK-005  
-**Fil**: `/docs/tasks/task-005-views-unique-products.md`  
-**Status**: ✅ Löst  
+**Task**: TASK-005B  
+**Fil**: `/docs/tasks/task-005b-remote-video-styling.md`  
+**Status**: ✅ Löst 2026-02-22  
 **Senast uppdaterad**: 2026-02-22
 
 ## Vad som gjordes idag (2026-02-22)
 
-### TASK-005 — Unika produkter i Views ✅
-- Lösning: Filter `Product: Variations:delta (= 0)` på Hero och Featured Products views
-- Varje produkt visas nu exakt en gång
-- Ingen relationship behövdes — enkelt filter löste det
-
-### Image style nginx-problem ✅
-- Problem: nginx genererade inte image style-derivat on-demand
-- Root cause: `@rewrite` skickade inte med URI till Drupal
-- Lösning: Fixade `@rewrite` i `.ddev/nginx_full/nginx-site.conf`
-- Vald stack: nginx (LEMP) — matchar Hostinger VPS produktion
-- Dokumenterat i `/docs/03-solutions/image-style-nginx-problem.md`
+### TASK-005B — Remote video ratio i produktgalleri ✅
+- Root cause: CSS redigerades i fel tema (`tritonled` istället för `tritonled_radix`)
+- Root cause: Blazy kunde inte hämta oEmbed-ratio offline → 150px hårdkodad höjd
+- Root cause: Splide optionset hade `autoHeight: false` och `heightRatio: 0.75`
+- Lösning: CSS-filer skapade i `tritonled_radix`, länkade i `libraries.yml`
+- Lösning: `aspect-ratio: 16/9` direkt på `.media--youtube` (ej beroende av Blazy API)
+- Lösning: Splide optionset `autoHeight: true`, `heightRatio: 0`
+- Dokumenterat i `/docs/03-solutions/active-theme-css-checklist.md`
 
 ## Startpunkt nästa session
 
-Hero-karusellen och Featured Products visas korrekt med unika produkter och bilder.
+Produktgalleriet fungerar: bilder och remote video visas med korrekt ratio, autoHeight på Splide.
 
-**Nästa steg:**
-1. Styling av Featured Products-korten
-2. Styling av Hero-karusellen (layout, text-overlay, ratio)
-3. Kontrollera att hero-bilden fyller hela bredden korrekt på alla breakpoints
+**Nästa steg (att prioritera):**
+1. Hero-karusellen — styling, layout, text-overlay, ratio
+2. Featured Products-korten — styling
+3. Kontrollera bildladdning (lazy-loading i Splide)
 
 ## Kvarstående städning
-- Ta bort `/docs/03-solutions/theme-and-views-debugging.md.bak`
-- Kör `ddev drush cex -y` för att exportera Views-config
+- CSS-aggregering är AV under dev — slå PÅ igen inför produktion:
+  `ddev drush config-set system.performance css.preprocess 1 -y`
