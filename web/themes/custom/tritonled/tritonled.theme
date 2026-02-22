@@ -71,9 +71,6 @@ function tritonled_preprocess_file_video(&$variables) {
   $route_match = \Drupal::routeMatch();
   $media = NULL;
 
-  // Debug: log files structure.
-  \Drupal::logger('tritonled')->debug('file_video files: @files', ['@files' => print_r($variables['files'], TRUE)]);
-
   // Try to find the media entity from the current route or entity context.
   foreach ($variables['files'] as $file) {
     // $file may be a render array with #file or a file entity directly.

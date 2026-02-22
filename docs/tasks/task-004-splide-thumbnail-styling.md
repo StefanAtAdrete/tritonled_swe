@@ -78,10 +78,23 @@ Thumbnail-navigeringen visas för tillfället med svart bakgrund och ostylade th
 
 ## 5. COMPLETION
 
-**Datum**: 2026-02-21
+**Datum**: 2026-02-22
 **Godkänt**: Stefan
 
 ### Lärdomar
 - `thumbnail_style` måste sättas i field formatter — annars renderas inga thumbnails
 - Svart bakgrund kom från Splide default skin, fixades med minimal CSS
 - Konfiguration via config/sync-filer + `drush cim` är rätt workflow
+- **Preprocess hooks måste ligga i AKTIVT tema** (`tritonled_radix.theme`), inte parent-temat (`tritonled.theme`). Watchdog-loggtypen avslöjar vilket tema som körs.
+- **Video poster-bild**: `preprocess_file_video` i aktivt tema loopar `$variables['files']`, hittar media via `field_media_video_file` → fid, sätter `poster`-attributet från `field_media_image`.
+- **Views `status: false`** orsakar "block is broken" i Layout Builder — kontrollera alltid med `$view->status()`
+- **Views custom text token** `{{ field_product_media }}` kräver att fältet är adderat som hidden field i view — annars PHP-fel `Undefined array key "fid"`
+- **`field_product_media` sitter på variation**, inte på product — måste nås via relationship (se TASK-005)
+- **Logotyp storlek**: `width` hårdkodas i temainställningar, override via CSS med `!important`
+- **drush watchdog severity**: använd siffra (`--severity=3`), inte text (`--severity=error`)
+
+### Dokumentation skapad/uppdaterad
+- [x] `task-005-views-unique-products.md` skapad för nästa steg
+
+### Nästa steg
+- TASK-005: Visa unika produkter i Hero och Featured Products via Views relationship

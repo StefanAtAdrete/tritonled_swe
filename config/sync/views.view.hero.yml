@@ -1,6 +1,6 @@
 uuid: 763d3fb1-d5a3-405a-b17e-b7677b29e3bc
 langcode: en
-status: false
+status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.default
