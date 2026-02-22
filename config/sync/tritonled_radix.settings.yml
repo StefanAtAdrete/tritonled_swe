@@ -5,8 +5,8 @@ features:
   favicon: 1
 logo:
   use_default: 0
-  path: 'public://Group 14_0.png'
+  path: 'public://Triton logo thin (2).svg'
 favicon:
-  use_default: 0
+  use_default: 1
   path: 'public://favicon-32x32.png'
   mimetype: image/png
