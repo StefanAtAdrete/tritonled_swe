@@ -6,6 +6,32 @@
 
 ---
 
+## 🏗️ Grundläggande Produktarkitektur
+
+**Detta gäller hela sajten och är ett arkitektoniskt beslut.**
+
+### Varianter har eget media
+
+Varje produktvariant (`luminaire` variation type) har ett eget `field_variation_media`-fält (Images/Videos). Detta är ett medvetet val:
+
+- En produkt kan ha varianter med olika watt/CCT
+- Varje variant kan ha egna produktbilder/videos
+- Commerce AJAX byter automatiskt bild/video när användaren väljer en annan variant
+- Samma mekanism som byter pris, SKU etc. byter även media
+
+### Konsekvens för Views
+
+När en View hämtar produkter via `Product variation`-relationship returneras **en rad per variant** (inte per produkt). Om 3 varianter har media = 3 rader för samma produkt.
+
+**Lösningsstrategier för Views som visar produktlistor (hero, featured, etc.):**
+- Sätt "Number of values = 1" på variation media-fältet → visar bara första media
+- Kombinera med DISTINCT i Query settings → en rad per produkt
+- Eller: basera View på Product variation istället för Product, filtrera på delta=0
+
+Se: `tasks/task-005-views-unique-products.md`
+
+---
+
 ## 🔴 Problemet
 
 Custom product templates (`commerce-product--full.html.twig`) **förstörde Commerce AJAX-funktionalitet** för produktvarianter.
@@ -305,9 +331,9 @@ Commerce's rendering är **mycket** komplext:
 
 ---
 
-**Version**: 1.1  
+**Version**: 1.2  
 **Skapad**: 2025-01-08  
-**Uppdaterad**: 2025-01-11 (Display Suite ersatt med Field Groups)  
+**Uppdaterad**: 2026-02-22 (Lade till produktarkitektur — varianter med eget media för AJAX)  
 **Testad**: 2025-01-08  
 **Verifierad**: ✅  
 **Författare**: Stefan + Claude
