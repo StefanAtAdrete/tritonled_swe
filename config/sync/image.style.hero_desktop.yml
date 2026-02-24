@@ -15,4 +15,10 @@ effects:
       width: 1920
       height: 480
       crop_type: focal_point
+  6f24f33e-a548-47e8-947a-17bfd9c4beb4:
+    uuid: 6f24f33e-a548-47e8-947a-17bfd9c4beb4
+    id: image_convert_avif
+    weight: 2
+    data:
+      extension: webp
 pipeline: ''

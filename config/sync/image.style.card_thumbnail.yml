@@ -1,0 +1,16 @@
+uuid: 293f0e35-1541-44b5-be56-0e66b616c2bb
+langcode: en
+status: true
+dependencies: {  }
+name: card_thumbnail
+label: 'Card Thumbnail (mobile)'
+effects:
+  bf73dd8e-2cd4-44c3-95e4-ad48a00a8912:
+    uuid: bf73dd8e-2cd4-44c3-95e4-ad48a00a8912
+    id: image_scale_and_crop
+    weight: 0
+    data:
+      width: 200
+      height: 200
+      anchor: center-center
+pipeline: __default__

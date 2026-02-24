@@ -7,6 +7,7 @@ dependencies:
     - field.field.commerce_product.default.body
     - field.field.commerce_product.default.field_brand
     - field.field.commerce_product.default.field_features
+    - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
   module:
@@ -112,6 +113,13 @@ mappings:
     target: title
     map:
       value: product_title
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_product_sku
+    map:
+      value: product_sku
     settings:
       language: en
     unique:

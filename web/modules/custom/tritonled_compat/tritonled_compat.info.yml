@@ -1,0 +1,5 @@
+name: 'TritonLED Compatibility Fixes'
+type: module
+description: 'Workarounds for third-party module incompatibilities. Required in production.'
+package: TritonLED
+core_version_requirement: ^11

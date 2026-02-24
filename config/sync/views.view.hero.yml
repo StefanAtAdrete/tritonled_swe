@@ -4,8 +4,8 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.default
+    - field.storage.commerce_product.field_hero_media
     - field.storage.commerce_product.field_short_description
-    - field.storage.commerce_product_variation.field_variation_media
   module:
     - commerce
     - commerce_product
@@ -220,11 +220,11 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        field_variation_media:
-          id: field_variation_media
-          table: commerce_product_variation__field_variation_media
-          field: field_variation_media
-          relationship: variations_target_id
+        field_hero_media:
+          id: field_hero_media
+          table: commerce_product__field_hero_media
+          field: field_hero_media
+          relationship: none
           group_type: group
           admin_label: ''
           plugin_id: field
@@ -276,7 +276,7 @@ display:
           group_column: target_id
           group_columns: {  }
           group_rows: true
-          delta_limit: 1
+          delta_limit: 0
           delta_offset: 0
           delta_reversed: false
           delta_first_last: false
@@ -328,20 +328,16 @@ display:
           plugin_id: commerce_entity_bundle
           value:
             default: default
-        delta:
-          id: delta
-          table: commerce_product__variations
-          field: delta
+        field_show_in_hero_value:
+          id: field_show_in_hero_value
+          table: commerce_product__field_show_in_hero
+          field: field_show_in_hero_value
           relationship: none
           group_type: group
           admin_label: ''
-          entity_type: commerce_product
-          plugin_id: numeric
+          plugin_id: boolean
           operator: '='
-          value:
-            min: ''
-            max: ''
-            value: '0'
+          value: '1'
           group: 1
           exposed: false
           expose:
@@ -358,9 +354,6 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-            min_placeholder: ''
-            max_placeholder: ''
-            placeholder: ''
           is_grouped: false
           group_info:
             label: ''
@@ -386,7 +379,7 @@ display:
           use_caption: 1
           wrap: 1
           effect: slide
-          image: field_variation_media
+          image: field_hero_media
           title: title
           description: field_short_description
       row:
@@ -420,8 +413,8 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
       tags:
+        - 'config:field.storage.commerce_product.field_hero_media'
         - 'config:field.storage.commerce_product.field_short_description'
-        - 'config:field.storage.commerce_product_variation.field_variation_media'
   block_1:
     id: block_1
     display_title: Block
@@ -435,5 +428,5 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
       tags:
+        - 'config:field.storage.commerce_product.field_hero_media'
         - 'config:field.storage.commerce_product.field_short_description'
-        - 'config:field.storage.commerce_product_variation.field_variation_media'
