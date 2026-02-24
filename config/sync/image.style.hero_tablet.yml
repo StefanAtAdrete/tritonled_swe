@@ -15,4 +15,10 @@ effects:
       width: 1200
       height: 300
       crop_type: focal_point
+  33ffa160-a604-4a38-90e2-41d5d0642015:
+    uuid: 33ffa160-a604-4a38-90e2-41d5d0642015
+    id: image_convert_avif
+    weight: 2
+    data:
+      extension: webp
 pipeline: ''

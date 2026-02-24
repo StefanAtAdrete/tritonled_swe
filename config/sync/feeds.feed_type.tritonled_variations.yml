@@ -310,9 +310,9 @@ mappings:
   -
     target: product_id
     map:
-      target_id: product_title
+      target_id: product_sku
     settings:
-      reference_by: title
+      reference_by: field_product_sku
       autocreate: false
     unique: {  }
   -
@@ -328,7 +328,7 @@ mappings:
       target_id: attribute_watt
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_cct
@@ -336,7 +336,7 @@ mappings:
       target_id: attribute_cct
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_ip_rating
@@ -344,7 +344,7 @@ mappings:
       target_id: attribute_ip_rating
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_beam_angle
@@ -352,7 +352,7 @@ mappings:
       target_id: attribute_beam_angle
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_color
@@ -360,7 +360,7 @@ mappings:
       target_id: attribute_color
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_length
@@ -368,7 +368,7 @@ mappings:
       target_id: attribute_length
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_voltage
@@ -376,7 +376,7 @@ mappings:
       target_id: attribute_voltage
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: attribute_accessories
@@ -384,7 +384,7 @@ mappings:
       target_id: attribute_accessories
     settings:
       reference_by: name
-      autocreate: false
+      autocreate: true
     unique: {  }
   -
     target: field_lumens

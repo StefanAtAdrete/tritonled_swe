@@ -9,8 +9,11 @@ dependencies:
     - field.field.commerce_product.default.field_brand
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
+    - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
+    - field.field.commerce_product.default.field_show_in_hero
   module:
     - commerce_product
     - file
@@ -57,6 +60,14 @@ content:
     third_party_settings: {  }
     weight: 7
     region: content
+  field_product_sku:
+    type: string
+    label: above
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 8
+    region: content
   field_series:
     type: string
     label: visually_hidden
@@ -91,5 +102,7 @@ content:
 hidden:
   created: true
   feeds_item: true
+  field_hero_media: true
+  field_show_in_hero: true
   stores: true
   uid: true

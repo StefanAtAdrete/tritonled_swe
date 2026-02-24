@@ -1,0 +1,163 @@
+/**
+ * Hero Carousel
+ * Bootstrap carousel med fullbredd, overlay-text och responsiv ratio.
+ */
+
+/* Fullbredd - ingen padding från container */
+.view-hero {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Carousel-item: 1:1 mobil */
+.view-hero .carousel-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Media-wrapper fyller carousel-item på mobil */
+.view-hero .carousel-item .media--type-video,
+.view-hero .carousel-item .media--type-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 4:1 desktop */
+@media (min-width: 768px) {
+  .view-hero .carousel-item {
+    aspect-ratio: 4 / 1;
+  }
+}
+
+/* Media fyller hela carousel-item */
+.view-hero .carousel-item .media,
+.view-hero .carousel-item .field--name-field-media-image,
+.view-hero .carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Video fyller hela carousel-item */
+.view-hero .carousel-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Mörk overlay för läsbarhet */
+.view-hero .carousel-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Caption över overlay - visa alltid, Bootstrap döljer den på mobil som default */
+.view-hero .carousel-caption {
+  display: block !important;
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  text-align: left;
+  z-index: 2;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .view-hero .carousel-caption {
+    bottom: 2rem;
+    left: 2rem;
+    right: 2rem;
+  }
+}
+
+.view-hero .carousel-caption a,
+.view-hero .carousel-caption h2,
+.view-hero .carousel-caption p {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.view-hero .carousel-caption a {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .view-hero .carousel-caption a {
+    font-size: 2.5rem;
+  }
+}
+
+/* ============================================
+ * Featured Products - Horizontal card (mobil)
+ * ============================================ */
+
+/* Mobil: bild 50% / text 50% horisontellt */
+.card-img-wrap {
+  flex: 0 0 50%;
+  max-width: 50%;
+  overflow: hidden;
+  min-height: 100%;
+  position: relative;
+}
+
+/* Stretch-wrapper för align-items */
+.d-flex.flex-row {
+  align-items: stretch;
+}
+
+.card-img-wrap .media,
+.card-img-wrap .field,
+.card-img-wrap .field__item,
+.card-img-wrap picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Desktop: återställ till normalt flöde */
+@media (min-width: 768px) {
+  .card-img-wrap .media,
+  .card-img-wrap .field,
+  .card-img-wrap .field__item,
+  .card-img-wrap picture {
+    position: static;
+    inset: auto;
+  }
+}
+
+.card-img-wrap img,
+.card-img-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Desktop: stapla vertikalt, full bredd */
+@media (min-width: 768px) {
+  .card-img-wrap {
+    flex: unset;
+    max-width: 100%;
+  }
+}
+
+/* Navigeringsknappar */
+.view-hero .carousel-control-prev,
+.view-hero .carousel-control-next {
+  z-index: 3;
+  width: 5%;
+}

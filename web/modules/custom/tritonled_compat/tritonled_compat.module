@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * TritonLED Compatibility Fixes.
+ *
+ * Workarounds for third-party module incompatibilities.
+ * This module is required in production.
+ *
+ * Current fixes:
+ * - Feeds module 8.x-3.2: feeds_item field causes Layout Builder to crash
+ *   when generating sample values. Bug: "fid" key not found in cleanIds().
+ *   Fix: override generateSampleValue to return empty array.
+ */
+
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function tritonled_compat_field_info_alter(&$info) {
+  if (isset($info['feeds_item'])) {
+    // Override the class to use our safe version.
+    $info['feeds_item']['class'] = '\Drupal\tritonled_compat\Plugin\Field\FieldType\SafeFeedsItem';
+  }
+}
