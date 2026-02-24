@@ -10,8 +10,11 @@ dependencies:
     - field.field.commerce_product.default.field_brand
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
+    - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
+    - field.field.commerce_product.default.field_show_in_hero
   module:
     - commerce_product
     - file
@@ -92,5 +95,8 @@ content:
 hidden:
   created: true
   feeds_item: true
+  field_hero_media: true
+  field_product_sku: true
+  field_show_in_hero: true
   stores: true
   uid: true

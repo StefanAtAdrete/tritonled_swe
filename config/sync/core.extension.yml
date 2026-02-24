@@ -59,8 +59,6 @@ module:
   history: 0
   image: 0
   imageapi_optimize: 0
-  imageapi_optimize_webp: 0
-  imageapi_optimize_webp_responsive: 0
   inline_entity_form: 0
   inline_form_errors: 0
   key: 0
@@ -113,6 +111,7 @@ module:
   tool_entity: 0
   tool_system: 0
   toolbar: 0
+  tritonled_compat: 0
   tritonled_quote: 0
   update: 0
   user: 0

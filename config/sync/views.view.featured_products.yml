@@ -229,7 +229,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card\">\r\n{{ field_variation_media }} \r\n  <div class=\"card-body\">\r\n<p class=\"card-subtitle\">{{ field_series }} </p>\r\n<p class=\"card-title\">{{ title }}</p>\r\n  </div>\r\n</div>"
+            text: '<div class="card h-100"><div class="d-flex flex-row flex-md-column"><div class="card-img-wrap">{{ field_variation_media }}</div><div class="card-body"><p class="card-subtitle mb-1">{{ field_series }}</p><p class="card-title mb-0">{{ title }}</p></div></div></div>'
             make_link: false
             path: ''
             absolute: false
