@@ -118,11 +118,25 @@ Triton LED är ett B2B-system med quote-baserad försäljning. Priser ska inte v
 
 ---
 
-### ST-3: Rollstruktur i Drupal ← NÄSTA
-- [ ] Skapa roller: Elektriker, Partner Silver, Partner Gold
-- [ ] Konfigurera permissions per roll
-- [ ] Prisdöljning för anonymous (renderas ej)
-- [ ] Commerce Price Lists per roll
+### ST-3: Rollstruktur i Drupal ✅ KLAR
+- ✅ Skapat roller: Elektriker, Partner Silver, Partner Gold
+- ✅ Permissions per roll: access checkout, access content, view commerce_product, view media, view own commerce_order
+- ✅ Prisdöljning via hook_entity_field_access() i tritonled_compat
+  - anonymous + authenticated ser INGA priser
+  - elektriker, partner_silver, partner_gold, administrator ser priser
+- ✅ Commerce Promotions skapade (ej Price Lists — promotions klarar % per roll bättre):
+  - "Quote - Partner Silver 5%" — automatisk 5% rabatt, order type: Quote
+  - "Quote - Partner Gold 10%" — automatisk 10% rabatt, order type: Quote
+- ✅ unit_price + total_price dolda i order item form display (Add to cart)
+- ✅ Hårdkodad "Volume Pricing Available" och "Free shipping on orders over $5,000" borttagna från template
+- ✅ Hårdkodad dubblettknapp "Request Quote" borttagen från template
+
+**Beslut**:
+- Listpris döljs även för authenticated (ej verifierad)
+- Verifiering sker manuellt av TritonLED-personal
+- Kunden kan ej ändra unit_price i formuläret
+- field_permissions installerad men ej i bruk (Commerce base fields stöds ej)
+- commerce_pricelist installerad men ej i bruk (promotions räcker för % per roll)
 
 ---
 
