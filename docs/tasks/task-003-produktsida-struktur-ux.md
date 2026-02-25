@@ -140,9 +140,56 @@ Triton LED är ett B2B-system med quote-baserad försäljning. Priser ska inte v
 
 ---
 
-### ST-4: Fältstruktur & permissions
-*(Efter ST-3)*
-- [ ] field_permissions per roll vid behov
+### ST-4: Produktsidans UX — Människor, Robotar & AI-agenter
+*(Aktiv)*
+
+#### ST-4a: Schema.org strukturerad data (SEO + AI + API)
+- [ ] Installera schema_metatag + metatag
+- [ ] Konfigurera Product/ProductGroup/Offer per content type
+- [ ] Verifiera med Google Rich Results Test
+- [ ] Verifiera att AI-agenter (ChatGPT, Perplexity) kan läsa strukturen
+
+#### ST-4b: Views-baserade dataströmmar
+Views används som central lösning för alla dataformat — samma data, olika display.
+Inga extra moduler behövs utöver core Views.
+
+| View | Format | Målgrupp |
+|------|--------|----------|
+| Produktlistning | HTML | Människor |
+| Produkter JSON | JSON | Återförsäljare/API-partners |
+| llms.txt | Plain text/Markdown | AI-agenter (Perplexity, ChatGPT m.fl.) |
+| Produkt-export | CSV | Intern export |
+
+**llms.txt** (emerging standard av Jeremy Howard/Answer.AI):
+- `/llms.txt` — index över produkter i markdown
+- `/llms-full.txt` — fullständigt produktinnehåll
+- Cloudflare AI Gateway och ledande AI-agenter börjar respektera standarden
+- Drupal View med Plain text display renderar detta utan extra modul
+
+**api_partner-rollen** (stub nu, utbyggnad senare):
+- [ ] Skapa roll: api_partner (manuellt verifierad)
+- [ ] JSON-view exponerar listpris för api_partner
+- [ ] Push/webhooks: parkeras som eget framtida task
+- [ ] Rabatter per nivå: parkeras som eget framtida task
+
+**Views att bygga:**
+- [ ] products-html (produktlistning för människor)
+- [ ] products-json (JSON för återförsäljare)
+- [ ] products-llms (plain text/markdown för AI-agenter → /llms.txt)
+- [ ] products-csv (intern export)
+
+#### ST-4c: UX för människor
+- [ ] Produktsida: visa "Kontakta oss för pris" för anonymous/authenticated
+- [ ] Produktlistning: korrekt visning per roll
+- [ ] Mobilanpassning
+
+**Beslut**:
+- Views är central lösning för alla dataströmmar — The Drupal Way
+- Schema.org är standard för Google, AI-agenter och återförsäljare
+- api_partner-rollen får listpris (rabatter per nivå = framtida task)
+- Pull-feed via Views JSON-display — ingen JSON:API-modul behövs i första steget
+- ProductGroup + Offer är rätt Schema.org-struktur för produkter med varianter
+- llms.txt löses via View, ingen extra modul behövs
 
 ---
 
