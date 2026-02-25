@@ -69,27 +69,14 @@
             {{ product.variations }}
           </div>
 
-          {# CTA Buttons #}
-          <div class="product-actions mb-3">
-            <button class="btn btn-primary btn-lg w-100 mb-2">
-              Request Quote
-            </button>
-            {% if product.field_datasheet %}
-              <div class="datasheet-link mt-2">
-                {{ product.field_datasheet }}
-              </div>
-            {% endif %}
-          </div>
+          {# Datasheet #}
+          {% if product.field_datasheet %}
+            <div class="datasheet-link mt-2">
+              {{ product.field_datasheet }}
+            </div>
+          {% endif %}
 
-          {# Volume Pricing #}
-          <div class="volume-pricing-notice text-muted small text-center mb-3">
-            Volume Pricing Available
-          </div>
 
-          {# Free Shipping #}
-          <div class="shipping-notice text-muted small text-center">
-            Free shipping on orders over $5,000
-          </div>
 
         </div>
       </div>

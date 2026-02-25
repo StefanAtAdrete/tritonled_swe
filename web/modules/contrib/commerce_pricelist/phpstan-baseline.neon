@@ -1,0 +1,15 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Method Drupal\\\\commerce_pricelist\\\\Form\\\\PriceListItemForm\\:\\:save\\(\\) should return int but return statement is missing\\.$#"
+			count: 1
+			path: src/Form/PriceListItemForm.php
+
+		-
+			message: """
+				#^Fetching deprecated class constant EXISTS_RENAME of interface Drupal\\\\Core\\\\File\\\\FileSystemInterface\\:
+				in drupal\\:10\\.3\\.0 and is removed from drupal\\:12\\.0\\.0\\. Use
+				\\\\Drupal\\\\Core\\\\File\\\\FileExists\\:\\:Rename instead\\.$#
+			"""
+			count: 1
+			path: src/Form/PriceListItemImportForm.php

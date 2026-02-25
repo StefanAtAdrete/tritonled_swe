@@ -4,17 +4,31 @@
  * @file
  * TritonLED Compatibility Fixes.
  *
- * Workarounds for third-party module incompatibilities.
+ * Workarounds for third-party module incompatibilities and B2B access control.
  * This module is required in production.
  *
- * Current fixes:
- * - Feeds module 8.x-3.2: feeds_item field causes Layout Builder to crash
- *   when generating sample values. Bug: "fid" key not found in cleanIds().
- *   Fix: override generateSampleValue to return empty array.
+ * Current fixes/features:
+ *
+ * 1. FEEDS ITEM BUG (feeds_item field)
+ *    - Feeds module 8.x-3.2: feeds_item field causes Layout Builder to crash
+ *      when generating sample values. Bug: "fid" key not found in cleanIds().
+ *    - Fix: override generateSampleValue to return empty array.
+ *    - See: /docs/03-solutions/feeds-item-ajax-bug.md
+ *
+ * 2. COMMERCE PRICE ACCESS (hook_entity_field_access)
+ *    - Commerce price is a base field and cannot use field_permissions module.
+ *    - Business rule: prices are only visible to verified B2B roles.
+ *    - Anonymous and Authenticated users see NO prices (not even list price).
+ *    - Verified roles that see prices: elektriker, partner_silver, partner_gold.
+ *    - Admins always see prices.
+ *    - Why: Customers must be manually verified before seeing any pricing.
+ *    - See: /docs/tasks/task-003-product-page.md
  */
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Implements hook_field_info_alter().
@@ -24,4 +38,33 @@ function tritonled_compat_field_info_alter(&$info) {
     // Override the class to use our safe version.
     $info['feeds_item']['class'] = '\Drupal\tritonled_compat\Plugin\Field\FieldType\SafeFeedsItem';
   }
+}
+
+/**
+ * Implements hook_entity_field_access().
+ *
+ * Hides Commerce price fields from non-verified users.
+ * Only roles manually assigned by TritonLED staff can see prices.
+ */
+function tritonled_compat_entity_field_access($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL) {
+  // Only restrict view operations on price fields.
+  if ($operation !== 'view') {
+    return AccessResult::neutral();
+  }
+
+  $price_fields = ['price', 'list_price', 'unit_price', 'total_price'];
+  if (!in_array($field_definition->getName(), $price_fields)) {
+    return AccessResult::neutral();
+  }
+
+  // Roles allowed to see prices (manually verified by TritonLED staff).
+  $allowed_roles = ['administrator', 'elektriker', 'partner_silver', 'partner_gold'];
+  foreach ($allowed_roles as $role) {
+    if ($account->hasRole($role)) {
+      return AccessResult::neutral()->cachePerUser();
+    }
+  }
+
+  // All other roles (anonymous, authenticated) cannot see prices.
+  return AccessResult::forbidden()->cachePerUser();
 }
