@@ -1,32 +1,37 @@
 # Aktuell Task
 
 **Task**: TASK-003 (Produktsida — Struktur, Priser & UX)  
-**Status**: Aktiv — ST-1 + ST-2 + ST-3 klara  
+**Status**: Aktiv — ST-1 + ST-2 + ST-3 + ST-4a (delvis) klara  
 **Senast uppdaterad**: 2026-02-24
 
 ## Vad som gjordes idag (2026-02-24)
 
-### Rollstruktur ST-3 ✅
-- Skapade roller: Elektriker, Partner Silver, Partner Gold
-- Satte permissions per roll
+### ST-3: Rollstruktur ✅
+- Roller: Elektriker, Partner Silver, Partner Gold
+- Permissions per roll
 - Prisdöljning via hook_entity_field_access() i tritonled_compat
 - Commerce Promotions: Quote - Partner Silver 5%, Quote - Partner Gold 10%
-- Dold unit_price + total_price i order item form display
-- Borttagna hårdkodade texter i commerce-product--default.html.twig:
-  - "Volume Pricing Available"
-  - "Free shipping on orders over $5,000"
-  - Dubblettknapp "Request Quote"
+- Template-fixes: borttagna hårdkodade texter och dubblettknapp
+
+### ST-4a: Schema.org ✅ (delvis)
+- Installerat metatag + schema_metatag + schema_product
+- Schema.org Product konfigurerat med name, description, url (absolut), sku
+- offers parkerat (pris-token hanteras separat)
 
 ## Startpunkt nästa session
 
-ST-3 klar. Produktsidan ser korrekt ut för anonymous (inga priser).
-
-**Nästa steg (ST-4)**:
-Fältstruktur & permissions — se task-003 för detaljer.
+**Nästa steg (ST-4b)**:
+Views-baserade dataströmmar:
+- products-html (produktlistning för människor)
+- products-json (JSON för återförsäljare)
+- products-llms (plain text/markdown → /llms.txt)
+- products-csv (intern export)
+- Skapa roll: api_partner
 
 ## Kvarstående städning
-- Dummyprodukter (Triton MAX, OPTI, SROW) lever kvar — raderas via VBO när riktiga produkter finns
-- commerce_pricelist installerad men ej i bruk — utvärdera om den behövs eller avinstalleras
-- field_permissions installerad men ej i bruk — samma utvärdering
-- CSS-aggregering är AV under dev — slå PÅ igen inför produktion:
-  `ddev drush config-set system.performance css.preprocess 1 -y`
+- Dummyprodukter (Triton MAX, OPTI, SROW) lever kvar
+- commerce_pricelist installerad men ej i bruk — utvärdera
+- field_permissions installerad men ej i bruk — utvärdera
+- Schema.org offers: parkerat
+- Google Rich Results Test: ej verifierat ännu
+- CSS-aggregering AV under dev

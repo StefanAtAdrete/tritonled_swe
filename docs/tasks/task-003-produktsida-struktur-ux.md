@@ -143,11 +143,22 @@ Triton LED är ett B2B-system med quote-baserad försäljning. Priser ska inte v
 ### ST-4: Produktsidans UX — Människor, Robotar & AI-agenter
 *(Aktiv)*
 
-#### ST-4a: Schema.org strukturerad data (SEO + AI + API)
-- [ ] Installera schema_metatag + metatag
-- [ ] Konfigurera Product/ProductGroup/Offer per content type
+#### ST-4a: Schema.org strukturerad data (SEO + AI + API) ✅ KLAR (delvis)
+- ✅ Installerat: metatag, metatag_open_graph, schema_metatag, schema_product
+- ✅ Konfigurerat Schema.org Product för commerce_product:
+  - @type: Product
+  - name: [commerce_product:title]
+  - description: [commerce_product:field_short_description]
+  - url: [commerce_product:url:absolute]
+  - sku: [commerce_product:current_variation:sku]
+- ⏸ offers: parkerat — pris-token hanteras separat pga rollbaserad synlighet
 - [ ] Verifiera med Google Rich Results Test
 - [ ] Verifiera att AI-agenter (ChatGPT, Perplexity) kan läsa strukturen
+
+**Token-lärdomar**:
+- Fältnamn i schema_metatag: `schema_product_name`, `schema_product_url` etc (ej `schema_product[name]`)
+- Absolut URL: `[commerce_product:url:absolute]`
+- SKU från variation: `[commerce_product:current_variation:sku]`
 
 #### ST-4b: Views-baserade dataströmmar
 Views används som central lösning för alla dataformat — samma data, olika display.
