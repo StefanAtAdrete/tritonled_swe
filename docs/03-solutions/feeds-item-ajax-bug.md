@@ -1,7 +1,7 @@
 # Lösning: Feeds Item AJAX 500-fel
 
 **Datum**: 2026-02-21  
-**Uppdaterad**: 2026-02-22  
+**Uppdaterad**: 2026-02-27  
 **Modul**: Feeds 8.x-3.2  
 **Symptom**: 500-fel vid formulärvalidering, "modified by another user" vid produktredigering
 
@@ -28,9 +28,20 @@ Båda måste rensas.
 - "The content has been modified by another user" vid produktredigering
 - Formulär går inte att spara
 
-## Lösning
+## ✅ Permanent lösning (2026-02-27)
 
-Rensa `feeds_item` på både produkter och variationer:
+`FeedsImportSubscriber` i `tritonled_compat` rensar feeds_item automatiskt efter varje import.
+Kör via cron — ingen manuell åtgärd behövs.
+
+- Filtrerar på `feeds_item.target_id` per feed (rensar bara aktuell feeds entiteter)
+- Processar i chunks om 50 för att hantera 15 000+ varianter
+- Loggar antal rensade entiteter i watchdog (`type=tritonled_compat`)
+
+**Manuell rensning behövs inte längre** om `tritonled_compat` är aktiverad.
+
+---
+
+## Manuell lösning (fallback om modulen ej är aktiv)
 
 ```bash
 # Rensa på variationer
@@ -56,9 +67,35 @@ foreach(\$products as \$p) {
 ddev drush cr
 ```
 
-## OBS – Måste upprepas efter import
+---
 
-`feeds_item` sätts om automatiskt vid nästa CSV-import. Kör kommandona ovan igen efter import.
+## Feeds private-mapp (viktigt vid CSV-uppdatering)
+
+Feeds lagrar uppladdade CSV-filer i containerns private-mapp:
+```
+/var/www/html/private/feeds/
+```
+
+När CSV uppdateras på Mac måste den synkas manuellt till containern:
+```bash
+ddev exec cp /var/www/html/data/import/max-ip20.csv /var/www/html/private/feeds/max-ip20_2.csv
+```
+
+Filnamnet i containern (t.ex. `max-ip20_2.csv`) kan ses via:
+```bash
+ddev drush feeds:list-feeds
+```
+
+---
+
+## Feeds hash-cache
+
+Om Feeds inte importerar nya rader trots att de finns i CSV — rensa hash:
+```bash
+ddev drush sqlq "UPDATE commerce_product_variation__feeds_item SET feeds_item_hash = '';"
+```
+
+---
 
 ## Diagnos
 
