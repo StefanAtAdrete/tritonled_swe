@@ -1,0 +1,22 @@
+uuid: 4e4ff566-5fcc-4dd9-a766-d41cc7b79688
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.customer_cases
+id: node.customer_cases.promote
+field_name: promote
+entity_type: node
+bundle: customer_cases
+label: 'Promoted to front page'
+description: ''
+required: false
+translatable: true
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

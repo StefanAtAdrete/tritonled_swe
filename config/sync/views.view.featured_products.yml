@@ -229,7 +229,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '<div class="card h-100"><div class="d-flex flex-row flex-md-column"><div class="card-img-wrap">{{ field_variation_media }}</div><div class="card-body"><p class="card-subtitle mb-1">{{ field_series }}</p><p class="card-title mb-0">{{ title }}</p></div></div></div>'
+            text: "<div class=\"card h-100\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap\">{{ field_variation_media }}</div><div class=\"card-body\"><p class=\"card-subtitle mb-1\">{{ field_series }}</p><p class=\"card-title mb-0\">{{ title }}</p></div></div></div>"
             make_link: false
             path: ''
             absolute: false
@@ -360,8 +360,8 @@ display:
         type: views_bootstrap_grid
         options:
           grouping: {  }
-          row_class: ''
-          default_row_class: true
+          row_class: g-4
+          default_row_class: false
           grid_class: ''
           col_xs: col-12
           col_sm: col-sm-6
@@ -370,6 +370,11 @@ display:
           col_xl: none
       row:
         type: fields
+        options:
+          default_field_elements: false
+          inline: {  }
+          separator: ''
+          hide_empty: true
       query:
         type: views_query
         options:

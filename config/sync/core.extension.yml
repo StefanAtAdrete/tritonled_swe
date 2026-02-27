@@ -9,6 +9,7 @@ module:
   big_pipe: 0
   blazy: 0
   block: 0
+  block_class: 0
   block_content: 0
   bootstrap_layout_builder: 0
   bootstrap_styles: 0
@@ -26,6 +27,7 @@ module:
   commerce_payment: 0
   commerce_payment_example: 0
   commerce_price: 0
+  commerce_pricelist: 0
   commerce_product: 0
   commerce_promotion: 0
   commerce_stock: 0
@@ -51,6 +53,7 @@ module:
   fences: 0
   fences_presets: 0
   field: 0
+  field_permissions: 0
   field_ui: 0
   file: 0
   filter: 0
@@ -68,12 +71,16 @@ module:
   link: 0
   masquerade: 0
   mcp_tools: 0
+  mcp_tools_blocks: 0
   mcp_tools_cache: 0
   mcp_tools_config: 0
   mcp_tools_content: 0
   mcp_tools_image_styles: 0
   mcp_tools_layout_builder: 0
   mcp_tools_media: 0
+  mcp_tools_menus: 0
+  mcp_tools_metatag: 0
+  mcp_tools_pathauto: 0
   mcp_tools_remote: 0
   mcp_tools_stdio: 0
   mcp_tools_structure: 0
@@ -83,6 +90,8 @@ module:
   media_library_form_element: 0
   menu_link_content: 0
   menu_ui: 0
+  metatag: 0
+  metatag_open_graph: 0
   mysql: 0
   navigation: 0
   node: 0
@@ -92,6 +101,8 @@ module:
   path_alias: 0
   profile: 0
   responsive_image: 0
+  schema_metatag: 0
+  schema_product: 0
   search: 0
   serialization: 0
   settings_tray: 0
@@ -99,6 +110,7 @@ module:
   splide: 0
   splide_ui: 0
   state_machine: 0
+  string_field_formatter: 0
   stringoverrides: 0
   system: 0
   tamper: 0

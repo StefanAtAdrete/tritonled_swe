@@ -4,4 +4,4 @@ status: true
 dependencies: {  }
 id: accessories
 label: Accessories
-elementType: select
+elementType: radios

@@ -16,6 +16,7 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
+    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -55,7 +56,7 @@ mode: default
 content:
   attribute_accessories:
     type: options_select
-    weight: 3
+    weight: 4
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -67,56 +68,56 @@ content:
     third_party_settings: {  }
   attribute_cct:
     type: options_select
-    weight: 10
+    weight: 1
     region: content
     settings: {  }
     third_party_settings: {  }
   attribute_color:
     type: options_select
-    weight: 4
+    weight: 5
     region: content
     settings: {  }
     third_party_settings: {  }
   attribute_ip_rating:
     type: options_select
-    weight: 5
+    weight: 6
     region: content
     settings: {  }
     third_party_settings: {  }
   attribute_length:
     type: options_select
-    weight: 6
+    weight: 7
     region: content
     settings: {  }
     third_party_settings: {  }
   attribute_voltage:
     type: options_select
-    weight: 11
+    weight: 10
     region: content
     settings: {  }
     third_party_settings: {  }
   attribute_watt:
     type: options_select
-    weight: 8
+    weight: 0
     region: content
     settings: {  }
     third_party_settings: {  }
   commerce_stock_always_in_stock:
     type: boolean_checkbox
-    weight: 7
+    weight: 8
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   created:
     type: datetime_timestamp
-    weight: 14
+    weight: 13
     region: content
     settings: {  }
     third_party_settings: {  }
   field_ambient_temp:
     type: string_textfield
-    weight: 13
+    weight: 12
     region: content
     settings:
       size: 60
@@ -124,21 +125,21 @@ content:
     third_party_settings: {  }
   field_case_temp:
     type: number
-    weight: 15
+    weight: 14
     region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
   field_ce_marking:
     type: boolean_checkbox
-    weight: 16
+    weight: 15
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   field_control_system:
     type: string_textfield
-    weight: 17
+    weight: 16
     region: content
     settings:
       size: 60
@@ -146,21 +147,21 @@ content:
     third_party_settings: {  }
   field_cri:
     type: number
-    weight: 18
+    weight: 17
     region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
   field_current:
     type: number
-    weight: 19
+    weight: 18
     region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
   field_dimension_height:
     type: number
-    weight: 20
+    weight: 19
     region: content
     settings:
       placeholder: ''
@@ -317,33 +318,33 @@ content:
     third_party_settings: {  }
   field_warranty_years:
     type: number
-    weight: 41
+    weight: 40
     region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
   field_weight:
     type: number
-    weight: 42
+    weight: 41
     region: content
     settings:
       placeholder: ''
     third_party_settings: {  }
   list_price:
     type: commerce_list_price
-    weight: 1
+    weight: 2
     region: content
     settings: {  }
     third_party_settings: {  }
   price:
     type: commerce_price_default
-    weight: 2
+    weight: 3
     region: content
     settings: {  }
     third_party_settings: {  }
   sku:
     type: string_textfield
-    weight: 0
+    weight: 42
     region: content
     settings:
       size: 60
@@ -351,11 +352,12 @@ content:
     third_party_settings: {  }
   status:
     type: boolean_checkbox
-    weight: 12
+    weight: 11
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
 hidden:
   feeds_item: true
+  field_certifications: true
   uid: true

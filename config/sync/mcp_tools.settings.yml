@@ -11,8 +11,9 @@ access:
     - write
   default_scopes:
     - read
+    - write
   trust_scopes_via_header: false
-  trust_scopes_via_query: false
+  trust_scopes_via_query: true
   trust_scopes_via_env: true
   audit_logging: true
 rate_limits:

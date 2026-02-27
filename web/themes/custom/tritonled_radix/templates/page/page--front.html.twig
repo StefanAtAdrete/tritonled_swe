@@ -1,0 +1,71 @@
+{#
+/**
+ * @file
+ * TritonLED front page template.
+ */
+#}
+<div class="page">
+
+  {# TOPBAR #}
+  {% if page.topbar_left or page.topbar_right %}
+  <div class="topbar bg-body-secondary py-1">
+    <div class="container d-flex">
+      {% if page.topbar_left %}
+        <div class="me-auto">
+          {{ page.topbar_left }}
+        </div>
+      {% endif %}
+      {% if page.topbar_right %}
+        <div class="ms-auto">
+          {{ page.topbar_right }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# NAVBAR #}
+  <nav class="navbar navbar-expand-lg" data-bs-theme="light">
+    <div class="container">
+
+      {% if page.navbar_branding %}
+        {{ page.navbar_branding }}
+      {% endif %}
+
+      <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse">
+        {% if page.navbar_left %}
+          {{ page.navbar_left }}
+        {% endif %}
+        {% if page.navbar_left_2 %}
+          {{ page.navbar_left_2 }}
+        {% endif %}
+        {% if page.navbar_left_3 %}
+          <div class="ms-auto">
+            {{ page.navbar_left_3 }}
+          </div>
+        {% endif %}
+        {% if page.navbar_right %}
+          <div class="ms-auto w-auto">
+            {{ page.navbar_right }}
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </nav>
+
+  {# PAGE CONTENT #}
+  {% include 'radix:page-content' with {
+    page_content_container_type: 'fluid',
+    page_main_utility_classes: [],
+    page_header_container_utility_classes: ['mb-3'],
+  } %}
+
+  {# FOOTER #}
+  {% include 'radix:page-footer' %}
+
+</div>
