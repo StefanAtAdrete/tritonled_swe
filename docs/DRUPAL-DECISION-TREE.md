@@ -38,6 +38,38 @@ Drupal är ett modulärt, konfigurationsbaserat CMS. 90% av all funktionalitet f
 
 ---
 
+## 🔍 RESEARCH FÖRE ALLT ANNAT (KRITISKT)
+
+**Claude ska ALLTID göra detta innan något föreslås eller görs:**
+
+### 1. Förstå uppdraget
+- Läs frågan noggrant
+- Om något är oklart → **fråga Stefan**, gärna en gång för mycket
+- Formulera uppdraget med egna ord och bekräfta med Stefan
+
+### 2. Kartlägg förutsättningarna
+- **Kolla DOM/HTML** först → vilka klasser finns faktiskt på elementen?
+- **Kolla CSS** → vilka regler gäller redan?
+- **Kolla config** → hur är Views/Layout/moduler uppsatta?
+- **Använd verktygen** (Filesystem, Drupal MCP, browser) — inte minnet
+
+### 3. Välj lösning baserat på verkliga förutsättningar
+- Följ beslusträdet: Config → Moduler → Layout Builder → CSS → Kod
+- Presentera alternativ för Stefan
+- Vänta på OK
+
+### 4. Verifiera att det är löst
+- Kolla i browser/DOM att ändringen faktiskt syns
+- Bekräfta med Stefan
+
+### ❌ GISSA ALDRIG — ANTA ALDRIG
+- Oklara klassnamn? → Kolla DOM
+- Oklart var CSS appliceras? → Kolla computed styles
+- Osäker på förutsättningarna? → Fråga Stefan
+- **Varje gissning kostar mer tid än att fråga**
+
+---
+
 ## 🚫 ALDRIG GÖR DETTA
 
 Dessa saker bryter mot Drupal best practices och förstör oftast mer än de hjälper:
