@@ -7,10 +7,10 @@ label: 'Card Medium (desktop)'
 effects:
   26fe5818-6f57-466b-a027-28f59cab85cc:
     uuid: 26fe5818-6f57-466b-a027-28f59cab85cc
-    id: image_scale_and_crop
+    id: focal_point_scale_and_crop
     weight: 0
     data:
       width: 400
       height: 300
-      anchor: center-center
+      anchor: null
 pipeline: __default__

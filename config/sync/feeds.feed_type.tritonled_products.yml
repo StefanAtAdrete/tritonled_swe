@@ -35,7 +35,7 @@ label: 'TritonLED Products'
 id: tritonled_products
 description: ''
 help: ''
-import_period: 3600
+import_period: -1
 import_period_per_feed: false
 fetcher: upload
 fetcher_configuration:
@@ -50,7 +50,7 @@ processor: 'entity:commerce_product'
 processor_configuration:
   values:
     type: default
-  langcode: sv
+  langcode: en
   insert_new: 1
   update_existing: 2
   update_non_existent: _keep

@@ -8,9 +8,12 @@ dependencies:
     - field.field.commerce_product.default.body
     - field.field.commerce_product.default.feeds_item
     - field.field.commerce_product.default.field_brand
+    - field.field.commerce_product.default.field_certifications
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
     - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_producers
+    - field.field.commerce_product.default.field_product_categories
     - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
@@ -95,7 +98,10 @@ content:
 hidden:
   created: true
   feeds_item: true
+  field_certifications: true
   field_hero_media: true
+  field_producers: true
+  field_product_categories: true
   field_product_sku: true
   field_show_in_hero: true
   stores: true

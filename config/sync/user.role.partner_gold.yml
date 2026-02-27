@@ -1,0 +1,20 @@
+uuid: 9aa8e6f8-1b5e-4b79-a866-2b8c823959ef
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_checkout
+    - commerce_order
+    - commerce_product
+    - media
+    - system
+id: partner_gold
+label: 'Partner Gold'
+weight: 7
+is_admin: false
+permissions:
+  - 'access checkout'
+  - 'access content'
+  - 'view commerce_product'
+  - 'view media'
+  - 'view own commerce_order'

@@ -1,0 +1,14 @@
+uuid: 19ddf381-e4db-4623-98b7-dbebf1dbb0b5
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.partner_silver
+  module:
+    - user
+id: user_remove_role_action.partner_silver
+label: 'Remove the Partner Silver role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: partner_silver

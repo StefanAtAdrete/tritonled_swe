@@ -1,0 +1,49 @@
+{#
+/**
+ * @file
+ * TritonLED override for page-navigation component.
+ *
+ * Extends Radix navbar_left with navbar_left_2 and navbar_left_3
+ * so multiple menus/blocks can be placed after each other in the navbar.
+ */
+#}
+{%
+  embed 'radix:navbar' with {
+    navbar_theme: 'light',
+    navbar_utility_classes: [
+      'justify-content-between',
+    ],
+  }
+%}
+  {% block branding %}
+    {% if page.navbar_branding %}
+      {{ page.navbar_branding }}
+    {% endif %}
+  {% endblock %}
+
+  {% block left %}
+    {% if page.navbar_left %}
+      <div class="me-2">
+        {{ page.navbar_left }}
+      </div>
+    {% endif %}
+    {% if page.navbar_left_2 %}
+      <div class="me-2">
+        {{ page.navbar_left_2 }}
+      </div>
+    {% endif %}
+    {% if page.navbar_left_3 %}
+      <div class="me-2">
+        {{ page.navbar_left_3 }}
+      </div>
+    {% endif %}
+  {% endblock %}
+
+  {% block right %}
+    {% if page.navbar_right %}
+      <div class="ms-auto">
+        {{ page.navbar_right }}
+      </div>
+    {% endif %}
+  {% endblock %}
+{% endembed %}

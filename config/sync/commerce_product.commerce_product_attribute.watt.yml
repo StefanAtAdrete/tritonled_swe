@@ -4,4 +4,4 @@ status: true
 dependencies: {  }
 id: watt
 label: Watt
-elementType: select
+elementType: radios

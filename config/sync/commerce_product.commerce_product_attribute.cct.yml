@@ -4,4 +4,4 @@ status: true
 dependencies: {  }
 id: cct
 label: 'CCT (Color Temperature)'
-elementType: select
+elementType: radios

@@ -53,9 +53,39 @@
         if (!url) return;
         slide.style.cursor = 'pointer';
         slide.addEventListener('click', function (e) {
-          // Don't navigate if clicking carousel controls
-          if (e.target.closest('.carousel-control-prev, .carousel-control-next, .carousel-indicators')) return;
+          // Don't navigate if clicking carousel controls or media player
+          if (e.target.closest('.carousel-control-prev, .carousel-control-next, .carousel-indicators, .media--player')) return;
           window.location.href = url;
+        });
+      });
+    }
+  };
+
+  /**
+   * Pause hero carousel when Blazy media player is playing.
+   * Blazy adds 'is-playing' class on .media--player when video starts.
+   */
+  Drupal.behaviors.tritonledCarouselVideoPause = {
+    attach: function (context, settings) {
+      once('carousel-video-pause', '.view-hero .carousel', context).forEach(function (carouselEl) {
+        var observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              var target = mutation.target;
+              var controls = carouselEl.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+              if (target.classList.contains('is-playing')) {
+                bootstrap.Carousel.getInstance(carouselEl).pause();
+                controls.forEach(function(c) { c.style.display = 'none'; });
+              } else {
+                bootstrap.Carousel.getInstance(carouselEl).cycle();
+                controls.forEach(function(c) { c.style.display = ''; });
+              }
+            }
+          });
+        });
+        // Observe all media--player elements
+        carouselEl.querySelectorAll('.media--player').forEach(function (player) {
+          observer.observe(player, { attributes: true, attributeFilter: ['class'] });
         });
       });
     }

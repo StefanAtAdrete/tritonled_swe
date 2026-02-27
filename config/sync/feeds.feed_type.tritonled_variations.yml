@@ -15,6 +15,7 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
+    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -43,6 +44,18 @@ dependencies:
   module:
     - commerce_feeds
     - commerce_product
+    - feeds_tamper
+third_party_settings:
+  feeds_tamper:
+    tampers:
+      ad3cff43-45bb-44a7-a969-98a92fb2b55d:
+        separator: '|'
+        limit: null
+        uuid: ad3cff43-45bb-44a7-a969-98a92fb2b55d
+        plugin: explode
+        source: certifications
+        weight: 0
+        label: Explode
 label: 'TritonLED Variations'
 id: tritonled_variations
 description: 'Importerar Commerce-varianter från CSV'
@@ -285,15 +298,29 @@ custom_sources:
     label: variation_status
     machine_name: variation_status
     type: csv
+  field_certifications:
+    value: field_certifications
+    label: field_certifications
+    machine_name: field_certifications
+    type: csv
+  field_certifications_new:
+    value: field_certifications
+    label: field_certifications
+    machine_name: field_certifications_new
+    type: csv
+  certifications:
+    value: certifications
+    label: certifications
+    machine_name: certifications
+    type: csv
 mappings:
   -
     target: sku
     map:
       value: sku
-    settings:
-      language: en
+    settings: {  }
     unique:
-      value: true
+      value: 1
   -
     target: title
     map:
@@ -305,7 +332,8 @@ mappings:
     target: status
     map:
       value: variation_status
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: product_id
@@ -314,6 +342,8 @@ mappings:
     settings:
       reference_by: field_product_sku
       autocreate: false
+      feeds_item: false
+      autocreate_bundle: false
     unique: {  }
   -
     target: price
@@ -329,6 +359,7 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      autocreate_bundle: watt
     unique: {  }
   -
     target: attribute_cct
@@ -337,6 +368,8 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      language: null
+      autocreate_bundle: cct
     unique: {  }
   -
     target: attribute_ip_rating
@@ -345,6 +378,7 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      autocreate_bundle: ip_rating
     unique: {  }
   -
     target: attribute_beam_angle
@@ -353,6 +387,8 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      language: null
+      autocreate_bundle: beam_angle
     unique: {  }
   -
     target: attribute_color
@@ -361,6 +397,7 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      autocreate_bundle: color
     unique: {  }
   -
     target: attribute_length
@@ -369,6 +406,7 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      autocreate_bundle: length
     unique: {  }
   -
     target: attribute_voltage
@@ -377,6 +415,8 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      language: null
+      autocreate_bundle: voltage
     unique: {  }
   -
     target: attribute_accessories
@@ -385,48 +425,56 @@ mappings:
     settings:
       reference_by: name
       autocreate: true
+      autocreate_bundle: accessories
     unique: {  }
   -
     target: field_lumens
     map:
       value: field_lumens
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_efficacy
     map:
       value: field_efficacy
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_cri
     map:
       value: field_cri
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_power_factor
     map:
       value: field_power_factor
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_current
     map:
       value: field_current
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_frequency
     map:
       value: field_frequency
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_dimmable
     map:
       value: field_dimmable
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_dimming_protocol
@@ -446,13 +494,15 @@ mappings:
     target: field_rated_life
     map:
       value: field_rated_life
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_warranty_years
     map:
       value: field_warranty_years
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_energy_class
@@ -486,49 +536,57 @@ mappings:
     target: field_weight
     map:
       value: field_weight
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_dimension_length
     map:
       value: field_dimension_length
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_dimension_width
     map:
       value: field_dimension_width
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_dimension_height
     map:
       value: field_dimension_height
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_operating_temp_min
     map:
       value: field_operating_temp_min
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_operating_temp_max
     map:
       value: field_operating_temp_max
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_ambient_temp
     map:
       value: field_ambient_temp
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_case_temp
     map:
       value: field_case_temp
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_ik_rating
@@ -541,19 +599,22 @@ mappings:
     target: field_rohs
     map:
       value: field_rohs
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_ce_marking
     map:
       value: field_ce_marking
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_enec
     map:
       value: field_enec
-    settings: {  }
+    settings:
+      language: null
     unique: {  }
   -
     target: field_installation_notes
@@ -561,4 +622,14 @@ mappings:
       value: field_installation_notes
     settings:
       language: en
+      format: plain_text
     unique: {  }
+  -
+    target: field_certifications
+    map:
+      target_id: certifications
+    settings:
+      language: null
+      reference_by: name
+      autocreate: false
+      autocreate_bundle: certifications

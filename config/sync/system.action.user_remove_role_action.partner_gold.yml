@@ -1,0 +1,14 @@
+uuid: 804f94f4-608d-4f1c-99d1-f70919f0e615
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.partner_gold
+  module:
+    - user
+id: user_remove_role_action.partner_gold
+label: 'Remove the Partner Gold role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: partner_gold

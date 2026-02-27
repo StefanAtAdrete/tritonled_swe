@@ -1,0 +1,20 @@
+uuid: a46c60b2-7732-4e9c-be52-c89570daa653
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_checkout
+    - commerce_order
+    - commerce_product
+    - media
+    - system
+id: elektriker
+label: Elektriker
+weight: 5
+is_admin: false
+permissions:
+  - 'access checkout'
+  - 'access content'
+  - 'view commerce_product'
+  - 'view media'
+  - 'view own commerce_order'

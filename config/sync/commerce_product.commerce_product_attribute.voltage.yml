@@ -4,4 +4,4 @@ status: true
 dependencies: {  }
 id: voltage
 label: Voltage
-elementType: select
+elementType: radios
