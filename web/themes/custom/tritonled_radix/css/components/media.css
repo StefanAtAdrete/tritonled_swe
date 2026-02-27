@@ -20,25 +20,85 @@
   }
 }
 
-/* Remote video (Blazy/YouTube oEmbed) */
-.media--youtube,
-.media--bundle--remote-video {
+/* Remote video - Blazy OEmbed (thumbnail + play knapp)
+ * Blazy använder padding-bottom-trick för ratio.
+ * Låt Blazy styra höjden - sätt INTE aspect-ratio här.
+ * field__item måste ha width: 100% annars blir padding-bottom = 0.
+ */
+.media--bundle--remote-video .field__item,
+.blazy--field-media-oembed-video .field__item {
+  width: 100%;
+}
+
+/* Blazy media container - låt padding-bottom styra höjden */
+.media--blazy.media--bundle--remote-video,
+.media--blazy.media--youtube {
   position: relative !important;
-  aspect-ratio: 4 / 3 !important;
+  width: 100% !important;
   height: auto !important;
+  /* Inget aspect-ratio här - Blazy sätter padding-bottom via inline style */
+  background: #000;
+  overflow: hidden;
+}
+
+/* Thumbnail-bild och iframe inuti Blazy-container */
+.media--blazy.media--bundle--remote-video .media__element,
+.media--blazy.media--youtube .media__element,
+.media--blazy.media--bundle--remote-video iframe,
+.media--blazy.media--youtube iframe {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border: 0;
+}
+
+/* Fallback för remote video utan Blazy (iframe direkt) */
+.media--bundle--remote-video:not(.media--blazy) {
+  position: relative;
+  aspect-ratio: 16 / 9;
   width: 100%;
   background: #000;
   overflow: hidden;
 }
 
-.media--youtube iframe,
-.media--bundle--remote-video iframe {
-  position: absolute !important;
+.media--bundle--remote-video:not(.media--blazy) iframe {
+  position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Blazy close-knapp - flytta till nedre högra hörnet */
+.media--player .media__icon--close {
+  top: auto !important;
+  bottom: 1rem !important;
+  right: 1rem !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+/* Hero-karusell: remote video fyller carousel-item helt */
+.view-hero .carousel-item .media--type-remote-video .blazy,
+.view-hero .carousel-item .media--type-remote-video .field__item,
+.view-hero .carousel-item .media--type-remote-video .media--blazy {
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  border: 0;
+  padding-bottom: 0 !important;
+}
+
+.view-hero .carousel-item .media--type-remote-video .media__element {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
 }
 
 /* Video fyller containern */

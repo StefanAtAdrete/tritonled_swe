@@ -1,0 +1,438 @@
+uuid: 0d4eae9a-465a-4e55-a1ff-ceeb45de7f6b
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.customer_cases.body
+    - field.field.node.customer_cases.field_cities
+    - field.field.node.customer_cases.field_countries
+    - field.field.node.customer_cases.field_media
+    - field.field.node.customer_cases.field_partners
+    - field.field.node.customer_cases.layout_builder__layout
+    - node.type.customer_cases
+  module:
+    - bootstrap_layout_builder
+    - layout_builder
+    - user
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_1'
+        layout_settings:
+          label: Title
+          container_wrapper_classes: mb-5
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+          regions_attributes:
+            blb_region_col_1: null
+          breakpoints: {  }
+          layout_regions_classes: {  }
+          remove_gutters: '0'
+          context_mapping: {  }
+        components:
+          c7691b40-8ddb-40da-8a14-87d657bdca4c:
+            uuid: c7691b40-8ddb-40da-8a14-87d657bdca4c
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:customer_cases:title'
+              label: Title
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: plain_string_formatter
+                label: visually_hidden
+                settings:
+                  link_to_entity: false
+                  wrap_tag: h1
+                  wrap_class: ''
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
+        third_party_settings: {  }
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          context_mapping: {  }
+        components:
+          84d1b175-2d3f-406a-86b2-db1aa967bbfc:
+            uuid: 84d1b175-2d3f-406a-86b2-db1aa967bbfc
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:customer_cases:field_partners'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 4
+            additional: {  }
+          9244ef8d-8a18-4eff-954f-14c857862335:
+            uuid: 9244ef8d-8a18-4eff-954f-14c857862335
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:customer_cases:field_countries'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+          8b1d6e21-cded-4dfc-906e-ec5fa315d6f6:
+            uuid: 8b1d6e21-cded-4dfc-906e-ec5fa315d6f6
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:customer_cases:field_cities'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 2
+            additional: {  }
+          79e715d3-86ee-47c8-8e4d-b09d9171534f:
+            uuid: 79e715d3-86ee-47c8-8e4d-b09d9171534f
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:customer_cases:body'
+              label: Body
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: text_default
+                label: visually_hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
+          8db84798-5412-4961-ab11-deddc89e35f0:
+            uuid: 8db84798-5412-4961-ab11-deddc89e35f0
+            region: blb_region_col_2
+            configuration:
+              id: 'extra_field_block:node:customer_cases:links'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+            weight: 3
+            additional: {  }
+          a833b0d1-262b-48f9-a627-979eff4a0968:
+            uuid: a833b0d1-262b-48f9-a627-979eff4a0968
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:customer_cases:field_media'
+              label: Media
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_entity_view
+                label: visually_hidden
+                settings:
+                  view_mode: full
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
+          144fa668-0dc1-4d54-a189-d6436cad7cd6:
+            uuid: 144fa668-0dc1-4d54-a189-d6436cad7cd6
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:customer_cases:field_media'
+              label: Media
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_entity_view
+                label: visually_hidden
+                settings:
+                  view_mode: full
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 5
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
+        third_party_settings: {  }
+id: node.customer_cases.default
+targetEntityType: node
+bundle: customer_cases
+mode: default
+content: {  }
+hidden:
+  body: true
+  field_cities: true
+  field_countries: true
+  field_media: true
+  field_partners: true
+  layout_builder__layout: true
+  links: true

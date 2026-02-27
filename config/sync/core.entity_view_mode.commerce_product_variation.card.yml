@@ -1,0 +1,11 @@
+uuid: c335ffda-f2e3-4fdd-a54a-a3655cce448f
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.card
+label: Card
+description: null
+targetEntityType: commerce_product_variation
+cache: true

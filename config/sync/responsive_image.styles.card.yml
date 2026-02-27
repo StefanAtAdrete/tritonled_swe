@@ -5,7 +5,6 @@ dependencies:
   config:
     - image.style.card_medium
     - image.style.card_thumbnail
-    - image.style.max_325x325
   theme:
     - tritonled_radix
 id: card
@@ -27,4 +26,4 @@ image_style_mappings:
     breakpoint_id: tritonled_radix.mobile
     multiplier: 1x
 breakpoint_group: tritonled_radix
-fallback_image_style: max_325x325
+fallback_image_style: card_medium

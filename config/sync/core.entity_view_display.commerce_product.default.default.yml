@@ -7,9 +7,12 @@ dependencies:
     - field.field.commerce_product.default.body
     - field.field.commerce_product.default.feeds_item
     - field.field.commerce_product.default.field_brand
+    - field.field.commerce_product.default.field_certifications
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
     - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_producers
+    - field.field.commerce_product.default.field_product_categories
     - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
@@ -45,6 +48,14 @@ content:
     third_party_settings: {  }
     weight: 6
     region: content
+  field_certifications:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 9
+    region: content
   field_datasheet:
     type: file_default
     label: inline
@@ -59,6 +70,22 @@ content:
     settings: {  }
     third_party_settings: {  }
     weight: 7
+    region: content
+  field_producers:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 10
+    region: content
+  field_product_categories:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 11
     region: content
   field_product_sku:
     type: string

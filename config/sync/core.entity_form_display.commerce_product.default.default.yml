@@ -7,9 +7,12 @@ dependencies:
     - field.field.commerce_product.default.body
     - field.field.commerce_product.default.feeds_item
     - field.field.commerce_product.default.field_brand
+    - field.field.commerce_product.default.field_certifications
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
     - field.field.commerce_product.default.field_hero_media
+    - field.field.commerce_product.default.field_producers
+    - field.field.commerce_product.default.field_product_categories
     - field.field.commerce_product.default.field_product_sku
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
@@ -47,6 +50,16 @@ content:
     weight: 8
     region: content
     settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_certifications:
+    type: entity_reference_autocomplete
+    weight: 16
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
       size: 60
       placeholder: ''
     third_party_settings: {  }
@@ -146,4 +159,6 @@ content:
     third_party_settings: {  }
 hidden:
   feeds_item: true
+  field_producers: true
+  field_product_categories: true
   stores: true

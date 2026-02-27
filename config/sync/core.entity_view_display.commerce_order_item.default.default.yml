@@ -16,19 +16,9 @@ targetEntityType: commerce_order_item
 bundle: default
 mode: default
 content:
-  created:
-    type: timestamp
-    label: hidden
-    settings:
-      date_format: medium
-      custom_date_format: ''
-      timezone: ''
-    third_party_settings: {  }
-    weight: 0
-    region: content
   purchased_entity:
     type: entity_reference_entity_view
-    label: above
+    label: inline
     settings:
       view_mode: default
       link: false
@@ -37,7 +27,7 @@ content:
     region: content
   quantity:
     type: number_decimal
-    label: above
+    label: inline
     settings:
       thousand_separator: ''
       decimal_separator: .
@@ -48,16 +38,7 @@ content:
     region: content
   total_price:
     type: commerce_price_default
-    label: above
-    settings:
-      strip_trailing_zeroes: false
-      currency_display: symbol
-    third_party_settings: {  }
-    weight: 3
-    region: content
-  unit_price:
-    type: commerce_price_default
-    label: above
+    label: inline
     settings:
       strip_trailing_zeroes: false
       currency_display: symbol
@@ -66,3 +47,5 @@ content:
     region: content
 hidden:
   adjustments: true
+  created: true
+  unit_price: true

@@ -1,33 +1,44 @@
 /**
  * @file
  * Global styles for TritonLED Radix theme.
- * 
- * Bootstrap 5.3 is provided by Radix base theme.
- * Add minimal custom styling here.
+ *
+ * PRINCIP:
+ * - Bootstrap 5.3 via Radix — använd utilities i första hand (.mt-3, .p-4, osv)
+ * - Layout Builder-sektioner styr layout via GUI (Bootstrap Layout Builder)
+ * - Views styr grid/gutters via Views Bootstrap-inställningar
+ * - Custom CSS endast för saker som inte kan lösas via GUI eller Bootstrap utilities
+ * - Inga !important-overrides på kolumner eller gutters — Bootstrap sköter det
+ *
+ * LAYOUT-ARKITEKTUR:
+ * .container-fluid (padding 0) → full bredd ytterhölje
+ *   .container (per sektion i LB) → styr innehållsbredd
+ *     .row → Bootstrap grid-rad
+ *       .col-* → normala Bootstrap-gutters, styrs från LB GUI
  */
 
-/* ========================================
-   Custom variables (if needed)
-   ======================================== */
 
-/* Use Bootstrap variables when possible:
-   var(--bs-primary)
-   var(--bs-gutter-x)
-   var(--bs-spacer)
-*/
+/* ============================================================
+   1. GLOBAL
+   ============================================================ */
 
-/* ========================================
-   Global overrides (minimal!)
-   ======================================== */
+body {
+  background-color: var(--bs-gray-100);
+}
 
-/* Keep custom CSS to minimum
-   Use Bootstrap utilities instead:
-   .mt-3, .p-4, .text-primary, etc.
-*/
 
-/* ========================================
-   TritonLED specific
-   ======================================== */
+/* ============================================================
+   2. NAVBAR & HEADER
+   ============================================================ */
+
+.page > .navbar {
+  background-color: var(--bs-gray-100);
+  margin-bottom: 0 !important;
+}
+
+/* Ta bort gap mellan navbar och main-innehåll */
+.page > main {
+  margin-top: -16px;
+}
 
 /* Logotyp */
 .navbar-brand img,
@@ -36,11 +47,25 @@
   height: 48px;
 }
 
-/* Add brand-specific styles here
-   when Bootstrap utilities are insufficient
-*/
 
-/* Hero carousel - video responsive ratio */
+/* ============================================================
+   3. LAYOUT
+   Ytterhöljet (container-fluid) har ingen padding — full bredd.
+   Sektioner i Layout Builder använder .container för innehållsbredd.
+   Kolumner och gutters styrs från Layout Builder GUI.
+   ============================================================ */
+
+.container-fluid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+
+/* ============================================================
+   4. HERO CAROUSEL
+   Video-ratio: 1:1 mobil, 4:1 desktop.
+   ============================================================ */
+
 .carousel-item .media--view-mode-hero video {
   width: 100%;
   height: auto;
@@ -54,11 +79,12 @@
   }
 }
 
-/* ========================================
-   Splide product gallery
-   ======================================== */
 
-/* Thumbnail navigation */
+/* ============================================================
+   5. SPLIDE PRODUKTGALLERI
+   ============================================================ */
+
+/* Thumbnail-navigering */
 .splide--nav {
   background: transparent;
   margin-top: 0.5rem;
@@ -89,6 +115,15 @@
   display: block;
 }
 
+/* Video-thumbnail i nav */
+.splide--nav .splide__slide .media--video-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+  height: 100%;
+}
+
 /* Video i huvudsliden */
 .splide--main .media--video-file {
   position: relative;
@@ -106,11 +141,76 @@
   object-fit: contain;
 }
 
-/* Video-thumbnail i nav */
-.splide--nav .splide__slide .media--video-file {
+
+/* ============================================================
+   6. FOOTER
+   ============================================================ */
+
+footer.page__footer {
+  background-color: var(--bs-secondary);
+  color: var(--bs-white);
+  width: 100%;
+  padding: 3rem 0;
+}
+
+footer.page__footer a {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+footer.page__footer a:hover {
+  color: var(--bs-white);
+}
+
+/* Topbar */
+.topbar .block__title {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Attribute radio buttons — styled as pill buttons (products only) */
+.path-product .form-radios {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #1a1a1a;
-  height: 100%;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.path-product .form-radios .form-check {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+.path-product .form-radios .form-check-input {
+  display: none;
+}
+
+.path-product .form-radios .form-check-label {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 2rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.path-product .form-radios .form-check-label:hover {
+  border-color: var(--bs-dark);
+  background-color: var(--bs-gray-100);
+}
+
+.path-product .form-radios .form-check-input:checked + .form-check-label {
+  background-color: var(--bs-dark);
+  border-color: var(--bs-dark);
+  color: var(--bs-white);
+}
+
+/* Datasheet PDF link icon */
+.datasheet-link a::before {
+  font-family: "bootstrap-icons";
+  content: "\F63E";
+  margin-right: 0.375rem;
+  color: #dc3545;
 }

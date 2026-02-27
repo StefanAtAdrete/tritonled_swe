@@ -7,8 +7,12 @@ screenshot: screenshot.png
 
 # Regions (inherited from Radix but can override)
 regions:
+  topbar_left: 'Topbar left'
+  topbar_right: 'Topbar right'
   navbar_branding: 'Navbar branding'
   navbar_left: 'Navbar left'
+  navbar_left_2: 'Navbar left 2'
+  navbar_left_3: 'Navbar left 3'
   navbar_right: 'Navbar right'
   header: 'Header'
   content: 'Content'
