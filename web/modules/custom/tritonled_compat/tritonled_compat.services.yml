@@ -1,0 +1,5 @@
+services:
+  tritonled_compat.feeds_import_subscriber:
+    class: Drupal\tritonled_compat\EventSubscriber\FeedsImportSubscriber
+    tags:
+      - { name: event_subscriber }
