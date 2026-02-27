@@ -191,6 +191,70 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - ✅ Layout Builder för layout
 - Se: `03-solutions/commerce-ajax-solution.md`
 
+### Bootstrap Layout Builder NULL-attribut bug (2026-02-26)
+- BLB sparar ibland `NULL` for `container_wrapper_attributes` och `section_attributes`
+- Orsakar `Warning: foreach() argument must be of type array|object, string given` i `NestedArray::mergeDeepArray()`
+- Fix: PHP-script som itererar sektioner och satter `[]` for NULL-varden
+- Se: `tasks/task-006-footer-layout.md`
+
+### Produktsida attribut & styling (2026-02-27)
+- ✅ Attribut-väljare bytta från dropdowns till radiobuttons via Commerce form display
+- ✅ Radiobuttons stylade som pill-knappar via CSS (`.path-product .form-radios`)
+- ✅ CSS begränsad till `.path-product` för att undvika påverkan på andra sidor
+- ✅ Bootstrap Icons CDN lagt till i `tritonled_radix.libraries.yml`
+- ✅ PDF-ikon på datasheet-länk via CSS `::before` + Bootstrap Icons unicode `\F63E`
+- ✅ Attributordning styrs av Manage form display på variationstypen (inte template)
+- ✅ Commerce visar bara attributvärden som finns i faktiska varianter — många watt-värden = många varianter (dummy-data)
+- ⏳ Datakvalitet/variantkombinationer — återkommer när riktig produktdata finns
+- ⏳ Navigation-modulen har bug med vissa admin-routes (`getPath() on null`) — workaround: navigera via admin-menyn
+
+### Topbar + Navbar regioner (2026-02-27)
+- ✅ Lade till `topbar_left`, `topbar_right`, `navbar_left_2`, `navbar_left_3` som regioner i `tritonled_radix.info.yml`
+- ✅ SDC-komponenter (`radix:page-navigation`) kan INTE overridas från custom-tema — namespace löses alltid mot ursprungstemat
+- ✅ Rätt lösning: Bygg navbar direkt i `page--front.html.twig` och `page.html.twig` utan SDC-chain
+- ✅ Kom ihåg: startsidan använder `page--front.html.twig` — BÅDA templates måste uppdateras
+- ✅ `ms-auto` på region-wrapper pushar innehåll till höger i navbar flex-container
+- ✅ Topbar renderas villkorligt — syns bara om `topbar_left` eller `topbar_right` har block
+- ✅ `.topbar .block__title { font-size: 1rem; }` krävs — `fs-6` på block-wrapper ärver inte till h2
+- ✅ Two-row navbar: Topbar (account, cart) + Navbar (logo, huvudmeny) är B2B-standard
+
+### Radix page--front.html.twig (2026-02-26)
+- Startsidan anvander `page--front.html.twig`, INTE `page.html.twig`
+- `py-5` ar hardkodat i `radix:page` - maste overskriva med egen template som kopierar strukturen
+- `include with` i Twig mergar INTE variabler uppifran
+- Se: `tasks/task-006-footer-layout.md`
+
+### Skapa config-entiteter: ALLTID via Drush/admin UI (2026-02-26)
+- ❌ ALDRIG skapa taxonomy vocabularies, node types eller liknande via manuell YAML
+- Drupal genererar `uuid` och `_core.default_config_hash` automatiskt — utan dem misslyckas `cim`
+- ✅ Skapa via Drush php:eval eller admin UI, sedan `cex` för att få det i sync
+- Fält (field.storage, field.field) KAN skapas via YAML men beror på att entiteten redan finns i databasen
+- Om `cim` misslyckas med "entity does not have an ID" → skapa via Drush istället
+
+```bash
+# Exempel: skapa taxonomy vocabulary via Drush
+ddev drush php:eval "
+\$vocab = \Drupal\taxonomy\Entity\Vocabulary::create(['vid' => 'my_vocab', 'name' => 'My Vocab']);
+\$vocab->save();
+"
+ddev drush cex -y
+```
+
+### Blazy + Responsive Images i Featured Products (2026-02-26)
+- ✅ Blazy ersätter `<picture>` med `<img data-src>` — `fallback_image_style` är den style Blazy använder
+- ❌ Sätt ALDRIG `fallback_image_style` till en Scale-stil (t.ex. `max_325x325`) — olika bildformat ger olika höjder
+- ✅ Använd alltid Scale and Crop som `fallback_image_style` (t.ex. `card_medium`)
+- ✅ `commerce_product_variation.default.card` view display måste skapas explicit — finns inte automatiskt
+- Se: `tasks/task-003-featured-products.md`
+
+### Blazy Remote Video i Hero Carousel (2026-02-26)
+- ✅ Blazy `use_oembed` måste vara **aktiverat** för att YouTube-thumbnails ska renderas
+- ✅ Lägg alltid till `media--type-remote-video` i hero.css-regler (bredvid image/video)
+- ❌ Sätt ALDRIG `aspect-ratio` på `.media--blazy` — Blazy använder `padding-bottom`-trick
+- ✅ MutationObserver på `is-playing`-klassen för att pausa karusell vid videouppspelning
+- ✅ Undanta `.media--player` från slide-klick-navigering i JS
+- Se: `tasks/task-002-hero-carousel.md`
+
 ### Responsive Images (2025-01-08)
 - ✅ 4:3 aspect ratio över ALLA breakpoints
 - ✅ Focal Point module

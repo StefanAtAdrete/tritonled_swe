@@ -1,8 +1,8 @@
 # TASK-002: Hero Carousel
 
 **Created**: 2026-02-17
-**Status**: ✅ Completed (E+F kvar som justeringar)
-**Last Updated**: 2026-02-17
+**Status**: ✅ KLAR
+**Last Updated**: 2026-02-26
 **Related Tasks**: TASK-001
 
 ---
@@ -20,170 +20,167 @@ i rätt ordning innan vi kan sätta ihop slutresultatet. Identifiera alltid dess
 5. **Block / Layout Builder** – Placerar resultatet på sidan
 6. **SDC / Template** – Sista utväg om core+views inte räcker
 
-**Verktyg att verifiera per sub-task:**
-- Config och admin UI → alltid FÖRSTA steget
-- Contrib-moduler → sök innan du kodar
-- Layout Builder → för placering
-- Preprocess hooks → kräver godkännande
-- Templates / SDC → kräver explicit godkännande
+---
+
+## SUB-TASKS
+
+### A–E: ✅ Klara (se tidigare dokumentation)
+
+### SUB-TASK F: Video och remote video i hero ✅ Klar 2026-02-26
 
 ---
 
-## 1. DEFINE
+## 🔍 Felsökning: Remote video (YouTube) svart i hero
 
-### Mål
-Skapa en hero carousel-sektion för startsidan som visar media (bild/video),
-rubrik, sammanfattningstext och CTA-knapp. Sektionen ska vara 100% bred,
-4:1 ratio på desktop och 1:1 ratio på mobil.
+### Problem
+Slide med `media--type-remote-video` (YouTube) visade svart bakgrund.
 
-### Syfte
-- Ge besökare en visuell och säljande ingång till TritonLED's produkter
-- Möjliggöra redaktionell kontroll via Drupal admin (lägg till/ta bort slides)
-- Responsiv och performant (rätt bildstorlek per breakpoint)
+### Diagnos steg för steg
 
-### Design (referensbild: LumaIndustrial)
-- Fullbredd hero med bakgrundsbild
-- Overlay-text: tagline (liten grön text), rubrik (stor), brödtext, CTA-länk
-- Carousel-indikatorer (streck/prickar) längst ner höger
-- Mörk overlay på bilden för läsbarhet
+**Steg 1 – Nätverkstest**
+```bash
+ddev exec curl -v "https://www.youtube.com"
+```
+→ TLS-handshake lyckades. DDEV kan nå YouTube. Inte ett nätverksproblem.
 
-### Acceptanskriterier
-- [ ] Slides hanteras som eget content type (ej produkter) med titel, text, media, CTA
-- [ ] Responsiva bildformat: 4:1 desktop, 1:1 mobil
-- [ ] Carousel fungerar med Bootstrap (views_bootstrap redan installerat)
-- [ ] Visas som block i Layout Builder på startsidan
-- [ ] Minst 2 testslides skapade via admin
-- [ ] Fungerar på desktop (≥768px) och mobil (<768px)
-- [ ] Inga JS-errors i console
-
-**Godkänt av Stefan**: ⏳ Väntar
-
----
-
-## 2. SUB-TASKS (i ordning)
-
-### SUB-TASK A: Verifiera befintligt innehåll
-**Mål**: Bekräfta att befintliga Commerce-produkter räcker som datakälla för hero  
-**Approach**: Kolla vilka fält produkter redan har (title, media, short description, CTA via URL)
-
-**Befintliga fält att verifiera**:
-- `title` – Produktnamn (rubrik)
-- `field_product_media` – Media (bild/video)
-- `field_short_description` – Sammanfattningstext
-- Produktens URL som CTA
-
-**Om fält saknas**: Lägg till på Commerce product type via admin UI  
-**Verktyg**: Admin UI, `ddev drush cex`  
-**Kräver kod?**: NEJ  
-**Status**: ✅ Klar
-
----
-
-### SUB-TASK B: Image styles för hero
-**Mål**: Rätt bildstorlek per breakpoint (undvik att ladda 4000px-bild på mobil)  
-**Approach**: Admin → Structure → Image styles  
-**Styles som behövs**:
-- `hero_desktop` – 1600×400px (4:1), Scale and crop
-- `hero_mobile` – 600×600px (1:1), Scale and crop
-- `hero_tablet` – 1024×256px (4:1), Scale and crop
-
-**Responsive image style**: `hero_responsive` som mappar breakpoints → styles  
-**Breakpoints**: Använder `tritonled_radix.breakpoints.yml`
-
-**Verktyg**: Admin UI + config export  
-**Kräver kod?**: NEJ – ren config  
-**Status**: ✅ Klar — alla styles verifierade i databas
-
----
-
-### SUB-TASK C: View mode "Hero" för Hero Slide
-**Mål**: Definiera hur en Hero Slide renderas i carousel-kontexten  
-**Approach**: Structure → Content types → Hero Slide → Manage display  
-**View mode**: Skapa "Hero" view mode med rätt fältordning och formatters  
-**Formatters**:
-- `field_hero_media` → Responsive image (hero_responsive)
-- `field_hero_tagline` → Plain text
-- `field_hero_title` → Default
-- `field_hero_body` → Plain text (trimmed)
-- `field_hero_cta_text` + `field_hero_cta_url` → Länkfält
-
-**Verktyg**: Admin UI  
-**Kräver kod?**: NEJ  
-**Status**: ✅ Klar — view modes skapade för commerce_product och media
-
----
-
-### SUB-TASK D: View "Hero Carousel" (block)
-**Mål**: Samla Hero Slides och rendera dem som Bootstrap carousel  
-**Approach**: Admin → Structure → Views  
-**Verktyg**: Admin UI + views_bootstrap  
-**Kräver kod?**: Minimal JS för Bootstrap 4→5 kompatibilitet  
-**Status**: ✅ Klar
-
-**Lärdomar**:
-- views_bootstrap genererar Bootstrap 4-attribut (data-ride, data-slide)
-- Bootstrap 5 kräver data-bs-* prefix
-- Lösning: Bootstrap compat behavior i global.js
-- Image styles genereras inte automatiskt on-demand i DDEV/nginx – kör manuellt vid behov:
+**Steg 2 – oEmbed-test från Drupal**
 ```bash
 ddev drush php:eval "
-\$styles = ['hero_desktop', 'hero_tablet', 'hero_mobile'];
-foreach (\$styles as \$style_id) {
-  \$style = \Drupal\image\Entity\ImageStyle::load(\$style_id);
-  \$destination = \$style->buildUri('public://[PATH/TO/FILE]');
-  \$result = \$style->createDerivative('public://[PATH/TO/FILE]', \$destination);
-  echo \$style_id . ': ' . (\$result ? 'OK' : 'FAIL') . '\n';
-}
+\$url = 'https://youtu.be/BYSH7D0woMw';
+\$resource_url = 'https://www.youtube.com/oembed?url=' . urlencode(\$url) . '&format=json';
+\$response = \Drupal::httpClient()->get(\$resource_url);
+echo \$response->getStatusCode();
 "
+```
+→ 200 OK. Drupal kan hämta oEmbed-data.
+
+**Steg 3 – Blazy-inställning**
+```bash
+ddev drush php:eval "print_r(\Drupal::config('blazy.settings')->getRawData());"
+```
+→ `use_oembed` var **avstängt**! Aktiverades:
+```bash
+ddev drush php:eval "
+\Drupal::service('config.factory')->getEditable('blazy.settings')
+  ->set('use_oembed', 1)->save();
+"
+```
+→ Blazy börjar rendera thumbnail + play-knapp.
+
+**Steg 4 – Fortfarande svart**
+DOM-inspektion visade:
+- `.media--blazy` höjd: 837px ✅
+- `.carousel-inner` höjd: 279px ← klipper innehållet
+
+`hero.css` saknade `.media--type-remote-video` i positioineringsregeln.
+
+**Steg 5 – CSS-fix i hero.css**
+```css
+.view-hero .carousel-item .media--type-video,
+.view-hero .carousel-item .media--type-image,
+.view-hero .carousel-item .media--type-remote-video {  /* ← tillagd */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+```
+
+Plus tillägg i `media.css` för att Blazy-containers ska fylla carousel-item:
+```css
+.view-hero .carousel-item .media--type-remote-video .blazy,
+.view-hero .carousel-item .media--type-remote-video .field__item,
+.view-hero .carousel-item .media--type-remote-video .media--blazy {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding-bottom: 0 !important;
+}
 ```
 
 ---
 
-### SUB-TASK E: Placering i Layout Builder
-**Verktyg**: Layout Builder admin UI  
-**Kräver kod?**: NEJ  
-**Status**: ✅ Klar — Edge to edge, no gutters
+## 🎬 Blazy Media Player-beteende
+
+Blazy renderar remote video som **thumbnail + play-knapp** (inte autoplay iframe).
+- Play-knapp: `.media__icon--play`
+- Close-knapp: `.media__icon--close` (X-ikon)
+- Klick på play → Blazy byter till iframe + lägger till klass `is-playing` på `.media--player`
+- Klick på close → tar bort `is-playing`, visar thumbnail igen
+
+### Lärdomar
+- Blazy's `is-playing`-klass triggas via klassändring på `.media--player`
+- MutationObserver är rätt verktyg för att lyssna på detta
+- `carousel-control-prev/next` måste döljas vid uppspelning (annars syns pilar ovanpå videon)
+- Slide-klick-navigering måste undanta `.media--player` klick
 
 ---
 
-### SUB-TASK F: Styling (overlay, text, responsiv ratio)
-**Status**: ⏳ Sparas till designfas — justera höjd, text-position, header-gap
+## JS: global.js tillägg
+
+### 1. Pausa karusell + dölja pilar vid videouppspelning
+```javascript
+Drupal.behaviors.tritonledCarouselVideoPause = {
+  attach: function (context, settings) {
+    once('carousel-video-pause', '.view-hero .carousel', context).forEach(function (carouselEl) {
+      var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            var target = mutation.target;
+            var controls = carouselEl.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+            if (target.classList.contains('is-playing')) {
+              bootstrap.Carousel.getInstance(carouselEl).pause();
+              controls.forEach(function(c) { c.style.display = 'none'; });
+            } else {
+              bootstrap.Carousel.getInstance(carouselEl).cycle();
+              controls.forEach(function(c) { c.style.display = ''; });
+            }
+          }
+        });
+      });
+      carouselEl.querySelectorAll('.media--player').forEach(function (player) {
+        observer.observe(player, { attributes: true, attributeFilter: ['class'] });
+      });
+    });
+  }
+};
+```
+
+### 2. Undanta media--player från slide-klick-navigering
+```javascript
+if (e.target.closest('.carousel-control-prev, .carousel-control-next, .carousel-indicators, .media--player')) return;
+```
 
 ---
 
-## 3. PLAN
+## CSS: Blazy close-knapp position
 
-**Beslutsträd**: `/docs/DRUPAL-DECISION-TREE.md`
-
-**Ordning**:
-A → B → C → D → E → F
-
-**Godkänt av Stefan**: ⏳ Väntar
-
----
-
-## 4. IMPLEMENT
-
-*(Fylls i per sub-task efter godkännande)*
+```css
+/* Flytta close-knapp till nedre högra hörnet */
+.media--player .media__icon--close {
+  top: auto !important;
+  bottom: 1rem !important;
+  right: 1rem !important;
+  left: auto !important;
+  transform: none !important;
+}
+```
 
 ---
 
-## 5. VERIFY
+## 📝 Samlade lärdomar
 
-*(Fylls i efter implementation)*
-
----
-
-## 📝 Lärdomar att ta med
-
-- Dela alltid upp huvuduppgifter i sub-tasks innan implementation
-- Verifiera alltid om content type / media type behöver skapas INNAN views
-- Image styles måste finnas INNAN view modes konfigureras
-- views_bootstrap finns och är aktiverat – använd det innan custom carousel
-- Befintlig `views.view.hero.yml` visar produkter (inte slides) – behöver ny approach
+1. **DDEV kan nå externa tjänster** – utgående trafik är inte blockerad
+2. **Blazy `use_oembed` måste aktiveras** för att remote video ska renderas
+3. **Blazy-ratio via padding-bottom krockar med aspect-ratio CSS** – använd aldrig `aspect-ratio` på `.media--blazy`-element
+4. **Alla media-typer måste täckas i hero.css** – glöm inte `media--type-remote-video`
+5. **Blazy Media Player = thumbnail + play, inte autoplay** – rätt beteende för hero
+6. **MutationObserver på `is-playing`-klassen** är rätt sätt att detektera videouppspelning
+7. **Slide-klick-navigering måste undanta media player** annars startar inte videon
 
 ---
 
-**Version**: 1.0
-**Skapad**: 2026-02-17
+**Version**: 2.0
+**Uppdaterad**: 2026-02-26
 **Författare**: Claude + Stefan
