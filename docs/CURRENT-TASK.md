@@ -1,12 +1,12 @@
 # Aktuell Task
 
-**Task**: TASK-010 (Layout Builder + Commerce Variation Field Injection)
-**Status**: Research / Planning — KRITISKT ARKITEKTURBESLUT
+**Task**: TASK-010b (commerce_variation_blocks — AJAX)
+**Status**: Planning
 **Senast uppdaterad**: 2026-02-28
-**Fil**: `/docs/tasks/task-010-layout-builder-commerce-variation-injection.md`
+**Fil**: `/docs/tasks/task-010b-commerce-variation-blocks-ajax.md`
 
-> Detta test avgör hela produktsidans arkitektur.
-> Genomför Test 1-4 i task-filen innan något byggs.
+> TASK-010 klar: modul byggd, pseudo-fält renderas i Layout Builder.
+> Återstår: AJAX-uppdatering vid variantbyte via hook_commerce_product_variation_field_injection().
 
 ## Vad som ska göras
 
