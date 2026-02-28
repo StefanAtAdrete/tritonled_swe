@@ -17,7 +17,6 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
-    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -77,7 +76,6 @@ hidden:
   field_ambient_temp: true
   field_case_temp: true
   field_ce_marking: true
-  field_certifications: true
   field_control_system: true
   field_cri: true
   field_current: true

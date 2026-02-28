@@ -16,7 +16,6 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
-    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -359,5 +358,4 @@ content:
     third_party_settings: {  }
 hidden:
   feeds_item: true
-  field_certifications: true
   uid: true
