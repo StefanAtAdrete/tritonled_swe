@@ -1,0 +1,11 @@
+uuid: 9d3848ef-a1e8-4e44-839b-bfeda52fd7f3
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.certifications
+label: Certifications
+description: null
+targetEntityType: commerce_product_variation
+cache: true

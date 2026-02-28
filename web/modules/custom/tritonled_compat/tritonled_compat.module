@@ -31,6 +31,23 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 
 /**
+ * Implements hook_field_group_content_element_keys_alter().
+ *
+ * Enables Field Group to work with Commerce entity types.
+ * Commerce uses 'product' and 'product_variation' as render array keys
+ * instead of the standard 'content' key that Field Group expects.
+ *
+ * Without this hook, Field Group tabs/fieldsets render no HTML output
+ * on Commerce product and variation displays.
+ *
+ * See: https://www.drupal.org/project/commerce/issues/2906502
+ */
+function tritonled_compat_field_group_content_element_keys_alter(&$keys) {
+  $keys['commerce_product_variation'] = 'product_variation';
+  $keys['commerce_product'] = 'product';
+}
+
+/**
  * Implements hook_field_info_alter().
  */
 function tritonled_compat_field_info_alter(&$info) {

@@ -1,0 +1,11 @@
+uuid: 66b42be4-ee6d-4f8a-b6f9-dee8fbbe4bce
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.electrical
+label: Electrical
+description: null
+targetEntityType: commerce_product_variation
+cache: true
