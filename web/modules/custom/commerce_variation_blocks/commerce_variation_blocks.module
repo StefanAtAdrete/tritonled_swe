@@ -13,11 +13,13 @@
  *    on commerce_product_variation and declares a pseudo-field for each one
  *    on commerce_product.
  *
- * 2. hook_commerce_product_view() - Renders the current variation using the
+ * 2. hook_entity_view() - Renders the current variation using the
  *    corresponding view mode and injects it into the product build array.
- *    Commerce's own AJAX system handles field-level updates automatically
- *    when the user switches variants, since individual fields inside the
- *    rendered view mode carry their standard AJAX replacement CSS classes.
+ *    A unique CSS class is added to each container so that the EventSubscriber
+ *    can target it via ReplaceCommand on AJAX variation change.
+ *
+ * 3. VariationAjaxChangeSubscriber - Listens to ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE
+ *    and sends ReplaceCommands for each pseudo-field container.
  *
  * Usage:
  * - Enable this module.
@@ -35,18 +37,13 @@ use Drupal\commerce_product\Entity\ProductInterface;
 
 /**
  * Implements hook_entity_extra_field_info().
- *
- * Dynamically discovers all custom view modes on commerce_product_variation
- * and exposes each as a pseudo-field on commerce_product bundles.
  */
 function commerce_variation_blocks_entity_extra_field_info() {
   $extra = [];
 
-  // Load all view modes for commerce_product_variation.
   $view_modes = \Drupal::service('entity_display.repository')
     ->getViewModes('commerce_product_variation');
 
-  // Skip Commerce's own internal view modes — they are already handled.
   $skip = ['default', 'cart', 'card', 'summary'];
 
   foreach ($view_modes as $view_mode_id => $view_mode_info) {
@@ -54,7 +51,6 @@ function commerce_variation_blocks_entity_extra_field_info() {
       continue;
     }
 
-    // Load all product bundles and add a pseudo-field to each.
     $product_types = \Drupal::entityTypeManager()
       ->getStorage('commerce_product_type')
       ->loadMultiple();
@@ -77,15 +73,14 @@ function commerce_variation_blocks_entity_extra_field_info() {
 /**
  * Implements hook_entity_view().
  *
- * Renders the current variation using each view mode's pseudo-field
- * if that pseudo-field is enabled in the current display.
+ * Renders the current variation into each pseudo-field container.
+ * Adds a unique CSS class for AJAX targeting via VariationAjaxChangeSubscriber.
  */
 function commerce_variation_blocks_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
   if (!$entity instanceof ProductInterface) {
     return;
   }
 
-  // Get the default variation to render.
   $variation = $entity->getDefaultVariation();
   if (!$variation) {
     return;
@@ -94,20 +89,26 @@ function commerce_variation_blocks_entity_view(array &$build, EntityInterface $e
   $view_builder = \Drupal::entityTypeManager()
     ->getViewBuilder('commerce_product_variation');
 
-  // Get all available variation view modes and render each as a pseudo-field.
-  // Layout Builder controls visibility by placing or not placing the block.
-  // We cannot use $display->getComponents() when Layout Builder is active,
-  // as blocks are stored in sections, not components.
   $view_modes = \Drupal::service('entity_display.repository')
     ->getViewModes('commerce_product_variation');
 
   $skip = ['default', 'cart', 'card', 'summary'];
+  $product_id = $entity->id();
 
   foreach ($view_modes as $view_mode_id => $view_mode_info) {
     if (in_array($view_mode_id, $skip)) {
       continue;
     }
+
     $field_name = 'variation_block__' . $view_mode_id;
-    $build[$field_name] = $view_builder->view($variation, $view_mode_id);
+    $rendered = $view_builder->view($variation, $view_mode_id);
+
+    $build[$field_name] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['commerce-variation-block--' . $view_mode_id . '--' . $product_id],
+      ],
+      'content' => $rendered,
+    ];
   }
 }

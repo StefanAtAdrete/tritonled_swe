@@ -16,111 +16,449 @@ dependencies:
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
     - field.field.commerce_product.default.field_show_in_hero
+    - field.field.commerce_product.default.layout_builder__layout
   module:
-    - commerce_product
-    - file
+    - bootstrap_layout_builder
     - layout_builder
-    - text
+    - layout_discovery
 third_party_settings:
   layout_builder:
-    enabled: false
-    allow_custom: false
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components:
+          e889435d-d31f-4d73-a8aa-a058cf52e05e:
+            uuid: e889435d-d31f-4d73-a8aa-a058cf52e05e
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:default:field_series'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: visually_hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          c3a9e8bf-a4f7-4570-8618-ebc13445a576:
+            uuid: c3a9e8bf-a4f7-4570-8618-ebc13445a576
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:default:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: visually_hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+          c13eeba0-ef29-4f8d-a866-1645a7ffb0a9:
+            uuid: c13eeba0-ef29-4f8d-a866-1645a7ffb0a9
+            region: content
+            configuration:
+              id: 'extra_field_block:commerce_product:default:variation_block__electrical'
+              label: Electrical
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                settings: {  }
+                third_party_settings: {  }
+            weight: 2
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
+        third_party_settings: {  }
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          context_mapping: {  }
+        components:
+          59942fcc-3f44-4193-b105-cc35de7fffc1:
+            uuid: 59942fcc-3f44-4193-b105-cc35de7fffc1
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_product_categories'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 4
+            additional: {  }
+          705552b3-f9c5-45d3-977d-acb8c777d4b1:
+            uuid: 705552b3-f9c5-45d3-977d-acb8c777d4b1
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_producers'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 5
+            additional: {  }
+          862ce454-86d3-4aef-9bda-d2c8c69dbd15:
+            uuid: 862ce454-86d3-4aef-9bda-d2c8c69dbd15
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_product_sku'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: above
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 3
+            additional: {  }
+          582ed13e-4952-4b56-872b-6a46b1b4633c:
+            uuid: 582ed13e-4952-4b56-872b-6a46b1b4633c
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_features'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: inline
+                settings: {  }
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+          e566bed9-691f-404c-9ce5-c93af736e0da:
+            uuid: e566bed9-691f-404c-9ce5-c93af736e0da
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_brand'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: inline
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 6
+            additional: {  }
+          7d70c0ff-b5c6-4007-8f1f-fc669466a660:
+            uuid: 7d70c0ff-b5c6-4007-8f1f-fc669466a660
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_datasheet'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: file_default
+                label: inline
+                settings:
+                  use_description_as_link_text: true
+                third_party_settings: {  }
+            weight: 7
+            additional: {  }
+          f37edcbb-a4b9-464f-9fe9-d7678f060457:
+            uuid: f37edcbb-a4b9-464f-9fe9-d7678f060457
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: visually_hidden
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 2
+            additional: {  }
+          b76b8ce8-1d31-460a-8e03-c061d738465b:
+            uuid: b76b8ce8-1d31-460a-8e03-c061d738465b
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:default:field_short_description'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: basic_string
+                label: visually_hidden
+                settings: {  }
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+        third_party_settings: {  }
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_1'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+          regions_attributes:
+            blb_region_col_1: null
+          breakpoints: {  }
+          layout_regions_classes: {  }
+          remove_gutters: '0'
+          context_mapping: {  }
+        components: {  }
+        third_party_settings: {  }
 _core:
   default_config_hash: 10qgl6V_HwkrJufzsNCV75OpqOeMzzKDJb3BhaogmzQ
 id: commerce_product.default.default
 targetEntityType: commerce_product
 bundle: default
 mode: default
-content:
-  body:
-    type: text_default
-    label: visually_hidden
-    settings: {  }
-    third_party_settings: {  }
-    weight: 3
-    region: content
-  field_brand:
-    type: string
-    label: inline
-    settings:
-      link_to_entity: false
-    third_party_settings: {  }
-    weight: 6
-    region: content
-  field_datasheet:
-    type: file_default
-    label: inline
-    settings:
-      use_description_as_link_text: true
-    third_party_settings: {  }
-    weight: 5
-    region: content
-  field_features:
-    type: text_default
-    label: inline
-    settings: {  }
-    third_party_settings: {  }
-    weight: 7
-    region: content
-  field_producers:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 10
-    region: content
-  field_product_categories:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 11
-    region: content
-  field_product_sku:
-    type: string
-    label: above
-    settings:
-      link_to_entity: false
-    third_party_settings: {  }
-    weight: 8
-    region: content
-  field_series:
-    type: string
-    label: visually_hidden
-    settings:
-      link_to_entity: false
-    third_party_settings: {  }
-    weight: 0
-    region: content
-  field_short_description:
-    type: basic_string
-    label: visually_hidden
-    settings: {  }
-    third_party_settings: {  }
-    weight: 2
-    region: content
-  title:
-    type: string
-    label: visually_hidden
-    settings:
-      link_to_entity: false
-    third_party_settings: {  }
-    weight: 1
-    region: content
-  variations:
-    type: commerce_add_to_cart
-    label: visually_hidden
-    settings:
-      combine: true
-    third_party_settings: {  }
-    weight: 4
-    region: content
+content: {  }
 hidden:
+  body: true
   created: true
   feeds_item: true
+  field_brand: true
+  field_datasheet: true
+  field_features: true
   field_hero_media: true
+  field_producers: true
+  field_product_categories: true
+  field_product_sku: true
+  field_series: true
+  field_short_description: true
   field_show_in_hero: true
+  layout_builder__layout: true
   stores: true
+  title: true
   uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true

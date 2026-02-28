@@ -16,6 +16,7 @@ dependencies:
     - field.field.commerce_product.default.field_series
     - field.field.commerce_product.default.field_short_description
     - field.field.commerce_product.default.field_show_in_hero
+    - field.field.commerce_product.default.layout_builder__layout
   module:
     - file
     - media_library
@@ -150,4 +151,5 @@ hidden:
   feeds_item: true
   field_producers: true
   field_product_categories: true
+  layout_builder__layout: true
   stores: true

@@ -1,0 +1,5 @@
+services:
+  commerce_variation_blocks.variation_ajax_change_subscriber:
+    class: Drupal\commerce_variation_blocks\EventSubscriber\VariationAjaxChangeSubscriber
+    tags:
+      - { name: event_subscriber }

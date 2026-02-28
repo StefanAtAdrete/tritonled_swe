@@ -88,12 +88,14 @@
       <div class="row mt-5">
         <div class="col-12">
           <div class="product-features">
-            <h2 class="h4 mb-3">Key Features</h2>
+            <h2 class="h4 mb-3">{{ 'Key Features'|t }}</h2>
             {{ product.field_features }}
           </div>
         </div>
       </div>
     {% endif %}
+
+    {# TODO: Specifications tabs via Field Group - under investigation #}
 
   </div>
 </article>

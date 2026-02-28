@@ -1,9 +1,10 @@
-uuid: 2bbe42fb-e1d6-49cc-b0a1-b1a7a51cecbb
+uuid: ff9d56fe-5265-454f-a191-44fa44c266ad
 langcode: en
 status: true
 dependencies:
   config:
     - commerce_product.commerce_product_variation_type.default
+    - core.entity_view_mode.commerce_product_variation.electrical
     - field.field.commerce_product_variation.default.attribute_accessories
     - field.field.commerce_product_variation.default.attribute_beam_angle
     - field.field.commerce_product_variation.default.attribute_cct
@@ -42,156 +43,42 @@ dependencies:
     - field.field.commerce_product_variation.default.field_variation_media
     - field.field.commerce_product_variation.default.field_warranty_years
     - field.field.commerce_product_variation.default.field_weight
-    - image.style.max_325x325
   module:
-    - commerce_price
-    - splide
-id: commerce_product_variation.default.default
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: false
+    allow_custom: false
+id: commerce_product_variation.default.electrical
 targetEntityType: commerce_product_variation
 bundle: default
-mode: default
+mode: electrical
 content:
-  attribute_accessories:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 30
-    region: content
-  attribute_beam_angle:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 6
-    region: content
-  attribute_cct:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 3
-    region: content
-  attribute_color:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 17
-    region: content
-  attribute_ip_rating:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 4
-    region: content
-  attribute_length:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 18
-    region: content
   attribute_voltage:
     type: entity_reference_label
     label: above
     settings:
       link: true
     third_party_settings: {  }
-    weight: 30
-    region: content
-  attribute_watt:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 2
-    region: content
-  field_variation_media:
-    type: splide_media
-    label: visually_hidden
-    settings:
-      caption: {  }
-      optionset: product_main
-      class: ''
-      image: ''
-      link: ''
-      overlay: ''
-      title: ''
-      vanilla: false
-      by_delta: -1
-      layout: ''
-      view_mode: splide
-      cache: 0
-      admin_uri: ''
-      use_lb: false
-      background: false
-      box_caption: ''
-      box_caption_custom: ''
-      box_media_style: ''
-      loading: lazy
-      preload: false
-      responsive_image_style: ''
-      use_theme_field: false
-      box_style: ''
-      image_style: ''
-      media_switch: ''
-      ratio: ''
-      thumbnail_style: max_325x325
-      grid: ''
-      grid_medium: ''
-      grid_small: ''
-      style: ''
-      svg_inline: false
-      svg_fill: false
-      svg_sanitize: true
-      svg_sanitize_remote: false
-      svg_hide_caption: false
-      svg_attributes: ''
-      skin: ''
-      overridables: {  }
-      thumbnail: ''
-      pagination_text: ''
-      optionset_nav: product_nav
-      skin_nav: ''
-      nav_caption: ''
-      thumbnail_effect: ''
-      navpos: ''
-      override: false
-      skin_arrows: ''
-      skin_dots: ''
-      pagination_pos: ''
-      preserve_keys: false
-      visible_items: 0
-    third_party_settings: {  }
     weight: 0
     region: content
-  list_price:
-    type: commerce_price_default
+  field_lumens:
+    type: number_integer
     label: above
     settings:
-      strip_trailing_zeroes: false
-      currency_display: symbol
-    third_party_settings: {  }
-    weight: 5
-    region: content
-  title:
-    type: string
-    label: above
-    settings:
-      link_to_entity: false
+      thousand_separator: ''
+      prefix_suffix: true
     third_party_settings: {  }
     weight: 1
     region: content
 hidden:
+  attribute_accessories: true
+  attribute_beam_angle: true
+  attribute_cct: true
+  attribute_color: true
+  attribute_ip_rating: true
+  attribute_length: true
+  attribute_watt: true
   commerce_variation_cart_form: true
   feeds_item: true
   field_ambient_temp: true
@@ -212,7 +99,6 @@ hidden:
   field_housing_color: true
   field_ik_rating: true
   field_installation_notes: true
-  field_lumens: true
   field_material: true
   field_mounting_type: true
   field_operating_temp_max: true
@@ -220,8 +106,11 @@ hidden:
   field_power_factor: true
   field_rated_life: true
   field_rohs: true
+  field_variation_media: true
   field_warranty_years: true
   field_weight: true
+  list_price: true
   price: true
   product_id: true
   sku: true
+  title: true
