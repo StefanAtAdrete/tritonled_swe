@@ -122,6 +122,11 @@ drush en bootstrap_layout_builder -y
 
 #### 3. Field Groups för field-gruppering
 
+⚠️ **VARNING (testat 2026-02-28)**: Field Group 4.0.0 fungerar INTE på Commerce entity types.
+"Add field group"-knappen saknas på både commerce_product och commerce_product_variation displays.
+Field Group fungerar bara på standard Drupal content types (node, taxonomy etc.).
+För Commerce-specifika layouts: använd template med `t()` för översättningsbara etiketter.
+
 ```bash
 composer require drupal/field_group
 drush en field_group -y
