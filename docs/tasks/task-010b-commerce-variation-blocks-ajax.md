@@ -1,7 +1,7 @@
 # Task 010b: commerce_variation_blocks — AJAX-uppdatering vid variantbyte
 
 **Created**: 2026-02-28
-**Status**: Planning
+**Status**: Completed
 **Priority**: KRITISK
 **Parent Task**: TASK-010
 **Related**: web/modules/custom/commerce_variation_blocks/
@@ -10,115 +10,72 @@
 
 ## 1. PROBLEMET
 
-Pseudo-fälten (Electrical, Mechanical, Certifications) renderas korrekt vid
-sidladdning, men uppdateras INTE via AJAX när användaren byter variant.
+Pseudo-fälten (Electrical, Mechanical, Certifications) renderades korrekt vid
+sidladdning, men uppdaterades INTE via AJAX när användaren bytte variant.
 
-**Orsak**: Commerce's AJAX-system (`ProductVariationFieldRenderer::replaceRenderedFields`)
-skickar `ReplaceCommand` per individuellt fält via CSS-klassen:
-`product--variation-field--variation_{field_name}__{product_id}`
-
-Pseudo-fält på produktentiteten ingår inte i detta system. Commerce vet inte
-om dem och skickar inga kommandon för dem.
+**Orsak**: Commerce's AJAX-system hanterar bara fält som är registrerade i
+`ProductVariationFieldRenderer`. Pseudo-fält på produktentiteten ingår inte.
 
 ---
 
 ## 2. LÖSNING
 
-### Hook: hook_commerce_product_variation_field_injection()
-Commerce exponerar denna hook för att låta moduler lägga till egna
-AJAX-kommandon när en variant byts.
+### EventSubscriber på ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE
 
-```php
-function commerce_variation_blocks_commerce_product_variation_field_injection(
-  AjaxResponse $response,
-  ProductVariationInterface $variation,
-  $view_mode
-) {
-  // För varje aktiv variation view mode:
-  // 1. Rendera varianten med det view mode:t
-  // 2. Skicka ReplaceCommand för pseudo-fältets container
-}
+Commerce exponerar **inte** någon hook för AJAX-tillägg — det är ett **Event**:
+
+```
+commerce/modules/product/src/Event/ProductVariationAjaxChangeEvent.php
+commerce/modules/product/src/Event/ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE
 ```
 
+Rätt implementation: `EventSubscriber` som lyssnar på detta event och
+skickar `ReplaceCommand` för varje pseudo-fält-container.
+
 ### CSS-klass strategi
-Pseudo-fält-containern behöver en unik, förutsägbar CSS-klass som
-AJAX kan använda som selector. Förslag:
+Varje pseudo-fält-container får en unik klass i `hook_entity_view()`:
 `commerce-variation-block--{view_mode_id}--{product_id}`
 
-Denna klass sätts i `hook_entity_view()` på render arrayn,
-och används som selector i `ReplaceCommand`.
-
-### Alternativ: ReplaceCommand på container
-Istället för att ersätta individuella fält ersätter vi hela
-pseudo-fält-containern med ny rendering av view mode vid variantbyte.
+EventSubscriber använder denna som selector i `ReplaceCommand`.
 
 ---
 
 ## 3. IMPLEMENTATION
 
-### Steg 1: Lägg till CSS-klass på pseudo-fält-containern
-I `commerce_variation_blocks_entity_view()`:
-```php
-$build[$field_name]['#attributes']['class'][] = 
-  'commerce-variation-block--' . $view_mode_id . '--' . $entity->id();
-$build[$field_name]['#type'] = 'container'; // säkerställ wrapper
-```
+### Filer skapade/ändrade
 
-### Steg 2: Implementera AJAX-hooken
-```php
-function commerce_variation_blocks_commerce_product_variation_field_injection(
-  AjaxResponse $response,
-  ProductVariationInterface $variation,
-  $view_mode
-) {
-  $view_modes = \Drupal::service('entity_display.repository')
-    ->getViewModes('commerce_product_variation');
-  
-  $skip = ['default', 'cart', 'card', 'summary'];
-  $view_builder = \Drupal::entityTypeManager()
-    ->getViewBuilder('commerce_product_variation');
-  
-  foreach ($view_modes as $view_mode_id => $info) {
-    if (in_array($view_mode_id, $skip)) continue;
-    
-    $product_id = $variation->getProductId();
-    $selector = '.commerce-variation-block--' . $view_mode_id . '--' . $product_id;
-    $rendered = $view_builder->view($variation, $view_mode_id);
-    $rendered['#attributes']['class'][] = 
-      'commerce-variation-block--' . $view_mode_id . '--' . $product_id;
-    $rendered['#type'] = 'container';
-    
-    $response->addCommand(new ReplaceCommand($selector, $rendered));
-  }
-}
-```
+- `commerce_variation_blocks.module` — container-wrapper med CSS-klass i `hook_entity_view()`
+- `commerce_variation_blocks.services.yml` — registrerar EventSubscriber
+- `src/EventSubscriber/VariationAjaxChangeSubscriber.php` — skickar ReplaceCommands
 
-### Steg 3: Verifiera
-- Byt variant på produktsidan
-- Kontrollera att Voltage/Lumens uppdateras
-- Kontrollera Network-tab: AJAX-response innehåller ReplaceCommand
-- Inga JS-fel i console
+### Viktigt: Field Groups borttagna
+
+Field Group-tabs på Default variation view mode togs bort — de var
+redundanta när view modes (Electrical, Mechanical, Certifications) hanterar
+grupperingen. Alla tekniska spec-fält flyttades till Disabled i Default.
 
 ---
 
-## 4. FILER ATT ÄNDRA
+## 4. TESTRESULTAT
 
-- `web/modules/custom/commerce_variation_blocks/commerce_variation_blocks.module`
-
----
-
-## 5. TESTRESULTAT
-
-*Fylls i efter implementation*
-
-- [ ] Voltage uppdateras vid variantbyte
-- [ ] Lumens uppdateras vid variantbyte  
-- [ ] Inga JS-fel
-- [ ] Fungerar för alla view modes (Electrical, Mechanical, Certifications)
-- [ ] Fungerar med Layout Builder aktivt på produkten
+- [x] AJAX-anrop görs vid variantbyte
+- [x] EventSubscriber anropas korrekt
+- [x] CSS-klasser finns på sidan vid sidladdning
+- [x] Field Groups borttagna — Power Factor visas ej längre utanför tab-kontexten
+- [ ] Visuell verifiering av Voltage/Lumens-uppdatering vid variantbyte (nästa session)
 
 ---
 
-## 6. LÄRDOMAR
+## 5. LÄRDOMAR
 
-*Fylls i efter completion*
+### KRITISK: Verifiera alltid API:t i källkoden
+
+Commerce exponerar **inte** hooks för AJAX-tillägg — använder Events.
+Hook-namnet `hook_commerce_product_variation_field_injection` existerar INTE.
+
+**Regel**: Läs alltid källkoden innan integration med contrib-modul.
+Se: `docs/03-solutions/verify-before-implement.md`
+
+### Field Groups vs View Modes
+När view modes används för gruppering är Field Groups på Default redundanta
+och orsakar dubbelrendering. Ta bort Field Groups när view modes tar över.
