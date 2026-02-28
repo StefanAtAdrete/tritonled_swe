@@ -1,8 +1,12 @@
 # Aktuell Task
 
-**Task**: TASK-009 (Produktsida — Variationsfält med tabs)
-**Status**: In Progress
+**Task**: TASK-010 (Layout Builder + Commerce Variation Field Injection)
+**Status**: Research / Planning — KRITISKT ARKITEKTURBESLUT
 **Senast uppdaterad**: 2026-02-28
+**Fil**: `/docs/tasks/task-010-layout-builder-commerce-variation-injection.md`
+
+> Detta test avgör hela produktsidans arkitektur.
+> Genomför Test 1-4 i task-filen innan något byggs.
 
 ## Vad som ska göras
 
