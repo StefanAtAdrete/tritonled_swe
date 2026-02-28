@@ -1,146 +1,74 @@
 # Task 010: Layout Builder + Commerce Variation Field Injection
 
 **Created**: 2026-02-28
-**Status**: Research / Planning
+**Status**: DELVIS KLAR — Subtask 010b för AJAX
 **Priority**: KRITISK — Arkitekturbeslut
-**Related Tasks**: TASK-009
+**Related Tasks**: TASK-009, TASK-010b
 
 ---
 
 ## 1. BAKGRUND
 
-### Problemet vi löser
-TASK-009 visade att variation-fält på Commerce produktsidan är svåra att styra via Drupal UI:
+### Problemet vi löste
+Variation-fält på Commerce produktsidan gick inte att gruppera via Drupal UI:
 - Field Group fungerar inte med Commerce variation injection
-- Fälten renderas som en flat lista utan möjlighet att gruppera via GUI
-- Enda fungerande alternativet har hittills varit manuell template-kod
+- Commerce exponerar variation-rendering som ETT samlat block
+- Separata view modes exponeras inte automatiskt som block i Layout Builder
 
-### Varför detta är viktigt
-Om Layout Builder kan styra produktsidan med fungerande variation field injection ger det:
-- Fullständig GUI-kontroll över produktsidans layout
-- Drag-and-drop för alla fält inklusive variationsfält
-- Field Group fungerar på Layout Builder blocks
-- Skalbart: framtida ändringar görs i UI, inte i kod
-- Hållbart: ingen teknisk skuld från workarounds
+### Lösningen vi byggde
+Modulen `commerce_variation_blocks` (web/modules/custom/commerce_variation_blocks/)
+exponerar varje custom view mode på `commerce_product_variation` som ett pseudo-fält
+på `commerce_product` — placerbart i Layout Builder som vanliga block.
 
 ---
 
-## 2. HYPOTES
+## 2. TESTER OCH LÄRDOMAR
 
-Layout Builder stöder redan Commerce produktsidor — men variation field injection
-kan ha buggar. Om det fungerar behöver vi ingen custom kod alls.
+### Test 1: Layout Builder på Commerce ✓
+- Layout Builder fungerar på Commerce produktsidor utan krasch
+- Variation AJAX-väljare fungerar med Layout Builder aktivt
 
-**Känd bugg**: `commerce_product_block_alter` kontrollerar fel `base_plugin_id`
-vilket kan krascha extra fields i Layout Builder.
-Referens: https://www.drupal.org/project/commerce/issues/3182636
+### Test 2: Variation fields som individuella block ✗
+- Commerce exponerar bara "Default variation" och "Variations" som block
+- Inga individuella fält eller view modes exponeras automatiskt
 
----
+### Test 3: commerce_variation_blocks modulen ✓ DELVIS
+- Pseudo-fält skapas dynamiskt från alla variation view modes
+- Block syns i Layout Builder block-biblioteket under "Product fields"
+- Fälten renderas korrekt på produktsidan (Voltage, Lumens visas)
+- **MEN**: AJAX uppdaterar INTE pseudo-fälten vid variantbyte ✗
 
-## 3. TEST SOM SKA GENOMFÖRAS
+### Kritisk lärdom: Layout Builder + getComponents()
+När Layout Builder är aktivt på en entity lagras block i **sections**, inte i
+`$display->getComponents()`. Hooken måste alltid rendera alla view modes —
+Layout Builder styr synligheten via block-placering, inte via components.
 
-### Test 1: Aktivera Layout Builder på Commerce product type
-1. Gå till: `/admin/commerce/config/product-types/default/edit/display`
-2. Aktivera "Use Layout Builder"
-3. Spara
-4. Gå till produktsidan `/product/8`
-5. Verifiera: renderas sidan korrekt?
-
-### Test 2: Variation field injection med Layout Builder
-1. I Layout Builder — lägg till ett variationsfält (t.ex. field_lumens) som block
-2. Spara layout
-3. Byt variant på produktsidan
-4. Verifiera: uppdateras fältet via AJAX?
-
-### Test 3: Field Group i Layout Builder
-1. Lägg till en Field Group (tabs) via Layout Builder section
-2. Placera variation-fält i Field Group
-3. Verifiera: renderas tabs korrekt?
-4. Byt variant — uppdateras fälten?
-
-### Test 4: Kontrollera Console
-- Inga JS-fel vid sidladdning
-- Inga JS-fel vid variantbyte
-- AJAX-requests ser korrekta ut (Network tab)
+### Kritisk lärdom: Commerce AJAX-systemet
+Commerce's AJAX (`replaceRenderedFields`) skickar `ReplaceCommand` per fält
+via CSS-klassen `product--variation-field--variation_{field}__{product_id}`.
+Pseudo-fält på produktentiteten ingår INTE i detta system automatiskt —
+de kräver en egen AJAX-implementation.
 
 ---
 
-## 4. FÖRVÄNTADE UTFALL
+## 3. NULÄGE
 
-### Scenario A: Allt fungerar ✓
-→ Aktivera Layout Builder permanent på product type
-→ Ta bort custom template-kod (TASK-009)
-→ Konfigurera produktsidans layout via GUI
-→ Ingen custom kod behövs
+### Vad som fungerar
+- `commerce_variation_blocks` modul installerad och aktiv
+- Electrical view mode exponeras som block i Layout Builder ✓
+- Electrical-blocket placerat i produktens Layout Builder layout ✓
+- Voltage och Lumens renderas på produktsidan ✓
+- Statisk rendering fungerar perfekt ✓
 
-### Scenario B: Layout Builder fungerar men AJAX inte uppdaterar ✗
-→ Undersök `commerce_product_block_alter` buggen
-→ Överväg patch eller workaround i tritonled_compat
-→ Referens: https://www.drupal.org/project/commerce/issues/3182636
-
-### Scenario C: Layout Builder kraschar helt ✗
-→ Fallback: pseudo-fält via `hook_entity_extra_field_info()`
-→ Exponera tab-grupper som pseudo-fält på commerce_product
-→ Placerbara i Layout Builder, AJAX via `hook_commerce_product_variation_field_injection()`
-→ Ca 100 rader PHP i tritonled_compat
+### Vad som saknas
+- AJAX-uppdatering av pseudo-fälten vid variantbyte ✗
+- Hook: `hook_commerce_product_variation_field_injection()` behöver implementeras
+- Commerce måste informeras om att ersätta hela pseudo-fält-containern vid AJAX
 
 ---
 
-## 5. ARKITEKTURELLT BESLUT
+## 4. NÄSTA STEG → TASK-010b
 
-Detta test avgör hela produktsidans arkitektur.
+Se: `/docs/tasks/task-010b-commerce-variation-blocks-ajax.md`
 
-**Om Layout Builder fungerar:**
-- GUI-baserad layout för alltid
-- Inga templates för fältplacering
-- Field Group för tab-gruppering
-
-**Om Layout Builder inte fungerar:**
-- Pseudo-fält approach (Scenario C)
-- Fortfarande GUI-baserat men med initial custom kod
-- Hållbart och skalbart
-
-**Det vi INTE gör oavsett:**
-- Ingen JavaScript för att flytta DOM-element
-- Ingen hårdkodad template för varje fält
-- Ingen CSS-position-hacking
-
----
-
-## 6. TESTRESULTAT
-
-*Fylls i under testet*
-
-### Test 1: Layout Builder aktiverat
-- [ ] Sidan renderas korrekt
-- [ ] Inga PHP-fel
-- Anteckningar:
-
-### Test 2: Variation field injection
-- [ ] Fält uppdateras vid variantbyte
-- [ ] AJAX fungerar
-- Anteckningar:
-
-### Test 3: Field Group i Layout Builder
-- [ ] Tabs renderas
-- [ ] AJAX uppdaterar fält i tabs
-- Anteckningar:
-
-### Test 4: Console
-- [ ] Inga JS-fel
-- Anteckningar:
-
----
-
-## 7. BESLUT
-
-*Fattas efter test*
-
-Valt scenario: __
-Motivering: __
-Godkänt av Stefan: __
-
----
-
-## 8. LÄRDOMAR
-
-*Fylls i efter completion*
+**Godkänt av Stefan**: ✓ 2026-02-28
