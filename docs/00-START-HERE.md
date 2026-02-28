@@ -213,6 +213,15 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - Fix: PHP-script som itererar sektioner och satter `[]` for NULL-varden
 - Se: `tasks/task-006-footer-layout.md`
 
+### commerce_variation_blocks AJAX (2026-02-28)
+- ✅ Commerce använder **Events**, inte hooks, för AJAX-tillägg vid variantbyte
+- ✅ Rätt event: `ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE` → `EventSubscriber`
+- ❌ `hook_commerce_product_variation_field_injection` existerar INTE
+- ✅ CSS-klass `commerce-variation-block--{view_mode}--{product_id}` på container → `ReplaceCommand`
+- ✅ Field Groups på Default view mode borttagna — redundanta när view modes hanterar grupperingen
+- ✅ REGEL: Läs alltid källkoden innan integration med contrib-modul
+- Se: `03-solutions/verify-before-implement.md`
+
 ### Produktsida attribut & styling (2026-02-27)
 - ✅ Attribut-väljare bytta från dropdowns till radiobuttons via Commerce form display
 - ✅ Radiobuttons stylade som pill-knappar via CSS (`.path-product .form-radios`)
