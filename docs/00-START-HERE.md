@@ -100,6 +100,22 @@ måste byggas i rätt ordning. Verifiera verktyg och regler per sub-task INNAN i
 | SDC-komponent | JA – explicit |
 | Custom modul | JA – explicit |
 
+### Research ALLTID innan nya fält skapas:
+
+```bash
+# Lista befintliga fält på en variation
+ddev drush php:eval "
+\$fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('commerce_product_variation', 'default');
+foreach(\$fields as \$name => \$def) {
+  if (str_starts_with(\$name, 'field_')) echo \$name . ' (' . \$def->getType() . ')' . PHP_EOL;
+}
+"
+```
+
+1. Finns liknande fält redan? → Använd dem
+2. Räcker ett boolean-fält? → Använd det
+3. Taxonomy motiveras endast om: logotyper, hierarki, Views-filtrering
+
 ### Commerce-undantag:
 - Drupal Commerce kräver templates som **inte stör AJAX**
 - Templates för produktsidor får ALDRIG blockera variation field injection
