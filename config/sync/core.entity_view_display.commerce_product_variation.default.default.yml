@@ -16,7 +16,6 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
-    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -55,18 +54,58 @@ content:
     type: splide_media
     label: visually_hidden
     settings:
+      caption: {  }
       optionset: product_main
+      class: ''
       image: ''
+      link: ''
+      overlay: ''
+      title: ''
       vanilla: false
+      by_delta: -1
+      layout: ''
       view_mode: splide
+      cache: 0
+      admin_uri: ''
+      use_lb: false
+      background: false
+      box_caption: ''
+      box_caption_custom: ''
+      box_media_style: ''
       loading: lazy
       preload: false
+      responsive_image_style: ''
+      use_theme_field: false
+      box_style: ''
       image_style: ''
       media_switch: ''
+      ratio: ''
       thumbnail_style: max_325x325
+      grid: ''
+      grid_medium: ''
+      grid_small: ''
+      style: ''
+      svg_inline: false
+      svg_fill: false
       svg_sanitize: true
+      svg_sanitize_remote: false
+      svg_hide_caption: false
+      svg_attributes: ''
+      skin: ''
+      overridables: {  }
+      thumbnail: ''
+      pagination_text: ''
       optionset_nav: product_nav
+      skin_nav: ''
+      nav_caption: ''
       thumbnail_effect: ''
+      navpos: ''
+      override: false
+      skin_arrows: ''
+      skin_dots: ''
+      pagination_pos: ''
+      preserve_keys: false
+      visible_items: 0
     third_party_settings: {  }
     weight: -1
     region: content
@@ -84,7 +123,6 @@ hidden:
   field_ambient_temp: true
   field_case_temp: true
   field_ce_marking: true
-  field_certifications: true
   field_control_system: true
   field_cri: true
   field_current: true

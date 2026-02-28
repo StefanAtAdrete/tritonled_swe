@@ -7,7 +7,6 @@ dependencies:
     - field.field.commerce_product.default.body
     - field.field.commerce_product.default.feeds_item
     - field.field.commerce_product.default.field_brand
-    - field.field.commerce_product.default.field_certifications
     - field.field.commerce_product.default.field_datasheet
     - field.field.commerce_product.default.field_features
     - field.field.commerce_product.default.field_hero_media
@@ -47,14 +46,6 @@ content:
       link_to_entity: false
     third_party_settings: {  }
     weight: 6
-    region: content
-  field_certifications:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 9
     region: content
   field_datasheet:
     type: file_default
