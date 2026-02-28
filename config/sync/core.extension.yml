@@ -36,6 +36,7 @@ module:
   commerce_stock_ui: 0
   commerce_store: 0
   commerce_tax: 0
+  commerce_variation_blocks: 0
   commerce_variation_cart_form: 0
   conditional_fields: 0
   config: 0
@@ -53,6 +54,7 @@ module:
   fences: 0
   fences_presets: 0
   field: 0
+  field_group: 0
   field_permissions: 0
   field_ui: 0
   file: 0
