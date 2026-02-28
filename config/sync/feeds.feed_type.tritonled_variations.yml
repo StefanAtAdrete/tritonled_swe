@@ -15,7 +15,6 @@ dependencies:
     - field.field.commerce_product_variation.default.field_ambient_temp
     - field.field.commerce_product_variation.default.field_case_temp
     - field.field.commerce_product_variation.default.field_ce_marking
-    - field.field.commerce_product_variation.default.field_certifications
     - field.field.commerce_product_variation.default.field_control_system
     - field.field.commerce_product_variation.default.field_cri
     - field.field.commerce_product_variation.default.field_current
@@ -47,15 +46,7 @@ dependencies:
     - feeds_tamper
 third_party_settings:
   feeds_tamper:
-    tampers:
-      ad3cff43-45bb-44a7-a969-98a92fb2b55d:
-        separator: '|'
-        limit: null
-        uuid: ad3cff43-45bb-44a7-a969-98a92fb2b55d
-        plugin: explode
-        source: certifications
-        weight: 0
-        label: Explode
+    tampers: {  }
 label: 'TritonLED Variations'
 id: tritonled_variations
 description: 'Importerar Commerce-varianter från CSV'
@@ -624,12 +615,3 @@ mappings:
       language: en
       format: plain_text
     unique: {  }
-  -
-    target: field_certifications
-    map:
-      target_id: certifications
-    settings:
-      language: null
-      reference_by: name
-      autocreate: false
-      autocreate_bundle: certifications
