@@ -1,0 +1,7 @@
+name: 'Commerce Variation Blocks'
+type: module
+description: 'Exposes Commerce product variation view modes as pseudo-fields (blocks) on the product entity, enabling Layout Builder control of variation field display.'
+package: 'TritonLED'
+core_version_requirement: ^10 || ^11
+dependencies:
+  - commerce:commerce_product
