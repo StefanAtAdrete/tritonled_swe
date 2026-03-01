@@ -38,7 +38,7 @@ options:
     start: 0
     focus: '0'
     gap: '8'
-    padding: ''
+    padding: '0'
     easing: 'cubic-bezier(.42,.65,.27,.99)'
     arrows: 'true'
     arrowPath: ''
@@ -65,7 +65,7 @@ options:
     slideFocus: true
     focusableNodes: 'a, button, textarea, input, select, iframe'
     isNavigation: true
-    trimSpace: 'true'
+    trimSpace: move
     live: true
     updateOnMove: false
     classes: ''

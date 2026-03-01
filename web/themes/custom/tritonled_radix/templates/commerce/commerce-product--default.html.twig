@@ -3,99 +3,12 @@
  * @file
  * Theme override for Commerce Product - Default
  *
- * Available variables:
- * - attributes: HTML attributes for the wrapper.
- * - product: The rendered product fields.
- * - product_entity: The product entity.
- * - product_url: The product URL.
+ * Minimal wrapper — all layout handled by Layout Builder.
  *
  * IMPORTANT: Use {{ product }} NOT {{ content }}
  * Commerce injects variation fields automatically via AJAX.
- *
- * Bootstrap classes are adjustable:
- * - mb-3, mb-4: margin-bottom
- * - col-md-7, col-md-5: grid columns
  */
 #}
-<article{{ attributes.addClass('product-page', 'product--default', 'mb-5') }}>
-  <div class="container">
-    <div class="row">
-      
-      {# LEFT COLUMN - Images (60% width on desktop) #}
-      {# Commerce will inject variation images here via AJAX when available #}
-      <div class="col-12 col-md-7 mb-4 mb-md-0">
-        <div class="product-images">
-          {{ product|without('variations', 'field_series', 'title', 'field_short_description', 'body', 'field_brand', 'field_datasheet', 'field_features') }}
-        </div>
-      </div>
-
-      {# RIGHT COLUMN - Product Information (40% width on desktop) #}
-      <div class="col-12 col-md-5">
-        <div class="product-info">
-          
-          {# Series Badge #}
-          {% if product.field_series %}
-            <div class="product-series mb-2">
-              <span class="badge bg-secondary">{{ product.field_series }}</span>
-            </div>
-          {% endif %}
-
-          {# Product Title #}
-          <h1 class="product-title mb-3">{{ product_entity.title.value }}</h1>
-
-          {# Short Description #}
-          {% if product.field_short_description %}
-            <div class="product-short-description text-muted mb-3">
-              {{ product.field_short_description }}
-            </div>
-          {% endif %}
-
-          {# Body #}
-          {% if product.body %}
-            <div class="product-description mb-4">
-              {{ product.body }}
-            </div>
-          {% endif %}
-
-          {# Brand #}
-          {% if product.field_brand %}
-            <div class="product-brand mb-3">
-              <strong>Brand:</strong> {{ product.field_brand }}
-            </div>
-          {% endif %}
-
-          {# Product Variations - CRITICAL for AJAX #}
-          <div class="product-variations mb-4">
-            {{ product.variations }}
-          </div>
-
-          {# Datasheet #}
-          {% if product.field_datasheet %}
-            <div class="datasheet-link mt-2">
-              {{ product.field_datasheet }}
-            </div>
-          {% endif %}
-
-
-
-        </div>
-      </div>
-
-    </div>
-
-    {# Features Section #}
-    {% if product.field_features %}
-      <div class="row mt-5">
-        <div class="col-12">
-          <div class="product-features">
-            <h2 class="h4 mb-3">{{ 'Key Features'|t }}</h2>
-            {{ product.field_features }}
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    {# TODO: Specifications tabs via Field Group - under investigation #}
-
-  </div>
+<article{{ attributes.addClass('product-page', 'product--default') }}>
+  {{ product }}
 </article>
