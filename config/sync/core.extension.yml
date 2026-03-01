@@ -66,10 +66,14 @@ module:
   imageapi_optimize: 0
   inline_entity_form: 0
   inline_form_errors: 0
+  jquery_ui: 0
+  jquery_ui_accordion: 0
+  jquery_ui_tabs: 0
   key: 0
   layout_builder: 0
   layout_builder_styles: 0
   layout_discovery: 0
+  lb_tabs: 0
   link: 0
   masquerade: 0
   mcp_tools: 0

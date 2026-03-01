@@ -81,6 +81,11 @@ function commerce_variation_blocks_entity_view(array &$build, EntityInterface $e
     return;
   }
 
+  // Only inject on the full/default product view mode, not card/teaser etc.
+  if (!in_array($view_mode, ['full', 'default'])) {
+    return;
+  }
+
   $variation = $entity->getDefaultVariation();
   if (!$variation) {
     return;
@@ -103,6 +108,7 @@ function commerce_variation_blocks_entity_view(array &$build, EntityInterface $e
     $field_name = 'variation_block__' . $view_mode_id;
     $rendered = $view_builder->view($variation, $view_mode_id);
 
+    // Always inject regardless of display config - rendered in template tabs.
     $build[$field_name] = [
       '#type' => 'container',
       '#attributes' => [
