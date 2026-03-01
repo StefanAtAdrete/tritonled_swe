@@ -213,6 +213,20 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - Fix: PHP-script som itererar sektioner och satter `[]` for NULL-varden
 - Se: `tasks/task-006-footer-layout.md`
 
+### Splide thumbnail overflow-fix (2026-03-01)
+- ❌ `border` på `.splide__slide` påverkar Splide's layoutberäkning → slides positioneras fel
+- ✅ Använd `outline` + `outline-offset: -2px` för aktiv-markering istället
+- ✅ `.splide--nav .splide__track { overflow: visible !important; }` fixar klippt första tumme
+- ✅ `trimSpace: move` i product_nav optionset
+- ✅ Splide ignorerar `!important` i CSS för overflow på track — måste sättas explicit
+
+### lb_tabs + Layout Builder (2026-03-01)
+- ✅ `lb_tabs` skapar tabs-layout direkt i Layout Builder — varje region = en tab
+- ✅ Pseudo-fält (Electrical/Mechanical/Certifications) placeras som block i respektive tab
+- ✅ AJAX fungerar utan ändringar — EventSubscriber's ReplaceCommand träffar CSS-klasserna inuti tab-panerna
+- ✅ Template reducerad till minimal wrapper: `<article>{{ product }}</article>`
+- ❌ Blanda INTE templatens grid med Layout Builder — välj ett system
+
 ### commerce_variation_blocks AJAX (2026-02-28)
 - ✅ Commerce använder **Events**, inte hooks, för AJAX-tillägg vid variantbyte
 - ✅ Rätt event: `ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE` → `EventSubscriber`

@@ -14,17 +14,21 @@
   margin-top: 0.5rem;
 }
 
+.splide--nav .splide__track {
+  overflow: visible !important;
+}
+
 .splide--nav .splide__slide {
-  border: 2px solid transparent;
   border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
   opacity: 0.6;
-  transition: border-color 0.2s ease, opacity 0.2s ease;
+  transition: outline-color 0.2s ease, opacity 0.2s ease;
 }
 
 .splide--nav .splide__slide.is-active {
-  border-color: var(--bs-primary, #0d6efd);
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
   opacity: 1;
 }
 
