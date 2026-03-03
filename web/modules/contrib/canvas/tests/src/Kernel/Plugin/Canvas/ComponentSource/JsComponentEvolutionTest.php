@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource;
 
+use Drupal\canvas\AutoSave\AutoSaveManager;
+use Drupal\canvas\ComponentSource\ComponentSourceManager;
+use Drupal\canvas\Controller\ApiConfigAutoSaveControllers;
+use Drupal\canvas\Controller\ApiConfigControllers;
 use Drupal\canvas\Controller\ClientServerConversionTrait;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
@@ -18,14 +22,14 @@ use Drupal\Core\Access\CsrfRequestHeaderAccessCheck;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Extension\ThemeInstallerInterface;
 use Drupal\Core\Url;
-use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
 use Drupal\Tests\canvas\Kernel\Traits\CiModulePathTrait;
 use Drupal\Tests\canvas\Kernel\Traits\RequestTrait;
 use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
-use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\ConstraintViolationInterface;
@@ -35,9 +39,9 @@ use Symfony\Component\Validator\ConstraintViolationInterface;
  *
  * @group canvas
  */
-final class JsComponentEvolutionTest extends KernelTestBase {
+#[RunTestsInSeparateProcesses]
+final class JsComponentEvolutionTest extends CanvasKernelTestBase {
 
-  use ContribStrictConfigSchemaTestTrait;
   use CiModulePathTrait;
   use CrawlerTrait;
   use ComponentTreeItemListInstantiatorTrait;
@@ -54,32 +58,17 @@ final class JsComponentEvolutionTest extends KernelTestBase {
   protected UuidInterface $uuid;
   protected string $originalVersion;
   protected string $childType;
-  protected array $expectedOriginalClientModel = [];
+  protected array $expectedClientModel = [];
   protected array $originalClientModel = [];
 
   /**
    * {@inheritdoc}
    */
   protected static $modules = [
-    'canvas',
-    'media',
-    'path',
-    'file',
-    'image',
-    'link',
-    'options',
-    'text',
-    'system',
-    'block',
-    'datetime',
-    'user',
-    'filter',
-    'ckeditor5',
-    'editor',
     'canvas_test_code_components',
   ];
 
-  protected function reloadJavascriptComponent(): JavascriptComponent {
+  protected function reloadJavascriptComponent(): JavaScriptComponent {
     /** @var \Drupal\canvas\Entity\JavaScriptComponent */
     return \Drupal::entityTypeManager()->getStorage(JavaScriptComponent::ENTITY_TYPE_ID)->loadUnchanged(self::JAVASCRIPT_COMPONENT_ID);
   }
@@ -97,12 +86,12 @@ final class JsComponentEvolutionTest extends KernelTestBase {
     \Drupal::service(ThemeInstallerInterface::class)->install(['canvas_stark']);
     $this->uuid = \Drupal::service(UuidInterface::class);
     $this->installEntitySchema('user');
+    $this->installEntitySchema('path_alias');
     $this->installEntitySchema(Page::ENTITY_TYPE_ID);
     Page::create([
       'title' => 'Interior Live Oak',
     ])->save();
     $this->installSchema('user', 'users_data');
-    $this->installConfig('canvas');
     $this->installConfig('canvas_test_code_components');
     // Set up a test user "bob"
     $this->setUpCurrentUser(['name' => 'bob', 'uid' => 2], [JavaScriptComponent::ADMIN_PERMISSION, Page::EDIT_PERMISSION]);
@@ -150,7 +139,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
     // @todo Simplify the client-side model in https://www.drupal.org/i/3528043
     $this->originalClientModel = $items->getClientSideRepresentation();
 
-    $this->expectedOriginalClientModel = [
+    $this->expectedClientModel = [
       'layout' => [
         [
           'uuid' => self::COMPONENT_INSTANCE_UUID,
@@ -189,10 +178,10 @@ final class JsComponentEvolutionTest extends KernelTestBase {
         ],
       ],
     ];
-    self::assertEquals($this->expectedOriginalClientModel, $this->originalClientModel);
+    self::assertEquals($this->expectedClientModel, $this->originalClientModel);
   }
 
-  protected function assertNewVersion(array $expectedFieldTypes, array $inputs, callable $expectedClientModelFunction, bool $withChild = TRUE): ComponentTreeItemList {
+  protected function assertNewVersion(array $expectedFieldTypes, array $inputs, callable $expectedClientModelFunction, bool $canAutoUpdate, bool $withChild): ComponentTreeItemList {
     $component = $this->reloadComponent();
     $new_version = $component->getActiveVersion();
     self::assertNotEquals($this->originalVersion, $new_version);
@@ -230,28 +219,38 @@ final class JsComponentEvolutionTest extends KernelTestBase {
     self::assertEquals($expectedClientModelFunction($new_version), $new_client_model);
 
     // Converting the old client model should still retain the reference to the
-    // old version.
+    // old version, unless we can auto-update.
     $component_tree_item_list_values = self::convertClientToServer($this->originalClientModel['layout'], $this->originalClientModel['model']);
     \assert(\array_key_exists('component_version', $component_tree_item_list_values[0]));
     self::assertSame($this->originalVersion, $component_tree_item_list_values[0]['component_version']);
-    // Create a new item list from this.
+    if ($canAutoUpdate) {
+      // If we know an auto-update will happen, then the expected client model
+      // will change accordingly.
+      $this->expectedClientModel['layout'][0]['type'] = \sprintf('%s@%s', self::COMPONENT_ID, $new_version);
+    }
+    // Create a new item list from this; always attempt to automatically update
+    // just like \Drupal\canvas\Controller\ApiLayoutController::buildRegion()
+    // would do. This test must call it explicitly because it is a kernel test
+    // that does not perform HTTP requests.
     $original_items = self::staticallyCreateDanglingComponentTreeItemList(\Drupal::typedDataManager());
     $original_items->setValue($component_tree_item_list_values);
+    $this->container->get(ComponentSourceManager::class)->updateComponentInstances($original_items);
     self::assertCount(0, $original_items->validate());
     // Should still equal the original model, even though the field type is now
     // different data type prop for new component instances: existing
     // component instances remain unchanged.
-    self::assertEquals($this->expectedOriginalClientModel, $original_items->getClientSideRepresentation());
+    self::assertEquals($this->expectedClientModel, $original_items->getClientSideRepresentation());
 
-    // Test can still edit the old component in a form.
+    // Test can still edit the old component in a form, if no auto-update happened.
+    // But if an auto-update happened, they will edit the active version.
     $this->request(Request::create(\sprintf('/canvas/api/v0/form/component-instance/%s/1', Page::ENTITY_TYPE_ID), 'PATCH', [
       'form_canvas_tree' => \json_encode([
         'nodeType' => 'component',
         'slots' => [],
-        'type' => \sprintf('%s@%s', self::COMPONENT_ID, $this->originalVersion),
+        'type' => \sprintf('%s@%s', self::COMPONENT_ID, $canAutoUpdate ? $new_version : $this->originalVersion),
         'uuid' => self::COMPONENT_INSTANCE_UUID,
       ], JSON_THROW_ON_ERROR),
-      'form_canvas_props' => \json_encode($this->originalClientModel['model'][self::COMPONENT_INSTANCE_UUID], JSON_THROW_ON_ERROR),
+      'form_canvas_props' => isset($this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]) ? \json_encode($this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID], JSON_THROW_ON_ERROR) : '[]',
       'form_canvas_selected' => self::COMPONENT_INSTANCE_UUID,
     ]));
 
@@ -388,13 +387,13 @@ final class JsComponentEvolutionTest extends KernelTestBase {
       // Omit new optional prop.
       'name' => 'Mike Watt',
     ];
-    $this->assertNewVersion($expectedFieldTypes, $inputs, $expectedClientModelFunction($inputs));
+    $this->assertNewVersion($expectedFieldTypes, $inputs, $expectedClientModelFunction($inputs), canAutoUpdate: TRUE, withChild: TRUE);
     $inputs = [
       'name' => 'Mike Watt',
       // Populate the new prop.
       'age' => 27,
     ];
-    $this->assertNewVersion($expectedFieldTypes, $inputs, $expectedClientModelFunction($inputs));
+    $this->assertNewVersion($expectedFieldTypes, $inputs, $expectedClientModelFunction($inputs), canAutoUpdate: TRUE, withChild: TRUE);
   }
 
   #[DataProvider('providerTrueFalse')]
@@ -412,6 +411,14 @@ final class JsComponentEvolutionTest extends KernelTestBase {
   #[DataProvider('providerTrueFalse')]
   public function testCodeComponentCanRemoveRequiredPropThenAddAnotherRequiredProp(bool $usingHttpApi = FALSE): void {
     $this->removeNamePropAndAddAgeProp($usingHttpApi, TRUE);
+
+    unset($this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['source']['name']);
+    unset($this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['resolved']['name']);
+    $this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['source']['age'] = [
+      'sourceType' => 'static:field_item:integer',
+      'expression' => 'ℹ︎integer␟value',
+    ];
+    $this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['resolved']['age'] = 27;
 
     $inputs = [
       // Populate the new prop.
@@ -456,7 +463,28 @@ final class JsComponentEvolutionTest extends KernelTestBase {
           'resolved' => $inputs,
         ],
       ],
-    ]);
+    ], canAutoUpdate: TRUE, withChild: TRUE);
+  }
+
+  public function testCodeComponentCanRemoveRequiredPropAndStillRenderPreviews(): void {
+    $js_component = $this->reloadJavascriptComponent();
+    $props = $js_component->getProps();
+    \assert(\is_array($props));
+    self::assertArrayHasKey('name', $props);
+    $required = $js_component->getRequiredProps();
+    self::assertContains('name', $required);
+    unset($props['name']);
+    $js_component->set('required', []);
+    $js_component->setProps($props);
+    self::assertCount(0, $js_component->getTypedData()->validate());
+
+    $autoSaveManager = \Drupal::service(AutoSaveManager::class);
+    \assert($autoSaveManager instanceof AutoSaveManager);
+    $autoSaveManager->saveEntity($js_component);
+
+    // Component previews will still work.
+    \Drupal::classResolver(ApiConfigControllers::class)->list(Component::ENTITY_TYPE_ID);
+    \Drupal::classResolver(ApiConfigAutoSaveControllers::class)->get($js_component);
   }
 
   protected function removeNamePropAndAddAgeProp(bool $usingHttpRequest = FALSE, bool $required = FALSE): void {
@@ -495,6 +523,13 @@ final class JsComponentEvolutionTest extends KernelTestBase {
       // Populate the new prop.
       'age' => 27,
     ];
+
+    $this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['source']['age'] = [
+      'sourceType' => 'static:field_item:integer',
+      'expression' => 'ℹ︎integer␟value',
+    ];
+    $this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]['resolved']['age'] = 27;
+
     $this->assertNewVersion([
       'name' => 'string',
       'age' => 'integer',
@@ -538,7 +573,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
           'resolved' => $inputs,
         ],
       ],
-    ]);
+    ], canAutoUpdate: TRUE, withChild: TRUE);
   }
 
   protected function addSlot(bool $usingHttpRequest = FALSE): void {
@@ -564,6 +599,14 @@ final class JsComponentEvolutionTest extends KernelTestBase {
     $this->addSlot($usingHttpApi);
     $inputs = [
       'name' => 'mike_watt',
+    ];
+    // Adding a new slot will trigger auto-updating, so the expected model will
+    // change accordingly.
+    $this->expectedClientModel['layout'][0]['slots'][] = [
+      'id' => \sprintf('%s/intro', self::COMPONENT_INSTANCE_UUID),
+      'name' => 'intro',
+      'nodeType' => 'slot',
+      'components' => [],
     ];
     $items = $this->assertNewVersion([
       'name' => 'string',
@@ -611,7 +654,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
             'resolved' => $inputs,
           ],
         ],
-      ]);
+      ], canAutoUpdate: TRUE, withChild: TRUE);
     // Validate that the slot can be populated.
     $new_uuid = $this->uuid->generate();
     $component = Component::load('js.canvas_test_code_components_with_no_props');
@@ -735,6 +778,10 @@ final class JsComponentEvolutionTest extends KernelTestBase {
   #[DataProvider('providerTrueFalse')]
   public function testCodeComponentCanRemoveProp(bool $usingHttpApi = FALSE): void {
     $this->removeNameProp($usingHttpApi);
+    // When a prop is removed and an update happens, the old instances get
+    // upgraded and their removed prop values are cleaned up. If all props are
+    // removed, the component instance is not included in the model at all.
+    unset($this->expectedClientModel['model'][self::COMPONENT_INSTANCE_UUID]);
     $expectedClientModelFunction = fn(string $version) => [
       'layout' => [
         [
@@ -762,7 +809,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
       ],
       'model' => [],
     ];
-    $this->assertNewVersion([], [], $expectedClientModelFunction);
+    $this->assertNewVersion([], [], $expectedClientModelFunction, canAutoUpdate: TRUE, withChild: TRUE);
   }
 
   protected function modifyExamples(bool $usingHttpRequest = FALSE): void {
@@ -832,7 +879,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
     ];
     $this->assertNewVersion([
       'name' => 'string',
-    ], $inputs, $expectedClientModelFunction);
+    ], $inputs, $expectedClientModelFunction, canAutoUpdate: TRUE, withChild: TRUE);
   }
 
   protected function removeDescriptionSlot(bool $usingHttpRequest = FALSE): void {
@@ -877,9 +924,12 @@ final class JsComponentEvolutionTest extends KernelTestBase {
         ],
       ],
     ];
+    // When a slot is removed and auto-update happens, the old instances get
+    // upgraded and their removed slots are cleaned up.
+    $this->expectedClientModel['layout'][0]['slots'] = [];
     $new_items = $this->assertNewVersion([
       'name' => 'string',
-    ], $inputs, $expectedClientModelFunction, FALSE);
+    ], $inputs, $expectedClientModelFunction, canAutoUpdate: TRUE, withChild: FALSE);
 
     // New version has no slots; adding a child should be rejected.
     $new_items->appendItem([
@@ -951,6 +1001,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
   #[DataProvider('providerTrueFalse')]
   public function testCodeComponentCanChangeThePropType(bool $usingHttpApi = FALSE): void {
     $this->markTestSkipped('To be fixed in https://www.drupal.org/project/canvas/issues/3557271');
+    // @phpstan-ignore deadCode.unreachable
     $this->modifyPropType($usingHttpApi);
     $inputs = [
       'name' => 'mike_watt',
@@ -1000,7 +1051,7 @@ final class JsComponentEvolutionTest extends KernelTestBase {
             'resolved' => $inputs,
           ],
         ],
-      ]);
+      ], canAutoUpdate: FALSE, withChild: TRUE);
   }
 
   public static function providerTrueFalse(): iterable {

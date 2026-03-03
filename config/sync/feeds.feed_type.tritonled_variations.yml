@@ -6,8 +6,11 @@ dependencies:
     - commerce_product.commerce_product_variation_type.default
     - field.field.commerce_product_variation.default.attribute_accessories
     - field.field.commerce_product_variation.default.attribute_beam_angle
+    - field.field.commerce_product_variation.default.attribute_bracket
     - field.field.commerce_product_variation.default.attribute_cct
     - field.field.commerce_product_variation.default.attribute_color
+    - field.field.commerce_product_variation.default.attribute_connection
+    - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_voltage
@@ -304,6 +307,26 @@ custom_sources:
     label: certifications
     machine_name: certifications
     type: csv
+  cri:
+    value: CRI
+    label: CRI
+    machine_name: cri
+    type: csv
+  attribute_cri:
+    value: attribute_cri
+    label: attribute_cri
+    machine_name: attribute_cri
+    type: csv
+  attribute_connection:
+    value: attribute_connection
+    label: attribute_connection
+    machine_name: attribute_connection
+    type: csv
+  attribute_bracket:
+    value: attribute_bracket
+    label: attribute_bracket
+    machine_name: attribute_bracket
+    type: csv
 mappings:
   -
     target: sku
@@ -376,9 +399,9 @@ mappings:
     map:
       target_id: attribute_beam_angle
     settings:
+      language: ''
       reference_by: name
-      autocreate: true
-      language: null
+      autocreate: 1
       autocreate_bundle: beam_angle
     unique: {  }
   -
@@ -435,7 +458,7 @@ mappings:
   -
     target: field_cri
     map:
-      value: field_cri
+      value: attribute_cri
     settings:
       language: null
     unique: {  }
@@ -615,3 +638,44 @@ mappings:
       language: en
       format: plain_text
     unique: {  }
+  -
+    target: attribute_color
+    map:
+      target_id: attribute_color
+    settings:
+      reference_by: name
+      autocreate: false
+      autocreate_bundle: color
+  -
+    target: attribute_cri
+    map:
+      target_id: attribute_cri
+    settings:
+      reference_by: name
+      autocreate: 1
+      autocreate_bundle: cri
+  -
+    target: attribute_beam_angle
+    map:
+      target_id: attribute_beam_angle
+    settings:
+      language: ''
+      reference_by: name
+      autocreate: 1
+      autocreate_bundle: beam_angle
+  -
+    target: attribute_connection
+    map:
+      target_id: attribute_connection
+    settings:
+      reference_by: name
+      autocreate: 1
+      autocreate_bundle: connection
+  -
+    target: attribute_bracket
+    map:
+      target_id: attribute_bracket
+    settings:
+      reference_by: name
+      autocreate: 1
+      autocreate_bundle: bracket

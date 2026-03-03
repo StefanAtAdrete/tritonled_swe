@@ -1,0 +1,67 @@
+{% if content.label_blocks %}
+  {% set inLayoutBuilder = content.content_blocks.layout_builder_add_block is defined %}
+
+  {% if inLayoutBuilder %}
+    {# I Layout Builder: rendera block staplade utan tabs för enkel konfiguration #}
+    {{ attach_library('lb_tabs/tabs_in_lb') }}
+    <div {{ attributes.addClass('lb-tabs-tabs') }}>
+      <div {{ region_attributes["content_blocks"] }}>
+        {% for contentKey, contentBlock in content.content_blocks %}
+          {% if contentKey|first != '#' %}
+            <div class="lb-tabs-panel-preview p-2 mb-2 border">
+              <div class="text-muted small mb-1">
+                {{ content.label_blocks['label_' ~ loop.index0] ?? '' }}
+              </div>
+              {{ contentBlock }}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+  {% else %}
+    {# Frontend: Bootstrap tabs #}
+    {{ attach_library('lb_tabs/tabs') }}
+    {{ attach_library('tritonled_radix/lb-tabs-bootstrap') }}
+
+    <div {{ attributes.addClass('lb-tabs-tabs').setAttribute('id', "#{settings.dom_id}") }}>
+      <div {{ region_attributes["content_blocks"] }}>
+
+        {# Bootstrap nav-tabs #}
+        <ul class="nav nav-tabs" role="tablist">
+          {% for labelKey, labelBlock in content.label_blocks %}
+            {% if labelKey|first != '#' %}
+              <li class="nav-item" role="presentation">
+                <a class="nav-link{% if loop.first %} active{% endif %}"
+                   href="#{{ "#{settings.dom_id}-#{loop.index}" }}"
+                   id="tab-{{ "#{settings.dom_id}-#{loop.index}" }}"
+                   role="tab"
+                   data-bs-toggle="tab"
+                   data-bs-target="#{{ "#{settings.dom_id}-#{loop.index}" }}"
+                   aria-controls="{{ "#{settings.dom_id}-#{loop.index}" }}"
+                   aria-selected="{{ loop.first ? 'true' : 'false' }}">
+                  {{ labelBlock }}
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+
+        {# Bootstrap tab-content #}
+        <div class="tab-content pt-3">
+          {% for contentKey, contentBlock in content.content_blocks %}
+            {% if contentKey|first != '#' %}
+              <div class="tab-pane fade{% if loop.first %} show active{% endif %}"
+                   id="{{ "#{settings.dom_id}-#{loop.index}" }}"
+                   role="tabpanel"
+                   aria-labelledby="tab-{{ "#{settings.dom_id}-#{loop.index}" }}">
+                {{ contentBlock }}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  {% endif %}
+{% endif %}

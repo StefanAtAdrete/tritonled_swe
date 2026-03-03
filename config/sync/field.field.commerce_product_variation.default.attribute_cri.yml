@@ -1,0 +1,24 @@
+uuid: c55782e5-967c-4096-af7a-05876aa4e583
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.cri
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.attribute_cri
+id: commerce_product_variation.default.attribute_cri
+field_name: attribute_cri
+entity_type: commerce_product_variation
+bundle: default
+label: CRI
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_product_attribute_value'
+  handler_settings:
+    target_bundles:
+      cri: cri
+field_type: entity_reference

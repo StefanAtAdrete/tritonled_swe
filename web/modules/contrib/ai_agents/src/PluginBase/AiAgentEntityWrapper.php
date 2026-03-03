@@ -1023,6 +1023,9 @@ class AiAgentEntityWrapper implements PluginInterfacesAiAgentInterface, ConfigAi
     // Use overridden functions, if set.
     $required_not_ran = [];
     $settings = $this->functionsOverride['tool_settings'] ?? $this->aiAgent->get('tool_settings');
+    if (empty($settings)) {
+      return $required_not_ran;
+    }
     foreach ($settings as $plugin_id => $tool_settings) {
       if (!empty($tool_settings['require_usage'])) {
         $function_name = $this->functionCallPluginManager->getDefinition($plugin_id)['function_name'];

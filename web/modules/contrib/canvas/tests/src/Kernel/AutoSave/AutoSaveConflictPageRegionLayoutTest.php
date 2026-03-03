@@ -10,15 +10,17 @@ use Drupal\canvas\Entity\Page;
 use Drupal\canvas\Entity\PageRegion;
 use Drupal\Tests\canvas\Kernel\ApiLayoutControllerTestBase;
 use Symfony\Component\HttpFoundation\Request;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Tests auto-save conflict handling for page regions.
  *
  * @see \Drupal\canvas\Entity\PageRegion
- * @covers \Drupal\canvas\Controller\ApiLayoutController::get()
+ * @covers \Drupal\canvas\Controller\ApiLayoutController::get
  * @group canvas
  */
+#[RunTestsInSeparateProcesses]
 final class AutoSaveConflictPageRegionLayoutTest extends ApiLayoutControllerTestBase {
 
   use AutoSaveConflictTestTrait;

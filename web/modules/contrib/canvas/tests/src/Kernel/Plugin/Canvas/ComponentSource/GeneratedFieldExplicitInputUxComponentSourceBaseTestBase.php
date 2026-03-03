@@ -9,6 +9,7 @@ use Drupal\canvas\ComponentSource\ComponentSourceManager;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase;
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
+use Drupal\canvas\PropSource\PropSource;
 use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 
 /**
@@ -83,7 +84,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBaseTestBase extends 
     // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::getExplicitInputDefinitions()
     $resolved = array_intersect_key($resolved, $component_with_optional_image_object_shape->getSettings()['prop_field_definitions']);
 
-    // TRICKY: DynamicPropSources can only be used in ContentTemplates and hence
+    // TRICKY: EntityFieldPropSources can only be used in ContentTemplates and hence
     // no host entity is known, which in turn causes the detailed validation for
     // it to be skipped thanks to MissingHostEntityException
     // being thrown.
@@ -91,7 +92,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBaseTestBase extends 
     self::assertCount(0, $source->validateComponentInput(
       [
         'image' => [
-          'sourceType' => 'dynamic',
+          'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:user␝user_picture␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
         ],
       ] + $resolved,
@@ -101,9 +102,16 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBaseTestBase extends 
 
     // Rendering MUST always succeed. It will only succeed if hydration is
     // smart enough to omit both optional props that are NULL(ish).
-    $hydrated = $source->hydrateComponent(['resolved' => $resolved], []);
+    // Hydration needs values for required props in the active version, to ensure
+    // rendering of live implementation component instances using old Component
+    // versions succeeds.
+    $active_required_explicit_inputs = $component_with_optional_image_object_shape
+      ->loadVersion($component_with_optional_image_object_shape->getActiveVersion())
+      ->getComponentSource()
+      ->getDefaultExplicitInput(only_required: TRUE);
+    $hydrated = $source->hydrateComponent(['resolved' => $resolved], [], $active_required_explicit_inputs);
     // @phpstan-ignore-next-line offsetAccess.notFound
-    self::assertSame($is_object_prop_present_in_hydration, array_key_exists('image', $hydrated[GeneratedFieldExplicitInputUxComponentSourceBase::EXPLICIT_INPUT_NAME]));
+    self::assertSame($is_object_prop_present_in_hydration, \array_key_exists('image', $hydrated[GeneratedFieldExplicitInputUxComponentSourceBase::EXPLICIT_INPUT_NAME]));
     $build = $source->renderComponent($hydrated, [], $this->randomString(), FALSE);
     $html = (string) $this->renderer->renderInIsolation($build);
     if (str_starts_with($expected_html, '<')) {
@@ -184,7 +192,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBaseTestBase extends 
     $violations = $source->validateComponentInput($input_with_multiple_garbage, $uuid, NULL);
     $this->assertCount(2, $violations, 'Input with two unexpected props should produce two violations');
 
-    $violation_messages = array_map(fn($v) => $v->getMessage(), iterator_to_array($violations));
+    $violation_messages = \array_map(fn($v) => $v->getMessage(), iterator_to_array($violations));
     $this->assertContains("Component `$uuid`: the `textUnwanted` prop is not defined.", $violation_messages);
     $this->assertContains("Component `$uuid`: the `anotherBadProp` prop is not defined.", $violation_messages);
   }

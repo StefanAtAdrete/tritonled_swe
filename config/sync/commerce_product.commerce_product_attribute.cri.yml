@@ -1,0 +1,7 @@
+uuid: 2b3f2a95-d15e-4971-a075-977bd02c9312
+langcode: en
+status: true
+dependencies: {  }
+id: cri
+label: CRI
+elementType: radios

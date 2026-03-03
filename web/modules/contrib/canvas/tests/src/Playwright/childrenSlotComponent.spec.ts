@@ -26,7 +26,6 @@ test.describe('Components with Children Slots', () => {
         if (args.length > 0) {
           try {
             error = await args[0].jsonValue();
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (e) {
             // If it's not JSON serializable, get the text
             error = await args[0].evaluate((arg) => arg.toString());
@@ -64,6 +63,7 @@ test.describe('Components with Children Slots', () => {
 
     // Add the Hero component that uses Container internally
     await canvasEditor.addComponent({ name: 'Hero' });
+    await canvasEditor.waitForContextualPanel();
 
     // Verify the component appears in the preview frame
     const previewFrame = await canvasEditor.getActivePreviewFrame();

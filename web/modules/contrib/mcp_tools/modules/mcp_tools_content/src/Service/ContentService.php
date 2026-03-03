@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\mcp_tools_content\Service;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
@@ -21,6 +22,7 @@ class ContentService {
     protected AccountProxyInterface $currentUser,
     protected AccessManager $accessManager,
     protected AuditLogger $auditLogger,
+    protected TimeInterface $time,
   ) {}
 
   /**
@@ -33,7 +35,11 @@ class ContentService {
 
     $nodeType = $this->entityTypeManager->getStorage('node_type')->load($type);
     if (!$nodeType) {
-      return ['success' => FALSE, 'error' => "Content type '$type' not found. Use mcp_structure_list_content_types to see available types."];
+      return [
+        'success' => FALSE,
+        'error' => "Content type '$type' not found."
+        . " Use mcp_structure_list_content_types to see available types.",
+      ];
     }
 
     $fieldDefinitions = $this->entityFieldManager->getFieldDefinitions('node', $type);
@@ -57,6 +63,10 @@ class ContentService {
       }
 
       $node = $this->entityTypeManager->getStorage('node')->create($nodeData);
+      // Use getCurrentTime() to avoid frozen REQUEST_TIME in server mode.
+      $now = $this->time->getCurrentTime();
+      $node->setCreatedTime($now);
+      $node->setChangedTime($now);
       $node->save();
 
       $this->auditLogger->logSuccess('create_content', 'node', (string) $node->id(), [
@@ -93,7 +103,11 @@ class ContentService {
 
     $node = $this->entityTypeManager->getStorage('node')->load($nid);
     if (!$node) {
-      return ['success' => FALSE, 'error' => "Content with ID $nid not found. Use mcp_content_search to find content by title or mcp_content_list to browse."];
+      return [
+        'success' => FALSE,
+        'error' => "Content with ID $nid not found."
+        . " Use mcp_content_search to find content by title or mcp_content_list to browse.",
+      ];
     }
 
     $fieldDefinitions = $this->entityFieldManager->getFieldDefinitions('node', $node->bundle());
@@ -153,7 +167,11 @@ class ContentService {
 
     $node = $this->entityTypeManager->getStorage('node')->load($nid);
     if (!$node) {
-      return ['success' => FALSE, 'error' => "Content with ID $nid not found. Use mcp_content_search to find content by title or mcp_content_list to browse."];
+      return [
+        'success' => FALSE,
+        'error' => "Content with ID $nid not found."
+        . " Use mcp_content_search to find content by title or mcp_content_list to browse.",
+      ];
     }
 
     try {
@@ -189,7 +207,11 @@ class ContentService {
 
     $node = $this->entityTypeManager->getStorage('node')->load($nid);
     if (!$node) {
-      return ['success' => FALSE, 'error' => "Content with ID $nid not found. Use mcp_content_search to find content by title or mcp_content_list to browse."];
+      return [
+        'success' => FALSE,
+        'error' => "Content with ID $nid not found."
+        . " Use mcp_content_search to find content by title or mcp_content_list to browse.",
+      ];
     }
 
     if ($publish === $node->isPublished()) {

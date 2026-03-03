@@ -9,6 +9,8 @@ use Drupal\canvas\ComponentIncompatibilityReasonRepository;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Entity\VersionedConfigEntityBase;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
 use Drupal\Component\Assertion\Inspector;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigInstallerInterface;
@@ -126,7 +128,7 @@ final class ComponentSourceManager extends DefaultPluginManager {
   private function generateComponentsForSource(string $source_id, ComponentCandidatesDiscoveryInterface $discovery, array $existing_components, ?array $source_specific_ids = NULL): void {
     \assert($source_specific_ids === NULL || \array_is_list($source_specific_ids));
     // Discover and check requirements.
-    $component_ids = array_keys($discovery->discover());
+    $component_ids = \array_keys($discovery->discover());
     if ($source_specific_ids !== NULL) {
       // Filter the discovered component IDs down to just those that were asked
       // for, if any.
@@ -188,7 +190,7 @@ final class ComponentSourceManager extends DefaultPluginManager {
       $current_metadata = $discovery->computeCurrentComponentMetadata($source_specific_component_id);
 
       // 1. Create a Component config entity if it does not exist yet.
-      if (!array_key_exists($component_id, $existing_components)) {
+      if (!\array_key_exists($component_id, $existing_components)) {
         // Only the initial `status` can be specified by the source: the site
         // owner can modify the status of Component config entities, so it must
         // remain unchanged. (Except if the component stops meeting the
@@ -239,6 +241,41 @@ final class ComponentSourceManager extends DefaultPluginManager {
         $component->save();
       }
     }
+  }
+
+  /**
+   * Updates component instances to the active (aka latest) version if possible.
+   *
+   * @param \Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList $component_tree
+   *   The component tree containing instances to update.
+   *
+   * @return bool
+   *   TRUE if any component instance was updated, FALSE otherwise.
+   */
+  public function updateComponentInstances(ComponentTreeItemList $component_tree): bool {
+    $wasModified = FALSE;
+    foreach ($component_tree as $item) {
+      \assert($item instanceof ComponentTreeItem);
+      $component = $item->getComponent();
+      if ($component === NULL) {
+        // If the component is missing, there's nothing to update.
+        continue;
+      }
+      $component_source = $component->getComponentSource();
+      $updater_class = $component_source->getPluginDefinition()['updater'] ?? FALSE;
+      if (!$updater_class) {
+        continue;
+      }
+      $updater = $this->classResolver->getInstanceFromDefinition($updater_class);
+      \assert($updater instanceof ComponentInstanceUpdaterInterface);
+      // Check if update is needed and safe, then perform the update.
+      if ($updater->isUpdateNeeded($item) && $updater->canUpdate($item)) {
+        $update_result = $updater->update($item);
+        \assert($update_result === ComponentInstanceUpdateAttemptResult::Latest);
+        $wasModified = TRUE;
+      }
+    }
+    return $wasModified;
   }
 
 }

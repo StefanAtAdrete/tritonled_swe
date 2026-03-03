@@ -1,0 +1,11 @@
+uuid: 2740e896-03bc-49a4-814e-7721adec322f
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.watt
+id: commerce_product_attribute_value.watt
+target_entity_type_id: commerce_product_attribute_value
+target_bundle: watt
+default_langcode: site_default
+language_alterable: false
