@@ -164,34 +164,68 @@ third_party_settings:
             region: blb_region_col_1
             configuration:
               id: 'field_block:commerce_product_variation:default:field_lumens'
+              label: Lumens
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: number_integer
                 label: above
                 settings:
                   thousand_separator: ''
                   prefix_suffix: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: span
+                    fences_field_item_classes: ''
+                    fences_label_tag: span
+                    fences_label_classes: ''
             weight: 0
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                padding_3: 0
           c77c760b-8b6c-4be9-bdaa-d5156d226dd3:
             uuid: c77c760b-8b6c-4be9-bdaa-d5156d226dd3
             region: blb_region_col_1
             configuration:
               id: 'field_block:commerce_product_variation:default:attribute_voltage'
+              label: Voltage
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: entity_reference_label
                 label: above
                 settings:
                   link: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: span
+                    fences_field_item_classes: ''
+                    fences_label_tag: span
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                padding_3: 0
         third_party_settings: {  }
 id: commerce_product_variation.default.electrical
 targetEntityType: commerce_product_variation
