@@ -1,0 +1,7 @@
+uuid: e6ccd72f-44d1-4cea-9998-726c9a83c8d1
+langcode: en
+status: true
+dependencies: {  }
+id: bracket
+label: Bracket
+elementType: radios

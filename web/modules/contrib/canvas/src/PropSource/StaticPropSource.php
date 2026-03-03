@@ -6,6 +6,8 @@ namespace Drupal\canvas\PropSource;
 
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
 use Drupal\canvas\PropExpressions\StructuredData\FieldTypeBasedPropExpressionInterface;
+use Drupal\canvas\PropShape\PropShape;
+use Drupal\canvas\PropShape\StorablePropShape;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\FieldableEntityInterface;
@@ -70,21 +72,12 @@ final class StaticPropSource extends PropSourceBase {
     if ((string) $this->expression !== (string) $other->expression) {
       return FALSE;
     }
-    // Cardinality, field storage settings and field instance settings all are
-    // optional:
-    // - cardinality defaults to 1
-    if (($this->cardinality ?? 1) !== ($other->cardinality ?? 1)) {
-      return FALSE;
-    }
-    // - field storage settings defaults to NULL
-    if (($this->fieldStorageSettings ?? []) !== ($other->fieldStorageSettings ?? [])) {
-      return FALSE;
-    }
-    // - field instance settings defaults to NULL
-    if (($this->fieldInstanceSettings ?? []) !== ($other->fieldInstanceSettings ?? [])) {
-      return FALSE;
-    }
-    return TRUE;
+    $irrelevant = $this->getCardinality() === 1
+      ? new PropShape(['type' => 'object'])
+      : new PropShape(['type' => 'array', 'items' => ['type' => 'object']]);
+    $this_storable = new StorablePropShape($irrelevant, $this->expression, 'irrelevant', $this->cardinality, $this->fieldStorageSettings, $this->fieldInstanceSettings);
+    $other_storable = new StorablePropShape($irrelevant, $other->expression, 'irrelevant', $other->cardinality, $other->fieldStorageSettings, $other->fieldInstanceSettings);
+    return $this_storable->fieldDataFitsIn($other_storable);
   }
 
   /**
@@ -98,15 +91,13 @@ final class StaticPropSource extends PropSourceBase {
       'value' => $this->getValue(),
       'expression' => (string) $this->expression,
     ];
-    if ($this->fieldStorageSettings !== NULL && $this->fieldStorageSettings !== []) {
+    if ($this->fieldStorageSettings !== NULL && $this->fieldStorageSettings !== StorablePropShape::DEFAULT_STORAGE_SETTINGS) {
       $array_representation['sourceTypeSettings']['storage'] = $this->fieldStorageSettings;
     }
-    if ($this->fieldInstanceSettings !== NULL && $this->fieldInstanceSettings !== []) {
+    if ($this->fieldInstanceSettings !== NULL && $this->fieldInstanceSettings !== StorablePropShape::DEFAULT_INSTANCE_SETTINGS) {
       $array_representation['sourceTypeSettings']['instance'] = $this->fieldInstanceSettings;
     }
-    // Single-cardinality is the default.
-    // @see ::parse()
-    if ($this->cardinality !== NULL && $this->cardinality !== 1) {
+    if ($this->cardinality !== NULL && $this->cardinality !== StorablePropShape::DEFAULT_CARDINALITY) {
       $array_representation['sourceTypeSettings']['cardinality'] = $this->cardinality;
     }
 
@@ -175,7 +166,7 @@ final class StaticPropSource extends PropSourceBase {
     // TRICKY: unfortunately, `field.storage_settings.*` does not store
     // cardinality, but the FieldStorageConfig entity does (config schema:
     // `field.storage.*.*`). Hence the need for an additional key-value pair.
-    return $this->cardinality ?? 1;
+    return $this->cardinality ?? StorablePropShape::DEFAULT_CARDINALITY;
   }
 
   /**
@@ -266,19 +257,19 @@ final class StaticPropSource extends PropSourceBase {
    */
   public static function parse(array $sdc_prop_source): static {
     // `sourceType = static` requires a value and an expression to be specified.
-    $missing = array_diff(['value', 'expression'], array_keys($sdc_prop_source));
+    $missing = array_diff(['value', 'expression'], \array_keys($sdc_prop_source));
     if (!empty($missing)) {
       throw new \LogicException(\sprintf('Missing the keys %s.', implode(',', $missing)));
     }
-    \assert(array_key_exists('value', $sdc_prop_source));
-    \assert(array_key_exists('expression', $sdc_prop_source));
+    \assert(\array_key_exists('value', $sdc_prop_source));
+    \assert(\array_key_exists('expression', $sdc_prop_source));
 
     // First: construct an expression object from the expression string.
     $expression = StructuredDataPropExpression::fromString($sdc_prop_source['expression']);
     \assert($expression instanceof FieldTypeBasedPropExpressionInterface);
 
     // Second: retrieve the field storage settings, if any.
-    $cardinality = $sdc_prop_source['sourceTypeSettings']['cardinality'] ?? 1;
+    $cardinality = $sdc_prop_source['sourceTypeSettings']['cardinality'] ?? StorablePropShape::DEFAULT_CARDINALITY;
     $field_storage_settings = $sdc_prop_source['sourceTypeSettings']['storage'] ?? NULL;
     $field_instance_settings = $sdc_prop_source['sourceTypeSettings']['instance'] ?? NULL;
 
@@ -415,7 +406,7 @@ final class StaticPropSource extends PropSourceBase {
       };
     }
 
-    $denormalized_values = array_map(
+    $denormalized_values = \array_map(
       fn (FieldItemInterface $item) => $this->denormalizeValue($item->getValue()),
       iterator_to_array($this->fieldItemList),
     );
@@ -519,10 +510,13 @@ final class StaticPropSource extends PropSourceBase {
     $widget_form = $widget->form($field, $form, $form_state);
     if ($widget->getPluginId() === 'datetime_default' && !$this->fieldItemList->isEmpty()) {
       // The datetime widget needs a DrupalDateTime object as the value.
-      // @todo Figure out why this is necessary — \DateTimeWidgetBase::createDefaultValue() *is* getting called, but somehow it does not result in the default value being populated unless we do this.
+      // @todo Figure out why this is necessary — \DateTimeWidgetBase::createDefaultValue() *is* getting called, but somehow it does not result in the default value being populated unless we do this. Fix in https://www.drupal.org/project/canvas/issues/3530808
       // @see \Drupal\datetime\Plugin\Field\FieldWidget\DateTimeWidgetBase::createDefaultValue()
       for ($i = 0; $i < $this->fieldItemList->count(); $i++) {
         \assert($this->fieldItemList[$i] !== NULL);
+        // @see \Drupal\Core\Field\FieldItemList::__get()
+        // @see \Drupal\datetime\Plugin\Field\FieldType\DateTimeItem::propertyDefinitions()
+        // @phpstan-ignore property.notFound
         $widget_form['widget'][$i]['value']['#default_value'] = new DrupalDateTime($this->fieldItemList[$i]->value);
       }
     }
@@ -560,7 +554,7 @@ final class StaticPropSource extends PropSourceBase {
       $storage_deps,
     );
     ksort($dependencies);
-    return array_map(static function ($values) {
+    return \array_map(static function ($values) {
       $values = array_unique($values);
       sort($values);
       return $values;

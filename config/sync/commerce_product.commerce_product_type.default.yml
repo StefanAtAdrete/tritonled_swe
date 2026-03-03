@@ -1,7 +1,9 @@
 uuid: 4f6af3a4-c6de-459c-accb-1123d83b4bd5
 langcode: en
 status: true
-dependencies: {  }
+dependencies:
+  module:
+    - layout_builder
 third_party_settings:
   layout_builder:
     enabled: 'false'

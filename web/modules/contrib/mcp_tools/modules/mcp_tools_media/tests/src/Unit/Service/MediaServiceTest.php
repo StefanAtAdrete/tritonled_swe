@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\media\MediaTypeInterface;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\mcp_tools\Service\AccessManager;
 use Drupal\mcp_tools\Service\AuditLogger;
 use Drupal\mcp_tools_media\Service\MediaService;
@@ -20,6 +21,12 @@ use Drupal\Tests\UnitTestCase;
 #[\PHPUnit\Framework\Attributes\CoversClass(\Drupal\mcp_tools_media\Service\MediaService::class)]
 #[\PHPUnit\Framework\Attributes\Group('mcp_tools_media')]
 class MediaServiceTest extends UnitTestCase {
+
+  protected function mockTime(): TimeInterface {
+    $time = $this->createMock(TimeInterface::class);
+    $time->method('getCurrentTime')->willReturn(time());
+    return $time;
+  }
 
   protected EntityTypeManagerInterface $entityTypeManager;
   protected FileSystemInterface $fileSystem;
@@ -60,7 +67,8 @@ class MediaServiceTest extends UnitTestCase {
       $this->entityTypeManager,
       $this->fileSystem,
       $this->accessManager,
-      $this->auditLogger
+      $this->auditLogger,
+      $this->mockTime(),
     );
   }
 

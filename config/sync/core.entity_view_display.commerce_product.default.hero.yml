@@ -103,6 +103,11 @@ hidden:
   field_product_categories: true
   field_product_sku: true
   field_show_in_hero: true
+  langcode: true
   layout_builder__layout: true
   stores: true
   uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__mechanical: true
+  variation_block__token: true

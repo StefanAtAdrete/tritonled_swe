@@ -1,0 +1,12 @@
+uuid: 78a4b601-0f10-42e9-bfea-7d4d27101552
+langcode: en
+status: true
+dependencies: {  }
+id: product_section_tabs
+label: 'Product section tabs'
+classes: container
+type: section
+group: product_tabs
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

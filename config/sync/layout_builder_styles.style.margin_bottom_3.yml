@@ -1,0 +1,12 @@
+uuid: f0d9a464-0eee-4bf4-8f27-88d63619b134
+langcode: en
+status: true
+dependencies: {  }
+id: margin_bottom_3
+label: 'Margin Bottom 3'
+classes: mb-3
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

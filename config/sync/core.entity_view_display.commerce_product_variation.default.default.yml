@@ -6,8 +6,11 @@ dependencies:
     - commerce_product.commerce_product_variation_type.default
     - field.field.commerce_product_variation.default.attribute_accessories
     - field.field.commerce_product_variation.default.attribute_beam_angle
+    - field.field.commerce_product_variation.default.attribute_bracket
     - field.field.commerce_product_variation.default.attribute_cct
     - field.field.commerce_product_variation.default.attribute_color
+    - field.field.commerce_product_variation.default.attribute_connection
+    - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_voltage
@@ -42,8 +45,9 @@ dependencies:
     - field.field.commerce_product_variation.default.field_variation_media
     - field.field.commerce_product_variation.default.field_warranty_years
     - field.field.commerce_product_variation.default.field_weight
-    - image.style.max_325x325
+    - image.style.thumbnail
   module:
+    - fences
     - splide
 id: commerce_product_variation.default.default
 targetEntityType: commerce_product_variation
@@ -54,7 +58,9 @@ content:
     type: splide_media
     label: visually_hidden
     settings:
-      caption: {  }
+      caption:
+        alt: '0'
+        title: '0'
       optionset: product_main
       class: ''
       image: ''
@@ -66,13 +72,13 @@ content:
       layout: ''
       view_mode: splide
       cache: 0
-      admin_uri: ''
+      admin_uri: '/admin/commerce/config/product-variation-types/default/edit/display?ajax_form=1&_wrapper_format=drupal_ajax'
       use_lb: false
       background: false
       box_caption: ''
       box_caption_custom: ''
       box_media_style: ''
-      loading: lazy
+      loading: ''
       preload: false
       responsive_image_style: ''
       use_theme_field: false
@@ -80,7 +86,7 @@ content:
       image_style: ''
       media_switch: ''
       ratio: ''
-      thumbnail_style: max_325x325
+      thumbnail_style: thumbnail
       grid: ''
       grid_medium: ''
       grid_small: ''
@@ -92,7 +98,15 @@ content:
       svg_hide_caption: false
       svg_attributes: ''
       skin: ''
-      overridables: {  }
+      overridables:
+        arrows: '0'
+        pagination: '0'
+        autoplay: '0'
+        autoWidth: '0'
+        autoHeight: '0'
+        drag: '0'
+        wheel: '0'
+        randomize: '0'
       thumbnail: ''
       pagination_text: ''
       optionset_nav: product_nav
@@ -105,15 +119,27 @@ content:
       skin_dots: ''
       pagination_pos: ''
       preserve_keys: false
-      visible_items: 0
-    third_party_settings: {  }
+      visible_items: null
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
     weight: 0
     region: content
 hidden:
   attribute_accessories: true
   attribute_beam_angle: true
+  attribute_bracket: true
   attribute_cct: true
   attribute_color: true
+  attribute_connection: true
+  attribute_cri: true
   attribute_ip_rating: true
   attribute_length: true
   attribute_voltage: true
@@ -148,6 +174,7 @@ hidden:
   field_rohs: true
   field_warranty_years: true
   field_weight: true
+  langcode: true
   list_price: true
   price: true
   product_id: true

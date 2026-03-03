@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\mcp_tools_structure\Service;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\mcp_tools\Service\AccessManager;
 use Drupal\mcp_tools\Service\AuditLogger;
@@ -20,6 +21,7 @@ class TaxonomyManagementService {
     protected EntityTypeManagerInterface $entityTypeManager,
     protected AccessManager $accessManager,
     protected AuditLogger $auditLogger,
+    protected TimeInterface $time,
   ) {}
 
   /**
@@ -287,6 +289,10 @@ class TaxonomyManagementService {
         $termData['parent'] = ['target_id' => $options['parent']];
       }
 
+      // Use getCurrentTime() to avoid frozen REQUEST_TIME in server mode.
+      $now = $this->time->getCurrentTime();
+      $termData['changed'] = $now;
+      $termData['created'] = $now;
       $term = $this->entityTypeManager->getStorage('taxonomy_term')->create($termData);
       $term->save();
 

@@ -1,0 +1,7 @@
+uuid: 519ee19d-9842-4196-a6c9-ba1c690e745a
+langcode: en
+status: true
+dependencies: {  }
+id: connection
+label: Connection
+elementType: radios

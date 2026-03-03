@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Exception\MissingOptionsException;
  *
  * Examples:
  * - content entities and ContentTypeTemplate config entities MAY use
- *   DynamicPropSources, but PageRegion and Pattern config entities MUST NOT
+ *   EntityFieldPropSources, but PageRegion and Pattern config entities MUST NOT
  * - content entities, ContentTypeTemplate and Pattern config entities MUST NOT
  *   use any "title" or "messages" blocks, but a PageRegion config entity MAY do
  *   so.
@@ -76,13 +76,13 @@ class ComponentTreeMeetsRequirementsConstraint extends SymfonyConstraint {
     $missing_nested_options = [];
     foreach (['tree', 'inputs'] as $option) {
       foreach (['absence', 'presence'] as $nested_option) {
-        if (!array_key_exists('absence', $this->$option)) {
+        if (!\array_key_exists('absence', $this->$option)) {
           $missing_nested_options[] = "$option.$nested_option";
         }
       }
     }
     if (!empty($missing_nested_options)) {
-      throw new MissingOptionsException(\sprintf('The options "%s" must be set for constraint "%s".', implode('", "', array_keys($missing_nested_options)), static::class), array_keys($missing_nested_options));
+      throw new MissingOptionsException(\sprintf('The options "%s" must be set for constraint "%s".', implode('", "', \array_keys($missing_nested_options)), static::class), \array_keys($missing_nested_options));
     }
 
     // Verify sensible values are present for $this->inputs: an array of source

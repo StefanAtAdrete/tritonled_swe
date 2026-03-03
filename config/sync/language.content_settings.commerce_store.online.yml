@@ -1,0 +1,11 @@
+uuid: 534f0688-4104-4089-bdc4-7982450e08f3
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_store.commerce_store_type.online
+id: commerce_store.online
+target_entity_type_id: commerce_store
+target_bundle: online
+default_langcode: site_default
+language_alterable: false

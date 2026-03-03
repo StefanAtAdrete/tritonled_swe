@@ -55,3 +55,17 @@ component-product-gallery:
   css:
     component:
       css/components/product-gallery.css: {}
+
+# Bootstrap tabs replacement for lb_tabs
+lb-tabs-bootstrap:
+  version: VERSION
+  css:
+    component:
+      css/components/lb-tabs.css: {}
+  js:
+    js/lb-tabs-bootstrap.js: {}
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/once
+    - tritonled_radix/global-styling

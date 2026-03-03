@@ -7,17 +7,19 @@ namespace Drupal\Tests\canvas\Functional\Update;
 use Drupal\canvas\Entity\Component;
 use Drupal\media\Entity\MediaType;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 
 /**
- * @covers \canvas_post_update_0011_multi_bundle_reference_prop_expressions()
- * @covers \Drupal\canvas\CanvasConfigUpdater::expressionUsesDeprecatedReference()
- * @covers \Drupal\canvas\CanvasConfigUpdater::needsMultiBundleReferencePropExpressionUpdate()
- * @covers \Drupal\canvas\CanvasConfigUpdater::updateMultiBundleReferencePropExpressionToMultiBranch()
+ * @covers \canvas_post_update_0011_multi_bundle_reference_prop_expressions
+ * @covers \Drupal\canvas\CanvasConfigUpdater::expressionUsesDeprecatedReference
+ * @covers \Drupal\canvas\CanvasConfigUpdater::needsMultiBundleReferencePropExpressionUpdate
+ * @covers \Drupal\canvas\CanvasConfigUpdater::updateMultiBundleReferencePropExpressionToMultiBranch
  * @group canvas
  * @group canvas_data_model__prop_expressions
  * @group legacy
  */
+#[RunTestsInSeparateProcesses]
 final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends CanvasUpdatePathTestBase {
 
   use MediaTypeCreationTrait;
@@ -57,12 +59,13 @@ final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends Canva
   }
 
   /**
+   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::needsLiftedReferencePropExpressionUpdate
+   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::liftReferenceAndCreateBranchesIfNeeded
+   * @see \Drupal\Tests\canvas\Unit\PropExpressionTest::testUpdatePathFor356345
+   *
    * The scenario where an "image" shape is populated by a single media type.
    *
    * @see \Drupal\canvas\Hook\ShapeMatchingHooks::mediaLibraryStorablePropShapeAlter()
-   *
-   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::needsLiftedReferencePropExpressionUpdate()
-   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::liftReferenceAndCreateBranchesIfNeeded()
    *
    * Tests the 3rd case described in
    *
@@ -116,12 +119,13 @@ final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends Canva
   }
 
   /**
+   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::needsMultiBundleReferencePropExpressionUpdate
+   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::liftReferenceAndCreateBranchesIfNeeded
+   * @see \Drupal\Tests\canvas\Unit\PropExpressionTest::testUpdatePathFor356345
+   *
    * The scenario where an "image" shape is populated by a single media type.
    *
    * @see \Drupal\canvas\Hook\ShapeMatchingHooks::mediaLibraryStorablePropShapeAlter()
-   *
-   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::needsMultiBundleReferencePropExpressionUpdate()
-   * @covers \Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression::liftReferenceAndCreateBranchesIfNeeded()
    *
    * Tests the 1st and 2nd case described in
    *
@@ -131,8 +135,6 @@ final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends Canva
    * obsoleteness of SYMBOL_OBJECT_MAPPED_OPTIONAL_PROP is not possible,
    * because the Media Library module's hook_canvas_storable_prop_shape_alter()
    * implementation would undo it. Hence that must be tested in a unit test.
-   *
-   * @see \Drupal\Tests\canvas\Unit\PropExpressionTest::testUpdatePathFor3563451
    */
   public function testMultipleImageMediaTypes(): void {
     // The database test fixture can only simulate one reality. It simulates the
@@ -155,9 +157,9 @@ final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends Canva
     // @see https://www.drupal.org/project/canvas/releases/1.0.3
     // @see ::EXPECTED_ORIGINAL_MULTI_BUNDLE_IMAGE_OBJECT_EXPRESSION
     // @see ::EXPECTED_ORIGINAL_MULTI_BUNDLE_IMAGE_URI_EXPRESSION
-    self::assertSame(['image'], array_keys(MediaType::loadMultiple()));
+    self::assertSame(['image'], \array_keys(MediaType::loadMultiple()));
     $this->createMediaType('image', ['id' => 'baby_photos']);
-    self::assertSame(['baby_photos', 'image'], array_keys(MediaType::loadMultiple()));
+    self::assertSame(['baby_photos', 'image'], \array_keys(MediaType::loadMultiple()));
     $target_bundles_setting = [
       'baby_photos' => 'baby_photos',
       'image' => 'image',
@@ -275,9 +277,9 @@ final class ComponentMultiBundleReferencePropExpressionsUpdateTest extends Canva
 
   private static function assertActiveVersionIsValid(Component $component): void {
     $violations = iterator_to_array($component->getTypedData()->validate());
-    $property_paths = array_map(fn (ConstraintViolationInterface $v) => $v->getPropertyPath(), $violations);
+    $property_paths = \array_map(fn (ConstraintViolationInterface $v) => $v->getPropertyPath(), $violations);
     $violations_by_property_path = array_combine($property_paths, $violations);
-    if (array_key_exists('active_version', $violations_by_property_path)) {
+    if (\array_key_exists('active_version', $violations_by_property_path)) {
       self::fail(\sprintf('The active version `%s` is invalid: %s',
         $component->getActiveVersion(),
         $violations_by_property_path['active_version']->getMessage(),

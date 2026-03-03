@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Drupal\Tests\canvas\Functional;
 
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * @coversDefaultClass \Drupal\canvas\Controller\EntityFormController
  * @group canvas
  */
+#[RunTestsInSeparateProcesses]
 class EntityFormControllerTest extends FunctionalTestBase {
 
   /**
@@ -35,7 +37,7 @@ class EntityFormControllerTest extends FunctionalTestBase {
 
   /**
    * @covers ::form
-   * @covers \Drupal\canvas\Hook\ContentTemplateHooks::entityFormDisplayAlter()
+   * @covers \Drupal\canvas\Hook\ContentTemplateHooks::entityFormDisplayAlter
    */
   public function testForm(): void {
     $assert = $this->assertSession();

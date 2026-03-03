@@ -1,0 +1,12 @@
+uuid: 7cc4232f-5ef9-4759-b26a-b545f417a7f0
+langcode: en
+status: true
+dependencies: {  }
+id: tab_block_products
+label: 'Tab block products'
+classes: bg-light
+type: component
+group: product_tabs
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

@@ -42,7 +42,6 @@ class CanvasTwigExtensionFiltersTest extends UnitTestCase {
   }
 
   /**
-   * @covers CanvasTwigExtension::toSrcSet
    * @dataProvider providerToSrcSet
    */
   public function testToSrcSet(string $src, int $intrinsicImageWidth, ?string $expected): void {
@@ -119,7 +118,7 @@ class CanvasTwigExtensionFiltersTest extends UnitTestCase {
   }
 
   private static function generateExpectedSrcSetForWidths(array $widths): string {
-    return implode(', ', array_map(function ($width) {
+    return implode(', ', \array_map(function ($width) {
       return "/sites/default/files/styles/canvas_parametrized_width--$width/public/2025-07/Screenshot 2025-07-08 at 8.56.02.png.webp?itok=Wp4lG4Wk {$width}w";
     }, $widths));
   }
@@ -134,7 +133,6 @@ class CanvasTwigExtensionFiltersTest extends UnitTestCase {
    * @param class-string<\Throwable> $expectedException
    *   The expected exception.
    *
-   * @covers CanvasTwigExtension::toSrcSet
    * @dataProvider invalidProviderToSrcSet
    */
   public function testToSrcSetWithInvalidWidth(string $src, int $intrinsicImageWidth, string $expectedException): void {

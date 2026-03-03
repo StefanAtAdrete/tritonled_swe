@@ -13,11 +13,13 @@ use Drupal\canvas\Entity\Page;
 use Drupal\node\Entity\Node;
 use Drupal\Tests\canvas\TestSite\CanvasTestSetup;
 use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * @group canvas
  */
+#[RunTestsInSeparateProcesses]
 class CodeComponentDataProviderTest extends FunctionalTestBase {
 
   use ContribStrictConfigSchemaTestTrait;
@@ -30,9 +32,8 @@ class CodeComponentDataProviderTest extends FunctionalTestBase {
   protected $defaultTheme = 'stark';
 
   /**
+   * @covers \Drupal\canvas\CodeComponentDataProvider::getCanvasDataBaseUrlV0
    * @covers \Drupal\canvas\CodeComponentDataProvider::getCanvasDataBrandingV0
-   * @covers \Drupal\canvas\CodeComponentDataProvider::getRequiredCanvasDataLibraries
-   * @covers \Drupal\canvas\CodeComponentDataProvider::getPartialCanvasDataFromSettingsV0
    */
   public function testV0UsingDrupalSettingsGetSiteData(): void {
     $page = Page::create([
@@ -66,8 +67,7 @@ class CodeComponentDataProviderTest extends FunctionalTestBase {
   }
 
   /**
-   * @covers \Drupal\canvas\CodeComponentDataProvider::getRequiredCanvasDataLibraries
-   * @covers \Drupal\canvas\CodeComponentDataProvider::getPartialCanvasDataFromSettingsV0
+   * @covers \Drupal\canvas\CodeComponentDataProvider
    */
   public function testV0NotUsingDrupalSettings(): void {
     $page = Page::create([

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel;
 
-use Drupal\canvas\PropSource\DynamicPropSource;
+use Drupal\canvas\PropSource\EntityFieldPropSource;
 use Drupal\canvas\PropSource\HostEntityUrlPropSource;
 use Drupal\canvas\PropSource\PropSource;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
@@ -15,12 +15,11 @@ use Drupal\Core\Plugin\Component;
 use Drupal\Core\Theme\ComponentPluginManager;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\KernelTests\KernelTestBase;
 use Drupal\link\LinkItemInterface;
 use Drupal\node\Entity\NodeType;
 use Drupal\taxonomy\Entity\Vocabulary;
-use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\field\Traits\EntityReferenceFieldCreationTrait;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * @coversClass \Drupal\canvas\ShapeMatcher\PropSourceSuggester
@@ -28,47 +27,27 @@ use Drupal\Tests\field\Traits\EntityReferenceFieldCreationTrait;
  *
  * @phpstan-import-type HostEntityUrlPropSourceArray from \Drupal\canvas\PropSource\PropSourceBase
  */
-class PropSourceSuggesterTest extends KernelTestBase {
+#[RunTestsInSeparateProcesses]
+class PropSourceSuggesterTest extends CanvasKernelTestBase {
 
-  use ContribStrictConfigSchemaTestTrait;
   use EntityReferenceFieldCreationTrait;
 
   /**
    * {@inheritdoc}
    */
   protected static $modules = [
-    // The two only modules Drupal truly requires.
-    'system',
-    'user',
-    // The module being tested.
-    'canvas',
-    // The dependent modules.
-    'sdc',
-    'media',
-    // The module providing realistic test SDCs.
-    'canvas_test_sdc',
     // The module providing the sample SDC to test all JSON schema types.
     'sdc_test_all_props',
     'canvas_test_sdc',
-    // All other core modules providing field types.
+    // All other core modules providing field types (in addition to the ones
+    // installed by CanvasKernelTestBase).
     'comment',
-    'datetime',
     'datetime_range',
-    'file',
-    'image',
-    'link',
-    'options',
-    'path',
     'telephone',
-    'text',
     // Create sample configurable fields on the `node` entity type.
     'node',
     'field',
     'taxonomy',
-    // Modules that field type-providing modules depend on.
-    'filter',
-    'ckeditor5',
-    'editor',
   ];
 
   /**
@@ -76,7 +55,6 @@ class PropSourceSuggesterTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    $this->installConfig('canvas');
     $this->installEntitySchema('node');
     $this->installEntitySchema('user');
     $this->installEntitySchema('field_storage_config');
@@ -230,21 +208,21 @@ class PropSourceSuggesterTest extends KernelTestBase {
       );
 
     // All expectations that are present must be correct.
-    foreach (array_keys($expected) as $prop_name) {
+    foreach (\array_keys($expected) as $prop_name) {
       $this->assertSame(
         $expected[$prop_name],
         [
           'required' => $suggestions[$prop_name]['required'],
-          'instances' => array_map(fn (DynamicPropSource $s): array => $s->toArray(), $suggestions[$prop_name]['instances']),
-          'adapters' => array_map(fn (AdapterInterface $a): string => $a->getPluginId(), $suggestions[$prop_name]['adapters']),
-          'host_entity_urls' => array_map(fn (HostEntityUrlPropSource $s): array => $s->toArray(), $suggestions[$prop_name]['host_entity_urls']),
+          'instances' => \array_map(fn (EntityFieldPropSource $s): array => $s->toArray(), $suggestions[$prop_name]['instances']),
+          'adapters' => \array_map(fn (AdapterInterface $a): string => $a->getPluginId(), $suggestions[$prop_name]['adapters']),
+          'host_entity_urls' => \array_map(fn (HostEntityUrlPropSource $s): array => $s->toArray(), $suggestions[$prop_name]['host_entity_urls']),
         ],
         "Unexpected prop source suggestion for $prop_name"
       );
     }
 
     // Finally, the set of expectations must be complete.
-    $this->assertSame(array_keys($expected), array_keys($suggestions));
+    $this->assertSame(\array_keys($expected), \array_keys($suggestions));
   }
 
   public static function provider(): \Generator {
@@ -256,7 +234,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
           ],
@@ -277,19 +255,19 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
             'Silly image 🤡' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
             'Primary topic → Taxonomy term → Revision user' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟{src↝entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths,alt↝entity␜␜entity:user␝name␞␟value,width↝entity␜␜entity:user␝user_picture␞␟width,height↝entity␜␜entity:user␝user_picture␞␟height}',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
           ],
@@ -314,7 +292,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
           ],
@@ -328,15 +306,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → srcset template' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟srcset_candidate_uri_template',
             ],
             'Silly image 🤡 → srcset template' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟srcset_candidate_uri_template',
             ],
             'Revision user → User → Picture → srcset template' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟srcset_candidate_uri_template',
             ],
           ],
@@ -354,15 +332,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'field_screenshots → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_screenshots␞␟alt',
             ],
             'field_screenshots → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_screenshots␞␟title',
             ],
             'Tags → Taxonomy term → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_tags␞␟entity␜␜entity:taxonomy_term␝name␞␟value',
             ],
           ],
@@ -380,20 +358,20 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored on' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node␝created␞␟value',
               'adapter' => 'unix_to_date',
             ],
             'field_event_duration → End date value' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟end_value',
             ],
             'field_event_duration' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟value',
             ],
             'Changed' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node␝changed␞␟value',
               'adapter' => 'unix_to_date',
             ],
@@ -407,47 +385,47 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝title␞␟value',
             ],
             'Authored by → User → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝name␞␟value',
             ],
             'Authored by → User → Picture → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟alt',
             ],
             'Authored by → User → Picture → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟title',
             ],
             'Check it out! → Link text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟title',
             ],
             'Silly image 🤡 → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟alt',
             ],
             'Silly image 🤡 → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟title',
             ],
             'Primary topic → Taxonomy term → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝name␞␟value',
             ],
             'Revision user → User → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝name␞␟value',
             ],
             'Revision user → User → Picture → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟alt',
             ],
             'Revision user → User → Picture → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟title',
             ],
           ],
@@ -465,23 +443,23 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → User status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝status␞␟value',
             ],
             "Published" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝status␞␟value',
             ],
             "Silly image 🤡 → Status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝status␞␟value',
             ],
             'Primary topic → Taxonomy term → Published' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝status␞␟value',
             ],
             "Revision user → User → User status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝status␞␟value',
             ],
           ],
@@ -492,23 +470,23 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → User status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝status␞␟value',
             ],
             "Published" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝status␞␟value',
             ],
             "Silly image 🤡 → Status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝status␞␟value',
             ],
             'Primary topic → Taxonomy term → Published' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝status␞␟value',
             ],
             "Revision user → User → User status" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝status␞␟value',
             ],
           ],
@@ -519,47 +497,47 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Title" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝title␞␟value',
             ],
             'Authored by → User → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝name␞␟value',
             ],
             'Authored by → User → Picture → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟alt',
             ],
             'Authored by → User → Picture → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟title',
             ],
             'Check it out! → Link text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟title',
             ],
             "Silly image 🤡 → Alternative text" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟alt',
             ],
             "Silly image 🤡 → Title" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟title',
             ],
             'Primary topic → Taxonomy term → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝name␞␟value',
             ],
             'Revision user → User → Name' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝name␞␟value',
             ],
             'Revision user → User → Picture → Alternative text' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟alt',
             ],
             'Revision user → User → Picture → Title' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟title',
             ],
           ],
@@ -576,7 +554,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "Title" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝title␞␟value',
             ],
           ],
@@ -599,11 +577,11 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_event_duration → End date value" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟end_value',
             ],
             "field_event_duration" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟value',
             ],
           ],
@@ -614,20 +592,20 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored on' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node␝created␞␟value',
               'adapter' => 'unix_to_date',
             ],
             "field_event_duration → End date value" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟end_value',
             ],
             "field_event_duration" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟value',
             ],
             'Changed' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node␝changed␞␟value',
               'adapter' => 'unix_to_date',
             ],
@@ -653,19 +631,19 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → Initial email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝init␞␟value',
             ],
             "Authored by → User → Email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝mail␞␟value',
             ],
             "Revision user → User → Initial email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝init␞␟value',
             ],
             "Revision user → User → Email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝mail␞␟value',
             ],
           ],
@@ -676,19 +654,19 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → Initial email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝init␞␟value',
             ],
             "Authored by → User → Email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝mail␞␟value',
             ],
             "Revision user → User → Initial email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝init␞␟value',
             ],
             "Revision user → User → Email" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝mail␞␟value',
             ],
           ],
@@ -723,39 +701,39 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝uuid␞␟value',
             ],
             "Authored by → Target UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟target_uuid',
             ],
             "Silly image 🤡 → UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uuid␞␟value',
             ],
             'Primary topic → Taxonomy term → Revision user → Target UUID' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟target_uuid',
             ],
             'Primary topic → Taxonomy term → UUID' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝uuid␞␟value',
             ],
             'Primary topic → Target UUID' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟target_uuid',
             ],
             "Revision user → User → UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝uuid␞␟value',
             ],
             "Revision user → Target UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟target_uuid',
             ],
             "UUID" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uuid␞␟value',
             ],
           ],
@@ -766,7 +744,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "Silly image 🤡 → URI" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
             ],
           ],
@@ -782,15 +760,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             'Check it out! → Resolved URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟url',
             ],
             "Silly image 🤡 → URI → Root-relative file URL" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟src_with_alternate_widths',
             ],
           ],
@@ -806,15 +784,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             "Silly image 🤡 → URI" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Revision user → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
           ],
@@ -830,31 +808,31 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             "Silly image 🤡 → URI → Root-relative file URL" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Revision user → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
           ],
@@ -867,31 +845,31 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             "Silly image 🤡 → URI → Root-relative file URL" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Revision user → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
           ],
@@ -900,71 +878,109 @@ class PropSourceSuggesterTest extends KernelTestBase {
           ],
           'host_entity_urls' => [],
         ],
+        '⿲sdc_test_all_props:all-props␟test_string_format_uri_public_stream_wrapper' => [
+          'required' => FALSE,
+          'instances' => [
+            'Authored by → User → Picture → URI' => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+            "Silly image 🤡 → URI" => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+            'Revision user → User → Picture → URI' => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+          ],
+          'adapters' => [],
+          'host_entity_urls' => [],
+        ],
+        '⿲sdc_test_all_props:all-props␟test_string_format_uri_public_stream_wrapper_using_ref' => [
+          'required' => FALSE,
+          'instances' => [
+            'Authored by → User → Picture → URI' => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+            "Silly image 🤡 → URI" => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+            'Revision user → User → Picture → URI' => [
+              'sourceType' => PropSource::EntityField->value,
+              'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
+            ],
+          ],
+          'adapters' => [],
+          'host_entity_urls' => [],
+        ],
         '⿲sdc_test_all_props:all-props␟test_string_format_uri_reference' => [
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Authored by → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Authored by → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟url',
             ],
             'Check it out!' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟uri',
             ],
             'Check it out! → Resolved URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟url',
             ],
             'Silly image 🤡 → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Silly image 🤡 → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟url',
             ],
             'Primary topic → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟url',
             ],
             'Revision user → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Revision user → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Revision user → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟url',
             ],
           ],
@@ -980,15 +996,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Silly image 🤡 → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Revision user → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
           ],
@@ -1004,67 +1020,67 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Authored by → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Authored by → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟url',
             ],
             'Check it out!' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟uri',
             ],
             'Check it out! → Resolved URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_check_it_out␞␟url',
             ],
             'Silly image 🤡 → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Silly image 🤡 → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Primary topic → Taxonomy term → Revision user → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟url',
             ],
             'Primary topic → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟url',
             ],
             'Revision user → User → Picture → URI → Root-relative file URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟url',
             ],
             'Revision user → User → Picture → URI' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟entity␜␜entity:file␝uri␞␟value',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths',
             ],
             'Revision user → URL' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟url',
             ],
           ],
@@ -1104,35 +1120,35 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → Height' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟height',
             ],
             'Authored by → User → Picture → Width' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟width',
             ],
             "Silly image 🤡 → File size" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝filesize␞␟value',
             ],
             "Silly image 🤡 → Height" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟height',
             ],
             "Silly image 🤡 → Width" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟width',
             ],
             'Primary topic → Taxonomy term → Weight' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝weight␞␟value',
             ],
             'Revision user → User → Picture → Height' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟height',
             ],
             'Revision user → User → Picture → Width' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟width',
             ],
           ],
@@ -1151,63 +1167,63 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "Authored by → User → Last access" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝access␞␟value',
             ],
             "Authored by → User → Changed" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝changed␞␟value',
             ],
             "Authored by → User → Created" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝created␞␟value',
             ],
             "Authored by → User → Last login" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝login␞␟value',
             ],
             'Authored on' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝created␞␟value',
             ],
             'Changed' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝changed␞␟value',
             ],
             "Silly image 🤡 → Changed" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝changed␞␟value',
             ],
             "Silly image 🤡 → Created" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝created␞␟value',
             ],
             'Primary topic → Taxonomy term → Changed' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝changed␞␟value',
             ],
             'Primary topic → Taxonomy term → Revision create time' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_created␞␟value',
             ],
             "Revision create time" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_timestamp␞␟value',
             ],
             "Revision user → User → Last access" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝access␞␟value',
             ],
             "Revision user → User → Changed" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝changed␞␟value',
             ],
             "Revision user → User → Created" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝created␞␟value',
             ],
             "Revision user → User → Last login" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝login␞␟value',
             ],
           ],
@@ -1224,35 +1240,35 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture → Height' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟height',
             ],
             'Authored by → User → Picture → Width' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟width',
             ],
             "Silly image 🤡 → File size" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟entity␜␜entity:file␝filesize␞␟value',
             ],
             "Silly image 🤡 → Height" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟height',
             ],
             "Silly image 🤡 → Width" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟width',
             ],
             'Primary topic → Taxonomy term → Weight' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝weight␞␟value',
             ],
             'Revision user → User → Picture → Height' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟height',
             ],
             'Revision user → User → Picture → Width' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟width',
             ],
           ],
@@ -1263,19 +1279,19 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             'Authored by → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝uid␞␟entity␜␜entity:user␝user_picture␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
             "Silly image 🤡" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_silly_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
             'Primary topic → Taxonomy term → Revision user' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝revision_user␞␟{src↝entity␜␜entity:user␝user_picture␞␟src_with_alternate_widths,alt↝entity␜␜entity:user␝name␞␟value,width↝entity␜␜entity:user␝user_picture␞␟width,height↝entity␜␜entity:user␝user_picture␞␟height}',
             ],
             'Revision user → User → Picture' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝revision_uid␞␟entity␜␜entity:user␝user_picture␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
           ],
@@ -1289,7 +1305,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_before_and_after" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_before_and_after␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
             ],
           ],
@@ -1306,7 +1322,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_event_duration" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_event_duration␞␟{from↠value,to↠end_value}',
             ],
           ],
@@ -1323,15 +1339,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_wall_of_text" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_wall_of_text␞␟processed',
             ],
             'Primary topic → Taxonomy term → Some text field' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term:vocab_2␝some_text␞␟processed',
             ],
             'Primary topic → Taxonomy term → Description' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝description␞␟processed',
             ],
           ],
@@ -1342,15 +1358,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_wall_of_text" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_wall_of_text␞␟processed',
             ],
             'Primary topic → Taxonomy term → Some text field' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term:vocab_2␝some_text␞␟processed',
             ],
             'Primary topic → Taxonomy term → Description' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝primary_topic␞␟entity␜␜entity:taxonomy_term␝description␞␟processed',
             ],
           ],
@@ -1367,7 +1383,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "field_wall_of_text" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_wall_of_text␞␟processed',
             ],
           ],
@@ -1378,7 +1394,7 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => TRUE,
           'instances' => [
             "field_wall_of_text" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_wall_of_text␞␟processed',
             ],
           ],
@@ -1389,19 +1405,19 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_screenshots → File size" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_screenshots␞␟entity␜␜entity:file␝filesize␞␟value',
             ],
             "field_screenshots → Height" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_screenshots␞␟height',
             ],
             "field_screenshots → Width" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_screenshots␞␟width',
             ],
             'Tags → Taxonomy term → Weight' => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_tags␞␟entity␜␜entity:taxonomy_term␝weight␞␟value',
             ],
           ],
@@ -1418,15 +1434,15 @@ class PropSourceSuggesterTest extends KernelTestBase {
           'required' => FALSE,
           'instances' => [
             "field_before_and_after → File size" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_before_and_after␞␟entity␜␜entity:file␝filesize␞␟value',
             ],
             "field_before_and_after → Height" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_before_and_after␞␟height',
             ],
             "field_before_and_after → Width" => [
-              'sourceType' => 'dynamic',
+              'sourceType' => PropSource::EntityField->value,
               'expression' => 'ℹ︎␜entity:node:foo␝field_before_and_after␞␟width',
             ],
           ],

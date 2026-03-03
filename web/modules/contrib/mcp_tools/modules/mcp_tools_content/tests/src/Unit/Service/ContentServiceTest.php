@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Url;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\mcp_tools\Service\AccessManager;
 use Drupal\mcp_tools\Service\AuditLogger;
 use Drupal\mcp_tools_content\Service\ContentService;
@@ -24,6 +25,12 @@ use Drupal\Tests\UnitTestCase;
 #[\PHPUnit\Framework\Attributes\CoversClass(\Drupal\mcp_tools_content\Service\ContentService::class)]
 #[\PHPUnit\Framework\Attributes\Group('mcp_tools_content')]
 class ContentServiceTest extends UnitTestCase {
+
+  protected function mockTime(): TimeInterface {
+    $time = $this->createMock(TimeInterface::class);
+    $time->method('getCurrentTime')->willReturn(time());
+    return $time;
+  }
 
   protected EntityTypeManagerInterface $entityTypeManager;
   protected EntityFieldManagerInterface $entityFieldManager;
@@ -66,7 +73,8 @@ class ContentServiceTest extends UnitTestCase {
       $this->entityFieldManager,
       $this->currentUser,
       $this->accessManager,
-      $this->auditLogger
+      $this->auditLogger,
+      $this->mockTime(),
     );
   }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\mcp_tools_batch\Service;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -28,6 +29,7 @@ class BatchService {
     protected ModuleHandlerInterface $moduleHandler,
     protected AccessManager $accessManager,
     protected AuditLogger $auditLogger,
+    protected TimeInterface $time,
   ) {}
 
   /**
@@ -36,7 +38,8 @@ class BatchService {
    * @param string $contentType
    *   The content type machine name.
    * @param array $items
-   *   Array of items to create. Each item should have 'title' and optionally 'fields'.
+   *   Array of items to create. Each item should have
+   *   'title' and optionally 'fields'.
    *
    * @return array
    *   Result with created items and any errors.
@@ -101,6 +104,10 @@ class BatchService {
         }
 
         $node = $this->entityTypeManager->getStorage('node')->create($nodeData);
+        // Use getCurrentTime() to avoid frozen REQUEST_TIME in server mode.
+        $now = $this->time->getCurrentTime();
+        $node->setCreatedTime($now);
+        $node->setChangedTime($now);
         $node->save();
 
         $created[] = [
@@ -515,7 +522,11 @@ class BatchService {
     // Verify role exists.
     $roleEntity = $this->entityTypeManager->getStorage('user_role')->load($role);
     if (!$roleEntity) {
-      return ['success' => FALSE, 'error' => "Role '$role' not found. Use mcp_structure_list_roles to see available roles."];
+      return [
+        'success' => FALSE,
+        'error' => "Role '$role' not found."
+        . " Use mcp_structure_list_roles to see available roles.",
+      ];
     }
 
     $assigned = [];
@@ -608,7 +619,8 @@ class BatchService {
    * @param string $vocabulary
    *   The vocabulary machine name.
    * @param array $terms
-   *   Array of terms to create. Each can be a string (term name) or array with 'name', 'description', 'parent', 'weight'.
+   *   Array of terms to create. Each can be a string (term name) or
+   *   array with 'name', 'description', 'parent', 'weight'.
    *
    * @return array
    *   Result with created terms and any errors.
@@ -636,7 +648,11 @@ class BatchService {
     // Verify vocabulary exists.
     $vocab = $this->entityTypeManager->getStorage('taxonomy_vocabulary')->load($vocabulary);
     if (!$vocab) {
-      return ['success' => FALSE, 'error' => "Vocabulary '$vocabulary' not found. Use mcp_structure_list_vocabularies to see available vocabularies."];
+      return [
+        'success' => FALSE,
+        'error' => "Vocabulary '$vocabulary' not found."
+        . " Use mcp_structure_list_vocabularies to see available vocabularies.",
+      ];
     }
 
     $created = [];
@@ -746,7 +762,8 @@ class BatchService {
    * Create multiple redirects at once.
    *
    * @param array $redirects
-   *   Array of redirects. Each should have 'source', 'destination', optional 'status_code', 'language'.
+   *   Array of redirects. Each should have 'source', 'destination',
+   *   optional 'status_code', 'language'.
    *
    * @return array
    *   Result with created redirects and any errors.

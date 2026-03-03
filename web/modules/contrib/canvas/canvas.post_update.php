@@ -219,8 +219,11 @@ function canvas_post_update_0010_migrate_auto_save(): void {
     $tempstore_storage = $storage_property->getValue($tempstore);
 
     foreach ($tempstore_storage->getAll() as $key => $value) {
+      // @phpstan-ignore property.notFound
       if (is_object($value) && isset($value->data)) {
         $data = $value->data;
+        \assert(\property_exists($value, 'owner'));
+        \assert(\property_exists($value, 'updated'));
         if ($collection === AutoSaveManager::AUTO_SAVE_STORE && isset($value->owner, $value->updated)) {
           $data['owner'] = (int) ($value->owner ?? 0);
           $data['updated'] = (int) ($value->updated ?? 0);
@@ -265,4 +268,22 @@ function canvas_post_update_0012_canvas_image_style_avif(array &$sandbox): void 
     $image_style->set('effects', $effects_data);
     $image_style->save();
   }
+}
+
+/**
+ * Updates content templates' DynamicPropSources to EntityFieldPropSources.
+ */
+function canvas_post_update_0013_update_dynamic_prop_sources_to_entity_field_prop_sources(array &$sandbox): void {
+  $canvasConfigUpdater = \Drupal::service(CanvasConfigUpdater::class);
+  \assert($canvasConfigUpdater instanceof CanvasConfigUpdater);
+  $canvasConfigUpdater->setDeprecationsEnabled(FALSE);
+  // Loading and re-saving automatically triggers a just-in-time update path.
+  // @see \Drupal\canvas\PropSource\PropSource::parse()
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    // We might not need to update every single ContentTemplate, because
+    // entity-field prop source presence is allowed, but not enforced via config
+    // schema. But the chances a content template won't have an entity-field
+    // prop source is quite low and irrelevant.
+    ->update($sandbox, ContentTemplate::ENTITY_TYPE_ID, static fn(ContentTemplate $template): bool => TRUE);
+
 }

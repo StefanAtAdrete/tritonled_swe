@@ -40,6 +40,7 @@ module:
   commerce_variation_cart_form: 0
   conditional_fields: 0
   config: 0
+  config_translation: 0
   contextual: 0
   crop: 0
   datetime: 0
@@ -70,11 +71,13 @@ module:
   jquery_ui_accordion: 0
   jquery_ui_tabs: 0
   key: 0
+  language: 0
   layout_builder: 0
   layout_builder_styles: 0
   layout_discovery: 0
   lb_tabs: 0
   link: 0
+  locale: 0
   masquerade: 0
   mcp_tools: 0
   mcp_tools_blocks: 0
@@ -111,7 +114,6 @@ module:
   schema_product: 0
   search: 0
   serialization: 0
-  settings_tray: 0
   shortcut: 0
   splide: 0
   splide_ui: 0
@@ -128,7 +130,6 @@ module:
   tool_content: 0
   tool_entity: 0
   tool_system: 0
-  toolbar: 0
   tritonled_compat: 0
   tritonled_quote: 0
   update: 0
@@ -138,6 +139,7 @@ module:
   views_slideshow_cycle: 0
   views_ui: 0
   pathauto: 1
+  content_translation: 10
   views: 10
   standard: 1000
 theme:

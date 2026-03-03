@@ -1,0 +1,16 @@
+uuid: a6e2f869-6cc1-4768-ae00-3742d83d283a
+langcode: sv
+status: true
+dependencies:
+  config:
+    - media.type.document
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: media.document
+target_entity_type_id: media
+target_bundle: document
+default_langcode: site_default
+language_alterable: false

@@ -239,22 +239,6 @@ third_party_settings:
             additional:
               layout_builder_styles_style:
                 padding_3: 0
-          59942fcc-3f44-4193-b105-cc35de7fffc1:
-            uuid: 59942fcc-3f44-4193-b105-cc35de7fffc1
-            region: blb_region_col_2
-            configuration:
-              id: 'field_block:commerce_product:default:field_product_categories'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: entity_reference_label
-                label: above
-                settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 3
-            additional: {  }
           d23aa1f2-48d9-401a-8cc3-9bdd564a8589:
             uuid: d23aa1f2-48d9-401a-8cc3-9bdd564a8589
             region: blb_region_col_2
@@ -284,23 +268,38 @@ third_party_settings:
             weight: 1
             additional:
               layout_builder_styles_style:
+                h1_title: h1_title
                 padding_3: 0
           e566bed9-691f-404c-9ce5-c93af736e0da:
             uuid: e566bed9-691f-404c-9ce5-c93af736e0da
             region: blb_region_col_1
             configuration:
               id: 'field_block:commerce_product:default:field_brand'
+              label: Brand/Manufacturer
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: string
-                label: inline
+                label: visually_hidden
                 settings:
                   link_to_entity: false
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                padding_3: 0
           7d70c0ff-b5c6-4007-8f1f-fc669466a660:
             uuid: 7d70c0ff-b5c6-4007-8f1f-fc669466a660
             region: blb_region_col_1
@@ -331,6 +330,53 @@ third_party_settings:
             additional:
               layout_builder_styles_style:
                 padding_3: 0
+          dc4f4da3-c08c-4471-90b0-133eec133875:
+            uuid: dc4f4da3-c08c-4471-90b0-133eec133875
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:body'
+              label: Body
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 4
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+                h1_title: 0
+                padding_3: 0
+          59942fcc-3f44-4193-b105-cc35de7fffc1:
+            uuid: 59942fcc-3f44-4193-b105-cc35de7fffc1
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:default:field_product_categories'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 3
+            additional: {  }
         third_party_settings: {  }
       -
         layout_id: lb_tabs_tabs
@@ -340,6 +386,8 @@ third_party_settings:
           initially_active_item: ''
           collapsible: 0
           labels_from_blocks: 0
+          layout_builder_styles_style:
+            product_section_tabs: product_section_tabs
         components:
           a283aa3d-9ab7-4b35-b407-c6cb476cf43a:
             uuid: a283aa3d-9ab7-4b35-b407-c6cb476cf43a
@@ -357,7 +405,10 @@ third_party_settings:
             weight: 0
             additional:
               layout_builder_styles_style:
-                padding_3: 0
+                tab_block_products: 0
+                padding_3: padding_3
+                h1_title: 0
+                margin_bottom_3: 0
           c7b986d8-9cfc-45af-9d3a-cf6e682bc786:
             uuid: c7b986d8-9cfc-45af-9d3a-cf6e682bc786
             region: content_blocks
@@ -374,7 +425,10 @@ third_party_settings:
             weight: 1
             additional:
               layout_builder_styles_style:
-                padding_3: 0
+                tab_block_products: 0
+                padding_3: padding_3
+                h1_title: 0
+                margin_bottom_3: 0
           0cde51ac-b73f-4b38-9bcf-c30638e95729:
             uuid: 0cde51ac-b73f-4b38-9bcf-c30638e95729
             region: content_blocks
@@ -391,7 +445,10 @@ third_party_settings:
             weight: 2
             additional:
               layout_builder_styles_style:
-                padding_3: 0
+                tab_block_products: 0
+                padding_3: padding_3
+                h1_title: 0
+                margin_bottom_3: 0
         third_party_settings: {  }
 _core:
   default_config_hash: 10qgl6V_HwkrJufzsNCV75OpqOeMzzKDJb3BhaogmzQ
@@ -414,6 +471,7 @@ hidden:
   field_series: true
   field_short_description: true
   field_show_in_hero: true
+  langcode: true
   layout_builder__layout: true
   stores: true
   title: true
