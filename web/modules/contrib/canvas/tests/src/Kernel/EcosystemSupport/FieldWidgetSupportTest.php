@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\EcosystemSupport;
 
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+
 /**
  * Checks that all core field widgets have Canvas client-side transforms metadata.
  *
- * @covers \Drupal\canvas\Hook\ReduxIntegratedFieldWidgetsHooks::fieldWidgetInfoAlter()
+ * @covers \Drupal\canvas\Hook\ReduxIntegratedFieldWidgetsHooks::fieldWidgetInfoAlter
  * @see docs/redux-integrated-field-widgets.md#3.4
  * @group canvas
  */
+#[RunTestsInSeparateProcesses]
 final class FieldWidgetSupportTest extends EcosystemSupportTestBase {
 
   public const COMPLETION = 0.5;
@@ -58,14 +61,14 @@ final class FieldWidgetSupportTest extends EcosystemSupportTestBase {
 
     $field_widget_definitions = $this->container->get('plugin.manager.field.widget')->getDefinitions();
     ksort($field_widget_definitions);
-    $supported = array_filter($field_widget_definitions, fn (array $def): bool => array_key_exists('canvas', $def) && array_key_exists('transforms', $def['canvas']));
+    $supported = array_filter($field_widget_definitions, fn (array $def): bool => \array_key_exists('canvas', $def) && \array_key_exists('transforms', $def['canvas']));
     $missing = array_diff_key($field_widget_definitions, $supported);
 
-    $this->assertSame(self::SUPPORTED, array_keys($supported));
+    $this->assertSame(self::SUPPORTED, \array_keys($supported));
     $this->assertSame(
       self::COMPLETION,
       count($supported) / count($field_widget_definitions),
-      \sprintf('Not yet supported: %s', implode(', ', array_keys($missing)))
+      \sprintf('Not yet supported: %s', implode(', ', \array_keys($missing)))
     );
   }
 

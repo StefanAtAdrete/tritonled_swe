@@ -7,7 +7,7 @@ core_version_requirement: ^10.3 || ^11
 dependencies:
   - ai_agents:ai_agents
 
-# Information added by Drupal.org packaging script on 2026-02-16
-version: '1.2.2'
+# Information added by Drupal.org packaging script on 2026-02-26
+version: '1.2.3'
 project: 'ai_agents'
-datestamp: 1771227743
+datestamp: 1772092824

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\Canvas\ComponentSource;
 
-use Drupal\Core\Asset\AssetQueryStringInterface;
+use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
+use Drupal\Component\Assertion\Inspector;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Extension\ExtensionPathResolver;
 use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\GeneratedUrl;
@@ -19,9 +21,9 @@ use Drupal\canvas\AutoSave\AutoSaveManager;
 use Drupal\canvas\AutoSaveEntity;
 use Drupal\canvas\Entity\AssetLibrary;
 use Drupal\canvas\Entity\JavaScriptComponent;
+use Drupal\canvas\GlobalImports;
 use Drupal\canvas\ComponentSource\UrlRewriteInterface;
 use Drupal\canvas\Render\ImportMapResponseAttachmentsProcessor;
-use Drupal\canvas\Version;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -32,6 +34,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
   label: new TranslatableMarkup('Code Components'),
   supportsImplicitInputs: FALSE,
   discovery: JsComponentDiscovery::class,
+  updater: GeneratedFieldExplicitInputUxComponentInstanceUpdater::class,
   // @see \Drupal\canvas\EntityHandlers\JavascriptComponentStorage::doPostSave()
   discoveryCacheTags: ['config:js_component_list'],
 )]
@@ -45,17 +48,15 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
   protected ExtensionPathResolver $extensionPathResolver;
   protected AutoSaveManager $autoSaveManager;
   protected FileUrlGeneratorInterface $fileUrlGenerator;
-  protected Version $version;
-  protected AssetQueryStringInterface $assetQueryString;
   protected ?JavaScriptComponent $jsComponent = NULL;
+  protected GlobalImports $globalImports;
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->extensionPathResolver = $container->get(ExtensionPathResolver::class);
     $instance->autoSaveManager = $container->get(AutoSaveManager::class);
     $instance->fileUrlGenerator = $container->get(FileUrlGeneratorInterface::class);
-    $instance->version = $container->get(Version::class);
-    $instance->assetQueryString = $container->get(AssetQueryStringInterface::class);
+    $instance->globalImports = $container->get(GlobalImports::class);
     return $instance;
   }
 
@@ -148,7 +149,20 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
   public function renderComponent(array $inputs, array $slot_definitions, string $componentUuid, bool $isPreview = FALSE): array {
     $component = $this->getJavaScriptComponent();
 
-    $autoSave = $this->autoSaveManager->getAutoSaveEntity($component);
+    // Rendering will validate the props against the version that is published,
+    // but on preview the auto-saved version will be used for those components
+    // whose implementation lives in config entities (e.g. for JS Components,
+    // but not SDCs). This means that required props might be mismatched, so we
+    // need to ensure there are explicit inputs for the set of props that are
+    // required in any of those.
+    if ($isPreview) {
+      $published_required_props = $this->getDefaultExplicitInput(only_required: TRUE);
+      \assert(Inspector::assertAllHaveKey($published_required_props, 'value'));
+      $published_required_props = \array_map(fn(array $prop_source) => new EvaluationResult($prop_source['value']), $published_required_props);
+      [$published_required_props, $published_required_props_cacheability] = self::getResolvedPropsAndCacheability(\array_intersect_key($inputs[self::EXPLICIT_INPUT_NAME] ?? [], $published_required_props));
+    }
+
+    $autoSave = $this->loadAutoSaveEntity($component, $isPreview);
     $component_url = $component->getComponentUrl($this->fileUrlGenerator, $isPreview);
 
     $build = [];
@@ -157,45 +171,7 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
 
     $canvas_path = $this->extensionPathResolver->getPath('module', 'canvas');
     // Build base import map.
-    // Whenever updating this import map, also update
-    // `src/features/code-editor/Preview.tsx`,
-    // as well as the list of supported imports in
-    // `packages/eslint-config/src/rules/component-imports.ts`.
-    // @see https://drupal.org/i/3552914
-    // @see https://drupal.org/i/3560197
-    $import_maps[ImportMapResponseAttachmentsProcessor::GLOBAL_IMPORTS] = [
-      'preact' => \sprintf('%s%s/ui/lib/astro-hydration/dist/preact.module.js', $base_path, $canvas_path),
-      'preact/hooks' => \sprintf('%s%s/ui/lib/astro-hydration/dist/hooks.module.js', $base_path, $canvas_path),
-      'react/jsx-runtime' => \sprintf('%s%s/ui/lib/astro-hydration/dist/jsx-runtime-default.js', $base_path, $canvas_path),
-      'react' => \sprintf('%s%s/ui/lib/astro-hydration/dist/compat.module.js', $base_path, $canvas_path),
-      'react-dom' => \sprintf('%s%s/ui/lib/astro-hydration/dist/compat.module.js', $base_path, $canvas_path),
-      'react-dom/client' => \sprintf('%s%s/ui/lib/astro-hydration/dist/compat.module.js', $base_path, $canvas_path),
-      'clsx' => \sprintf('%s%s/ui/lib/astro-hydration/dist/clsx.js', $base_path, $canvas_path),
-      'class-variance-authority' => \sprintf('%s%s/ui/lib/astro-hydration/dist/class-variance-authority.js', $base_path, $canvas_path),
-      'tailwind-merge' => \sprintf('%s%s/ui/lib/astro-hydration/dist/tailwind-merge.js', $base_path, $canvas_path),
-      'drupal-jsonapi-params' => \sprintf('%s%s/ui/lib/astro-hydration/dist/jsonapi-params.js', $base_path, $canvas_path),
-      'swr' => \sprintf('%s%s/ui/lib/astro-hydration/dist/swr.js', $base_path, $canvas_path),
-
-      'drupal-canvas' => \sprintf('%s%s/ui/lib/astro-hydration/dist/drupal-canvas.js', $base_path, $canvas_path),
-      // Backward compatibility entries for elements that were moved
-      // into drupal-canvas package.
-      '@/lib/FormattedText' => \sprintf('%s%s/ui/lib/astro-hydration/dist/FormattedText.js', $base_path, $canvas_path),
-      'next-image-standalone' => \sprintf('%s%s/ui/lib/astro-hydration/dist/next-image-standalone.js', $base_path, $canvas_path),
-      '@/lib/utils' => \sprintf('%s%s/ui/lib/astro-hydration/dist/utils.js', $base_path, $canvas_path),
-      '@drupal-api-client/json-api-client' => \sprintf('%s%s/ui/lib/astro-hydration/dist/jsonapi-client.js', $base_path, $canvas_path),
-      '@/lib/jsonapi-utils' => \sprintf('%s%s/ui/lib/astro-hydration/dist/jsonapi-utils.js', $base_path, $canvas_path),
-      '@/lib/drupal-utils' => \sprintf('%s%s/ui/lib/astro-hydration/dist/drupal-utils.js', $base_path, $canvas_path),
-    ];
-    // We need a cache-busting query string for the browser to not use cached
-    // files after installing an update.
-    $version = $this->version->getVersion();
-    // If version is 0.0.0, use the AssetQueryStringInterface service to improve
-    // DX: avoid the need to do a hard refresh or wipe the browser cache.
-    $query_string = $version === '0.0.0' ? $this->assetQueryString->get() : $version;
-    foreach ($import_maps[ImportMapResponseAttachmentsProcessor::GLOBAL_IMPORTS] as &$asset) {
-      $asset .= '?' . $query_string;
-    }
-
+    $import_maps[ImportMapResponseAttachmentsProcessor::GLOBAL_IMPORTS] = $this->globalImports->getGlobalImports();
     // For scoped dependencies we don't need cache-busting query strings, as
     // those are already busted by its content-dependent filename: when the
     // code component changes, so does the filename.
@@ -212,15 +188,15 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
     }
     // Resource hints.
     $resource_hints = [
-      'preact/signals' => \sprintf('%s%s/ui/lib/astro-hydration/dist/signals.module.js', $base_path, $canvas_path),
-      '@/lib/preload-helper' => \sprintf('%s%s/ui/lib/astro-hydration/dist/preload-helper.js', $base_path, $canvas_path),
+      'preact/signals' => \sprintf('%s%s/packages/astro-hydration/dist/signals.module.js', $base_path, $canvas_path),
+      '@/lib/preload-helper' => \sprintf('%s%s/packages/astro-hydration/dist/preload-helper.js', $base_path, $canvas_path),
     ];
     foreach ($resource_hints as $url) {
       $build['#attached']['html_head_link'][] = [
         [
           'rel' => 'modulepreload',
           'fetchpriority' => 'high',
-          'href' => $url . '?' . $query_string,
+          'href' => $url . '?' . $this->globalImports->getQueryString(),
         ],
       ];
     }
@@ -242,6 +218,17 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
     $valid_props = $component->getProps() ?? [];
 
     [$props, $props_cacheability] = self::getResolvedPropsAndCacheability(\array_intersect_key($inputs[self::EXPLICIT_INPUT_NAME] ?? [], $valid_props));
+
+    // Explicit inputs for required props for both the auto-saved version and
+    // the live versions, including cacheability.
+    if ($isPreview) {
+      $props += $published_required_props;
+      $props_cacheability->merge($published_required_props_cacheability);
+    }
+
+    // Match SDC's developer-only validation of props.
+    // @see \Drupal\Core\Template\ComponentsTwigExtension::validateProps()
+    \assert($this->componentValidator->validateProps($props, $this->getComponentPlugin()));
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($component)
       ->addCacheableDependency($props_cacheability)
@@ -321,7 +308,7 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
       }
       $seen[] = $js_component_dependency_name;
       \assert($js_component_dependency instanceof JavaScriptComponent);
-      $dependencyAutoSave = $this->autoSaveManager->getAutoSaveEntity($js_component_dependency);
+      $dependencyAutoSave = $this->loadAutoSaveEntity($js_component_dependency, $isPreview);
       $dependency_component_url = $js_component_dependency->getComponentUrl($this->fileUrlGenerator, $isPreview);
       $scoped_dependencies[$component_url]["@/components/{$js_component_dependency_name}"] = $js_component_dependency->getComponentUrl($this->fileUrlGenerator, $isPreview);
       $scoped_dependencies = array_merge($scoped_dependencies, $this->getScopedDependencies($js_component_dependency, $dependencyAutoSave, $isPreview, $seen));
@@ -343,7 +330,7 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
       }
       $seen[] = $js_component_dependency_name;
       \assert($js_component_dependency instanceof JavaScriptComponent);
-      $dependencyAutoSave = $this->autoSaveManager->getAutoSaveEntity($js_component_dependency);
+      $dependencyAutoSave = $this->loadAutoSaveEntity($js_component_dependency, $isPreview);
       $libraries[] = $js_component_dependency->getAssetLibrary($isPreview);
       $libraries = array_merge($libraries, $this->getDependencyLibraries($js_component_dependency, $dependencyAutoSave, $isPreview, $seen));
     }
@@ -353,6 +340,11 @@ final class JsComponent extends GeneratedFieldExplicitInputUxComponentSourceBase
   public function setJavaScriptComponent(?JavaScriptComponent $jsComponent): static {
     $this->jsComponent = $jsComponent;
     return $this;
+  }
+
+  private function loadAutoSaveEntity(EntityInterface $entity, bool $isPreview): AutoSaveEntity {
+    // If we are not previewing then we never need to load the auto-save data.
+    return $isPreview ? $this->autoSaveManager->getAutoSaveEntity($entity) : AutoSaveEntity::empty();
   }
 
 }

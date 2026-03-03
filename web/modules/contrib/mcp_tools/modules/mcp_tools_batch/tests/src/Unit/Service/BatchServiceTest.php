@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\mcp_tools\Service\AccessManager;
 use Drupal\mcp_tools\Service\AuditLogger;
 use Drupal\mcp_tools_batch\Service\BatchService;
@@ -19,6 +20,12 @@ use Drupal\Tests\UnitTestCase;
 #[\PHPUnit\Framework\Attributes\Group('mcp_tools_batch')]
 final class BatchServiceTest extends UnitTestCase {
 
+  private function mockTime(): TimeInterface {
+    $time = $this->createMock(TimeInterface::class);
+    $time->method('getCurrentTime')->willReturn(time());
+    return $time;
+  }
+
   private function createService(): BatchService {
     return new class(
       $this->createMock(EntityTypeManagerInterface::class),
@@ -27,6 +34,7 @@ final class BatchServiceTest extends UnitTestCase {
       $this->createMock(ModuleHandlerInterface::class),
       $this->createMock(AccessManager::class),
       $this->createMock(AuditLogger::class),
+      $this->createMock(TimeInterface::class),
     ) extends BatchService {
 
       public function normalizeField(string $fieldName, mixed $value, array $definitions): mixed {
@@ -48,6 +56,7 @@ final class BatchServiceTest extends UnitTestCase {
       $overrides['module_handler'] ?? $this->createMock(ModuleHandlerInterface::class),
       $overrides['access_manager'] ?? $this->createMock(AccessManager::class),
       $overrides['audit_logger'] ?? $this->createMock(AuditLogger::class),
+      $overrides['time'] ?? $this->mockTime(),
     );
   }
 
@@ -121,6 +130,8 @@ final class BatchServiceTest extends UnitTestCase {
       public function save(): void {}
       public function id(): int { return 123; }
       public function uuid(): string { return 'uuid-123'; }
+      public function setCreatedTime(int $timestamp): void {}
+      public function setChangedTime(int $timestamp): void {}
       public function toUrl(): object {
         return new class() { public function toString(): string { return '/node/123'; } };
       }

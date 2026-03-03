@@ -9,7 +9,6 @@ dependencies:
     - media.type.remote_video
   module:
     - blazy
-    - media
 id: media.remote_video.splide
 targetEntityType: media
 bundle: remote_video
@@ -39,6 +38,7 @@ content:
     region: content
 hidden:
   created: true
+  langcode: true
   name: true
   thumbnail: true
   uid: true

@@ -7,8 +7,11 @@ dependencies:
     - core.entity_view_mode.commerce_product_variation.mechanical
     - field.field.commerce_product_variation.default.attribute_accessories
     - field.field.commerce_product_variation.default.attribute_beam_angle
+    - field.field.commerce_product_variation.default.attribute_bracket
     - field.field.commerce_product_variation.default.attribute_cct
     - field.field.commerce_product_variation.default.attribute_color
+    - field.field.commerce_product_variation.default.attribute_connection
+    - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_voltage
@@ -232,8 +235,11 @@ content: {  }
 hidden:
   attribute_accessories: true
   attribute_beam_angle: true
+  attribute_bracket: true
   attribute_cct: true
   attribute_color: true
+  attribute_connection: true
+  attribute_cri: true
   attribute_ip_rating: true
   attribute_length: true
   attribute_voltage: true
@@ -269,6 +275,7 @@ hidden:
   field_variation_media: true
   field_warranty_years: true
   field_weight: true
+  langcode: true
   list_price: true
   price: true
   product_id: true

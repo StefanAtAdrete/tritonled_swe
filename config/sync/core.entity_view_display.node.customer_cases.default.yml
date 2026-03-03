@@ -434,5 +434,6 @@ hidden:
   field_countries: true
   field_media: true
   field_partners: true
+  langcode: true
   layout_builder__layout: true
   links: true

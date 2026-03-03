@@ -39,7 +39,6 @@ use Drupal\Tests\canvas\Kernel\BrokenPluginManagerInterface;
 use Drupal\Tests\canvas\Kernel\Traits\CiModulePathTrait;
 use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
 use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
-use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
@@ -47,6 +46,7 @@ use Drupal\Tests\TestFileCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Twig\Error\Error;
 use Twig\Error\RuntimeError;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Twig\Error\SyntaxError;
 
 /**
@@ -57,10 +57,10 @@ use Twig\Error\SyntaxError;
  * @phpstan-import-type ComponentConfigEntityId from \Drupal\canvas\Entity\Component
  * @phpstan-import-type SingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
  */
+#[RunTestsInSeparateProcesses]
 final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxComponentSourceBaseTestBase {
 
   use ConstraintViolationsTestTrait;
-  use ContribStrictConfigSchemaTestTrait;
   use SingleDirectoryComponentTreeTestTrait;
   use CiModulePathTrait;
   use CrawlerTrait;
@@ -73,14 +73,8 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
    * {@inheritdoc}
    */
   protected static $modules = [
-    'canvas_test_sdc',
-    'image',
-    'media',
     'node',
-    'path',
-    'user',
     'field',
-    'text',
   ];
 
   /**
@@ -129,8 +123,8 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
   /**
    * All test module SDCs must either have a Component or a reason why not.
    *
-   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::discover()
-   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::checkRequirements()
+   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::discover
+   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::checkRequirements
    */
   public function testDiscovery(): array {
     // Nothing discovered initially.
@@ -276,7 +270,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       $source = $component->getComponentSource();
       $private_method = new \ReflectionMethod($source, 'getDefaultStaticPropSource');
       $private_method->setAccessible(TRUE);
-      foreach (array_keys($settings[$component_id]['prop_field_definitions']) as $prop) {
+      foreach (\array_keys($settings[$component_id]['prop_field_definitions']) as $prop) {
         $static_prop_source = $private_method->invoke($source, $prop, TRUE);
         $this->assertInstanceOf(StaticPropSource::class, $static_prop_source);
       }
@@ -288,7 +282,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::getReferencedPluginClass()
+   * @covers ::getReferencedPluginClass
    * @depends testDiscovery
    */
   public function testGetReferencedPluginClass(array $component_ids): void {
@@ -304,7 +298,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::renderComponent()
+   * @covers ::renderComponent
    * @depends testDiscovery
    */
   public function testRenderComponentLive(array $component_ids): void {
@@ -1097,7 +1091,7 @@ HTML
   }
 
   /**
-   * @covers ::getExplicitInput()
+   * @covers ::getExplicitInput
    * @dataProvider providerComponentResolving
    */
   public function testGetExplicitInput(array $component_item_value, array $expected_props_for_uuids, ?array $permissions = NULL): void {
@@ -1123,10 +1117,10 @@ HTML
 
     $this->assertInstanceOf(ComponentTreeItem::class, $canvas_field_item);
     $actual_props = array_combine(
-      array_keys($expected_props_for_uuids),
-      array_map(
+      \array_keys($expected_props_for_uuids),
+      \array_map(
         fn (string $uuid) => $canvas_field_item->getComponent()?->getComponentSource()->getExplicitInput($uuid, $canvas_field_item)['resolved'],
-        array_keys($expected_props_for_uuids)
+        \array_keys($expected_props_for_uuids)
       )
     );
     self::assertEquals($expected_props_for_uuids, $actual_props);
@@ -1165,16 +1159,16 @@ HTML
     $hero_with_dynamic_sources = [
       'uuid' => 'partly-dynamic-hero',
       'component_id' => 'sdc.canvas_test_sdc.my-hero',
-      'component_version' => '888412021fbcc837',
+      'component_version' => 'a681ae184a8f6b7f',
       'inputs' => [
         'heading' => 'hello, world!',
         'subheading' => [
-          'sourceType' => 'dynamic',
+          'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:node:article␝title␞␟value',
         ],
         'cta1href' => ['uri' => 'https://drupal.org'],
         'cta1' => [
-          'sourceType' => 'dynamic',
+          'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:node:article␝title␞␟value',
         ],
       ],
@@ -1346,17 +1340,16 @@ HTML
       'expected_output_selector' => NULL,
     ];
 
-    yield "SDC with missing prop, with exception" => [
+    // Missing required props from the active version will be assigned on
+    // hydration so no exception occurs.
+    yield "SDC with missing prop, validation error without exception" => [
       'component_id' => 'sdc.canvas_test_sdc.crash',
       'inputs' => [],
       'expected_validation_errors' => [
         \sprintf('2.inputs.%s.crash', self::UUID_CRASH_TEST_DUMMY) => 'The property crash is required.',
       ],
-      'expected_exception' => [
-        'class' => RuntimeError::class,
-        'message' => 'An exception has been thrown during the rendering of a template ("[canvas_test_sdc:crash/crash] The property crash is required.") in "canvas_test_sdc:crash" at line 1.',
-      ],
-      'expected_output_selector' => NULL,
+      'expected_exception' => NULL,
+      'expected_output_selector' => 'h1:contains("test")',
     ];
 
     yield "SDC with invalid Twig (due to filter)" => [
@@ -2584,7 +2577,7 @@ HTML
   }
 
   /**
-   * @covers ::calculateDependencies()
+   * @covers ::calculateDependencies
    * @depends testDiscovery
    */
   public function testCalculateDependencies(array $component_ids): void {
@@ -5256,7 +5249,7 @@ HTML
   }
 
   /**
-   * @covers ::inputToClientModel()
+   * @covers ::inputToClientModel
    * @dataProvider explicitsInputsProvider
    */
   public function testInputToClientModel(string $component_id, array $explicit_input, array $expected_client_model):void {
@@ -5331,7 +5324,7 @@ HTML
     $clientModel = [
       'source' => [
         'heading' => [
-          'sourceType' => 'dynamic',
+          'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:node:page␝title␞␟value',
           'value' => 'Some value, will be ignored by server',
         ],
@@ -5357,7 +5350,7 @@ HTML
           'value' => 'Inside developer joke',
         ],
         'subheading' => [
-          'sourceType' => 'dynamic',
+          'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:node:page␝revision_log␞␟value',
           'value' => NULL,
         ],
@@ -5372,7 +5365,7 @@ HTML
     ];
     $expectedInput = [
       'heading' => [
-        'sourceType' => 'dynamic',
+        'sourceType' => PropSource::EntityField->value,
         'expression' => 'ℹ︎␜entity:node:page␝title␞␟value',
       ],
       'cta1' => 'Witty test value',
@@ -5382,22 +5375,22 @@ HTML
       ],
       'cta2' => 'Inside developer joke',
       'subheading' => [
-        'sourceType' => 'dynamic',
+        'sourceType' => PropSource::EntityField->value,
         'expression' => 'ℹ︎␜entity:node:page␝revision_log␞␟value',
       ],
     ];
     $nodeValues = ['type' => 'page', 'title' => 'Test page for inputToClientModel'];
     // Explicit failure when no host entity is provided.
-    yield "Invalid: DynamicPropSource without host entity" => [
+    yield "Invalid: EntityFieldPropSource without host entity" => [
       'clientModel' => $clientModel,
       'nodeValues' => NULL,
       'expectedInput' => NULL,
       'expectedExceptionClass' => \InvalidArgumentException::class,
-      'expectedExceptionMessage' => 'A host entity is required to set dynamic prop sources.',
+      'expectedExceptionMessage' => 'A host entity is required to set entity field prop sources.',
     ];
     // Expected (server-side) component instance input for the given client model when provided with a host entity.
     // The non-required property "subheading" is linked to an empty field, revision_log.
-    yield "Valid: DynamicPropSource with host entity, empty non-required property" => [
+    yield "Valid: EntityFieldPropSource with host entity, empty non-required property" => [
       'clientModel' => $clientModel,
       'nodeValues' => $nodeValues,
       'expectedInput' => $expectedInput,
@@ -5407,7 +5400,7 @@ HTML
     // Expected (server-side) component instance input for the given client model when provided with a host entity.
     // The non-required property "subheading" is linked to a non-empty field, revision_log.
     $nodeValues['revision_log'] = 'This is the revision log.';
-    yield "Valid: DynamicPropSource with host entity, not empty non-required property" => [
+    yield "Valid: EntityFieldPropSource with host entity, not empty non-required property" => [
       'clientModel' => $clientModel,
       'nodeValues' => $nodeValues,
       'expectedInput' => $expectedInput,
@@ -5416,7 +5409,7 @@ HTML
     ];
     // Modifying the client model to use an expression requiring a different bundle triggers an exception.
     $clientModel['source']['heading']['expression'] = 'ℹ︎␜entity:node:article␝title␞␟value';
-    yield "Invalid: DynamicPropSource, expression with non-matching bundle" => [
+    yield "Invalid: EntityFieldPropSource, expression with non-matching bundle" => [
       'clientModel' => $clientModel,
       'nodeValues' => $nodeValues,
       'expectedInput' => NULL,

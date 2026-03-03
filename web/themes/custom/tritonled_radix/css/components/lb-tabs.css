@@ -1,0 +1,67 @@
+/**
+ * Bootstrap override for lb_tabs jQuery UI styling.
+ * lb_tabs uses jQuery UI which conflicts with Bootstrap.
+ * These overrides force Bootstrap tab appearance.
+ */
+
+/* Reset jQuery UI wrapper styles */
+.lb-tabs-tabs.ui-widget {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.lb-tabs-tabs.ui-widget-content {
+  border: none;
+  background: none;
+}
+
+/* Force Bootstrap nav-tabs appearance */
+.lb-tabs-tabs .ui-tabs-nav {
+  background: none;
+  border: none;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+  display: flex;
+}
+
+.lb-tabs-tabs .ui-tabs-nav li {
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0 0;
+  margin-bottom: -1px;
+  list-style: none;
+}
+
+.lb-tabs-tabs .ui-tabs-nav li.ui-tabs-active {
+  background: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.lb-tabs-tabs .ui-tabs-nav li a,
+.lb-tabs-tabs .nav-tabs .nav-link {
+  color: #495057 !important;
+  padding: 0.5rem 1rem;
+  display: block;
+  text-decoration: none !important;
+}
+
+.lb-tabs-tabs .ui-tabs-nav li.ui-tabs-active a,
+.lb-tabs-tabs .nav-tabs .nav-link.active {
+  color: #212529 !important;
+}
+
+.lb-tabs-tabs .ui-tabs-nav li:not(.ui-tabs-active):hover {
+  background: #e9ecef;
+  border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+/* Tab panels */
+.lb-tabs-tabs .ui-tabs-panel {
+  border: 1px solid #dee2e6;
+  border-top: none;
+  padding: 1rem;
+  background: #fff;
+}

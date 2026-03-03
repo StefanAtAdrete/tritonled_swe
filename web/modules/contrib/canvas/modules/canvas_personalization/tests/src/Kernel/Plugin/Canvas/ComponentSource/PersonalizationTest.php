@@ -14,7 +14,6 @@ use Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource\ComponentSourceTest
 use Drupal\Tests\canvas\Kernel\Traits\CiModulePathTrait;
 use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
 use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
-use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
@@ -31,7 +30,6 @@ use Drupal\canvas_personalization\Plugin\Canvas\ComponentSource\Personalization;
 final class PersonalizationTest extends ComponentSourceTestBase {
 
   use ConstraintViolationsTestTrait;
-  use ContribStrictConfigSchemaTestTrait;
   use SingleDirectoryComponentTreeTestTrait;
   use GenerateComponentConfigTrait;
   use CiModulePathTrait;
@@ -45,14 +43,8 @@ final class PersonalizationTest extends ComponentSourceTestBase {
    */
   protected static $modules = [
     'canvas_personalization',
-    'canvas_test_sdc',
-    'image',
-    'media',
     'node',
-    'path',
-    'user',
     'field',
-    'text',
     // @todo Remove once ComponentSourceInterface is a public API, i.e. after https://www.drupal.org/i/3520484#stable is done.
     'canvas_dev_mode',
   ];
@@ -85,7 +77,7 @@ final class PersonalizationTest extends ComponentSourceTestBase {
   /**
    * Test our case and switch personalization Components are installed.
    *
-   * @covers ::checkRequirements()
+   * @covers ::checkRequirements
    */
   public function testDiscovery(): array {
     $provided_components = [
@@ -117,7 +109,7 @@ final class PersonalizationTest extends ComponentSourceTestBase {
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::getReferencedPluginClass()
+   * @covers ::getReferencedPluginClass
    * @depends testDiscovery
    */
   public function testGetReferencedPluginClass(array $component_ids): void {
@@ -133,7 +125,7 @@ final class PersonalizationTest extends ComponentSourceTestBase {
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::renderComponent()
+   * @covers ::renderComponent
    * @depends testDiscovery
    */
   public function testRenderComponentLive(array $component_ids): void {
@@ -186,7 +178,7 @@ HTML,
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::renderComponent()
+   * @covers ::renderComponent
    * @depends testDiscovery
    */
   public function testRenderComponentPreview(array $component_ids): void {
@@ -394,7 +386,7 @@ HTML,
   }
 
   /**
-   * @covers ::calculateDependencies()
+   * @covers ::calculateDependencies
    * @depends testDiscovery
    */
   public function testCalculateDependencies(array $component_ids): void {
@@ -449,8 +441,8 @@ HTML,
   }
 
   /**
-   * @covers ::inputToClientModel()
-   * @covers ::clientModelToInput()
+   * @covers ::inputToClientModel
+   * @covers ::clientModelToInput
    * @dataProvider explicitsInputsProvider
    */
   public function testInputToClientModel(string $component_id, array $explicit_input): void {

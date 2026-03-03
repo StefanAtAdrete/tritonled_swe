@@ -44,3 +44,8 @@ ai_global:
   css:
     component:
       assets/css/ai_global.css: {}
+
+ai_settings_form:
+  css:
+    component:
+      assets/css/ai_settings_form.css: {}

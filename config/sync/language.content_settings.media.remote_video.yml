@@ -1,0 +1,16 @@
+uuid: 4b0d9c13-872d-441d-8320-dbc290102bde
+langcode: sv
+status: true
+dependencies:
+  config:
+    - media.type.remote_video
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: media.remote_video
+target_entity_type_id: media
+target_bundle: remote_video
+default_langcode: site_default
+language_alterable: false

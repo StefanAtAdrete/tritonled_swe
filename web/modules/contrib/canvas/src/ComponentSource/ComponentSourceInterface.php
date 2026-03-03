@@ -35,15 +35,25 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
  * Not all component sources support slots. A source that supports slots should
  * implement \Drupal\canvas\ComponentSource\ComponentSourceWithSlotsInterface.
  *
- * @phpstan-import-type PropSourceArray from \Drupal\canvas\PropSource\PropSourceBase
- * @phpstan-import-type SingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
- * @phpstan-import-type OptimizedExplicitInput from \Drupal\canvas\Plugin\DataType\ComponentInputs
- * @phpstan-import-type OptimizedSingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
+ * This interface handles all component instance concerns besides updating. Some
+ * concerns are optional, and have explicit handlers:
+ * - discovery: a ComponentCandidatesDiscoveryInterface — handles discovering
+ *   components in this source
+ * - updater: a ComponentInstanceUpdaterInterface — handles updating existing
+ *   component instances to the active (aka latest) version of the Component
+ *   config entity
  *
  * @see \Drupal\canvas\Attribute\ComponentSource
  * @see \Drupal\canvas\ComponentSource\ComponentSourceBase
  * @see \Drupal\canvas\ComponentSource\ComponentSourceManager
  * @see \Drupal\canvas\ComponentSource\ComponentSourceWithSlotsInterface
+ * @see \Drupal\canvas\ComponentSource\ComponentCandidatesDiscoveryInterface
+ * @see \Drupal\canvas\ComponentSource\ComponentInstanceUpdaterInterface
+ *
+ * @phpstan-import-type PropSourceArray from \Drupal\canvas\PropSource\PropSourceBase
+ * @phpstan-import-type SingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
+ * @phpstan-import-type OptimizedExplicitInput from \Drupal\canvas\Plugin\DataType\ComponentInputs
+ * @phpstan-import-type OptimizedSingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
  */
 interface ComponentSourceInterface extends PluginInspectionInterface, DerivativeInspectionInterface, ConfigurableInterface, DependentPluginInterface, ContextAwarePluginInterface {
 
@@ -127,21 +137,25 @@ interface ComponentSourceInterface extends PluginInspectionInterface, Derivative
   /**
    * Returns the default explicit input (prop sources) for this component.
    *
+   * @param bool $only_required
+   *   (Optional) If true, only required explicit inputs will be returned. False
+   *   by default.
+   *
    * @phpcs:ignore
    * @return SingleComponentInputArray
    *   An array of prop sources to use for the inputs of this component, keyed
    *   by input name.
    */
-  public function getDefaultExplicitInput(): array;
+  public function getDefaultExplicitInput(bool $only_required = FALSE): array;
 
   /**
    * Retrieves the component instance's explicit (possibly empty) input.
    *
    * @param \Drupal\Core\Entity\FieldableEntityInterface|null $host_entity
    *   Host entity. Required when a component instance has inputs populated by
-   *   DynamicPropSources AND the parent entity of $item is not the host entity
-   *   to use during evaluation of the DynamicPropSources. (Typically: when
-   *   this is a component instance in a ContentTemplate.)
+   *   EntityFieldPropSources AND the parent entity of $item is not the host
+   *   entity to use during evaluation of the EntityFieldPropSources.
+   *   (Typically: when this is a component instance in a ContentTemplate.)
    *
    * @todo Add ::getImplicitInput() in https://www.drupal.org/project/canvas/issues/3485502 — SDCs don't have implicit inputs, but Block plugins do: contexts
    */
@@ -154,11 +168,18 @@ interface ComponentSourceInterface extends PluginInspectionInterface, Derivative
    * only handles a single component instance, not a component tree. Populating
    * slots with component instance happens later.
    *
+   * @param array $active_required_explicit_inputs
+   *   The required explicit inputs (e.g. props) for the active version of the
+   *   component. On hydration, we are always rendering the live implementation
+   *   of that component. If it defines required inputs, we need to include
+   *   those to ensure we don't have an error when rendering a component
+   *   instance on a live public-facing component tree.
+   *
    * @return array{'slots'?: array<string, string>}
    *
    * @see \Drupal\canvas\ComponentSource\ComponentSourceWithSlotsInterface::setSlots()
    */
-  public function hydrateComponent(array $explicit_input, array $slot_definitions): array;
+  public function hydrateComponent(array $explicit_input, array $slot_definitions, array $active_required_explicit_inputs): array;
 
   /**
    * Converts (stored) explicit inputs to the data model expected by the client.
@@ -253,7 +274,7 @@ interface ComponentSourceInterface extends PluginInspectionInterface, Derivative
    *   Client model for this component.
    * @param \Drupal\Core\Entity\FieldableEntityInterface|null $host_entity
    *   Host entity. Required when a component instance has inputs populated by
-   *   DynamicPropSources.
+   *   EntityFieldPropSources.
    * @param \Symfony\Component\Validator\ConstraintViolationListInterface|null $violations
    *   If validation should be performed, a violation constraint list, or NULL
    *   otherwise. Use ::addViolation to add violations detected during
@@ -264,7 +285,7 @@ interface ComponentSourceInterface extends PluginInspectionInterface, Derivative
    *
    * @see ::inputToClientModel()
    * @see \Drupal\canvas\AutoSave\AutoSaveManager::saveComponentInstanceFormViolations
-   * @see \Drupal\canvas\PropSource\DynamicPropSource
+   * @see \Drupal\canvas\PropSource\EntityFieldPropSource
    * @todo Refactor to use the Symfony denormalizer infrastructure?
    */
   public function clientModelToInput(string $component_instance_uuid, Component $component, array $client_model, ?FieldableEntityInterface $host_entity, ?ConstraintViolationListInterface $violations = NULL): array;
