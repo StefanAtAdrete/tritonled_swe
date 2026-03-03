@@ -1,8 +1,8 @@
 # Task 012: Flerspråkighet & Product Tabs Bootstrap-styling
 
 **Created**: 2026-03-03  
-**Status**: In Progress  
-**Last Updated**: 2026-03-03  
+**Status**: Completed  
+**Last Updated**: 2026-03-03 15:30  
 **Related Tasks**: TASK-011
 
 ---
@@ -25,8 +25,8 @@
 - [x] Contact us-block översatt
 - [x] Menyer översatta
 - [x] Views-titlar översatta
-- [ ] lb_tabs ser ut som Bootstrap tabs på produktsidan
-- [ ] jQuery UI-initiering ersatt med Bootstrap tabs JS
+- [x] lb_tabs ser ut som Bootstrap tabs på produktsidan
+- [x] jQuery UI-initiering ersatt med Bootstrap tabs JS
 
 **Godkänt av Stefan**: ✅ Godkänd
 
@@ -126,7 +126,7 @@ Template-override ensam räcker inte — jQuery UI JS måste ersättas.
 
 ## 5. COMPLETION
 
-### Status: 🔄 In Progress
+### Status: ✅ Completed
 
 ### Lärdomar
 - `lb_tabs` använder jQuery UI som initieras via JS — template-override ensam räcker inte
@@ -136,5 +136,4 @@ Template-override ensam räcker inte — jQuery UI JS måste ersättas.
 - `menu_link_content` måste ha content_translation aktiverat för att kunna översättas
 
 ### Nästa steg
-- Implementera custom JS för Bootstrap tabs-initiering
-- Skapa Layout Builder Styles-grupp för product tabs
+- Layout Builder Styles appliceras i UI av Stefan (tab_block_products på block, product_section_tabs på sektion)
