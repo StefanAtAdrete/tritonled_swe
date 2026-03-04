@@ -1,0 +1,47 @@
+display:
+  default:
+    display_title: Huvud
+    display_options:
+      exposed_form:
+        options:
+          submit_button: Applicera
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
+      pager:
+        options:
+          tags:
+            previous: '‹ Föregående'
+            next: 'Nästa ›'
+            first: '« Första'
+            last: 'Sista »'
+          expose:
+            items_per_page_label: 'Inlägg per sida'
+            items_per_page_options_all_label: '- Alla -'
+            offset_label: Kompensera
+      fields:
+        order_id:
+          label: ID
+          separator: ', '
+        order_number:
+          label: Beställningsnummer
+          separator: ', '
+        placed:
+          label: Datum
+          separator: ', '
+        total_price__number:
+          label: Totalt
+          separator: ', '
+        state:
+          label: Läge
+          separator: ', '
+      title: Beställningar
+      arguments:
+        uid:
+          exception:
+            title: Alla
+  order_page:
+    display_options:
+      menu:
+        title: Beställningar
