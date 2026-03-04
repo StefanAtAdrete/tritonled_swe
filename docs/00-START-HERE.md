@@ -213,6 +213,16 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - Fix: PHP-script som itererar sektioner och satter `[]` for NULL-varden
 - Se: `tasks/task-006-footer-layout.md`
 
+### Language config incident (2026-03-04)
+- ❌ ALDRIG `ddev drush config:delete language.negotiation` — bryter sajten omedelbart
+- ❌ ALDRIG ändra language detection utan att ta snapshot först
+- ✅ Ta alltid `ddev snapshot` innan språkinställningar ändras
+- ✅ Vid trasig language.negotiation: återskapa via `php:eval` med korrekt struktur
+- ✅ Vid blockerad `cim`: rensa config-objekt som beror på avinstallerade moduler via `php:eval` + `->delete()`
+- ✅ `cim --partial` fungerar bättre än full `cim` vid partiella problem
+- ⚠️ navigation-modulen (Drupal core experimental) är avinstallerad — orsakade `getPath() on null` på translation-routes med flerspråkighet aktiverat
+- ⚠️ Commerce translation-routes kräver explicit permission: `translate default commerce_product`, `translate commerce_product_variation`, `translate commerce_product_attribute`
+
 ### Splide thumbnail overflow-fix (2026-03-01)
 - ❌ `border` på `.splide__slide` påverkar Splide's layoutberäkning → slides positioneras fel
 - ✅ Använd `outline` + `outline-offset: -2px` för aktiv-markering istället
@@ -472,7 +482,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.1  
+**Version**: 2.2  
 **Skapad**: 2025-01-10  
-**Uppdaterad**: 2026-02-17 - Lade till sub-task metodiken  
+**Uppdaterad**: 2026-03-04 - Language config incident lärdomar, navigation-modulen avinstallerad  
 **Författare**: Stefan + Claude
