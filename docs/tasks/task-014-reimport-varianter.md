@@ -1,8 +1,8 @@
 # Task 014: Reimportera OPTI, SROW, MAX med korrekta CSV:er
 
 **Created**: 2026-03-05  
-**Status**: Not Started  
-**Last Updated**: 2026-03-05  
+**Status**: In Progress
+**Last Updated**: 2026-03-05
 **Related Tasks**: TASK-012, TASK-013, TASK-015
 
 ---
