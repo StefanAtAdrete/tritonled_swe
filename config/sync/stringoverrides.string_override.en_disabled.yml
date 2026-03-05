@@ -1,1 +1,7 @@
-contexts: {  }
+contexts:
+  -
+    context: ''
+    translations:
+      -
+        source: Electrical
+        translation: Elektriskt

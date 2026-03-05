@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
+    - field.field.commerce_product_variation.default.attribute_model
     - field.field.commerce_product_variation.default.attribute_voltage
     - field.field.commerce_product_variation.default.attribute_watt
     - field.field.commerce_product_variation.default.feeds_item
@@ -107,6 +108,12 @@ content:
   attribute_length:
     type: options_select
     weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_model:
+    type: options_select
+    weight: 17
     region: content
     settings: {  }
     third_party_settings: {  }
@@ -383,6 +390,11 @@ content:
     region: content
     settings:
       display_label: true
+    third_party_settings: {  }
+  translation:
+    weight: 10
+    region: content
+    settings: {  }
     third_party_settings: {  }
 hidden:
   feeds_item: true
