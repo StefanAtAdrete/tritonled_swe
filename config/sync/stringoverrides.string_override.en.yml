@@ -9,26 +9,29 @@ contexts:
         source: 'Add to cart'
         translation: 'Request Quote'
       -
+        source: Certifications
+        translation: Certifikat
+      -
         source: Checkout
         translation: 'Quote Request'
       -
         source: 'Continue to review'
         translation: 'Continue to review quote'
       -
+        source: 'Order information'
+        translation: 'Quote Information'
+      -
         source: 'Order summary'
         translation: 'Quote summary'
+      -
+        source: 'Place order'
+        translation: 'Submit Quote Request'
+      -
+        source: 'Review order'
+        translation: 'Review Quote'
       -
         source: 'Shopping cart'
         translation: 'Quote Request'
       -
         source: 'View cart'
         translation: 'View Quote'
-      -
-        source: 'Place order'
-        translation: 'Submit Quote Request'
-      -
-        source: 'Order information'
-        translation: 'Quote Information'
-      -
-        source: 'Review order'
-        translation: 'Review Quote'
