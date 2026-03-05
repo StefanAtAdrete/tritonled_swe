@@ -20,6 +20,7 @@
     },
     "require": {
         "composer/installers": "^2.3",
+        "cweagans/composer-patches": "^2.0",
         "drupal/ai": "^1.2.0",
         "drupal/ai_agents": "^1.2.0",
         "drupal/ai_provider_openai": "^1.2.0",
@@ -42,6 +43,7 @@
         "drupal/field_permissions": "^1.5",
         "drupal/gin": "^5.0",
         "drupal/inline_entity_form": "^3.0@RC",
+        "drupal/lb_tabs": "*",
         "drupal/mcp": "^1.2",
         "drupal/mcp_tools": "^1.0@beta",
         "drupal/media_bulk_upload": "^3.0",
@@ -69,13 +71,14 @@
     "config": {
         "allow-plugins": {
             "composer/installers": true,
-            "drupal/core-composer-scaffold": true,
-            "drupal/core-recipe-unpack": true,
-            "drupal/core-project-message": true,
-            "phpstan/extension-installer": true,
+            "cweagans/composer-patches": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
+            "drupal/core-composer-scaffold": true,
+            "drupal/core-project-message": true,
+            "drupal/core-recipe-unpack": true,
             "php-http/discovery": true,
-            "php-tuf/composer-integration": true
+            "php-tuf/composer-integration": true,
+            "phpstan/extension-installer": true
         },
         "sort-packages": true
     },
@@ -115,6 +118,15 @@
             ],
             "recipes/{$name}": [
                 "type:drupal-recipe"
+            ]
+        },
+        "patches": {
+            "drupal/lb_tabs": [
+                {
+                    "description": "Make tab labels translatable via t()",
+                    "url": "patches/lb_tabs-translatable-labels.patch",
+                    "depth": 1
+                }
             ]
         },
         "drupal-core-project-message": {

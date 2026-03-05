@@ -87,3 +87,8 @@
   object-fit: cover;
   display: block;
 }
+
+/* Dölj slide caption (filnamn/titel visas annars av Splide) */
+.slide__caption {
+  display: none;
+}

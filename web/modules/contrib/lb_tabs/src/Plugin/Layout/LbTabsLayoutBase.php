@@ -4,6 +4,7 @@ namespace Drupal\lb_tabs\Plugin\Layout;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Layout\LayoutDefault;
 use Drupal\Core\Render\Element;
 
@@ -40,7 +41,10 @@ abstract class LbTabsLayoutBase extends LayoutDefault {
     // No label blocks, so set labels from block titles.
     if (!$this->configuration['labels_from_blocks']) {
       foreach (Element::children($build['content_blocks'], TRUE) as $i => $contentKey) {
-        $build['label_blocks']["label_$i"] = ['#plain_text' => $build['content_blocks'][$contentKey]['#configuration']['label'] ?? $i + 1];
+        $label = $build['content_blocks'][$contentKey]['#configuration']['label'] ?? $i + 1;
+        $build['label_blocks']["label_$i"] = is_string($label)
+          ? ['#markup' => new TranslatableMarkup($label)]
+          : ['#plain_text' => $label];
       }
     }
 

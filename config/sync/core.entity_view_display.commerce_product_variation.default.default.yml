@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
+    - field.field.commerce_product_variation.default.attribute_model
     - field.field.commerce_product_variation.default.attribute_voltage
     - field.field.commerce_product_variation.default.attribute_watt
     - field.field.commerce_product_variation.default.feeds_item
@@ -142,6 +143,7 @@ hidden:
   attribute_cri: true
   attribute_ip_rating: true
   attribute_length: true
+  attribute_model: true
   attribute_voltage: true
   attribute_watt: true
   commerce_variation_cart_form: true

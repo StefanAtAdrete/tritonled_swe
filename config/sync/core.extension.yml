@@ -41,6 +41,7 @@ module:
   conditional_fields: 0
   config: 0
   config_translation: 0
+  content_moderation: 0
   contextual: 0
   crop: 0
   datetime: 0
@@ -89,6 +90,7 @@ module:
   mcp_tools_media: 0
   mcp_tools_menus: 0
   mcp_tools_metatag: 0
+  mcp_tools_moderation: 0
   mcp_tools_pathauto: 0
   mcp_tools_remote: 0
   mcp_tools_stdio: 0
@@ -127,8 +129,10 @@ module:
   token: 0
   tool: 0
   tool_content: 0
+  tool_content_translation: 0
   tool_entity: 0
   tool_system: 0
+  toolbar: 0
   tritonled_compat: 0
   tritonled_quote: 0
   update: 0
@@ -137,6 +141,7 @@ module:
   views_slideshow: 0
   views_slideshow_cycle: 0
   views_ui: 0
+  workflows: 0
   pathauto: 1
   content_translation: 10
   views: 10

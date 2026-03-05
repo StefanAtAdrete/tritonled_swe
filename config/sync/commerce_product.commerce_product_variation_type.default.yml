@@ -2,6 +2,10 @@ uuid: 10f3d80f-6bc6-463b-9afd-7131fffe13a8
 langcode: en
 status: true
 dependencies: {  }
+third_party_settings:
+  commerce_product:
+    attributes:
+      - driver
 _core:
   default_config_hash: 3vA4FKQ1Qu8B1R8UdGPnmMfJrYO6Y6uMqeNgDgXxods
 id: default

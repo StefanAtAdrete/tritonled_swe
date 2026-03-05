@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_cri
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
+    - field.field.commerce_product_variation.default.attribute_model
     - field.field.commerce_product_variation.default.attribute_voltage
     - field.field.commerce_product_variation.default.attribute_watt
     - field.field.commerce_product_variation.default.field_ambient_temp
@@ -41,6 +42,7 @@ dependencies:
     - field.field.commerce_product_variation.default.field_power_factor
     - field.field.commerce_product_variation.default.field_rated_life
     - field.field.commerce_product_variation.default.field_rohs
+    - field.field.commerce_product_variation.default.field_variation_media
     - field.field.commerce_product_variation.default.field_warranty_years
     - field.field.commerce_product_variation.default.field_weight
   module:
@@ -326,6 +328,16 @@ custom_sources:
     value: attribute_bracket
     label: attribute_bracket
     machine_name: attribute_bracket
+    type: csv
+  attribute_model:
+    value: attribute_model
+    label: attribute_model
+    machine_name: attribute_model
+    type: csv
+  field_variation_media:
+    value: field_variation_media
+    label: field_variation_media
+    machine_name: field_variation_media
     type: csv
 mappings:
   -
@@ -679,3 +691,20 @@ mappings:
       reference_by: name
       autocreate: 1
       autocreate_bundle: bracket
+  -
+    target: attribute_model
+    map:
+      target_id: attribute_model
+    settings:
+      reference_by: name
+      autocreate: false
+      autocreate_bundle: model
+  -
+    target: field_variation_media
+    map:
+      target_id: field_variation_media
+    settings:
+      language: ''
+      reference_by: mid
+      autocreate: 0
+      autocreate_bundle: image

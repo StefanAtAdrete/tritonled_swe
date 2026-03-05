@@ -1,0 +1,17 @@
+{
+    "_hash": "e8874af848c8f66daa7cb81ac6aad3466d5476476280409be0c09aa28303715f",
+    "patches": {
+        "drupal/lb_tabs": [
+            {
+                "package": "drupal/lb_tabs",
+                "description": "Make tab labels translatable via t()",
+                "url": "patches/lb_tabs-translatable-labels.patch",
+                "sha256": "d028ee7fc24696e5e0a42b9840ba30fffeb5dbbf39918bc28f60cef984f0d978",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}
