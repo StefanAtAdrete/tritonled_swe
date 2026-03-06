@@ -190,6 +190,15 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 
 ## 📊 Senaste Viktiga Beslut
 
+### Feeds import-ordning och store-koppling (2026-03-06)
+- ✅ Products-feed ALLTID FÖRST → sätter store-koppling på produkten
+- ✅ Variations-feed SEDAN → importerar varianter
+- ❌ Om produkten skapas manuellt utan products-feed → saknar store-koppling → 500-fel vid AJAX
+- ✅ `tritonled_compat` FeedsImportSubscriber rensar feeds_item automatiskt efter varje import
+- ✅ Feeds-tabeller: `commerce_product_variation__feeds_item` och `commerce_product__feeds_item` (INTE `feeds_item`)
+- ✅ Products-CSV: en rad på engelska → svenska via Drupal Translate-UI
+- Se: `03-solutions/feeds-import-ordning.md`
+
 ### Feeds Item AJAX Bug (2026-02-21)
 - ⚠️ `feeds_item` på varianter orsakar 500-fel vid Media Library AJAX
 - ✅ Fix: Rensa `feeds_item` på alla varianter efter import
@@ -482,7 +491,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.2  
+**Version**: 2.3  
 **Skapad**: 2025-01-10  
-**Uppdaterad**: 2026-03-04 - Language config incident lärdomar, navigation-modulen avinstallerad  
+**Uppdaterad**: 2026-03-06 - Feeds import-ordning och store-koppling  
 **Författare**: Stefan + Claude
