@@ -1,7 +1,7 @@
 _core:
   default_config_hash: cceqUa945af6yMPEeM1pWJQoA-tumoAqhThW2xGoZ04
 check:
-  disabled_extensions: true
+  disabled_extensions: false
   interval_days: 7
 fetch:
   url: null

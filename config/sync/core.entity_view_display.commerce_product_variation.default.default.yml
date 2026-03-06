@@ -11,6 +11,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_color
     - field.field.commerce_product_variation.default.attribute_connection
     - field.field.commerce_product_variation.default.attribute_cri
+    - field.field.commerce_product_variation.default.attribute_driver
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_model
@@ -141,6 +142,7 @@ hidden:
   attribute_color: true
   attribute_connection: true
   attribute_cri: true
+  attribute_driver: true
   attribute_ip_rating: true
   attribute_length: true
   attribute_model: true
