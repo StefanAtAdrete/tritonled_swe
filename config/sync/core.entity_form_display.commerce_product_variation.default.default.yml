@@ -11,6 +11,7 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_color
     - field.field.commerce_product_variation.default.attribute_connection
     - field.field.commerce_product_variation.default.attribute_cri
+    - field.field.commerce_product_variation.default.attribute_driver
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
     - field.field.commerce_product_variation.default.attribute_model
@@ -96,6 +97,12 @@ content:
   attribute_cri:
     type: options_select
     weight: 13
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_driver:
+    type: options_select
+    weight: 18
     region: content
     settings: {  }
     third_party_settings: {  }
