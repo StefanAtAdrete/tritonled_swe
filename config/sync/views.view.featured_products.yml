@@ -93,7 +93,7 @@ display:
           exclude: true
           alter:
             alter_text: true
-            text: '<a href="{{ view_commerce_product }}" class="h4 text-dark text-decoration-none fw-semibold">{{ title__value }}</a>'
+            text: '<a href="{{ view_commerce_product }}" class="h5 text-dark text-decoration-none fw-light">{{ title__value }}</a>'
             make_link: false
             path: ''
             absolute: false
@@ -282,7 +282,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap\">{{ field_variation_media }}</div>\r\n<div class=\"card-body bg-light\"><p class=\"card-title mb-0\">{{ title }}</p></div>\r\n</div></div>"
+            text: "<div class=\"card h-100 border-0 shadow bg-info bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-3\">{{ field_variation_media }}</div>\r\n<div class=\"card-body\"><p class=\"card-title mb-0\">{{ title }}</p></div>\r\n</div></div>"
             make_link: false
             path: ''
             absolute: false
