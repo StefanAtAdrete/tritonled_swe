@@ -1,16 +1,36 @@
 uuid: 293f0e35-1541-44b5-be56-0e66b616c2bb
 langcode: en
 status: true
-dependencies: {  }
+dependencies:
+  module:
+    - image_effects
 name: card_thumbnail
 label: 'Card Thumbnail (mobile)'
 effects:
-  bf73dd8e-2cd4-44c3-95e4-ad48a00a8912:
-    uuid: bf73dd8e-2cd4-44c3-95e4-ad48a00a8912
-    id: focal_point_scale_and_crop
-    weight: 0
+  1b118dcd-7e5c-4db0-ae31-07a43bb8c746:
+    uuid: 1b118dcd-7e5c-4db0-ae31-07a43bb8c746
+    id: image_scale
+    weight: 2
     data:
-      width: 200
-      height: 200
-      anchor: null
-pipeline: __default__
+      width: 400
+      height: null
+      upscale: false
+  3f6eb75a-8aab-4d03-81b4-7ce821d2bf06:
+    uuid: 3f6eb75a-8aab-4d03-81b4-7ce821d2bf06
+    id: image_effects_set_canvas
+    weight: 2
+    data:
+      canvas_size: exact
+      canvas_color: ''
+      exact:
+        width: '400'
+        height: '225'
+        placement: center-center
+        x_offset: 0
+        y_offset: 0
+      relative:
+        left: 0
+        right: 0
+        top: 0
+        bottom: 0
+pipeline: ''

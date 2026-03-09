@@ -121,7 +121,7 @@ third_party_settings:
           container_wrapper_bg_color_class: ''
           container_wrapper_bg_media: null
           container: container
-          section_classes: ''
+          section_classes: gx-5
           section_attributes: null
           regions_classes:
             blb_region_col_1: ''
@@ -144,6 +144,8 @@ third_party_settings:
               - col-12
           remove_gutters: '0'
           context_mapping: {  }
+          layout_builder_styles_style:
+            product_section_tabs: 0
         components:
           f37edcbb-a4b9-464f-9fe9-d7678f060457:
             uuid: f37edcbb-a4b9-464f-9fe9-d7678f060457
@@ -161,84 +163,6 @@ third_party_settings:
                 third_party_settings: {  }
             weight: 5
             additional: {  }
-          52935a42-816f-433c-912f-1a18d88b1e7d:
-            uuid: 52935a42-816f-433c-912f-1a18d88b1e7d
-            region: blb_region_col_1
-            configuration:
-              id: 'field_block:commerce_product_variation:default:field_variation_media'
-              label: 'Variation Media (Images/Videos)'
-              label_display: '0'
-              provider: layout_builder
-              context_mapping:
-                entity: '@commerce_product.product_variation_route_context:commerce_product_variation'
-                view_mode: view_mode
-              formatter:
-                type: splide_media
-                label: hidden
-                settings:
-                  caption:
-                    title: title
-                    alt: '0'
-                  optionset: product_main
-                  class: ''
-                  image: field_media_image
-                  link: ''
-                  title: title
-                  vanilla: false
-                  layout: below
-                  view_mode: splide
-                  cache: 60
-                  admin_uri: '/layout_builder/update/block/defaults/commerce_product.default.default/0/blb_region_col_1/52935a42-816f-433c-912f-1a18d88b1e7d?destination=/admin/commerce/config/product-types/default/edit/display/default/layout&_wrapper_format=drupal_dialog.off_canvas&ajax_form=1&_wrapper_format=drupal_ajax'
-                  background: true
-                  box_caption: auto
-                  box_caption_custom: ''
-                  box_media_style: splide_media
-                  loading: ''
-                  preload: true
-                  responsive_image_style: product_responsive
-                  box_style: hero_responsive
-                  image_style: splide_media
-                  media_switch: ''
-                  ratio: '1:1'
-                  thumbnail_style: splide_media
-                  grid: ''
-                  grid_medium: ''
-                  grid_small: ''
-                  style: column
-                  skin: default
-                  overridables:
-                    arrows: '0'
-                    pagination: '0'
-                    autoplay: '0'
-                    autoWidth: '0'
-                    autoHeight: '0'
-                    drag: '0'
-                    wheel: '0'
-                    randomize: '0'
-                  pagination_text: ''
-                  optionset_nav: product_nav
-                  skin_nav: asnavfor
-                  nav_caption: ''
-                  thumbnail_effect: ''
-                  navpos: ''
-                  override: false
-                  pagination_pos: ''
-                  preserve_keys: false
-                  visible_items: null
-                third_party_settings:
-                  fences:
-                    fences_field_tag: div
-                    fences_field_classes: ''
-                    fences_field_items_wrapper_tag: none
-                    fences_field_items_wrapper_classes: ''
-                    fences_field_item_tag: div
-                    fences_field_item_classes: ''
-                    fences_label_tag: div
-                    fences_label_classes: ''
-            weight: 0
-            additional:
-              layout_builder_styles_style:
-                padding_3: 0
           d23aa1f2-48d9-401a-8cc3-9bdd564a8589:
             uuid: d23aa1f2-48d9-401a-8cc3-9bdd564a8589
             region: blb_region_col_2
@@ -296,7 +220,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 1
+            weight: 3
             additional:
               layout_builder_styles_style:
                 padding_3: 0
@@ -326,7 +250,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 2
+            weight: 4
             additional:
               layout_builder_styles_style:
                 padding_3: 0
@@ -377,6 +301,87 @@ third_party_settings:
                 third_party_settings: {  }
             weight: 3
             additional: {  }
+          0b81b584-4c80-4f1d-9299-868ade0d6de6:
+            uuid: 0b81b584-4c80-4f1d-9299-868ade0d6de6
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product_variation:default:field_variation_media'
+              label: 'Variation Media (Images/Videos)'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: '@commerce_product.product_variation_route_context:commerce_product_variation'
+                view_mode: view_mode
+              formatter:
+                type: splide_media
+                label: visually_hidden
+                settings:
+                  caption:
+                    alt: '0'
+                    title: '0'
+                  optionset: product_main
+                  class: ''
+                  image: ''
+                  link: ''
+                  title: ''
+                  vanilla: false
+                  layout: ''
+                  view_mode: default
+                  cache: 0
+                  admin_uri: '/en/layout_builder/update/block/defaults/commerce_product.default.default/0/blb_region_col_1/0b81b584-4c80-4f1d-9299-868ade0d6de6?destination=/en/admin/commerce/config/product-types/default/edit/display/default/layout&_wrapper_format=drupal_dialog.off_canvas&ajax_form=1&_wrapper_format=drupal_ajax'
+                  background: false
+                  box_caption: auto
+                  box_caption_custom: ''
+                  box_media_style: ''
+                  loading: ''
+                  preload: false
+                  responsive_image_style: product_responsive
+                  box_style: product_responsive
+                  image_style: splide_media
+                  media_switch: ''
+                  ratio: fluid
+                  thumbnail_style: thumbnail
+                  grid: ''
+                  grid_medium: ''
+                  grid_small: ''
+                  style: column
+                  skin: ''
+                  overridables:
+                    arrows: '0'
+                    pagination: '0'
+                    autoplay: '0'
+                    autoWidth: '0'
+                    autoHeight: '0'
+                    drag: '0'
+                    wheel: '0'
+                    randomize: '0'
+                  pagination_text: ''
+                  optionset_nav: product_nav
+                  skin_nav: ''
+                  nav_caption: ''
+                  thumbnail_effect: ''
+                  navpos: ''
+                  override: false
+                  pagination_pos: ''
+                  preserve_keys: false
+                  visible_items: null
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 2
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                padding_3: padding_3
+                h1_title: 0
+                margin_bottom_3: 0
         third_party_settings: {  }
       -
         layout_id: lb_tabs_tabs
@@ -478,6 +483,7 @@ hidden:
   uid: true
   variation_block__certifications: true
   variation_block__electrical: true
+  variation_block__gallery: true
   variation_block__mechanical: true
   variation_block__token: true
   variations: true

@@ -12,10 +12,8 @@ dependencies:
     - field.field.commerce_product_variation.default.attribute_color
     - field.field.commerce_product_variation.default.attribute_connection
     - field.field.commerce_product_variation.default.attribute_cri
-    - field.field.commerce_product_variation.default.attribute_driver
     - field.field.commerce_product_variation.default.attribute_ip_rating
     - field.field.commerce_product_variation.default.attribute_length
-    - field.field.commerce_product_variation.default.attribute_model
     - field.field.commerce_product_variation.default.attribute_voltage
     - field.field.commerce_product_variation.default.attribute_watt
     - field.field.commerce_product_variation.default.feeds_item
@@ -263,6 +261,40 @@ third_party_settings:
                 h1_title: 0
                 margin_bottom_3: 0
                 padding_3: 0
+          8f1ffbbb-f496-44dd-9cb9-e7fae398e049:
+            uuid: 8f1ffbbb-f496-44dd-9cb9-e7fae398e049
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product_variation:default:field_weight'
+              label: Vikt
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: '@commerce_product.product_variation_route_context:commerce_product_variation'
+                view_mode: view_mode
+              formatter:
+                type: number_integer
+                label: inline
+                settings:
+                  thousand_separator: ''
+                  prefix_suffix: true
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: span
+                    fences_field_item_classes: ''
+                    fences_label_tag: span
+                    fences_label_classes: ''
+            weight: 4
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                padding_3: 0
         third_party_settings: {  }
 id: commerce_product_variation.default.mechanical
 targetEntityType: commerce_product_variation
@@ -277,10 +309,8 @@ hidden:
   attribute_color: true
   attribute_connection: true
   attribute_cri: true
-  attribute_driver: true
   attribute_ip_rating: true
   attribute_length: true
-  attribute_model: true
   attribute_voltage: true
   attribute_watt: true
   commerce_variation_cart_form: true

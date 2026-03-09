@@ -26,16 +26,15 @@ display:
     display_options:
       title: 'Featured Products'
       fields:
-        title:
-          id: title
-          table: commerce_product_field_data
-          field: title
+        view_commerce_product:
+          id: view_commerce_product
+          table: commerce_product
+          field: view_commerce_product
           relationship: none
           group_type: group
           admin_label: ''
-          entity_type: null
-          entity_field: title
-          plugin_id: field
+          entity_type: commerce_product
+          plugin_id: entity_link
           label: ''
           exclude: true
           alter:
@@ -70,9 +69,63 @@ display:
           element_label_type: ''
           element_label_class: ''
           element_label_colon: false
-          element_wrapper_type: h3
+          element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          text: view
+          output_url_as_text: true
+          absolute: true
+        title:
+          id: title
+          table: commerce_product_field_data
+          field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: null
+          entity_field: title
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: true
+            text: '<a href="{{ view_commerce_product }}" class="h4 text-dark text-decoration-none fw-semibold">{{ title__value }}</a>'
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: false
           empty: ''
           hide_empty: false
           empty_zero: false
@@ -229,7 +282,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap\">{{ field_variation_media }}</div><div class=\"card-body\"><p class=\"card-title mb-0\">{{ title }}</p></div></div></div>"
+            text: "<div class=\"card h-100 border-0 shadow\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap\">{{ field_variation_media }}</div>\r\n<div class=\"card-body bg-light\"><p class=\"card-title mb-0\">{{ title }}</p></div>\r\n</div></div>"
             make_link: false
             path: ''
             absolute: false

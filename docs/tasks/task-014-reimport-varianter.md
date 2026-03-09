@@ -31,13 +31,13 @@ Befintliga varianter är importerade med felaktig attributstruktur (accessories 
 
 ### Acceptanskriterier
 - [x] OPTI: gamla varianter borttagna, nya importerade med korrekt struktur
-- [ ] SROW: gamla varianter borttagna, nya importerade med korrekt struktur
-- [ ] MAX: gamla varianter borttagna, nya importerade med korrekt struktur
+- [x] SROW: gamla varianter borttagna, nya importerade med korrekt struktur
+- [x] MAX: gamla varianter borttagna, nya importerade med korrekt struktur
 - [x] Ingen `attribute_accessories` i någon variant
 - [x] Media (bilder) korrekt mappade per variant (OPTI)
 - [x] Produktsidorna fungerar med AJAX-variantbyte (OPTI verifierad)
 
-**Godkänt av Stefan**: ⏳ Väntar på SROW och MAX
+**Godkänt av Stefan**: SROW och MAX klara. Återstår: TASK-010b (AJAX bildbytet) för alla tre serier.
 
 ---
 
@@ -128,19 +128,70 @@ Symptom: `Exception: The given entity is not assigned to any store` (500-fel vid
 - `W2` → `Wago DALI (W2)`, ip_rating `IP20` → `20`
 - `W3` → `Wago Black Infinity (W3)`, ip_rating `IP20` → `20`
 
-### SROW ⏳ Återstår
+### SROW ✅ Klar (2026-03-07)
 
 **Produkt-ID**: 5  
-Behöver:
-- `srow-products-v1.csv`
-- `srow-variations-v1.csv` med korrekta connection-namn och IP-format
+**Antal varianter**: 120
 
-### MAX ⏳ Återstår
+**Modeller**: Standard, Sensor, Emergency, Emergency Daylight
+
+**Filer**:
+- `private/feeds/srow-products-v1.csv`
+- `private/feeds/srow-variations-v1.csv`
+- `config/sync/feeds.feed_type.tritonled_srow_products.yml`
+- `config/sync/feeds.feed_type.tritonled_srow_variations.yml`
+
+**Variantstruktur**:
+- Standard (TS): 600/1200/1740mm × 3/3/5 watt × 5 connections = 55 varianter
+- Sensor (SS): 800/1400/1900mm × 3/3/3 watt × 5 connections = 45 varianter
+- Emergency (SE): 800mm × 3W × 5 connections = 5 varianter
+- Emergency Daylight: 800mm × 16/23/33W × 5 connections = 15 varianter
+
+**Media entity-ID:n**:
+- Standard CG=56, EN=57, W1=58, W2=59, W3=55
+- Sensor CG=63, EN=64, W1=65, W2=66, W3=55
+- Emergency/ED CG=55, EN=55, W1=60, W2=61, W3=62
+
+**Viktigt**: Bildbytet på frontend är TASK-010b (AJAX) — inte ett importproblem. Bilder verifierade via php:eval.
+
+### MAX ✅ Klar (2026-03-06)
 
 **Produkt-ID**: 8  
-Behöver:
-- `max-products-v1.csv`
-- `max-variations-v1.csv` med korrekta connection-namn och IP-format
+**Antal varianter**: 150
+
+**Modeller**: Standard, Sensor, Emergency, Emergency Daylight
+
+**Filer**:
+- `private/feeds/max-products-v1.csv` — produktfeed (1 rad, engelska)
+- `private/feeds/max-variations-v1.csv` — variationsfeed (150 rader)
+- `config/sync/feeds.feed_type.tritonled_max_products.yml`
+- `config/sync/feeds.feed_type.tritonled_max_variations.yml`
+
+**Variantstruktur**:
+- Standard: 4 längder (500/1000/1500/2000mm) × 5 connections × 3-5 watt = 75 varianter
+- Sensor (TMS): 3 längder (1200/1700/2200mm) × 5 connections × 3-4 watt = 55 varianter
+- Emergency (TME): 700mm × 5 connections × 1 watt (3W) = 5 varianter
+- Emergency Daylight: 700mm × 5 connections × 3 watt (14/20/29W) = 15 varianter
+
+**Media entity-ID:n** (entity_id, INTE fid):
+- Standard CG: 41, EN: 42, W1: 43, W2: 44, W3: 45
+- Sensor CG: 50, EN: 51, W1: 52, W2: 53, W3: 54
+- Emergency/Emergency Daylight CG: 55 (Missing image), EN: 46, W1: 47, W2: 48, W3: 49
+
+**Steg genomförda**:
+1. Variantstruktur fastställd från PDF-datasheets
+2. SKU-format: `TM{modell}{längdkod}{watt}K0-{connection}` (följer OPTI-mönster)
+3. `Emergency Daylight` attributvärde skapat via drush eval
+4. max-products-v1.csv skapad och importerad → store-koppling satt
+5. max-variations-v1.csv skapad med korrekta media entity-ID:n (41-55)
+6. Variations-feed kördes → 150 varianter importerade
+7. Bilder verifierade i admin-UI
+
+**Viktiga lärdomar**:
+- Media entity-ID (mid) ≠ file-ID (fid) — måste kartlägga via `media__field_media_image`
+- Feeds cached-fil byter namn (`_0`, `_0_0` etc) — kopiera rätt fil med `ddev exec cp`
+- `Emergency Daylight` måste skapas som attributvärde INNAN import (`autocreate: false`)
+- Nya feed type-instanser kräver `ddev drush cim --partial -y` + `ddev drush cr` för att aktiveras
 
 ---
 
@@ -153,8 +204,19 @@ Behöver:
 - [x] AJAX-variantbyte fungerar på produktsidan
 - [ ] Svenska översättningar (TASK-016 / separat uppgift)
 
-### SROW ⏳
-### MAX ⏳
+### SROW ✅
+- [x] 120 varianter importerade
+- [x] Bilder korrekt kopplade (verifierat via php:eval)
+- [x] Required-fält fixade (accessories, beam_angle etc avmarkerade)
+- [ ] AJAX-variantbyte (TASK-010b)
+- [ ] Svenska översättningar
+### MAX ✅
+- [x] 150 varianter importerade
+- [x] Store-koppling på plats (product_id=8)
+- [x] Bilder verifierade i admin-UI
+- [ ] feeds_item rensning verifierad
+- [ ] AJAX-variantbyte verifierat på produktsidan
+- [ ] Svenska översättningar (separat uppgift)
 
 ---
 
