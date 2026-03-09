@@ -1,16 +1,36 @@
 uuid: 6b76d97d-10e0-4b71-a360-707803e30918
 langcode: en
 status: true
-dependencies: {  }
+dependencies:
+  module:
+    - image_effects
 name: card_medium
 label: 'Card Medium (desktop)'
 effects:
-  26fe5818-6f57-466b-a027-28f59cab85cc:
-    uuid: 26fe5818-6f57-466b-a027-28f59cab85cc
-    id: focal_point_scale_and_crop
-    weight: 0
+  cc5ce8b5-2875-4bcb-af0f-5abe86cede8c:
+    uuid: cc5ce8b5-2875-4bcb-af0f-5abe86cede8c
+    id: image_scale
+    weight: 2
     data:
       width: 400
-      height: 300
-      anchor: null
-pipeline: __default__
+      height: null
+      upscale: true
+  4e31858f-d3c9-4125-a094-456ba1613125:
+    uuid: 4e31858f-d3c9-4125-a094-456ba1613125
+    id: image_effects_set_canvas
+    weight: 2
+    data:
+      canvas_size: exact
+      canvas_color: ''
+      exact:
+        width: '400'
+        height: '225'
+        placement: center-center
+        x_offset: 0
+        y_offset: 0
+      relative:
+        left: 0
+        right: 0
+        top: 0
+        bottom: 0
+pipeline: ''

@@ -1,0 +1,11 @@
+uuid: 1efd188b-bb9d-4944-bfc3-60247ddeb862
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.gallery
+label: Gallery
+description: null
+targetEntityType: commerce_product_variation
+cache: true

@@ -31,6 +31,26 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 
 /**
+ * Implements hook_page_attachments().
+ *
+ * Attaches product libraries on Commerce product pages.
+ *
+ * NOTE: This hook lives here (in a module) rather than in tritonled_radix.theme
+ * because hook_page_attachments() in themes is unreliable in Drupal 11 —
+ * the theme's .theme file may not be fully bootstrapped when the hook fires.
+ * Modules are always loaded before themes. This is the correct Drupal way.
+ *
+ * Se: /docs/03-solutions/product-ajax-library-attach.md
+ */
+function tritonled_compat_page_attachments(array &$attachments) {
+  $route = \Drupal::routeMatch()->getRouteName();
+  if ($route === 'entity.commerce_product.canonical') {
+    $attachments['#attached']['library'][] = 'tritonled_radix/product-ajax';
+    $attachments['#attached']['library'][] = 'tritonled_radix/product-variation-media';
+  }
+}
+
+/**
  * Implements hook_field_group_content_element_keys_alter().
  *
  * Enables Field Group to work with Commerce entity types.

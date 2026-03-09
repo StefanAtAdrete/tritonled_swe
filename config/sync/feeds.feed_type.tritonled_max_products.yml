@@ -1,0 +1,176 @@
+uuid: b58f665d-2e4a-4c8f-a1b2-c3d4e5f60718
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.default
+    - field.field.commerce_product.default.body
+    - field.field.commerce_product.default.field_brand
+    - field.field.commerce_product.default.field_features
+    - field.field.commerce_product.default.field_product_sku
+    - field.field.commerce_product.default.field_series
+    - field.field.commerce_product.default.field_short_description
+  module:
+    - commerce_feeds
+    - commerce_product
+    - feeds_log
+third_party_settings:
+  feeds_log:
+    status: true
+    operations:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+      cleaned: cleaned
+    items:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+    source: true
+label: 'TritonLED MAX Products'
+id: tritonled_max_products
+description: ''
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product'
+processor_configuration:
+  values:
+    type: default
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  product_title:
+    value: product_title
+    label: product_title
+    machine_name: product_title
+    type: csv
+  product_brand:
+    value: product_brand
+    label: product_brand
+    machine_name: product_brand
+    type: csv
+  product_series:
+    value: product_series
+    label: product_series
+    machine_name: product_series
+    type: csv
+  product_short_description:
+    value: product_short_description
+    label: product_short_description
+    machine_name: product_short_description
+    type: csv
+  product_body:
+    value: product_body
+    label: product_body
+    machine_name: product_body
+    type: csv
+  product_features:
+    value: product_features
+    label: product_features
+    machine_name: product_features
+    type: csv
+  product_status:
+    value: product_status
+    label: product_status
+    machine_name: product_status
+    type: csv
+  store_id:
+    value: store_id
+    label: store_id
+    machine_name: store_id
+    type: csv
+mappings:
+  -
+    target: title
+    map:
+      value: product_title
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_product_sku
+    map:
+      value: product_sku
+    settings:
+      language: en
+    unique:
+      value: true
+  -
+    target: status
+    map:
+      value: product_status
+    settings: {  }
+    unique: {  }
+  -
+    target: stores
+    map:
+      target_id: store_id
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: field_brand
+    map:
+      value: product_brand
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_series
+    map:
+      value: product_series
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_short_description
+    map:
+      value: product_short_description
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: body
+    map:
+      value: product_body
+    settings:
+      format: plain_text
+      language: en
+    unique: {  }
+  -
+    target: field_features
+    map:
+      value: product_features
+    settings:
+      language: en
+    unique: {  }
