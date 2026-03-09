@@ -1,45 +1,66 @@
 # Aktuell Task
 
-**Task**: TASK-014 (In Progress)
-**Status**: In Progress
-**Senast uppdaterad**: 2026-03-05
-**Fil**: `/docs/tasks/task-014-reimport-varianter.md`
+**Task**: TASK-015 (Planning)
+**Status**: Planning — väntar på JSON:API-undersökning
+**Senast uppdaterad**: 2026-03-07
+**Fil**: `/docs/tasks/task-015-variant-konfigurator.md`
 
-## Senast gjordes (denna session 2026-03-05)
+---
 
-### Splide caption-fix
-- Aktiverade `Splide slider` view mode på Image media type
-- Lade till `.slide__caption { display: none; }` i `product-gallery.css`
-- Rotorsak: Splide renderar media-entitetens namn som caption när nav är dold
+## Bakgrund (varför vi är här)
 
-### Attribut-städning (TASK-013, delvis klar)
-- Inventerade alla attribut — `attribute_accessories` innehåller Connection-värden + DALI
-- Skapade nytt `driver`-attribut med värden: On/Off, DALI, DALI-2, 1-10V, Wireless/RF
-- Lade till `driver` på variation type default
-- Config exporterad
-- `attribute_accessories` kvarstår tills TASK-014 är klar (12 varianter refererar det)
+Commerce's Add to Cart-formulär matchar varianter hierarkiskt. För produkter med oberoende attribut (OPTI/MAX/SROW) innebär det att väljer man Connection=EN och byter Längd → återgår Connection till CG. Problemet är fundamentalt i Commerce och kan inte konfigureras bort.
 
-### Beslutad produktstruktur (gäller alla Triton-produkter)
-**Standardattribut**: Längd, Watt, CCT, CRI, IP-rating, Connection, Model  
-**Optik/tillval** (line item fields): Beam angle, övriga optiska val  
-**Datafält**: Voltage  
-**Separat produkt**: Bracket  
+**Beslut**: Bygga en custom variant-konfigurator baserad på JSON:API som kringgår Commerce's attributformulär men behåller hela Commerce-arkitekturen (cart, order, priser etc.).
 
-### Tasks skapade
-- TASK-013: Attribut-cleanup (In Progress — väntar på TASK-014)
-- TASK-014: Reimport OPTI/SROW/MAX (In Progress)
-- TASK-015: Bracket som separat produkt
-- TASK-016: Optik/tillval som line item fields
+---
 
-## Nästa steg (TASK-014)
+## Nästa steg (nästa session)
 
-1. Stefan laddar upp PDF med produktdata för OPTI, SROW, MAX
-2. Analysera PDF → kartlägg attributstruktur per produkt
-3. Skapa nya CSV-filer utan accessories, med korrekt struktur
-4. Ta bort gamla varianter och reimportera
-5. Avsluta TASK-013 (ta bort attribute_accessories)
+### 1. Stefan kör dessa kommandon för att undersöka JSON:API
 
-## Nuläge varianter
-- MAX (ID:8): 488 varianter
-- SROW (ID:5): 795 varianter  
-- OPTI (ID:13): 260 varianter
+```bash
+# Kontrollera vilka variation resource types som finns
+ddev drush php-eval "print_r(array_keys(\Drupal::service('jsonapi.resource_type.repository')->all()));" | grep variation
+```
+
+```bash
+# Testa att variantdata är tillgänglig
+ddev drush php-eval "
+\$storage = \Drupal::entityTypeManager()->getStorage('commerce_product_variation');
+\$ids = \$storage->getQuery()->condition('product_id', 5)->range(0, 3)->execute();
+foreach (\$ids as \$id) {
+  \$v = \$storage->load(\$id);
+  print \$v->getSku() . ' | connection: ' . \$v->get('attribute_connection')->target_id . ' | length: ' . \$v->get('attribute_length')->target_id . PHP_EOL;
+}
+"
+```
+
+### 2. Med output från kommandon ovan → bygga konfiguratorn
+
+---
+
+## Öppna tasks (lägre prioritet, väntar)
+
+| Task | Status | Fil |
+|------|--------|-----|
+| TASK-013 | In Progress — väntar på TASK-014 | task-013-attribut-cleanup.md |
+| TASK-014 | In Progress | task-014-reimport-varianter.md |
+| TASK-016 | Planned | task-016-optik-line-item-fields.md |
+
+---
+
+## Produktstatus (nuläge)
+
+- **MAX** (ID:8): 488 varianter ✓
+- **SROW** (ID:5): 795 varianter ✓
+- **OPTI** (ID:13): 260 varianter ✓
+- Alla kritiska produkter inlagda
+
+---
+
+## Lärdomar från förra sessionen (2026-03-07)
+
+- `hook_page_attachments` i `.theme`-filer anropas INTE tillförlitligt i Drupal 11 — lägg alltid kritiska page attachments i en `.module`-fil (t.ex. `tritonled_compat`)
+- MutationObserver + Blazy.load() löste inte bildproblemet — rotorsaken var Commerce's attributordning, inte Blazy
+- Dokumentation: `/docs/03-solutions/product-ajax-library-attach.md`

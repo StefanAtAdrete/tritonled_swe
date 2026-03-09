@@ -109,9 +109,13 @@ function tritonled_radix_preprocess_image(&$variables) {
 
 /**
  * Implements hook_page_attachments().
+ *
+ * NOTE: hook_page_attachments() is unreliable in themes in Drupal 11.
+ * Library attachment for product pages is handled in tritonled_compat.module.
+ * lb-tabs-bootstrap is attached here as a fallback — works reliably for
+ * Bootstrap tab initialization which is less AJAX-critical.
  */
 function tritonled_radix_page_attachments(array &$attachments) {
-  // Attach Bootstrap tabs JS on product pages.
   $route = \Drupal::routeMatch()->getRouteName();
   if ($route === 'entity.commerce_product.canonical') {
     $attachments['#attached']['library'][] = 'tritonled_radix/lb-tabs-bootstrap';
