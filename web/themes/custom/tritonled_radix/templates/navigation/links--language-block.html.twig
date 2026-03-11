@@ -1,0 +1,28 @@
+{#
+/**
+ * @file
+ * TritonLED override: Language switcher links.
+ *
+ * Visar språk som förkortningar (EN | SV) med separator.
+ * Låter Drupal rendera länken (item.link) för korrekt URL och cache.
+ * Texten i render arrayn byts ut via '#title' innan rendering.
+ */
+#}
+{% if links %}
+  <ul{{ attributes.addClass('list-unstyled d-flex align-items-center gap-1 mb-0') }}>
+    {%- for key, item in links -%}
+      <li{{ item.attributes }}>
+        {%- if item.link -%}
+          {% set lang_link = item.link %}
+          {% set lang_link = lang_link|merge({'#title': key|upper, '#attributes': {'class': ['text-secondary', 'text-decoration-none', 'small']}|merge(lang_link['#attributes'] ?? {})}) %}
+          {{ lang_link }}
+        {%- else -%}
+          <span class="text-dark small fw-semibold">{{ key|upper }}</span>
+        {%- endif -%}
+      </li>
+      {%- if not loop.last -%}
+        <li class="text-muted small px-1" aria-hidden="true">|</li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ul>
+{% endif %}
