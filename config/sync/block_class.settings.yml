@@ -6,6 +6,7 @@ default_case: standard
 block_classes_stored:
   - h5
   - fs-6
+  - container
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10

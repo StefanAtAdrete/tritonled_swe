@@ -1,0 +1,23 @@
+uuid: 13dba1b3-71f3-4b0d-8912-5f0b90a55453
+langcode: sv
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:7f8653e9-722f-4195-a3bc-acaa2441b941'
+  module:
+    - block_content
+  theme:
+    - tritonled_radix
+id: tritonled_radix_cookiesettingsfooter
+theme: tritonled_radix
+region: footer
+weight: 0
+provider: null
+plugin: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
+settings:
+  id: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
+  label: 'Cookie-settings footer'
+  label_display: '0'
+  provider: block_content
+  view_mode: full
+visibility: {  }
