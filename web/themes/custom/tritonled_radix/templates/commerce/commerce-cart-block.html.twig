@@ -1,0 +1,39 @@
+{#
+/**
+ * @file
+ * TritonLED override: Commerce Cart block.
+ *
+ * Renderar cart-knapp som btn-primary med badge för antal.
+ * Dropdown-innehåll visas vid hover/klick via Commerce's inbyggda mekanism.
+ *
+ * Variabler:
+ * - url: länk till cart-sidan
+ * - count: antal produkter (integer)
+ * - content: rendered cart-innehåll (dropdown)
+ * - links: länk till cart-sidan
+ * - dropdown: boolean
+ */
+#}
+<div{{ attributes }}>
+  <div class="cart-block--summary">
+    <a class="cart-block--link__expand btn btn-primary btn-sm d-flex align-items-center gap-2" href="{{ url }}">
+      <i class="bi bi-cart3"></i>
+      <span>{{ 'Get a quote'|t }}</span>
+      {% if count > 0 %}
+        <span class="badge rounded-pill bg-white text-primary">{{ count }}</span>
+      {% endif %}
+    </a>
+  </div>
+  {% if content %}
+  <div class="cart-block--contents">
+    <div class="cart-block--contents__inner">
+      <div class="cart-block--contents__items">
+        {{ content }}
+      </div>
+      <div class="cart-block--contents__links">
+        {{ links }}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>

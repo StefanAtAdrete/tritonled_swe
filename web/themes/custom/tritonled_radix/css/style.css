@@ -30,17 +30,98 @@ body {
    2. NAVBAR & HEADER
    ============================================================ */
 
-.page > .navbar {
+/* Sticky navbar — vit, flat, tunn border */
+.navbar.sticky-top {
+  z-index: 1030;
+}
+
+/* Navbar-höjd */
+.navbar .container {
+  min-height: 64px;
+}
+
+/* Branding */
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: var(--bs-dark) !important;
+}
+
+/* Menylenkar — flat, modern */
+.navbar-nav .nav-link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--bs-body-color) !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  position: relative;
+}
+
+/* Hover underline-animation */
+.navbar-nav .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0.75rem;
+  right: 0.75rem;
+  height: 2px;
+  background-color: var(--bs-primary);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover::after,
+.navbar-nav .nav-link.active::after {
+  transform: scaleX(1);
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--bs-dark) !important;
+}
+
+/* Dropdown */
+.navbar-nav .dropdown-menu {
+  border: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.navbar-nav .dropdown-item {
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.navbar-nav .dropdown-item:hover {
   background-color: var(--bs-gray-100);
-  margin-bottom: 0 !important;
 }
 
-/* Ta bort gap mellan navbar och main-innehåll */
-.page > main {
-  margin-top: -16px;
+/* Topbar */
+.topbar {
+  font-size: 0.85rem;
 }
 
-/* Logotyp */
+.topbar .block__title {
+  display: none;
+}
+
+/* Offcanvas mobilmeny */
+.offcanvas-start {
+  width: 280px;
+}
+
+.offcanvas .navbar-nav {
+  flex-direction: column;
+}
+
+.offcanvas .nav-link::after {
+  display: none;
+}
+
+/* Logotyp-bild */
 .navbar-brand img,
 .site-logo img {
   width: auto !important;
@@ -159,12 +240,6 @@ footer.page__footer a {
 
 footer.page__footer a:hover {
   color: var(--bs-white);
-}
-
-/* Topbar */
-.topbar .block__title {
-  font-size: 1rem;
-  margin: 0;
 }
 
 /* Attribute radio buttons — styled as pill buttons (products only) */

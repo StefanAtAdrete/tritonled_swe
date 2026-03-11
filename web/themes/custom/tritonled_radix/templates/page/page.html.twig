@@ -3,16 +3,17 @@
  * @file
  * TritonLED page template.
  *
- * Navbar byggs direkt här för att stödja navbar_left_2 och navbar_left_3.
- * Page content och footer delegeras till Radix SDC-komponenter.
+ * Navbar: sticky-top, Bootstrap offcanvas för mobil.
+ * Desktop: collapse navbar-collapse (standard Bootstrap).
+ * Mobil: offcanvas-start slide-in sidebar.
  */
 #}
 <div class="page">
 
   {# TOPBAR #}
   {% if page.topbar_left or page.topbar_right %}
-  <div class="topbar bg-body-secondary py-1">
-    <div class="container d-flex">
+  <div class="topbar bg-white border-bottom py-2">
+    <div class="container d-flex align-items-center">
       {% if page.topbar_left %}
         <div class="me-auto">
           {{ page.topbar_left }}
@@ -27,8 +28,8 @@
   </div>
   {% endif %}
 
-  {# NAVBAR #}
-  <nav class="navbar navbar-expand-lg" data-bs-theme="light">
+  {# NAVBAR — sticky, vit, flat #}
+  <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top" data-bs-theme="light">
     <div class="container">
 
       {# Branding #}
@@ -36,13 +37,17 @@
         {{ page.navbar_branding }}
       {% endif %}
 
-      {# Toggler för mobil #}
-      <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+      {# Mobil: offcanvas toggler #}
+      <button class="navbar-toggler border-0" type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#navbarOffcanvas"
+        aria-controls="navbarOffcanvas"
+        aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
+      {# Desktop: collapse meny #}
       <div class="collapse navbar-collapse">
-        {# Vänster: navbar_left, navbar_left_2, navbar_left_3 #}
         {% if page.navbar_left %}
           {{ page.navbar_left }}
         {% endif %}
@@ -54,10 +59,8 @@
             {{ page.navbar_left_3 }}
           </div>
         {% endif %}
-
-        {# Höger #}
         {% if page.navbar_right %}
-          <div class="ms-auto w-auto">
+          <div class="ms-auto w-auto d-flex align-items-center gap-3">
             {{ page.navbar_right }}
           </div>
         {% endif %}
@@ -65,6 +68,29 @@
 
     </div>
   </nav>
+
+  {# MOBIL: Offcanvas sidebar #}
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <span class="offcanvas-title fw-bold" id="navbarOffcanvasLabel">TritonLED</span>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      {% if page.navbar_left %}
+        {{ page.navbar_left }}
+      {% endif %}
+      {% if page.navbar_left_2 %}
+        {{ page.navbar_left_2 }}
+      {% endif %}
+      {% if page.navbar_left_3 %}
+        {{ page.navbar_left_3 }}
+      {% endif %}
+      {% if page.navbar_right %}
+        <hr>
+        {{ page.navbar_right }}
+      {% endif %}
+    </div>
+  </div>
 
   {# PAGE CONTENT #}
   {% include 'radix:page-content' with {
