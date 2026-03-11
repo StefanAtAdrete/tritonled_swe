@@ -44,6 +44,7 @@
         "drupal/gin": "^5.0",
         "drupal/image_effects": "^5.0",
         "drupal/inline_entity_form": "^3.0@RC",
+        "drupal/klaro": "^3.0",
         "drupal/lb_tabs": "*",
         "drupal/mcp": "^1.2",
         "drupal/mcp_tools": "^1.0@beta",
