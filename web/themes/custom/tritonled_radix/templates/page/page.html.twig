@@ -73,6 +73,11 @@
   <div class="offcanvas offcanvas-start" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
     <div class="offcanvas-header border-bottom">
       <span class="offcanvas-title fw-bold" id="navbarOffcanvasLabel">TritonLED</span>
+      {% if page.navbar_left_3 %}
+        <div class="ms-auto me-2">
+          {{ page.navbar_left_3 }}
+        </div>
+      {% endif %}
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
@@ -82,12 +87,15 @@
       {% if page.navbar_left_2 %}
         {{ page.navbar_left_2 }}
       {% endif %}
-      {% if page.navbar_left_3 %}
-        {{ page.navbar_left_3 }}
-      {% endif %}
       {% if page.navbar_right %}
         <hr>
         {{ page.navbar_right }}
+      {% endif %}
+      {% if page.topbar_right %}
+        <hr>
+        <div class="d-flex align-items-center gap-3">
+          {{ page.topbar_right }}
+        </div>
       {% endif %}
     </div>
   </div>
