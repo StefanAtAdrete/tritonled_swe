@@ -1,0 +1,31 @@
+consentNotice:
+  learnMore: Anpassa
+  title: 'Användning av personuppgifter och cookies'
+  changeDescription: 'Det har skett ändringar sedan ditt senaste besök, vänligen uppdatera ditt samtycke.'
+  description: 'Vi använder cookies och behandlar personuppgifter för följande ändamål: {purposes}.'
+save: Spara
+close: Stäng
+service:
+  purpose: Syfte
+  disableAll:
+    title: 'Välj alla'
+    description: 'Använd den här reglaget för att aktivera/inaktivera alla tjänster.'
+  optOut:
+    description: 'Den här tjänsten laddas som standard (opt-out möjligt).'
+  purposes: Syften
+consentModal:
+  title: 'Användning av personuppgifter och cookies'
+  description: 'Välj vilka tjänster och tredjepartsapplikationer vi får använda.'
+  privacyPolicy:
+    name: Integritetspolicy
+    text: 'För att lära dig mer, vänligen läs vår {privacyPolicy}.'
+    url: 'internal:/integritetspolicy'
+ok: Godkänn
+decline: Avböj
+acceptAll: 'Godkänn alla'
+acceptSelected: 'Godkänn valda'
+contextualConsent:
+  acceptAlways: Alltid
+  acceptOnce: 'Ja (denna gång)'
+  description: 'Ladda externt innehåll från {title}?'
+poweredBy: 'Drivs av Klaro!'
