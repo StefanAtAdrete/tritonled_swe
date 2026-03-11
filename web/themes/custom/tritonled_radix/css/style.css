@@ -30,9 +30,9 @@ body {
    2. NAVBAR & HEADER
    ============================================================ */
 
-/* Sticky navbar — vit, flat, tunn border */
+/* Sticky navbar — z-index under Drupal admin toolbar/contextual (600+) */
 .navbar.sticky-top {
-  z-index: 1030;
+  z-index: 400;
 }
 
 /* Navbar-höjd */
@@ -106,6 +106,19 @@ body {
 
 .topbar .block__title {
   display: none;
+}
+
+/* Cart-knapp — override btn-sm till standard btn-storlek */
+.topbar .cart-block--link__expand {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+}
+
+/* Topbar account menu — länkar på samma rad */
+.block--tritonled-radix-account-menu .navbar-nav {
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
 }
 
 /* Offcanvas mobilmeny */
