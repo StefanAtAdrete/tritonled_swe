@@ -201,3 +201,5 @@ yarn-error.log*
 !/composer.lock
 !/phpunit.xml
 vendor/
+config/sync/ai_provider_openai.settings.yml
+config/sync/ai.settings.yml
