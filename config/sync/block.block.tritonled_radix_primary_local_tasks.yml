@@ -2,8 +2,13 @@ uuid: 3803fc24-c5bf-4cd5-9034-4d0645016cec
 langcode: en
 status: true
 dependencies:
+  module:
+    - block_class
   theme:
     - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: container
 _core:
   default_config_hash: nGE3EoPQQaQCuqTUtZgw0-KIzmrqdKDzdNQf2JyPUt4
 id: tritonled_radix_primary_local_tasks
