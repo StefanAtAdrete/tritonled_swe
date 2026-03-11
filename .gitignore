@@ -200,3 +200,4 @@ yarn-error.log*
 !/composer.json
 !/composer.lock
 !/phpunit.xml
+vendor/
