@@ -1,0 +1,29 @@
+uuid: 2b6290a3-3d08-4db3-9ae2-c1306eb87509
+langcode: en
+status: true
+dependencies:
+  module:
+    - block_class
+    - language
+    - system
+  theme:
+    - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: 'd-lg-flex align-items-center'
+id: tritonled_radix_languageswitcher_2
+theme: tritonled_radix
+region: topbar_right
+weight: 0
+provider: null
+plugin: 'language_block:language_interface'
+settings:
+  id: 'language_block:language_interface'
+  label: 'Language switcher'
+  label_display: visible
+  provider: language
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    pages: "/sv/product/*\r\n/en/product/*\r\n/sv/produkt/*"

@@ -7,6 +7,14 @@ block_classes_stored:
   - h5
   - fs-6
   - container
+  - d-lg-none
+  - d-noned-lg-flex
+  - d-none
+  - d-lg-flex
+  - align-items-center
+  - gap-2
+  - mt-2
+  - p-0
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10

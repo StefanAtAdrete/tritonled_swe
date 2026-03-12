@@ -3,9 +3,14 @@ langcode: en
 status: true
 dependencies:
   module:
+    - block_class
     - language
+    - system
   theme:
     - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: d-lg-none
 id: tritonled_radix_languageswitcher
 theme: tritonled_radix
 region: navbar_left_3
@@ -17,4 +22,8 @@ settings:
   label: 'Language switcher'
   label_display: '0'
   provider: language
-visibility: {  }
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    pages: "/sv/product/*\r\n/en/product/*\r\n/sv/produkt/*"

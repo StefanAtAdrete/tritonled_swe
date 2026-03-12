@@ -1,0 +1,21 @@
+uuid: 3077dec3-861d-4205-917b-5fc43a9e971c
+langcode: en
+status: true
+dependencies:
+  module:
+    - splide
+  enforced:
+    module:
+      - webform
+name: 'Webform (Default) - DO NOT EDIT'
+format: webform_default
+weight: 100
+filters:
+  splide_filter:
+    id: splide_filter
+    provider: splide
+    status: false
+    weight: 4
+    settings:
+      optionset: default
+      media_switch: ''

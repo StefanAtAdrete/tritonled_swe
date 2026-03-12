@@ -11,6 +11,7 @@ display:
           sort_desc_label: Fallande
       fields:
         purchased_entity:
+          label: Artikel
           separator: ', '
         unit_price__number:
           label: Pris
