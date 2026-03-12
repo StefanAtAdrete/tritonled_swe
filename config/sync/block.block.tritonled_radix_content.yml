@@ -3,13 +3,9 @@ langcode: en
 status: true
 dependencies:
   module:
-    - block_class
     - system
   theme:
     - tritonled_radix
-third_party_settings:
-  block_class:
-    classes: container
 _core:
   default_config_hash: erQSEZF2XUjNmgTl0uNRBzmg18ZGXwUcw2FhApoeuHk
 id: tritonled_radix_content

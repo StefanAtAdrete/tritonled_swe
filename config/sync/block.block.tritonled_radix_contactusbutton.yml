@@ -1,0 +1,32 @@
+uuid: 76e1aaf6-8887-4ad8-895c-2a65d6069a44
+langcode: sv
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
+  module:
+    - block_class
+    - block_content
+    - system
+  theme:
+    - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: mt-2
+id: tritonled_radix_contactusbutton
+theme: tritonled_radix
+region: topbar_right
+weight: 0
+provider: null
+plugin: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
+settings:
+  id: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
+  label: 'Contact us - button'
+  label_display: '0'
+  provider: block_content
+  view_mode: full
+visibility:
+  request_path:
+    id: request_path
+    negate: true
+    pages: "/product/*\r\n/product/*\r\n/produkt/*"

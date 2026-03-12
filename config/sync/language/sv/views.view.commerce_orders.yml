@@ -18,6 +18,7 @@ display:
             offset_label: Kompensera
       fields:
         order_number:
+          label: '#'
           separator: ', '
         placed:
           label: Datum

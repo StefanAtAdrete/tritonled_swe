@@ -1,6 +1,6 @@
 # TASK-016: Navigation & Mobil meny
 
-## Status: IN PROGRESS (parkerad)
+## Status: COMPLETED
 
 ## Mål
 Snygga till navbar och mobilmeny — konsekvent design, rätt Bootstrap-klasser, bra UX på mobil.
@@ -49,9 +49,9 @@ Rätt mönster: `product/*` (inte `/sv/product/*`)
 ---
 
 ## Kvarvarande arbete
-- [ ] Besluta om User account menu på mobil
-- [ ] Interface Translation för "Get a quote" → "Få offert"
-- [ ] Testa mobilvy som anonym användare (inkognito)
+- [x] Besluta om User account menu på mobil — lämnas som det är (C)
+- [x] Interface Translation för "Get a quote" → "Få offert" — klar
+- [x] Testa mobilvy som anonym användare (inkognito) — klar
 - [ ] Kontrollera offcanvas på riktiga mobila enheter
 
 ---
