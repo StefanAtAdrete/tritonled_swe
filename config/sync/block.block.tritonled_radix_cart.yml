@@ -5,6 +5,7 @@ dependencies:
   module:
     - block_class
     - commerce_cart
+    - system
   theme:
     - tritonled_radix
 third_party_settings:
@@ -13,14 +14,18 @@ third_party_settings:
 id: tritonled_radix_cart
 theme: tritonled_radix
 region: topbar_right
-weight: 0
+weight: -6
 provider: null
 plugin: commerce_cart
 settings:
   id: commerce_cart
-  label: 'Få offert'
+  label: 'Get a quote'
   label_display: '0'
   provider: commerce_cart
   dropdown: true
   show_if_empty: true
-visibility: {  }
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    pages: "/product/*\r\n/produkt/*"
