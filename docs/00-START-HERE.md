@@ -188,6 +188,52 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - **Git**: Versionskontroll
 - **Drush**: CLI administration
 
+## 🚀 Deploy till Produktion
+
+### Förutsättningar
+- Produktionsservern kör på Hostinger VPS: `/home/tritonled/htdocs/tritonled.se`
+- **Alltid** använd `vendor/bin/drush` på produktion — aldrig bara `drush` (fel projekt körs annars)
+- `settings.php` är INTE i git — den måste underhållas manuellt på servern
+- `settings.php` innehåller: `$databases`, `$settings['hash_salt']`, `config_sync_directory`, `file_private_path`
+
+### Deploy-flöde (ALLTID följa denna ordning)
+
+```bash
+# 1. LOKALT — exportera config och pusha
+ddev drush cex -y
+git add -A
+git commit -m "[TASK-NNN] Beskrivning"
+git push origin main
+
+# 2. PÅ PRODUKTIONSSERVERN
+cd /home/tritonled/htdocs/tritonled.se
+git pull
+vendor/bin/drush cim -y
+vendor/bin/drush cr
+```
+
+### ⚠️ Kritiska regler för produktion
+- ❌ ALDRIG `git reset --hard` utan att säkerhetskopiera `settings.php` först
+- ❌ ALDRIG `git stash pop` utan att veta vad stashen innehåller
+- ✅ Om `git pull` misslyckas med divergent branches: kontakta Stefan innan åtgärd
+- ✅ `settings.php` ska alltid innehålla korrekt `$databases` och `hash_salt`
+- ✅ Verifiera alltid med `vendor/bin/drush status` att rätt projekt körs
+
+### Block content på produktion
+- **Custom block content** (skapade via Content → Block content) följer INTE med i config/sync
+- De är innehållsentiteter (som noder) och lagras i databasen
+- Vid deploy till ny miljö måste de återskapas manuellt via `vendor/bin/drush php:eval`
+- UUID i `block.block.*.yml` måste matcha block content-entitetens UUID på servern
+- Om UUID inte matchar: uppdatera via `drush php:eval` med `configFactory()->getEditable()`
+
+### Systemblock vs Custom block content
+| Typ | Exempel | Följer med i config? |
+|-----|---------|---------------------|
+| Systemblock | Cart, Language switcher, Menu | ✅ Ja |
+| Custom block content | "Kontakta oss"-knapp | ❌ Nej — måste återskapas |
+
+---
+
 ## 📊 Senaste Viktiga Beslut
 
 ### Feeds import-ordning och store-koppling (2026-03-06)
