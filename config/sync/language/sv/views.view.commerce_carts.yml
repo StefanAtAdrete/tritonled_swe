@@ -1,0 +1,44 @@
+display:
+  default:
+    display_title: Huvud
+    display_options:
+      exposed_form:
+        options:
+          submit_button: Filtrera
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
+      pager:
+        options:
+          expose:
+            items_per_page_label: 'Inlägg per sida'
+            items_per_page_options_all_label: '- Alla -'
+            offset_label: Kompensera
+      fields:
+        type:
+          label: Typ
+          separator: ', '
+        store_id:
+          label: Butik
+          separator: ', '
+        uid:
+          label: Kund
+          separator: ', '
+        mail:
+          label: E-post
+          separator: ', '
+        total_price__number:
+          label: Totalt
+          separator: ', '
+        changed:
+          label: Uppdaterad
+          separator: ', '
+        operations:
+          label: Funktioner
+      filters:
+        type:
+          expose:
+            label: Typ
+  page_1:
+    display_title: Sida
