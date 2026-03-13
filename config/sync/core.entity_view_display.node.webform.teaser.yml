@@ -5,6 +5,7 @@ dependencies:
   config:
     - core.entity_view_mode.node.teaser
     - field.field.node.webform.body
+    - field.field.node.webform.layout_builder__layout
     - field.field.node.webform.webform
     - node.type.webform
   module:
@@ -18,18 +19,19 @@ bundle: webform
 mode: teaser
 content:
   body:
-    label: hidden
     type: text_summary_or_trimmed
-    weight: 101
+    label: hidden
     settings:
       trim_length: 600
     third_party_settings: {  }
+    weight: 101
     region: content
   links:
-    weight: 100
     settings: {  }
     third_party_settings: {  }
+    weight: 100
     region: content
 hidden:
   langcode: true
+  layout_builder__layout: true
   webform: true
