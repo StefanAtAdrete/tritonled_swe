@@ -4,37 +4,178 @@ status: true
 dependencies:
   config:
     - field.field.node.webform.body
+    - field.field.node.webform.layout_builder__layout
     - field.field.node.webform.webform
     - node.type.webform
   module:
-    - text
+    - bootstrap_layout_builder
+    - layout_builder
     - user
-    - webform
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_1'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+          regions_attributes:
+            blb_region_col_1: null
+          breakpoints: {  }
+          layout_regions_classes: {  }
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+          context_mapping: {  }
+        components:
+          e59ccef7-48ca-4b2c-bb91-02a295233a4d:
+            uuid: e59ccef7-48ca-4b2c-bb91-02a295233a4d
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:webform:body'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          de188fec-50db-4ac1-aef2-4b8e12d873b5:
+            uuid: de188fec-50db-4ac1-aef2-4b8e12d873b5
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:webform:webform'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: webform_entity_reference_entity_view
+                label: hidden
+                settings:
+                  source_entity: true
+                  lazy: false
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+          faab6739-b5ee-4ab8-a706-b86a5cea5ede:
+            uuid: faab6739-b5ee-4ab8-a706-b86a5cea5ede
+            region: blb_region_col_1
+            configuration:
+              id: 'extra_field_block:node:webform:links'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+            weight: 2
+            additional: {  }
+        third_party_settings: {  }
 _core:
   default_config_hash: 3r1i0UMUbeNHhvmiqHDYznoS4G9XR1jq6lQ49r80lDE
 id: node.webform.default
 targetEntityType: node
 bundle: webform
 mode: default
-content:
-  body:
-    label: hidden
-    type: text_default
-    weight: 101
-    settings: {  }
-    third_party_settings: {  }
-    region: content
-  links:
-    weight: 100
-    settings: {  }
-    third_party_settings: {  }
-    region: content
-  webform:
-    weight: 102
-    label: hidden
-    settings: {  }
-    third_party_settings: {  }
-    type: webform_entity_reference_entity_view
-    region: content
+content: {  }
 hidden:
+  body: true
   langcode: true
+  layout_builder__layout: true
+  links: true
+  webform: true
