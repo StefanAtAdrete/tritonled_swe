@@ -3,7 +3,7 @@ langcode: sv
 status: true
 dependencies:
   content:
-    - 'block_content:basic:7f8653e9-722f-4195-a3bc-acaa2441b941'
+    - 'block_content:basic:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
   module:
     - block_content
   theme:
@@ -13,9 +13,9 @@ theme: tritonled_radix
 region: footer
 weight: 0
 provider: null
-plugin: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
+plugin: 'block_content:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
 settings:
-  id: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
+  id: 'block_content:96e0c8a4-4d50-4b07-a87f-06f9cf5b5ce0'
   label: 'Cookie-settings footer'
   label_display: '0'
   provider: block_content
