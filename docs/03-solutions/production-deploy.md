@@ -1,6 +1,7 @@
 # Production Deploy - TritonLED
 
 **Datum:** 2026-03-10  
+**Uppdaterad:** 2026-03-15
 **Status:** ✅ Klar — sajten live på preview.affarsfabriken.se
 
 ---
@@ -17,6 +18,53 @@
 | **DB** | MariaDB 10.11 | MariaDB (CloudPanel) |
 | **Webserver** | nginx-fpm | nginx (CloudPanel) |
 | **Preview-URL** | tritonled.ddev.site | https://preview.affarsfabriken.se |
+
+---
+
+## ⚠️ KRITISKT: Custom block content följer INTE med i deploy
+
+**Problem:** `block_content`-entiteter är *innehåll* (inte config) och synkas aldrig via `cim`.
+Block-*placeringar* (region, synlighet) följer med — men inte *innehållet* i blocket.
+
+**Symptom på prod:** "This block is broken or missing."
+
+### Lösning A — Använd Views med Custom text (rekommenderas)
+Views är ren config och exporteras/importeras via `cex`/`cim`.
+Custom text-fältet kan också översättas via Drupals översättningssystem.
+
+```
+Admin → Structure → Views → Add view
+→ Display: Block
+→ Fields: Global: Custom text → skriv HTML direkt
+→ Spara → ddev drush cex -y
+```
+
+### Lösning B — Återskapa block_content manuellt på prod (nödlösning)
+```bash
+vendor/bin/drush php:eval "
+\$block = \Drupal\block_content\Entity\BlockContent::create([
+  'uuid' => '[UUID från block.block.*.yml]',
+  'type' => 'basic',
+  'info' => 'Blocknamn',
+  'body' => ['value' => '<p>HTML här</p>', 'format' => 'full_html'],
+]);
+\$block->save();
+echo 'Created: ' . \$block->uuid();
+"
+vendor/bin/drush cr
+```
+
+UUID hittas i `config/sync/block.block.[block-id].yml` under `plugin:`.
+
+---
+
+## ⚠️ JS-cache efter deploy
+
+Efter deploy med ny JS-kod — servercachen rensas med `drush cr` men **browsercachen** rensas inte automatiskt.
+
+**Symptom:** Ny JavaScript-behavior fungerar inte trots att `drush cr` körts.
+
+**Lösning:** Hård reload i browsern: `Ctrl+Shift+R` (Win/Linux) eller `Cmd+Shift+R` (Mac).
 
 ---
 
@@ -158,15 +206,23 @@ git push origin main
 # VPS — hämta och importera
 cd /home/tritonled/htdocs/tritonled.se
 git pull origin main
-composer install --no-dev --optimize-autoloader
-vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web updb -y
-vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web cim -y
-vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web cr
+vendor/bin/drush cim -y
+vendor/bin/drush cr
 ```
 
 ---
 
 ## Kända problem & lärdomar
+
+### Custom block content på prod
+- ❌ Följer INTE med i `cim` — är innehåll, inte config
+- ✅ Använd Views med Custom text för statiska block
+- ✅ Menyer för navigerbara länkar (översättningsbara)
+- Se avsnitt "KRITISKT: Custom block content" ovan
+
+### JS-cache på prod
+- `drush cr` rensar server-cache men inte browser-cache
+- Hård reload krävs: `Ctrl+Shift+R` / `Cmd+Shift+R`
 
 ### SSH-autentisering
 - SSH-nyckel (`~/.ssh/id_ed25519`) har passphrase som Stefan inte minns
@@ -192,7 +248,7 @@ vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web cr
 
 ### jsonrpc deprecation-varning
 - `Drupal\jsonrpc` ger PHP 8.4 deprecation-varning
-- Är en dev-modul — bör avinstalleras på produktion (se ENVIRONMENT-STRATEGY.md)
+- Är en dev-modul — bör avinstalleras på produktion
 
 ---
 
@@ -200,7 +256,6 @@ vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web cr
 
 - [ ] Avinstallera dev-moduler på produktion (jsonrpc, mcp_tools, field_ui etc.)
 - [ ] Sätta upp SSH-nyckel utan passphrase för smidigare deploy
-- [ ] Automatisera deploy-scriptet
 - [ ] Flytta `tritonled.se` DNS till VPS när sajten är godkänd
-- [ ] Let's Encrypt för `tritonled.se` och `www.tritonled.se` efter DNS-flytt
+- [ ] Let's Encrypt för `tritonled.se` och `www.tritonled\.se` efter DNS-flytt
 - [ ] Sätta upp cron för Feeds-import på produktion
