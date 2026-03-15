@@ -91,4 +91,24 @@
     }
   };
 
+  /**
+   * Klaro cookie consent — open via .klaro-open links.
+   *
+   * Views Custom text strippar onclick-attribut av säkerhetsskäl.
+   * Lösning: ge länken klassen "klaro-open" i View:en och hantera
+   * klicket här istället.
+   */
+  Drupal.behaviors.tritonledKlaroOpen = {
+    attach: function (context, settings) {
+      once('klaro-open', '.klaro-open', context).forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (typeof klaro !== 'undefined') {
+            klaro.show();
+          }
+        });
+      });
+    }
+  };
+
 })(Drupal, once);
