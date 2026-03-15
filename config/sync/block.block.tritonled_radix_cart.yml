@@ -14,7 +14,7 @@ third_party_settings:
 id: tritonled_radix_cart
 theme: tritonled_radix
 region: topbar_right
-weight: -6
+weight: -9
 provider: null
 plugin: commerce_cart
 settings:
