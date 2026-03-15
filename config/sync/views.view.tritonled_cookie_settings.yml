@@ -96,7 +96,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '<a href="#" onclick="klaro.show(); return false;">Cookie-inställningar</a>'
+            text: '<a href="#" class="klaro-open">Cookie-inställningar</a>'
             make_link: false
             path: ''
             absolute: false
