@@ -1,0 +1,8 @@
+label: 'Tritonled kontakt oss knapp'
+display:
+  default:
+    display_options:
+      fields:
+        nothing:
+          alter:
+            text: '<a class="btn btn-primary" href="/sv/form/contact">Kontakta oss</a>'
