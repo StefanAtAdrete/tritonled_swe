@@ -1,0 +1,29 @@
+uuid: ab6aa01c-acaf-4efa-8981-6f70067faed3
+langcode: en
+status: true
+dependencies:
+  config:
+    - system.menu.main
+  module:
+    - block_class
+    - system
+  theme:
+    - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: menu--offcanvas-nav
+id: tritonled_radix_mainnavigation
+theme: tritonled_radix
+region: navbar_offcanvas
+weight: -8
+provider: null
+plugin: 'system_menu_block:main'
+settings:
+  id: 'system_menu_block:main'
+  label: 'Main navigation'
+  label_display: visible
+  provider: system
+  level: 1
+  depth: null
+  expand_all_items: false
+visibility: {  }

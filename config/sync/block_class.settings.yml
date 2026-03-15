@@ -15,6 +15,7 @@ block_classes_stored:
   - gap-2
   - mt-2
   - p-0
+  - menu--offcanvas-nav
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10
