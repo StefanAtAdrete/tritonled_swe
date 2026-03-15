@@ -3,7 +3,7 @@ langcode: sv
 status: true
 dependencies:
   content:
-    - 'block_content:basic:3162d6c9-1706-43a0-80e2-be328c15be96'
+    - 'block_content:basic:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
   module:
     - block_class
     - block_content
@@ -18,9 +18,9 @@ theme: tritonled_radix
 region: topbar_right
 weight: 0
 provider: null
-plugin: 'block_content:3162d6c9-1706-43a0-80e2-be328c15be96'
+plugin: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
 settings:
-  id: 'block_content:3162d6c9-1706-43a0-80e2-be328c15be96'
+  id: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
   label: 'Contact us - button'
   label_display: '0'
   provider: block_content

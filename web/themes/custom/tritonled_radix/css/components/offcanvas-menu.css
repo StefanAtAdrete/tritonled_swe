@@ -1,0 +1,33 @@
+/**
+ * Offcanvas mobile menu — undermeny med collapse.
+ * Chevron roterar när undermenyn är öppen.
+ */
+
+.offcanvas-submenu-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  font-weight: inherit;
+}
+
+.offcanvas-submenu-toggle:hover,
+.offcanvas-submenu-toggle:focus {
+  background: none;
+  color: var(--bs-nav-link-hover-color);
+}
+
+.offcanvas-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.offcanvas-submenu-toggle[aria-expanded="true"] .offcanvas-chevron {
+  transform: rotate(90deg);
+}
+
+.offcanvas-submenu {
+  border-left: 2px solid var(--bs-border-color);
+}
