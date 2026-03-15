@@ -35,6 +35,11 @@ body {
   z-index: 400;
 }
 
+/* Cart-dropdown — måste ligga över sticky navbar (400) */
+.cart-block--contents {
+  z-index: 999 !important;
+}
+
 /* Navbar-höjd */
 .navbar .container {
   min-height: 64px;
