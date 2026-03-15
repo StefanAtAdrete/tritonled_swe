@@ -14,7 +14,7 @@ third_party_settings:
 id: tritonled_radix_languageswitcher_2
 theme: tritonled_radix
 region: topbar_right
-weight: 0
+weight: -7
 provider: null
 plugin: 'language_block:language_interface'
 settings:

@@ -1,0 +1,46 @@
+label: Betalningar
+display:
+  default:
+    display_title: Förvald
+    display_options:
+      title: Betalningar
+      fields:
+        amount__number:
+          label: Betalning
+          separator: ', '
+        refunded_amount__number:
+          separator: ', '
+        avs_response_code_label:
+          separator: ', '
+        avs_response_code:
+          separator: ', '
+        state:
+          label: Läge
+          separator: ', '
+        payment_gateway:
+          separator: ', '
+        authorized:
+          separator: ', '
+        completed:
+          label: Slutförd
+          separator: ', '
+        remote_id:
+          separator: ', '
+        operations:
+          label: Funktioner
+      exposed_form:
+        options:
+          submit_button: Applicera
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
+      arguments:
+        order_id:
+          exception:
+            title: Alla
+  page_1:
+    display_title: Sida
+    display_options:
+      menu:
+        title: Betalningar

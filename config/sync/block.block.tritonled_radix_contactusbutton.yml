@@ -1,6 +1,6 @@
 uuid: 76e1aaf6-8887-4ad8-895c-2a65d6069a44
 langcode: sv
-status: true
+status: false
 dependencies:
   content:
     - 'block_content:basic:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
@@ -16,7 +16,7 @@ third_party_settings:
 id: tritonled_radix_contactusbutton
 theme: tritonled_radix
 region: topbar_right
-weight: 0
+weight: -6
 provider: null
 plugin: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
 settings:
