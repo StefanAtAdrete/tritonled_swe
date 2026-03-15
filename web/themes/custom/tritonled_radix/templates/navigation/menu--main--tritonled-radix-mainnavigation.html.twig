@@ -1,0 +1,44 @@
+{#
+/**
+ * @file
+ * menu--main--tritonled-radix-mainnavigation.html.twig
+ *
+ * Offcanvas mobile menu — Bootstrap Collapse för undermenyer.
+ * Används ENBART i region navbar_offcanvas (mobil).
+ * Desktop-menyn använder Radix dropdown via navbar_left.
+ */
+#}
+<ul class="navbar-nav flex-column w-100">
+  {% for item in items %}
+    {% set item_id = 'offcanvas-submenu-' ~ loop.index %}
+    <li class="nav-item{% if item.below %} has-children{% endif %}{% if item.in_active_trail %} active{% endif %}">
+      {% if item.below %}
+        {# Förälder med undermeny — en knapp som togglar collapse, ingen sidnavigering #}
+        <button
+          class="nav-link w-100 text-start d-flex align-items-center justify-content-between offcanvas-submenu-toggle{% if item.in_active_trail %} active{% endif %}"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#{{ item_id }}"
+          aria-expanded="false"
+          aria-controls="{{ item_id }}">
+          <span>{{ item.title }}</span>
+          <span class="offcanvas-chevron">&#8250;</span>
+        </button>
+        <ul class="collapse list-unstyled offcanvas-submenu ps-3" id="{{ item_id }}">
+          {% for child in item.below %}
+            <li class="nav-item{% if child.in_active_trail %} active{% endif %}">
+              {{ link(child.title, child.url, {
+                'class': ['nav-link', 'py-2', child.in_active_trail ? 'active' : '']
+              }) }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        {# Länk utan undermeny #}
+        {{ link(item.title, item.url, {
+          'class': ['nav-link', item.in_active_trail ? 'active' : '']
+        }) }}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

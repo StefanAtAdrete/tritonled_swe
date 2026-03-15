@@ -1,5 +1,5 @@
 settings:
-  confirmation_message: 'Ditt meddelande har skickats.'
+  confirmation_message: '<p>Ditt meddelande har skickats.</p>'
 handlers:
   email_confirmation:
     label: E-postbekräftelse

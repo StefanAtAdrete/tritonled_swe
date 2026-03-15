@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "003f9b1f65fd3ed0dea077ea93a4f818",
+    "content-hash": "01e93d9ebabe170aa141149b4a6166d2",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -2279,6 +2279,71 @@
             ],
             "support": {
                 "source": "https://git.drupalcode.org/project/ai_agents"
+            }
+        },
+        {
+            "name": "drupal/ai_provider_ollama",
+            "version": "1.2.0-rc2",
+            "source": {
+                "type": "git",
+                "url": "https://git.drupalcode.org/project/ai_provider_ollama.git",
+                "reference": "1.2.0-rc2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://ftp.drupal.org/files/projects/ai_provider_ollama-1.2.0-rc2.zip",
+                "reference": "1.2.0-rc2",
+                "shasum": "f8473ca3fe1ff17741c88d97a084e0ebeecbaf39"
+            },
+            "require": {
+                "drupal/ai": "^1.2.0",
+                "drupal/core": "^10.2 || ^11"
+            },
+            "type": "drupal-module",
+            "extra": {
+                "drupal": {
+                    "version": "1.2.0-rc2",
+                    "datestamp": "1764859585",
+                    "security-coverage": {
+                        "status": "not-covered",
+                        "message": "RC releases are not covered by Drupal security advisories."
+                    }
+                }
+            },
+            "notification-url": "https://packages.drupal.org/8/downloads",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "kevinquillen",
+                    "homepage": "https://www.drupal.org/user/317279"
+                },
+                {
+                    "name": "marcus_johansson",
+                    "homepage": "https://www.drupal.org/user/385947"
+                },
+                {
+                    "name": "scott_euser",
+                    "homepage": "https://www.drupal.org/user/3267594"
+                },
+                {
+                    "name": "seogow",
+                    "homepage": "https://www.drupal.org/user/3065779"
+                },
+                {
+                    "name": "wouters_f",
+                    "homepage": "https://www.drupal.org/user/721548"
+                },
+                {
+                    "name": "yautja_cetanu",
+                    "homepage": "https://www.drupal.org/user/626050"
+                }
+            ],
+            "description": "Ollama provider implementation for the AI module for Drupal",
+            "homepage": "https://www.drupal.org/project/ai_provider_ollama",
+            "support": {
+                "source": "https://git.drupalcode.org/project/ai_provider_ollama"
             }
         },
         {
@@ -14220,6 +14285,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "drupal/ai_provider_ollama": 5,
         "drupal/canvas": 10,
         "drupal/commerce_feeds": 15,
         "drupal/feeds": 20,
@@ -14232,5 +14298,5 @@
     "prefer-lowest": false,
     "platform": {},
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }

@@ -1,27 +1,29 @@
-uuid: 29586255-e8ad-4e14-a70e-a48e478643ac
+uuid: ab6aa01c-acaf-4efa-8981-6f70067faed3
 langcode: en
 status: true
 dependencies:
   config:
     - system.menu.main
   module:
+    - block_class
     - system
   theme:
     - tritonled_radix
-_core:
-  default_config_hash: KWAiziL39uEzmOJEql_wbUP2RtqGceL3WM2CfxhMelE
-id: tritonled_radix_main_menu
+third_party_settings:
+  block_class:
+    classes: menu--offcanvas-nav
+id: tritonled_radix_mainnavigation
 theme: tritonled_radix
-region: navbar_left
-weight: -9
+region: navbar_offcanvas
+weight: -8
 provider: null
 plugin: 'system_menu_block:main'
 settings:
   id: 'system_menu_block:main'
   label: 'Main navigation'
-  label_display: '0'
+  label_display: visible
   provider: system
   level: 1
-  depth: 2
-  expand_all_items: true
+  depth: null
+  expand_all_items: false
 visibility: {  }
