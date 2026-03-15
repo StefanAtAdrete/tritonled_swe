@@ -1,73 +1,94 @@
 # TASK-016: Navigation & Mobil meny
 
 ## Status: COMPLETED
+**Senast uppdaterad:** 2026-03-15
+
+---
 
 ## Mål
 Snygga till navbar och mobilmeny — konsekvent design, rätt Bootstrap-klasser, bra UX på mobil.
 
 ---
 
-## Genomfört denna session
+## Genomfört (alla sessioner)
 
-### Block Layout — Topbar right
-- **Get a quote** (Commerce Cart-block) — Pages: Show only `product/*`
-- **Contact us - button** (Custom content block) — Pages: Hide for `product/*`
-- **Language switcher** — Topbar right + Navbar left 3
+### Topbar & CTA-knappar
+- "Få offert" (Cart-block) — visas på `product/*`
+- "Kontakta oss" — visas på alla andra sidor
+- Synlighetsvillkor matchar mot `currentPath` UTAN språkprefix och UTAN inledande `/`
+- Rätt mönster: `product/*` (inte `/sv/product/*`)
 
-**Viktigt:** Drupal Pages-villkor matchar mot `currentPath` UTAN språkprefix och UTAN inledande `/`.
-Rätt mönster: `product/*` (inte `/sv/product/*`)
+### Offcanvas mobilmeny — collapse-struktur (denna session)
+- Ny region `navbar_offcanvas` tillagd i `tritonled_radix.info.yml`
+- Separat meny-block `tritonled_radix_mainnavigation` placerat i `navbar_offcanvas`
+- `page.html.twig` + `page--front.html.twig` uppdaterade — offcanvas-body använder `navbar_offcanvas` istället för `navbar_left`
+- Template: `menu--main--tritonled-radix-mainnavigation.html.twig` — Bootstrap Collapse-struktur
+- `hook_theme_suggestions_menu_alter` + `preprocess_block` i `tritonled_radix.theme`
+- CSS: `css/components/offcanvas-menu.css` — chevron-rotation, knapp-reset
+- Förälderlänk med undermeny = `<button>` med `justify-content-between` (ingen sidladdning)
 
-### Contact us - button
-- Nytt Custom content block med länk till `/sv/form/contact`
-- HTML: `<a href="/sv/form/contact" class="btn btn-primary">Kontakta oss</a>`
-- Skapad via Admin → Content → Block content
+### Cart z-index
+- `.cart-block--contents { z-index: 999 !important }` i `style.css`
+- Commerce's egen CSS sätter z-index: 300 — vår override krävs
 
-### Block class-klasser
-- User account menu: `d-none d-lg-flex align-items-center gap-3`
-- Language switcher (Topbar right): `d-none d-lg-flex align-items-center`
+### Custom block content → Views (deploy-fix)
+- **Problem:** `block_content`-entiteter är innehåll, inte config — följer inte med i `cim`
+- **Lösning:** Bytt ut mot Views med Global: Custom text-fält
+- "Kontakta oss"-knapp → View `tritonled_contact_button` (block display)
+- "Cookie-inställningar" → View `tritonled_cookie_settings` (block display)
+- Views är ren config — exporteras med `cex`, importeras med `cim` ✅
+- Views Custom text kan översättas via Drupals översättningssystem ✅
 
-### CSS-ändringar i style.css
-- `.navbar.sticky-top { z-index: 400 }` — under Drupal admin contextual (600+)
-- `.topbar .cart-block--link__expand` — override btn-sm till standard btn-storlek
-- `.block--tritonled-radix-account-menu .navbar-nav` — flex-direction: row för samma rad
-
-### Offcanvas-template (page.html.twig + page--front.html.twig)
-- Språkväljare (navbar_left_3) i offcanvas-header bredvid logotyp
-- Topbar right renderas i offcanvas-body (språkväljare + CTA-knappar)
-- **Begränsning:** Drupal renderar inte samma block två gånger — User account menu
-  syns därför inte i offcanvas (renderas redan i topbar_left på desktop)
-
-### Öppna frågor / att sova på
-- **User account menu i offcanvas** — behövs det?
-  - Alternativ A: Lägg till andra block-instans i Header-region, rendera i offcanvas
-  - Alternativ B: Sätt Roles-villkor (bara visa för authenticated) — förenklar allt
-  - Alternativ C: Lämna som det är (B2B-besökare loggar sällan in på mobil)
-
-- **Get a quote-block titeln** — översätts via Interface Translation
-  `/en/admin/config/regional/translate` → sök "Get a quote"
+### Klaro cookie-länk
+- Views Custom text strippar `onclick`-attribut av säkerhetsskäl
+- Lösning: CSS-klass `klaro-open` på länken + JS-behavior i `global.js`
+- `Drupal.behaviors.tritonledKlaroOpen` hanterar klick och anropar `klaro.show()`
 
 ---
 
-## Kvarvarande arbete
-- [x] Besluta om User account menu på mobil — lämnas som det är (C)
-- [x] Interface Translation för "Get a quote" → "Få offert" — klar
-- [x] Testa mobilvy som anonym användare (inkognito) — klar
-- [ ] Kontrollera offcanvas på riktiga mobila enheter
+## Lärdomar
+
+### Custom block content följer INTE med i deploy
+- Block-*placeringar* (config) följer med via `cim`
+- Block-*innehåll* (block_content-entiteter) är databas-innehåll — måste skapas manuellt på prod
+- **Lösning:** Använd Views med Custom text för statiska block som behöver deploy-säkerhet
+
+### Views kan översättas
+- Views Custom text-fält kan översättas via Drupals inbyggda översättningssystem
+- Menyer är alternativet om redaktörer behöver redigera via UI
+
+### JS-cache på prod
+- Efter deploy med ny JS — hård reload (Ctrl+Shift+R) krävs i browsern för att se ny kod
+- `drush cr` rensar server-cache men inte browser-cache
+
+### hook_theme_suggestions_menu_alter
+- Lägger till block-ID som template-suggestion för menyer
+- Kräver `preprocess_block` som skickar `block_id` till menu-elementets attributes
+- Ger `menu--main--[block-id].html.twig` per block-instans
 
 ---
 
-## Tekniska noter
+## Tekniska filer
 
-### Templatefiler
+### Templates
 - `web/themes/custom/tritonled_radix/templates/page/page.html.twig`
 - `web/themes/custom/tritonled_radix/templates/page/page--front.html.twig`
+- `web/themes/custom/tritonled_radix/templates/navigation/menu--main--tritonled-radix-mainnavigation.html.twig`
+
+### CSS
+- `web/themes/custom/tritonled_radix/css/style.css` — cart z-index
+- `web/themes/custom/tritonled_radix/css/components/offcanvas-menu.css` — chevron, knapp
+
+### JS
+- `web/themes/custom/tritonled_radix/js/global.js` — Klaro behavior
+
+### Theme
+- `web/themes/custom/tritonled_radix/tritonled_radix.theme` — hook_theme_suggestions_menu_alter, preprocess_block
+- `web/themes/custom/tritonled_radix/tritonled_radix.info.yml` — region navbar_offcanvas
 
 ### Block-ID:n
+- Desktop-meny: `tritonled_radix_main_menu` (navbar_left)
+- Offcanvas-meny: `tritonled_radix_mainnavigation` (navbar_offcanvas)
 - Cart/offert-block: `tritonled_radix_cart`
-- Contact us button: content block (skapad manuellt)
-- Language switcher desktop: `tritonled_radix_languageswitcher` (Topbar right)
-- Language switcher offcanvas: `tritonled_radix_languageswitcher_2` (Navbar left 3)
-
-### Regioner i TritonLED Radix
-topbar_left, topbar_right, navbar_branding, navbar_left, navbar_left_2,
-navbar_left_3, navbar_right, header, content, sidebar_first, sidebar_second, footer
+- Kontakta oss (View): `tritonled_radix_views_block__tritonled_contact_button_block_1`
+- Cookie-inställningar (View): `tritonled_radix_views_block__tritonled_cookie_s...`
