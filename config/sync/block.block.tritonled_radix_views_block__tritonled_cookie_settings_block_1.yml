@@ -1,0 +1,24 @@
+uuid: d17241f0-7ea9-4f3f-9ad0-b1551cffd3ea
+langcode: sv
+status: true
+dependencies:
+  config:
+    - views.view.tritonled_cookie_settings
+  module:
+    - views
+  theme:
+    - tritonled_radix
+id: tritonled_radix_views_block__tritonled_cookie_settings_block_1
+theme: tritonled_radix
+region: footer
+weight: 0
+provider: null
+plugin: 'views_block:tritonled_cookie_settings-block_1'
+settings:
+  id: 'views_block:tritonled_cookie_settings-block_1'
+  label: ''
+  label_display: '0'
+  provider: views
+  views_label: ''
+  items_per_page: null
+visibility: {  }
