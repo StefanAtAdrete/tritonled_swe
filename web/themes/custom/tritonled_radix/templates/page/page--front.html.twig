@@ -2,11 +2,13 @@
 /**
  * @file
  * TritonLED front page template.
+ *
+ * topbar_right renderas INTE i offcanvas — Cart-block är desktop-only.
  */
 #}
 <div class="page">
 
-  {# TOPBAR #}
+  {# TOPBAR — desktop only #}
   {% if page.topbar_left or page.topbar_right %}
   <div class="topbar bg-white border-bottom py-2">
     <div class="container d-flex align-items-center">
@@ -77,21 +79,12 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
+      {# navbar_offcanvas: huvudmeny + cart-länk (product/*) + kontakta oss #}
       {% if page.navbar_offcanvas %}
         {{ page.navbar_offcanvas }}
       {% endif %}
       {% if page.navbar_left_2 %}
         {{ page.navbar_left_2 }}
-      {% endif %}
-      {% if page.navbar_right %}
-        <hr>
-        {{ page.navbar_right }}
-      {% endif %}
-      {% if page.topbar_right %}
-        <hr>
-        <div class="d-flex align-items-center gap-3">
-          {{ page.topbar_right }}
-        </div>
       {% endif %}
     </div>
   </div>
