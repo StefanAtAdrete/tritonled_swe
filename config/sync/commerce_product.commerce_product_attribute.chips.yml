@@ -1,0 +1,7 @@
+uuid: 1d868d40-6a11-4dae-b4bb-637f63bd9aae
+langcode: en
+status: true
+dependencies: {  }
+id: chips
+label: Chips/Modul
+elementType: select

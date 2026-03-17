@@ -1,0 +1,7 @@
+uuid: 9f870d53-53f9-44f7-8b41-cc3d3c5293e2
+langcode: en
+status: true
+dependencies: {  }
+id: sensor
+label: 'Sensor / Batteritid'
+elementType: select

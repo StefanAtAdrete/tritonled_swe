@@ -1,0 +1,7 @@
+uuid: 7f4d406a-76ae-4477-b952-21bfde2b1a91
+langcode: en
+status: true
+dependencies: {  }
+id: ip_class
+label: IP-klass
+elementType: select

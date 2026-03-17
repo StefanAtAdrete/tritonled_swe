@@ -1,0 +1,7 @@
+uuid: 037e99a1-0dcf-44f9-b791-347916116a53
+langcode: en
+status: true
+dependencies: {  }
+id: kelvin
+label: 'Kelvin (CCT)'
+elementType: select

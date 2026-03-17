@@ -1,0 +1,11 @@
+uuid: 7688f52f-4c1f-4e34-a693-631e74584b3e
+langcode: en
+status: true
+dependencies: {  }
+id: led_luminaire_max_opti
+label: 'LED Luminaire MAX/OPTI'
+traits:
+  - purchasable_entity_shippable
+locked: false
+orderItemType: qoute
+generateTitle: true

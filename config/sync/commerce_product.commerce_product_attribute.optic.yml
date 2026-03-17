@@ -1,0 +1,7 @@
+uuid: 814b8127-b47f-4dfa-a09e-d6abb359fdc0
+langcode: en
+status: true
+dependencies: {  }
+id: optic
+label: 'Optik (grader)'
+elementType: select
