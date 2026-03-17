@@ -4,8 +4,7 @@ status: true
 dependencies: {  }
 id: led_luminaire_max_opti
 label: 'LED Luminaire MAX/OPTI'
-traits:
-  - purchasable_entity_shippable
+traits: {  }
 locked: false
 orderItemType: qoute
 generateTitle: true

@@ -4,8 +4,7 @@ status: true
 dependencies: {  }
 id: led_luminaire_srow
 label: 'LED Luminaire SROW'
-traits:
-  - purchasable_entity_shippable
+traits: {  }
 locked: false
 orderItemType: qoute
 generateTitle: true
