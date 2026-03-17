@@ -1,0 +1,11 @@
+uuid: 6928e867-5de1-4381-974d-78434892b184
+langcode: en
+status: true
+dependencies: {  }
+id: led_luminaire_srow
+label: 'LED Luminaire SROW'
+traits:
+  - purchasable_entity_shippable
+locked: false
+orderItemType: qoute
+generateTitle: true

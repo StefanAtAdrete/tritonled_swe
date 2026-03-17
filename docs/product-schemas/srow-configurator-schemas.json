@@ -1,0 +1,269 @@
+{
+  "source": "https://triton-solutions.co/sw/catalogue/industrial/linear/config/",
+  "fetched": "2026-03-17",
+  "note": "SROW är fundamentalt annorlunda än MAX/OPTI. Unika attribut: 'chips' (48/72 chips per modul) och 'ipClass' (IP54/IP65). Ingen sensor-modell. Endast Cable Gland. Ingen CRI-väljare. Optik: 60°/90°/145° Batwing (ej 30° HighRack). SKU-prefix S- (ej TS-).",
+  "models": [
+    {
+      "slug": "srow-base",
+      "productName": "Triton SROW Gen. 3 (Base) IP54/IP65",
+      "skuPrefix": "S-",
+      "note": "3 längder (0,6/1,2/1,8m). Unika attribut: chips (48/72) och ipClass (IP54/IP65). Watt beror på chips+längd. Ingen CRI-väljare. Bara Cable Gland.",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,6m" },
+            { "code": "B", "label": "1,2m" },
+            { "code": "C", "label": "1,8m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "0", "label": "On/Off" },
+            { "code": "2", "label": "DALI2" },
+            { "code": "3", "label": "B2LD2 (D4i)" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland" }
+          ]
+        },
+        {
+          "id": "chips",
+          "skuPart": "middle",
+          "options": [
+            { "code": "7", "label": "72 Chips/Modul" },
+            { "code": "4", "label": "48 Chips/Modul" }
+          ]
+        },
+        {
+          "id": "ipClass",
+          "skuPart": "middle",
+          "options": [
+            { "code": "Y", "label": "IP54 Class" },
+            { "code": "W", "label": "IP65 Class" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "note": "Watt beror på chips+längd (ej CRI+längd som MAX/OPTI)",
+          "options": [
+            { "code": "15", "label": "15W 2781lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "22", "label": "22W 3862lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "30", "label": "30W 5490lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "44", "label": "44W 7656lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "45", "label": "45W 8235lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "66", "label": "66W 11484lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "17", "label": "17W 3111lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "25", "label": "25W 4350lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "34", "label": "34W 6222lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "50", "label": "50W 8700lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "51", "label": "51W 9333lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "75", "label": "75W 13050lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["C"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "note": "Helt andra optiker än MAX/OPTI. Ingen 30° HighRack. Unik 145° Batwing.",
+          "options": [
+            { "code": "M", "label": "60° Medium" },
+            { "code": "V", "label": "90° Wide" },
+            { "code": "B", "label": "145° Batwing" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "srow-e",
+      "productName": "Triton SROW-E Gen. 3. (Emergency)",
+      "skuPrefix": "SE-",
+      "note": "Endast 0,8m. Endast 48 chips. Nödljus 3W. IP54/IP65-val finns.",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,8m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "0", "label": "On/Off" },
+            { "code": "2", "label": "DALI2" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland (IP43)" }
+          ]
+        },
+        {
+          "id": "chips",
+          "skuPart": "middle",
+          "options": [
+            { "code": "4", "label": "48 Chips/Modul" }
+          ]
+        },
+        {
+          "id": "ipClass",
+          "skuPart": "middle",
+          "options": [
+            { "code": "Y", "label": "IP54 Class" },
+            { "code": "W", "label": "IP65 Class" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "3", "label": "3W 483lm 350mA 161lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["A"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "options": [
+            { "code": "M", "label": "60° Medium" },
+            { "code": "V", "label": "90° Wide" },
+            { "code": "B", "label": "145° Batwing" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "srow-ed",
+      "productName": "Triton SROW-ED Gen. 3. (Emergency + Daylight) IP54/IP65",
+      "skuPrefix": "SED-",
+      "note": "Endast 0,8m. Dubbla ljuskretsar (drivdon 5/6/7). 48 eller 72 chips. IP54/IP65-val. Watt beror på chips.",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,8m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "5", "label": "Double On/OFF" },
+            { "code": "6", "label": "Light:D2/Em:On-OFF" },
+            { "code": "7", "label": "Light:D2/Em:D2" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland" }
+          ]
+        },
+        {
+          "id": "chips",
+          "skuPart": "middle",
+          "options": [
+            { "code": "7", "label": "72 Chips/Modul" },
+            { "code": "4", "label": "48 Chips/Modul" }
+          ]
+        },
+        {
+          "id": "ipClass",
+          "skuPart": "middle",
+          "options": [
+            { "code": "Y", "label": "IP54 Class" },
+            { "code": "W", "label": "IP65 Class" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "15", "label": "15W 2781lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "22", "label": "22W 3862lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["4"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "17", "label": "17W 3111lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "25", "label": "25W 4350lm 500mA 174lm/W", "dependsOnAny": [[{ "stepId": "chips", "codes": ["7"] }, { "stepId": "length", "codes": ["A"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "options": [
+            { "code": "M", "label": "60° Medium" },
+            { "code": "V", "label": "90° Wide" },
+            { "code": "B", "label": "145° Batwing" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    }
+  ]
+}

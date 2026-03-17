@@ -1,0 +1,7 @@
+uuid: 642c20f1-1542-434a-8922-ddff926a20b1
+langcode: en
+status: true
+dependencies: {  }
+id: endcap
+label: Ändstycke
+elementType: select

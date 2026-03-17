@@ -1,0 +1,24 @@
+uuid: ee0e65cf-d78b-46a6-a75f-45eda35afd6b
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.optic
+    - commerce_product.commerce_product_variation_type.led_luminaire_srow
+    - field.storage.commerce_product_variation.attribute_optic
+id: commerce_product_variation.led_luminaire_srow.attribute_optic
+field_name: attribute_optic
+entity_type: commerce_product_variation
+bundle: led_luminaire_srow
+label: 'Optik (grader)'
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_product_attribute_value'
+  handler_settings:
+    target_bundles:
+      optic: optic
+field_type: entity_reference

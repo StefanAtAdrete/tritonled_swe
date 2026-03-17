@@ -1,0 +1,387 @@
+{
+  "source": "https://triton-solutions.co/sw/catalogue/industrial/linear/config/",
+  "fetched": "2026-03-17",
+  "note": "Hämtat via browser automation från Next.js RSC payload. OPTI är Gen. 4 (jämfört med MAX Gen. 3). Optik-koden 'W' = 80° Wide för OPTI (inte 90° som för MAX).",
+  "models": [
+    {
+      "slug": "opti-base",
+      "productName": "Triton OPTI Gen. 4 (BASE)",
+      "skuPrefix": "O-",
+      "note": "Längder: 0,6/1,2/1,7/2,0m. 3 watt per längd. Optik W=80° (inte 90° som MAX).",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,6m" },
+            { "code": "B", "label": "1,2m" },
+            { "code": "C", "label": "1,7m" },
+            { "code": "D", "label": "2,0m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "0", "label": "On/Off" },
+            { "code": "2", "label": "DALI2" },
+            { "code": "3", "label": "B2LD2 (D4i)" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
+            { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
+            { "code": "V", "label": "W1", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] },
+            { "code": "B", "label": "Wago Dali Blue (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] },
+            { "code": "W", "label": "Wago Infinity (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] }
+          ]
+        },
+        {
+          "id": "cri",
+          "skuPart": "middle",
+          "options": [
+            { "code": "8", "label": "Ra80" },
+            { "code": "9", "label": "Ra90" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "21", "label": "21W 3843lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "31", "label": "31W 5425lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "44", "label": "44W 7260lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "42", "label": "42W 7686lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "62", "label": "62W 10850lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "88", "label": "88W 14520lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "63", "label": "63W 11529lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "93", "label": "93W 16275lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "132", "label": "132W 21780lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "84", "label": "84W 15372lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] },
+            { "code": "124", "label": "124W 21700lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] },
+            { "code": "154", "label": "154W 25410lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "note": "OBS: W=80° Wide för OPTI (inte 90° som för MAX)",
+          "options": [
+            { "code": "N", "label": "30° HighRack (Narrow)" },
+            { "code": "M", "label": "60° Medium" },
+            { "code": "V", "label": "80° Wide" },
+            { "code": "D", "label": "110° Diffuse" },
+            { "code": "S", "label": "Retail Symmetric1" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "opti-s",
+      "productName": "Triton OPTI-S Gen. 4 (Sensor)",
+      "skuPrefix": "OS-",
+      "note": "Längder: 0,8/1,4/1,9/2,2m (sensor tar extra plats). Samma watt-värden som opti-base. Cable Gland = IP20 (inte IP43).",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,8m" },
+            { "code": "B", "label": "1,4m" },
+            { "code": "C", "label": "1,9m" },
+            { "code": "D", "label": "2,2m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "0", "label": "On/Off" },
+            { "code": "2", "label": "DALI2" },
+            { "code": "3", "label": "B2LD2 (D4i)" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
+            { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
+            { "code": "V", "label": "W1", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] },
+            { "code": "B", "label": "Wago Dali Blue (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] },
+            { "code": "W", "label": "Wago Infinity (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] }
+          ]
+        },
+        {
+          "id": "cri",
+          "skuPart": "middle",
+          "options": [
+            { "code": "8", "label": "Ra80" },
+            { "code": "9", "label": "Ra90" }
+          ]
+        },
+        {
+          "id": "sensor",
+          "skuPart": "middle",
+          "semantics": "sensor_type",
+          "options": [
+            { "code": "M", "label": "Connect ME", "dependsOn": [{ "stepId": "driver", "codes": ["3"] }] },
+            { "code": "S", "label": "MultiSensor XS <4m", "dependsOn": [{ "stepId": "driver", "codes": ["3"] }] },
+            { "code": "X", "label": "MultiSensor XL <12m", "dependsOn": [{ "stepId": "driver", "codes": ["3"] }] },
+            { "code": "L", "label": "MultiSensor XXL <15m", "dependsOn": [{ "stepId": "driver", "codes": ["3"] }] },
+            { "code": "O", "label": "OnOff (ON) <6m (Up to 400W)", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] },
+            { "code": "P", "label": "OnOff (ON) <12m (Up to 400W)", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "21", "label": "21W 3843lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "31", "label": "31W 5425lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "44", "label": "44W 7260lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "42", "label": "42W 7686lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "62", "label": "62W 10850lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "88", "label": "88W 14520lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["B"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["B"] }]] },
+            { "code": "63", "label": "63W 11529lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "93", "label": "93W 16275lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "132", "label": "132W 21780lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["C"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["C"] }]] },
+            { "code": "84", "label": "84W 15372lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] },
+            { "code": "124", "label": "124W 21700lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] },
+            { "code": "154", "label": "154W 25410lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["D"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["D"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "options": [
+            { "code": "N", "label": "30° HighRack (Narrow)" },
+            { "code": "M", "label": "60° Medium" },
+            { "code": "V", "label": "80° Wide" },
+            { "code": "D", "label": "110° Diffuse" },
+            { "code": "S", "label": "Retail Symmetric1" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "opti-e",
+      "productName": "Triton OPTI-E Gen. 4. (Emergency)",
+      "skuPrefix": "OE-",
+      "note": "Endast 0,8m. Endast Ra80. Nödljus 3W. Sensor=batteritid. Cable Gland tillgänglig (skillnad mot MAX-E).",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,8m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "0", "label": "On/Off" },
+            { "code": "2", "label": "DALI2" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] },
+            { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] },
+            { "code": "V", "label": "Wago Grey (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] },
+            { "code": "B", "label": "Wago Dali Blue (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2"] }] },
+            { "code": "W", "label": "Wago Infinity (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] }
+          ]
+        },
+        {
+          "id": "cri",
+          "skuPart": "middle",
+          "options": [
+            { "code": "8", "label": "Ra80" }
+          ]
+        },
+        {
+          "id": "sensor",
+          "skuPart": "middle",
+          "semantics": "battery_duration",
+          "options": [
+            { "code": "B", "label": "1H Battery" },
+            { "code": "N", "label": "3H Battery" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "3", "label": "3W 483lm 350mA 161lm/W" }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "options": [
+            { "code": "N", "label": "30° HighRack (Narrow)" },
+            { "code": "M", "label": "60° Medium" },
+            { "code": "W", "label": "80° Wide" },
+            { "code": "D", "label": "110° Diffuse" },
+            { "code": "S", "label": "Retail Symmetric1" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "opti-ed",
+      "productName": "Triton OPTI-ED + Daylight Gen. 4. (Emergency+ Daylight)",
+      "skuPrefix": "OED-",
+      "note": "Endast 0,8m. Dubbla ljuskretsar. Drivdon 5/6/7 (samma som MAX-ED). Ra80+Ra90. Watt: 21/31/44W (samma som opti-base längd A).",
+      "steps": [
+        {
+          "id": "length",
+          "skuPart": "middle",
+          "options": [
+            { "code": "A", "label": "0,8m" }
+          ]
+        },
+        {
+          "id": "driver",
+          "skuPart": "middle",
+          "options": [
+            { "code": "5", "label": "Double On/OFF" },
+            { "code": "6", "label": "Light:D2/Em:On-OFF" },
+            { "code": "7", "label": "Light:D2/Em:D2" }
+          ]
+        },
+        {
+          "id": "endcap",
+          "skuPart": "middle",
+          "options": [
+            { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] },
+            { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] },
+            { "code": "V", "label": "Wago Grey (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5"] }] },
+            { "code": "B", "label": "Wago Dali Blue (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["6", "7"] }] },
+            { "code": "W", "label": "Wago Infinity (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] }
+          ]
+        },
+        {
+          "id": "cri",
+          "skuPart": "middle",
+          "options": [
+            { "code": "8", "label": "Ra80" },
+            { "code": "9", "label": "Ra90" }
+          ]
+        },
+        {
+          "id": "sensor",
+          "skuPart": "middle",
+          "semantics": "battery_duration",
+          "options": [
+            { "code": "B", "label": "1H Battery" },
+            { "code": "N", "label": "3H Battery" }
+          ]
+        },
+        {
+          "id": "kelvin",
+          "skuPart": "end",
+          "options": [
+            { "code": "-J", "label": "3000K" },
+            { "code": "-K", "label": "4000K" },
+            { "code": "-L", "label": "5000K" },
+            { "code": "-M", "label": "6500K" }
+          ]
+        },
+        {
+          "id": "watt",
+          "skuPart": "end",
+          "options": [
+            { "code": "21", "label": "21W 3843lm 350mA 183lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "31", "label": "31W 5425lm 500mA 175lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] },
+            { "code": "44", "label": "44W 7260lm 700mA 165lm/W", "dependsOnAny": [[{ "stepId": "cri", "codes": ["8"] }, { "stepId": "length", "codes": ["A"] }], [{ "stepId": "cri", "codes": ["9"] }, { "stepId": "length", "codes": ["A"] }]] }
+          ]
+        },
+        {
+          "id": "optic",
+          "skuPart": "end",
+          "options": [
+            { "code": "N", "label": "30° HighRack (Narrow)" },
+            { "code": "M", "label": "60° Medium" },
+            { "code": "W", "label": "80° Wide" },
+            { "code": "D", "label": "110° Diffuse" },
+            { "code": "S", "label": "Retail Symmetric1" }
+          ]
+        },
+        {
+          "id": "color",
+          "skuPart": "end",
+          "options": [
+            { "code": "1", "label": "Anodized Grey" },
+            { "code": "2", "label": "Black" },
+            { "code": "3", "label": "White" }
+          ]
+        }
+      ]
+    }
+  ]
+}

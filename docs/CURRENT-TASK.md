@@ -2,22 +2,23 @@
 
 **Task**: TASK-018 (Cart-sida layout)
 **Status**: Påbörjad
-**Senast uppdaterad**: 2026-03-15
+**Senast uppdaterad**: 2026-03-17
 
 ---
 
-## Vad som gjordes idag (2026-03-15)
+## Vad som gjordes idag (2026-03-17)
 
-### TASK-016 — Avslutad
-- Offcanvas collapse-meny med `navbar_offcanvas`-region och custom template
-- Cart z-index: 999
-- Custom block content → Views (deploy-säkert)
-- Klaro cookie-länk via JS-behavior (`.klaro-open`)
+### Produktarkitektur — Analys och dokumentation
+- Hämtat alla konfigurator-scheman från triton-solutions.co via browser automation (12 modeller, 3 serier)
+- Sparat i `/docs/product-schemas/` (max, opti, srow)
+- Dokumenterat arkitektur i `task-015-konfigurator-arkitektur.md`
+- Skapat TASK-020 (Produktarkitektur Rebuild) med sub-tasks
 
-### Lärdomar
-- Custom block content följer INTE med i `cim` — använd Views med Custom text istället
-- JS-cache på prod kräver hård reload efter deploy
-- Views Custom text kan översättas
+### Viktiga insikter
+- SROW är fundamentalt annorlunda: `chips`/`ip_class` istället för `cri`/`sensor`
+- Behövs 2 Commerce Product Types: `led_luminaire_max_opti` och `led_luminaire_srow`
+- Konfiguratorn (TASK-015) behöver lager-modellen: Commerce för data + JSON-schema + JS för UX
+- dependsOn-logiken kräver custom konfigurator — Commerce klarar det inte nativt
 
 ---
 
@@ -40,3 +41,4 @@
 | TASK-017 | Planned | task-017-cart-block-styling.md |
 | TASK-018 | In Progress | task-018-cart-page-layout.md |
 | TASK-013 | In Progress | task-013-attribut-cleanup.md |
+| TASK-020 | Not Started | task-020-produktarkitektur-rebuild.md |

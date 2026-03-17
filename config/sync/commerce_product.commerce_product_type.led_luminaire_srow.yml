@@ -1,0 +1,12 @@
+uuid: 9a6d6563-4ce9-4508-885e-f0ad20b1ffb8
+langcode: en
+status: true
+dependencies: {  }
+id: led_luminaire_srow
+label: 'LED Luminaire SROW'
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true
