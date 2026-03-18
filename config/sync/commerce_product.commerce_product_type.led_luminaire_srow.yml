@@ -7,6 +7,7 @@ label: 'LED Luminaire SROW'
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - led_luminaire_srow
 multipleVariations: true
 injectVariationFields: true
