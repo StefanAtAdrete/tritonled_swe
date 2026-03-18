@@ -1,0 +1,9 @@
+name: 'TritonLED Configurator'
+type: module
+description: 'Product configurator for LED luminaires. Reads JSON schema from commerce_product, builds SKU dynamically, adds custom order item to cart.'
+package: TritonLED
+core_version_requirement: ^11
+dependencies:
+  - commerce:commerce_order
+  - commerce:commerce_product
+  - commerce:commerce_cart

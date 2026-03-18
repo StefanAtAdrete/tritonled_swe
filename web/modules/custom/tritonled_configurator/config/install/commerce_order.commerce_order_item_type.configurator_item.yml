@@ -1,0 +1,13 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - commerce_product
+    - tritonled_configurator
+id: configurator_item
+label: 'Configurator Item'
+traits: {  }
+locked: false
+purchasableEntityType: commerce_product
+orderType: default
