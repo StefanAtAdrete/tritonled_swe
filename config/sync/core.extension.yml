@@ -144,6 +144,7 @@ module:
   tool_system: 0
   toolbar: 0
   tritonled_compat: 0
+  tritonled_configurator: 0
   tritonled_quote: 0
   update: 0
   user: 0

@@ -1,39 +1,39 @@
 # Aktuell Task
 
 **Task**: TASK-015 (Produktkonfigurator)
-**Status**: In Progress — SESSION 1 planerad
+**Status**: In Progress — SESSION 1 klar, SESSION 2 nästa
 **Senast uppdaterad**: 2026-03-18
 
 ---
 
-## Sessionsplan
+## Var vi är
 
-Se `/docs/tasks/task-015-session-plan.md` för fullständig plan.
+### SESSION 1 ✅ Klar (2026-03-18)
 
-### SESSION 1 (nästa) — Backend-grund
-**Mål**: `tritonled_configurator` modul + `configurator_item` order item type
+- ✅ 12 Commerce-produkter verifierade med `field_configurator_schema` ifyllt
+- ✅ `tritonled_configurator` modul skapad och aktiverad
+- ✅ `configurator_item` order item type registrerad i Drupal
+- ✅ Fält skapade: `field_configurator_sku` + `field_configurator_data`
+- ✅ Config exporterad, commit: `[TASK-015-01]`
 
-Steg:
-1. Verifiera att 12 produkter finns och att `field_configurator_schema` är ifyllt
-2. Skapa modul med `.info.yml`, grundstruktur
-3. Skapa `commerce_order_item_type.configurator_item.yml`
-4. Skapa fält: `field_configurator_sku`, `field_configurator_data`
-5. `ddev drush en tritonled_configurator -y`
+### SESSION 2 — nästa
 
-### SESSION 2 — JSON:API + Cart API
-### SESSION 3 — JS: rendering + dependsOn
-### SESSION 4 — JS: SKU-byggare + cart-POST
-### SESSION 5 — Styling + produktsida-integration
-### SESSION 6 — Schema-fyllning (om behövs)
+**Mål:** JSON:API-verifiering + Cart API-integration
 
----
+1. Testa att `field_configurator_schema` exponeras via JSON:API
+2. Testa Cart API POST med `configurator_item`
+3. Implementera PriceResolver (returnerar 0 för offert-flöde)
 
-## Öppna frågor inför SESSION 1
+### Kommande sessioner
+| Session | Fokus |
+|---------|-------|
+| SESSION 3 | JS: dropdown-rendering + dependsOn-filtrering |
+| SESSION 4 | JS: SKU-byggare + cart-knapp |
+| SESSION 5 | Styling + placering i Layout Builder |
+| SESSION 6 | Schema-fyllning (klar — ej behövs) |
 
-1. Är `field_configurator_schema` ifyllt på de 12 produkterna?
-2. Har varje produkt en dummy-variation? (Commerce-krav)
-3. Hur placeras konfiguratorn på produktsidan? (Block/Layout Builder rekommenderas)
-4. Prislösning för offert-flöde?
+Se fullständig plan: `/docs/tasks/task-015-session-plan.md`  
+Se task-detaljer: `/docs/tasks/task-015-variant-configurator.md`
 
 ---
 
@@ -41,7 +41,7 @@ Steg:
 
 | Task | Status | Fil |
 |------|--------|-----|
-| TASK-015 | 🔄 In Progress | task-015-session-plan.md |
+| TASK-015 | 🔄 SESSION 1 klar | task-015-variant-configurator.md |
 | TASK-016 | ✅ Completed | task-016-navigation-styling.md |
 | TASK-017 | Planned | task-017-cart-block-styling.md |
 | TASK-018 | In Progress | task-018-cart-page-layout.md |
