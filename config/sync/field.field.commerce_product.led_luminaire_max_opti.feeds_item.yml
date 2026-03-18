@@ -1,0 +1,23 @@
+uuid: 5b611511-57ab-4e09-ae26-a7f30c228eee
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.storage.commerce_product.feeds_item
+  module:
+    - feeds
+id: commerce_product.led_luminaire_max_opti.feeds_item
+field_name: feeds_item
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: 'Feeds item'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:feeds_feed'
+  handler_settings: {  }
+field_type: feeds_item
