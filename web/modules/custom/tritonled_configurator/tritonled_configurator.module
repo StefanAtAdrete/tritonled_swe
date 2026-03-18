@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * TritonLED Configurator module.
+ *
+ * Provides a custom order item type (configurator_item) for quote-based
+ * LED luminaire ordering. The configurator reads a JSON schema from
+ * field_configurator_schema on commerce_product, renders step-by-step
+ * dropdowns with dependsOn logic, builds the SKU dynamically in JS,
+ * and adds the result directly to cart as a configurator_item order item.
+ *
+ * No Commerce product variations are required.
+ *
+ * @see /docs/tasks/task-015-session-plan.md
+ * @see /docs/tasks/task-015-konfigurator-arkitektur.md
+ */
