@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_optic
     - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_sensor
     - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_watt
+    - field.field.commerce_product_variation.led_luminaire_max_opti.feeds_item
   module:
     - commerce_price
 id: commerce_product_variation.led_luminaire_max_opti.default
@@ -117,4 +118,5 @@ content:
     third_party_settings: {  }
 hidden:
   created: true
+  feeds_item: true
   uid: true

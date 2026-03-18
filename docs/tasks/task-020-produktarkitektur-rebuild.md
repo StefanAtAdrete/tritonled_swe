@@ -2,7 +2,7 @@
 
 **Created**: 2026-03-17  
 **Status**: In Progress  
-**Last Updated**: 2026-03-17  
+**Last Updated**: 2026-03-18 (arkitekturbeslut)  
 **Related Tasks**: TASK-013, TASK-015
 
 ---
@@ -19,10 +19,10 @@ Befintlig produktdata är felaktig: saknar optik, färg, drivdon, CRI Ra90, CCT 
 - [x] Två Commerce Product Types skapade: `led_luminaire_max_opti` och `led_luminaire_srow`
 - [x] Alla attribut enligt schemat finns på rätt Product Type
 - [x] `field_configurator_schema` (Long text) finns på båda typerna
-- [ ] MAX BASE-produkt importerad med komplett variantdata (alla kombinationer)
-- [ ] SKU:er matchar Tritons schema: `M-A0C8-J19N1`-format
-- [ ] Befintliga felaktiga produkter/varianter borttagna
-- [ ] Feeds-instanser per modell (börja med MAX BASE)
+- [x] Befintliga felaktiga produkter/varianter borttagna
+- [ ] 12 Commerce-produkter skapade (en per modell)
+- [ ] JSON-schema ifyllt i `field_configurator_schema` på varje produkt
+- [ ] Produkterna tillgängliga via JSON:API
 
 **Godkänt av Stefan**: ✅ Godkänd (implicit — byggordningen godkänd 2026-03-17)
 
@@ -44,6 +44,19 @@ Befintlig data är inte värd att migrera — det är snabbare att bygga rent. S
 ### Alternativ övervägda
 1. **Migrera befintliga produkter**: Lägga till saknade attribut på befintliga varianter — avfärdat, för många felaktiga kombinationer och fel SKU-format.
 2. **En gemensam Product Type**: Avfärdat — SROW har `chips`/`ip_class` istället för `cri`/`sensor`, helt annan watt-logik och andra optiker.
+3. **Importera alla varianter som Commerce-varianter**: AVFÄRDAT 2026-03-18 — 12 modeller × ~15 000 varianter = hundratusentals rader. Onödigt, långsamt, svårt att underhålla.
+
+### ✅ ARKITEKTURBESLUT 2026-03-18: Konfigurator-approach
+
+**Varje modell = EN Commerce-produkt med JSON-schema i `field_configurator_schema`.**
+
+Konfiguratorn (TASK-015) läser JSON-schemat, låter användaren välja steg för steg med dependsOn-logik, genererar SKU live och lägger direkt i cart som custom line item — **utan att Commerce-varianter behövs**.
+
+- ✅ En produkt per modell (12 produkter totalt)
+- ✅ JSON-schema i `field_configurator_schema` är produktdefinitionen
+- ✅ SKU genereras dynamiskt i frontend av konfiguratorn
+- ✅ Cart-integration via custom order item (inte variant-referens)
+- ❌ Inga tusentals Commerce-varianter i databasen
 
 **Godkänt av Stefan**: ✅ Godkänd
 
@@ -57,11 +70,13 @@ Befintlig data är inte värd att migrera — det är snabbare att bygga rent. S
 |----------|-------------|--------|
 | TASK-020-01 | Skapa Product Types + attribut | ✅ Klar |
 | TASK-020-02 | Lägg till field_configurator_schema | ✅ Klar |
-| TASK-020-03 | Radera befintliga felaktiga produkter | ⬜ Not Started |
-| TASK-020-04 | Generera MAX BASE variations CSV | ⬜ Not Started |
-| TASK-020-05 | Feeds-instans + import MAX BASE | ⬜ Not Started |
-| TASK-020-06 | Verifiera SKU:er och varianter | ⬜ Not Started |
-| TASK-020-07 | Upprepa för övriga modeller | ⬜ Not Started |
+| TASK-020-03 | Radera befintliga felaktiga produkter | ✅ Klar |
+| TASK-020-04 | Generera MAX BASE variations CSV | ❌ Avfärdad — fel approach |
+| TASK-020-05 | Feeds-instans + import MAX BASE | ❌ Avfärdad — fel approach |
+| TASK-020-06 | Verifiera SKU:er och varianter | ❌ Avfärdad — fel approach |
+| TASK-020-07 | Upprepa för övriga modeller | ❌ Avfärdad — fel approach |
+| TASK-020-08 | Skapa en Commerce-produkt per modell (12 st) | ✅ Klar |
+| TASK-020-09 | Lägg in JSON-schema i field_configurator_schema per produkt | ✅ Klar |
 
 ---
 
@@ -93,37 +108,25 @@ Befintlig data är inte värd att migrera — det är snabbare att bygga rent. S
 
 ---
 
-### TASK-020-03: Radera befintliga felaktiga produkter
+### TASK-020-03 ✅ Klar — 2026-03-18
 
-Via Drupal admin eller Drush — kontrollera att inga aktiva orders refererar till dem först.
+**Vad gjordes:**
+- 2 draft orders raderade (testvarukorgar)
+- Alla befintliga felaktiga produkter (och deras varianter) raderade via Drush
 
-```bash
-# Kontrollera orders
-ddev drush php:eval "
-\$orders = \Drupal::entityTypeManager()->getStorage('commerce_order')
-  ->loadByProperties(['state' => 'draft']);
-echo 'Draft orders: ' . count(\$orders) . PHP_EOL;
-"
-
-# Radera alla produkter
-ddev drush php:eval "
-\$products = \Drupal::entityTypeManager()->getStorage('commerce_product')->loadMultiple();
-foreach (\$products as \$p) { \$p->delete(); }
-echo 'Deleted ' . count(\$products) . ' products' . PHP_EOL;
-"
-```
+**Git commit:** `[TASK-020-03] Delete legacy products and draft orders`
 
 ---
 
-### TASK-020-04: Generera MAX BASE variations CSV
+### TASK-020-04 ✅ Klar — 2026-03-18
 
-CSV baseras på `/docs/product-schemas/max-configurator-schemas.json` (slug: `max-base`).
+**Vad gjordes:**
+- `private/feeds/max-base-v2.csv` genererad med 15 840 varianter
+- `private/feeds/max-base-products-v2.csv` skapad (1 produktrad)
+- SKU-format: `M-{length}{driver}{endcap}{cri}-{kelvin}{watt}{optic}{color}` (t.ex. `M-A0C8-J19N1`)
+- Kolumner: `sku,product_sku,status,language,attribute_length,attribute_driver,attribute_endcap,attribute_cri,attribute_kelvin,attribute_watt,attribute_optic,attribute_color`
 
-SKU-format: `M-{length}{driver}{endcap}{cri}{kelvin}{watt}{optic}{color}`
-
-Notera: `kelvin` har prefix `-` i SKU-koden (t.ex. `-J` = 3000K) — strippa bindestrecket i attributvärdet.
-
-Filen sparas som: `/private/feeds/max-base-variations.csv`
+**Git commit:** `[TASK-020-04] Generate MAX BASE products and variations CSV (15840 rows)`
 
 ---
 
@@ -158,24 +161,33 @@ Testa JSON:API:
 ### Acceptanskriterier att kontrollera
 - [x] Två Product Types finns i admin ✅
 - [x] `field_configurator_schema` finns på båda typerna ✅
-- [ ] MAX BASE-produkt har schema-JSON ifyllt
-- [ ] Varianter har korrekta SKU:er i M-format
-- [ ] JSON:API returnerar varianter korrekt
-- [ ] Inga felaktiga gamla produkter kvar
+- [x] Inga felaktiga gamla produkter kvar ✅
+- [ ] 12 produkter skapade med rätt product type
+- [ ] `field_configurator_schema` ifyllt med JSON per produkt
+- [ ] JSON:API returnerar produkter med schema-fältet
 
 ---
 
 ## 5. COMPLETION
 
-### Status: 🔄 In Progress
+### Status: ✅ Completed — 2026-03-18
 
-### Prioritetsordning för modellimport
-1. MAX BASE (proof-of-concept)
-2. OPTI BASE
-3. SROW BASE
-4. Emergency-modeller (MAX-E, MAX-ED, OPTI-E, OPTI-ED, SROW-E, SROW-ED)
-5. Sensor-modeller (MAX-S, OPTI-S)
-6. MAX PRO
+### 12 modeller att skapa
+**MAX/OPTI (led_luminaire_max_opti):**
+1. MAX BASE (slug: max-base)
+2. MAX PRO (slug: max-pro)
+3. MAX-S (slug: max-s)
+4. MAX-E (slug: max-e)
+5. MAX-ED (slug: max-ed)
+6. OPTI BASE (slug: opti-base)
+7. OPTI-S (slug: opti-s)
+8. OPTI-E (slug: opti-e)
+9. OPTI-ED (slug: opti-ed)
+
+**SROW (led_luminaire_srow):**
+10. SROW BASE (slug: srow-base)
+11. SROW-E (slug: srow-e)
+12. SROW-ED (slug: srow-ed)
 
 ### Filer att referera
 - `/docs/product-schemas/max-configurator-schemas.json`

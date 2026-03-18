@@ -1,24 +1,23 @@
 # Aktuell Task
 
-**Task**: TASK-018 (Cart-sida layout)
-**Status**: Påbörjad
-**Senast uppdaterad**: 2026-03-17
+**Task**: TASK-020 (Produktarkitektur Rebuild)
+**Status**: In Progress
+**Senast uppdaterad**: 2026-03-18
 
 ---
 
-## Vad som gjordes idag (2026-03-17)
+## Vad som gjordes idag (2026-03-18)
 
-### Produktarkitektur — Analys och dokumentation
-- Hämtat alla konfigurator-scheman från triton-solutions.co via browser automation (12 modeller, 3 serier)
-- Sparat i `/docs/product-schemas/` (max, opti, srow)
-- Dokumenterat arkitektur i `task-015-konfigurator-arkitektur.md`
-- Skapat TASK-020 (Produktarkitektur Rebuild) med sub-tasks
+### TASK-020 — Arkitekturbeslut (KRITISKT)
+- TASK-020-01 till 03 klara: Product Types, attribut, field_configurator_schema, rensning av felaktig data
+- Försökte importera 15 840 varianter per modell via Feeds — **fel approach, avfärdat**
+- **Nytt beslut:** Varje modell = EN Commerce-produkt med JSON-schema i `field_configurator_schema`
+- Konfiguratorn (TASK-015) läser schemat, genererar SKU dynamiskt, lägger i cart som custom line item
+- Inga tusentals Commerce-varianter behövs
 
-### Viktiga insikter
-- SROW är fundamentalt annorlunda: `chips`/`ip_class` istället för `cri`/`sensor`
-- Behövs 2 Commerce Product Types: `led_luminaire_max_opti` och `led_luminaire_srow`
-- Konfiguratorn (TASK-015) behöver lager-modellen: Commerce för data + JSON-schema + JS för UX
-- dependsOn-logiken kräver custom konfigurator — Commerce klarar det inte nativt
+### Nästa steg
+- TASK-020-08: Skapa 12 Commerce-produkter (en per modell) via Drush
+- TASK-020-09: Lägg in JSON-schema i `field_configurator_schema` per produkt
 
 ---
 

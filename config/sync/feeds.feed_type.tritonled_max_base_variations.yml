@@ -1,0 +1,225 @@
+uuid: e81c998g-5b7d-7f1i-d4e5-f607182930b1
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.led_luminaire_max_opti
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_color
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_cri
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_driver
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_endcap
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_kelvin
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_length
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_optic
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_watt
+  module:
+    - commerce_feeds
+    - commerce_product
+    - feeds_log
+third_party_settings:
+  feeds_log:
+    status: true
+    operations:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+      cleaned: cleaned
+    items:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+    source: true
+label: 'TritonLED MAX BASE Variations'
+id: tritonled_max_base_variations
+description: 'Importerar MAX BASE varianter från CSV (led_luminaire_max_opti)'
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product_variation'
+processor_configuration:
+  values:
+    type: led_luminaire_max_opti
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  sku:
+    value: sku
+    label: sku
+    machine_name: sku
+    type: csv
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  status:
+    value: status
+    label: status
+    machine_name: status
+    type: csv
+  attribute_length:
+    value: attribute_length
+    label: attribute_length
+    machine_name: attribute_length
+    type: csv
+  attribute_driver:
+    value: attribute_driver
+    label: attribute_driver
+    machine_name: attribute_driver
+    type: csv
+  attribute_endcap:
+    value: attribute_endcap
+    label: attribute_endcap
+    machine_name: attribute_endcap
+    type: csv
+  attribute_cri:
+    value: attribute_cri
+    label: attribute_cri
+    machine_name: attribute_cri
+    type: csv
+  attribute_kelvin:
+    value: attribute_kelvin
+    label: attribute_kelvin
+    machine_name: attribute_kelvin
+    type: csv
+  attribute_watt:
+    value: attribute_watt
+    label: attribute_watt
+    machine_name: attribute_watt
+    type: csv
+  attribute_optic:
+    value: attribute_optic
+    label: attribute_optic
+    machine_name: attribute_optic
+    type: csv
+  attribute_color:
+    value: attribute_color
+    label: attribute_color
+    machine_name: attribute_color
+    type: csv
+mappings:
+  -
+    target: sku
+    map:
+      value: sku
+    settings: {  }
+    unique:
+      value: 1
+  -
+    target: title
+    map:
+      value: sku
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: status
+    map:
+      value: status
+    settings: {  }
+    unique: {  }
+  -
+    target: product_id
+    map:
+      target_id: product_sku
+    settings:
+      reference_by: title
+      autocreate: false
+      feeds_item: false
+      autocreate_bundle: false
+    unique: {  }
+  -
+    target: attribute_length
+    map:
+      target_id: attribute_length
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: length
+    unique: {  }
+  -
+    target: attribute_driver
+    map:
+      target_id: attribute_driver
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: driver
+    unique: {  }
+  -
+    target: attribute_endcap
+    map:
+      target_id: attribute_endcap
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: endcap
+    unique: {  }
+  -
+    target: attribute_cri
+    map:
+      target_id: attribute_cri
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: cri
+    unique: {  }
+  -
+    target: attribute_kelvin
+    map:
+      target_id: attribute_kelvin
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: kelvin
+    unique: {  }
+  -
+    target: attribute_watt
+    map:
+      target_id: attribute_watt
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: watt
+    unique: {  }
+  -
+    target: attribute_optic
+    map:
+      target_id: attribute_optic
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: optic
+    unique: {  }
+  -
+    target: attribute_color
+    map:
+      target_id: attribute_color
+    settings:
+      reference_by: name
+      autocreate: true
+      autocreate_bundle: color
+    unique: {  }
