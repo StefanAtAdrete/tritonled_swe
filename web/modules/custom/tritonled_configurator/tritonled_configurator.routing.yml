@@ -1,0 +1,10 @@
+tritonled_configurator.add_to_cart:
+  path: '/triton/configurator/add-to-cart'
+  defaults:
+    _controller: '\Drupal\tritonled_configurator\Controller\ConfiguratorCartController::addToCart'
+    _title: 'Add to cart'
+  requirements:
+    _access: 'TRUE'
+  methods: [POST]
+  options:
+    no_cache: TRUE
