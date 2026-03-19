@@ -70,6 +70,7 @@ class ConfiguratorCartController extends ControllerBase {
 
     $variation_id = (int) $data['variationId'];
     $sku = (string) $data['sku'];
+    $quantity = max(1, (int) ($data['quantity'] ?? 1));
     $selections = $data['selections'] ?? [];
 
     // Load the dummy variation — entityTypeManager comes from ControllerBase.
@@ -99,7 +100,7 @@ class ConfiguratorCartController extends ControllerBase {
 
     /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
     $order_item = $order_item_storage->createFromPurchasableEntity($variation);
-    $order_item->setQuantity(1);
+    $order_item->setQuantity($quantity);
     $order_item->save();
 
     $cart->addItem($order_item);
