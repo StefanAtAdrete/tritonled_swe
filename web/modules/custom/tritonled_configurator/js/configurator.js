@@ -1,11 +1,13 @@
 /**
  * @file
- * TritonLED Product Configurator — SESSION 4
+ * TritonLED Product Configurator — SESSION 5
  *
- * Reads schema from drupalSettings, renders dropdowns with dependsOn logic,
- * builds SKU live, and POSTs to Commerce Cart API on submit.
- *
- * SESSION 5 adds: Bootstrap styling.
+ * SESSION 5 adds:
+ * - Bootstrap 5 classes in render()
+ * - imageMap support + image switching on endcap/color change
+ * - Quantity field
+ * - Auto-select first valid combination on load
+ * - Hide Commerce's own attribute dropdowns
  */
 
 (function (Drupal, drupalSettings) {
@@ -29,29 +31,39 @@
       var variationId = config.variationId;
       var selections = {};
 
-      // --- Render ---
+      // Hide Commerce's own attribute dropdowns (they conflict with our UI).
+      var commerceForm = document.querySelector('.commerce-order-item-add-to-cart-form');
+      if (commerceForm) {
+        commerceForm.style.display = 'none';
+      }
+
+      // ------------------------------------------------------------------ //
+      // Render
+      // ------------------------------------------------------------------ //
 
       function render() {
         container.innerHTML = '';
 
-        // Steps wrapper.
+        // Steps wrapper — Bootstrap row with 3 columns.
         var stepsWrapper = document.createElement('div');
-        stepsWrapper.className = 'configurator-steps';
+        stepsWrapper.className = 'row g-3 mb-3 configurator-steps';
         container.appendChild(stepsWrapper);
 
         steps.forEach(function (step) {
-          var wrapper = document.createElement('div');
-          wrapper.className = 'configurator-step';
-          wrapper.dataset.stepId = step.id;
+          var col = document.createElement('div');
+          col.className = 'col-12 col-sm-6 col-md-4 configurator-step';
+          col.dataset.stepId = step.id;
 
           var label = document.createElement('label');
+          label.className = 'form-label fw-semibold small text-uppercase';
           label.textContent = getLabelForStep(step.id);
           label.htmlFor = 'configurator-' + step.id;
-          wrapper.appendChild(label);
+          col.appendChild(label);
 
           var select = document.createElement('select');
           select.id = 'configurator-' + step.id;
           select.name = step.id;
+          select.className = 'form-select form-select-sm';
           select.dataset.stepId = step.id;
 
           var placeholder = document.createElement('option');
@@ -78,36 +90,60 @@
             updateVisibility();
             updateSku();
             updateButton();
+            maybeUpdateImage(step);
           });
 
-          wrapper.appendChild(select);
-          stepsWrapper.appendChild(wrapper);
+          col.appendChild(select);
+          stepsWrapper.appendChild(col);
         });
 
         // SKU bar.
         var skuBar = document.createElement('div');
-        skuBar.className = 'configurator-sku-bar';
+        skuBar.className = 'configurator-sku-bar d-flex align-items-center gap-2 mb-3 p-2 bg-light rounded border';
 
         var skuLabel = document.createElement('span');
-        skuLabel.className = 'configurator-sku-label';
-        skuLabel.textContent = 'SKU: ';
+        skuLabel.className = 'configurator-sku-label text-muted small';
+        skuLabel.textContent = 'SKU:';
 
         var skuValue = document.createElement('code');
         skuValue.id = 'configurator-sku-value';
+        skuValue.className = 'fw-bold text-dark';
         skuValue.textContent = schema.skuPrefix + '…';
 
         skuBar.appendChild(skuLabel);
         skuBar.appendChild(skuValue);
         container.appendChild(skuBar);
 
-        // Submit button.
+        // Quantity + submit row.
+        var actionRow = document.createElement('div');
+        actionRow.className = 'd-flex align-items-center gap-2 mb-3';
+
+        var qtyLabel = document.createElement('label');
+        qtyLabel.htmlFor = 'configurator-qty';
+        qtyLabel.className = 'form-label mb-0 small fw-semibold';
+        qtyLabel.textContent = 'Antal:';
+
+        var qty = document.createElement('input');
+        qty.type = 'number';
+        qty.id = 'configurator-qty';
+        qty.name = 'quantity';
+        qty.className = 'form-control form-control-sm';
+        qty.style.width = '70px';
+        qty.min = '1';
+        qty.value = '1';
+
         var btn = document.createElement('button');
         btn.id = 'configurator-submit';
         btn.type = 'button';
+        btn.className = 'btn btn-primary';
         btn.textContent = 'Lägg i offert';
         btn.disabled = true;
         btn.addEventListener('click', submitToCart);
-        container.appendChild(btn);
+
+        actionRow.appendChild(qtyLabel);
+        actionRow.appendChild(qty);
+        actionRow.appendChild(btn);
+        container.appendChild(actionRow);
 
         // Feedback area.
         var feedback = document.createElement('div');
@@ -118,9 +154,71 @@
         updateVisibility();
         updateSku();
         updateButton();
+        autoSelectFirst();
       }
 
-      // --- SKU builder ---
+      // ------------------------------------------------------------------ //
+      // Auto-select first valid combination
+      // ------------------------------------------------------------------ //
+
+      function autoSelectFirst() {
+        steps.forEach(function (step) {
+          if (selections[step.id]) return; // Already selected.
+          var select = container.querySelector('select[data-step-id="' + step.id + '"]');
+          if (!select) return;
+          var col = container.querySelector('.configurator-step[data-step-id="' + step.id + '"]');
+          if (col && col.style.display === 'none') return;
+
+          for (var i = 0; i < step.options.length; i++) {
+            var option = step.options[i];
+            if (isOptionAvailable(option)) {
+              selections[step.id] = option.code;
+              select.value = option.code;
+              break;
+            }
+          }
+        });
+        updateVisibility();
+        updateSku();
+        updateButton();
+        // Fire image update for the first imageMap step.
+        steps.forEach(function (step) {
+          if (step.imageMap && selections[step.id]) {
+            maybeUpdateImage(step);
+          }
+        });
+      }
+
+      // ------------------------------------------------------------------ //
+      // Image switching
+      // ------------------------------------------------------------------ //
+
+      function maybeUpdateImage(step) {
+        // Always read imageMap from schema.steps (live drupalSettings reference).
+        var liveStep = schema.steps.find(function(s){ return s.id === step.id; });
+        if (!liveStep || !liveStep.imageMap) return;
+        var val = selections[step.id];
+        if (!val || !liveStep.imageMap[val]) return;
+        var imgUrl = liveStep.imageMap[val];
+
+        // Dispatch custom event for external listeners (e.g. product image block).
+        var event = new CustomEvent('triton:configurator:image', {
+          bubbles: true,
+          detail: { url: imgUrl, stepId: step.id, code: val },
+        });
+        container.dispatchEvent(event);
+
+        // Update the main product image directly.
+        var productImg = document.querySelector('.field--name-field-product-media img, .field--name-field-media-image img');
+        if (productImg) {
+          productImg.src = imgUrl;
+          productImg.srcset = '';
+        }
+      }
+
+      // ------------------------------------------------------------------ //
+      // SKU builder
+      // ------------------------------------------------------------------ //
 
       function buildSku() {
         var middle = '';
@@ -143,13 +241,14 @@
         if (el) el.textContent = buildSku();
       }
 
-      // --- Validation ---
+      // ------------------------------------------------------------------ //
+      // Validation
+      // ------------------------------------------------------------------ //
 
       function allStepsSelected() {
         return steps.every(function (step) {
-          var wrapper = container.querySelector('.configurator-step[data-step-id="' + step.id + '"]');
-          // Skip hidden steps.
-          if (wrapper && wrapper.style.display === 'none') return true;
+          var col = container.querySelector('.configurator-step[data-step-id="' + step.id + '"]');
+          if (col && col.style.display === 'none') return true;
           return !!selections[step.id];
         });
       }
@@ -159,17 +258,19 @@
         if (btn) btn.disabled = !allStepsSelected();
       }
 
-      // --- Cart API ---
+      // ------------------------------------------------------------------ //
+      // Cart API
+      // ------------------------------------------------------------------ //
 
       function submitToCart() {
         var feedback = document.getElementById('configurator-feedback');
         var btn = document.getElementById('configurator-submit');
+        var qty = parseInt(document.getElementById('configurator-qty').value, 10) || 1;
 
         if (!allStepsSelected()) {
           setFeedback(feedback, 'error', 'Välj ett alternativ för alla steg.');
           return;
         }
-
         if (!variationId) {
           setFeedback(feedback, 'error', 'Konfigurationsfel: saknar variation ID.');
           return;
@@ -182,13 +283,9 @@
         btn.textContent = 'Lägger till…';
         feedback.textContent = '';
 
-        var basePath = drupalSettings.path.baseUrl + drupalSettings.path.pathPrefix;
-
-        // Fetch CSRF token first, then POST to cart.
-        // session/token uses baseUrl only (no language prefix).
         fetch(drupalSettings.path.baseUrl + 'session/token')
           .then(function (r) { return r.text(); })
-          .then(function (token) { return doCartPost(token, sku, data); })
+          .then(function (token) { return doCartPost(token, sku, data, qty); })
           .catch(function (err) {
             setFeedback(feedback, 'error', 'Fel: ' + err.message);
             btn.disabled = false;
@@ -196,7 +293,7 @@
           });
       }
 
-      function doCartPost(csrfToken, sku, data) {
+      function doCartPost(csrfToken, sku, data, qty) {
         var feedback = document.getElementById('configurator-feedback');
         var btn = document.getElementById('configurator-submit');
 
@@ -209,6 +306,7 @@
           body: JSON.stringify({
             variationId: variationId,
             sku: sku,
+            quantity: qty,
             selections: JSON.parse(data),
           }),
           credentials: 'same-origin',
@@ -222,9 +320,9 @@
             return response.json();
           })
           .then(function () {
-            setFeedback(feedback, 'success', 'Produkten är tillagd i offerten! SKU: ' + sku);
+            setFeedback(feedback, 'success', '✓ Tillagd i offerten! SKU: ' + sku);
             btn.textContent = 'Tillagd ✓';
-            // Trigger cart block refresh if available.
+            btn.classList.replace('btn-primary', 'btn-success');
             if (Drupal.ajax) {
               Drupal.announce(Drupal.t('Product added to cart.'));
             }
@@ -238,10 +336,12 @@
 
       function setFeedback(el, type, message) {
         el.textContent = message;
-        el.className = 'configurator-feedback configurator-feedback--' + type;
+        el.className = 'mt-2 small ' + (type === 'success' ? 'text-success' : 'text-danger');
       }
 
-      // --- Visibility ---
+      // ------------------------------------------------------------------ //
+      // Visibility / dependsOn
+      // ------------------------------------------------------------------ //
 
       function updateVisibility() {
         steps.forEach(function (step) {
@@ -249,7 +349,6 @@
           if (!select) return;
 
           var hasVisible = false;
-
           step.options.forEach(function (option) {
             var optEl = select.querySelector('option[value="' + option.code + '"]');
             if (!optEl) return;
@@ -263,9 +362,9 @@
             }
           });
 
-          var stepWrapper = select.closest('.configurator-step');
-          if (stepWrapper) {
-            stepWrapper.style.display = hasVisible ? '' : 'none';
+          var col = select.closest('.configurator-step');
+          if (col) {
+            col.style.display = hasVisible ? '' : 'none';
           }
         });
       }
@@ -300,15 +399,15 @@
 
       function getLabelForStep(stepId) {
         var labels = {
-          length: 'Längd',
-          driver: 'Driver',
-          endcap: 'Anslutning',
-          cri: 'CRI',
-          chips: 'Chips',
-          kelvin: 'Färgtemperatur',
-          watt: 'Effekt',
-          optic: 'Optik',
-          color: 'Färg',
+          length:  'Längd',
+          driver:  'Driver',
+          endcap:  'Anslutning',
+          cri:     'CRI',
+          chips:   'Chips',
+          kelvin:  'Färgtemperatur',
+          watt:    'Effekt',
+          optic:   'Optik',
+          color:   'Färg',
           ipClass: 'IP-klass',
         };
         return labels[stepId] || stepId;
