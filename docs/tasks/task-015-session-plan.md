@@ -2,194 +2,191 @@
 
 **Skapad**: 2026-03-18  
 **Uppdaterad**: 2026-03-18  
-**Status**: Planning
+**Status**: In Progress — SESSION 3 klar, SESSION 4 nästa
 
 ---
 
 ## Kontext & förutsättningar
 
-### Vad som är klart (TASK-020)
+### Vad som är klart
 - ✅ Commerce Product Types: `led_luminaire_max_opti` och `led_luminaire_srow`
 - ✅ `field_configurator_schema` (Long text) finns på båda typerna
-- ✅ 12 Commerce-produkter skapade (en per modell)
+- ✅ 12 Commerce-produkter skapade (en per modell), alla med schema ifyllt
 - ✅ JSON-scheman finns i `/docs/product-schemas/` (max, opti, srow)
 - ✅ Scheman är kompletta med `dependsOn`/`dependsOnAny`-logik
-- ✅ Befintliga felaktiga produkter/varianter är borttagna
-- ⚠️ Oklart: Är `field_configurator_schema` ifyllt på produkterna?
-- ⚠️ Oklart: Finns det en Commerce-variation kopplad till varje produkt? (krävs för cart)
+- ✅ `tritonled_configurator` modul aktiverad
+- ✅ Order item type: `qoute` (standard Commerce) med extra fält
+- ✅ Fält på `qoute`: `field_configurator_sku` (string), `field_configurator_data` (text_long)
+- ✅ 12 dummy-varianter skapade (CONFIGURATOR-15 → CONFIGURATOR-26)
+- ✅ Cart API fungerar med `qoute` order item type
+- ✅ Block plugin `ConfiguratorBlock` — synlig i Layout Builder under "TritonLED"
+- ✅ `configurator.js` — dropdowns + dependsOn + dependsOnAny + live SKU-display
+- ✅ Blocket placerat på MAX BASE-produktsidan, verifierat i webbläsaren
 
-### Arkitekturbeslut (från task-015-konfigurator-arkitektur.md)
-- **Ingen** Commerce-variantsökning — konfiguratorn lägger custom order item direkt i cart
-- `tritonled_configurator` modul med `configurator_item` order item type
-- JS läser `field_configurator_schema` → renderar steg → bygger SKU → lägger i cart
-- SKU-formatet är produktdefinitionen — ingen variant-matchning behövs
+### Arkitekturbeslut
+- **Order item type**: `qoute` med extra fält `field_configurator_sku` + `field_configurator_data`
+- **Schema**: exponeras via `drupalSettings.tritonConfigurator` (sätts i preprocess hook)
+- **Block**: `ConfiguratorBlock` plugin renderar `<div data-triton-configurator>`
+- **JS**: vanilla JS Drupal behavior, inga externa bibliotek
 
----
-
-## Teknisk arkitektur
-
-### Drupal-backend
+### Modulstruktur (aktuell)
 ```
 tritonled_configurator/
 ├── tritonled_configurator.info.yml
-├── tritonled_configurator.module
-├── tritonled_configurator.services.yml
-├── config/install/
-│   └── commerce_order_item_type.configurator_item.yml   ← Custom order item type
+├── tritonled_configurator.module        ← hook_preprocess_commerce_product
+├── tritonled_configurator.libraries.yml ← registrerar configurator.js
+├── src/Plugin/Block/
+│   └── ConfiguratorBlock.php           ← block plugin "Produktkonfigurator"
 └── js/
-    └── configurator.js                                    ← Frontend-logik
+    └── configurator.js                  ← dropdown + dependsOn + SKU-display
 ```
 
-### Custom order item type: `configurator_item`
-- Lagrar: `purchased_entity` (NULL — ingen variation-referens)
-- Extra fält: `field_configurator_sku` (text) — det genererade SKU:t
-- Extra fält: `field_configurator_data` (text_long/JSON) — valen som JSON
-- Kopplas till en Commerce-produkt via `field_product_reference` eller liknande
-- Priset sätts manuellt via en PriceResolver (eller sätts till 0 för offert-flöde)
+### Dummy-variation-mappning
+| Produkt ID | Produkt | Variation SKU | Variation ID |
+|------------|---------|---------------|--------------|
+| 15 | MAX BASE | CONFIGURATOR-15 | 20841 |
+| 16 | MAX-PRO | CONFIGURATOR-16 | 20842 |
+| 17 | MAX-S | CONFIGURATOR-17 | 20843 |
+| 18 | MAX-E | CONFIGURATOR-18 | 20844 |
+| 19 | MAX-ED | CONFIGURATOR-19 | 20845 |
+| 20 | OPTI BASE | CONFIGURATOR-20 | 20846 |
+| 21 | OPTI-S | CONFIGURATOR-21 | 20847 |
+| 22 | OPTI-E | CONFIGURATOR-22 | 20848 |
+| 23 | OPTI-ED | CONFIGURATOR-23 | 20849 |
+| 24 | SROW BASE | CONFIGURATOR-24 | 20850 |
+| 25 | SROW-E | CONFIGURATOR-25 | 20851 |
+| 26 | SROW-ED | CONFIGURATOR-26 | 20852 |
 
-### JavaScript-konfigurator
+### SKU-format
 ```
-Flöde:
-1. Sidan laddas → konfiguratorn läser schema från ett JSON-script-tag eller JSON:API
-2. Renderar dropdowns i ordning (steps-array)
-3. Varje val triggar dependsOn-filtrering på nästa steg
-4. watt-steget filtrerar på dependsOnAny (length + cri/chips kombination)
-5. SKU byggs live: prefix + middle-delar + kelvin + watt + optic + color
-6. "Lägg i offert"-knapp: POST till Commerce Cart API med configurator_item
+MAX:  {skuPrefix}{middle-koder}{end-koder}
+      Exempel: M-A0C8-J19N1
+      middle = length+driver+endcap+cri = A+0+C+8 = A0C8
+      end    = kelvin+watt+optic+color  = -J+19+N+1 = -J19N1
+
+SROW: S-{length}{driver}{endcap}{chips}{ipClass}{kelvin}{watt}{optic}{color}
 ```
 
-### SKU-format (från scheman)
+---
+
+## Sessionsöversikt
+
+| Session | Fokus | Status |
+|---------|-------|--------|
+| SESSION 1 | Backend: modul + order item type + fält | ✅ Klar |
+| SESSION 2 | Backend: dummy-varianter + Cart API-verifiering | ✅ Klar |
+| SESSION 3 | JS: dropdown-rendering + dependsOn + SKU-display | ✅ Klar |
+| SESSION 4 | JS: Cart API POST + feedback | 🔄 Nästa |
+| SESSION 5 | Styling (Bootstrap) + generalisering OPTI/SROW | ⏳ Planerad |
+
+---
+
+## SESSION 1 ✅ Klar — 2026-03-18
+
+- Skapade `tritonled_configurator` modul
+- Skapade `configurator_item` order item type (senare ersatt av `qoute`)
+- Skapade `field_configurator_sku` + `field_configurator_data`
+- **Commit:** `[TASK-015-01] Add tritonled_configurator module with configurator_item order type and fields`
+
+---
+
+## SESSION 2 ✅ Klar — 2026-03-18
+
+- Verifierade `field_configurator_schema` via Drush
+- Skapade 12 dummy-varianter (CONFIGURATOR-15..26)
+- Verifierade Cart API med `qoute`
+- Tog bort `configurator_item` — `qoute` räcker
+- Beslut: schema via `drupalSettings` — inte JSON:API (kräver auth)
+
+---
+
+## SESSION 3 ✅ Klar — 2026-03-18
+
+**Mål:** JS-konfiguratorn renderar dropdowns med dependsOn-filtrering och live SKU
+
+### Vad byggdes
+- ✅ `tritonled_configurator.libraries.yml` — registrerar `configurator.js`
+- ✅ `tritonled_configurator.module` — `hook_preprocess_commerce_product`:
+  - Sätter `drupalSettings.tritonConfigurator.productId` + `.schema`
+  - Attachar `tritonled_configurator/configurator` library
+  - Körs bara om produkten har `field_configurator_schema` ifyllt
+- ✅ `src/Plugin/Block/ConfiguratorBlock.php`:
+  - Renderar `<div data-triton-configurator id="triton-configurator">`
+  - Synlig i Layout Builder under kategorin "TritonLED"
+  - Cache contexts: `url.path` + produktens cache tags
+- ✅ `js/configurator.js` — `Drupal.behaviors.tritonConfigurator`:
+  - Läser schema från `drupalSettings.tritonConfigurator`
+  - Renderar alla steps som `<select>`-dropdowns i ordning
+  - `dependsOn`-filtrering: option visas om ALLA villkor uppfylls
+  - `dependsOnAny`-filtrering: option visas om MINST ETT yttervillkor uppfylls
+  - Rensar downstream-val vid ändring
+  - Live SKU-display: `{skuPrefix}{middle-koder}{end-koder}`
+
+### Verifierat i webbläsaren
+- ✅ Alla 8 dropdowns renderas för MAX BASE (produkt 15)
+- ✅ endcap-filtrering: W1 bara vid On/Off, Wago-varianter bara vid DALI
+- ✅ watt-filtrering: korrekt per längd (19/22/29W vid 0,5m osv)
+- ✅ SKU `M-A0C8-J19N1` verifierad som giltig kombination
+- ✅ Blocket placerat i Layout Builder på MAX BASE
+
+### Hinder/beslut under SESSION 3
+- Basic block med body-fält escapade HTML → löst med block plugin istället
+- `drupalSettings` är rätt kanal (inte inline `<script>` som planerat)
+
+---
+
+## SESSION 4 — Nästa
+
+**Mål:** "Lägg i offert"-knapp → Cart API POST → feedback
+
+### Sub-tasks
+- TASK-015-17: Validering — alla steg måste vara valda
+- TASK-015-18: "Lägg i offert"-knapp i JS
+- TASK-015-19: `POST /cart/add` med variation ID + fält
+- TASK-015-20: Hämta rätt variation ID per produkt (från drupalSettings eller data-attribut)
+- TASK-015-21: Success-meddelande / felhantering
+- TASK-015-22: End-to-end test MAX BASE → kundvagn
+
+### Cart API-anrop (planerat)
+```json
+POST /cart/add
+[{
+  "purchased_entity_type": "commerce_product_variation",
+  "purchased_entity_id": "20841",
+  "quantity": "1",
+  "field_configurator_sku": [{"value": "M-A0C8-J19N1"}],
+  "field_configurator_data": [{"value": "{\"length\":\"A\",\"driver\":\"0\",...}"}]
+}]
 ```
-MAX BASE: M-{length}{driver}{endcap}{cri}{kelvin}{watt}{optic}{color}
-Exempel:  M-A0C8-J19N1
 
-SROW BASE: S-{length}{driver}{endcap}{chips}{ipClass}{kelvin}{watt}{optic}{color}
-Exempel:   S-B02Y-K30M1
-```
-Notera: kelvin har bindestreck som prefix i koden (t.ex. `-J`)
+**Öppen fråga:** Variation ID behöver vara känt i JS. Enklast via `drupalSettings.tritonConfigurator.variationId` — sätts i preprocess-hooken via Drush-query mot variationerna.
+
+**STOP — godkännande krävs** innan SESSION 4 startar.
 
 ---
 
-## Sessionsplan
+## SESSION 5 — Planerad
 
-### SESSION 1 (denna session) — Backend-grund
-**Mål**: Modulstruktur + custom order item type klar och aktiverad
+**Mål:** Bootstrap-styling + generalisering till alla 12 produkter
 
-**Sub-tasks:**
-- TASK-015-01: Verifiera att 12 produkter finns och att `field_configurator_schema` är ifyllt
-- TASK-015-02: Skapa `tritonled_configurator` modul (info.yml, grundstruktur)
-- TASK-015-03: Skapa `configurator_item` order item type config YAML
-- TASK-015-04: Skapa fält på order item: `field_configurator_sku`, `field_configurator_data`
-- TASK-015-05: Verifiera att modulen kan aktiveras utan fel (`ddev drush en tritonled_configurator`)
-
-**Leverabler:**
-- Modul-katalog med filer
-- Order item type registrerad i Drupal
-- Drush-kommandon att köra
-- Commit: `[TASK-015-01] Add tritonled_configurator module with configurator_item order type`
-
-**Tokens-bedömning:** Räcker för hela SESSION 1.
+### Sub-tasks
+- TASK-015-23: Bootstrap-styling (3-kolumns grid, labels, SKU-bar, knapp)
+- TASK-015-24: Dölj Commerce's egna attribut-dropdowns på produktsidan
+- TASK-015-25: Responsiv layout (mobil → 1 kolumn, desktop → 3 kolonner)
+- TASK-015-26: Placera blocket på alla 12 produktsidor i Layout Builder
+- TASK-015-27: Test OPTI BASE (produkt 20) + SROW BASE (produkt 24)
+- TASK-015-28: Verifiering — alla 12 produkter fungerar
 
 ---
 
-### SESSION 2 — JSON:API + Cart API-integration
-**Mål**: Kan lägga `configurator_item` i cart via Drupal Commerce Cart API
+## Öppna frågor
 
-**Sub-tasks:**
-- TASK-015-06: Verifiera JSON:API endpoint för produkter med schema-fält
-  - `/jsonapi/commerce_product/led_luminaire_max_opti?include=field_configurator_schema`
-- TASK-015-07: Custom Cart API endpoint eller verifiering att standard Cart API fungerar
-  - `POST /cart/add` med custom order item type
-- TASK-015-08: PriceResolver för `configurator_item` (returnerar 0 för offert-flöde)
-- TASK-015-09: Enkel test: lägg ett `configurator_item` i cart via curl/Postman
-
-**Förutsättning:** SESSION 1 avklarad.  
-**Tokens-bedömning:** Måttlig session — primärt config och PHP.
-
----
-
-### SESSION 3 — JavaScript-konfigurator (del 1: rendering + dependsOn)
-**Mål**: Dropdowns renderas korrekt med dependsOn-filtrering
-
-**Sub-tasks:**
-- TASK-015-10: JS-modul `configurator.js` — grundstruktur
-- TASK-015-11: Schema-läsning (från inline JSON eller JSON:API)
-- TASK-015-12: Rendera alla steps som dropdowns i ordning
-- TASK-015-13: `dependsOn`-filtrering — dölj ogiltiga alternativ
-- TASK-015-14: `dependsOnAny`-filtrering för watt-steget
-- TASK-015-15: Visuell test med MAX BASE — alla steg fungerar
-
-**Förutsättning:** SESSION 2 avklarad.  
-**Tokens-bedömning:** Stor session — fokus på JS-logik.
-
----
-
-### SESSION 4 — JavaScript-konfigurator (del 2: SKU + cart)
-**Mål**: SKU byggs live, "Lägg i offert"-knapp fungerar
-
-**Sub-tasks:**
-- TASK-015-16: SKU-byggare i JS (middle-delar + end-delar)
-- TASK-015-17: Live SKU-visning i UI
-- TASK-015-18: "Lägg i offert"-knapp → POST till Cart API
-- TASK-015-19: Feedback till användaren (success/error)
-- TASK-015-20: Test med MAX BASE end-to-end
-
-**Förutsättning:** SESSION 3 avklarad.  
-**Tokens-bedömning:** Medelstor session.
-
----
-
-### SESSION 5 — Styling + integration med produktsidan
-**Mål**: Konfiguratorn ser bra ut och sitter rätt på produktsidan
-
-**Sub-tasks:**
-- TASK-015-21: Bootstrap-styling av konfiguratorn (dropdowns, SKU-display, knapp)
-- TASK-015-22: Dölj Commerce's egna attribut-dropdowns på produktsidan
-- TASK-015-23: Placera konfiguratorn i Layout Builder som ett block
-- TASK-015-24: Test responsiv layout (mobil/desktop)
-- TASK-015-25: Test med OPTI BASE och SROW BASE (generalisering)
-
-**Förutsättning:** SESSION 4 avklarad.  
-**Tokens-bedömning:** Medelstor session.
-
----
-
-### SESSION 6 — Schema-fyllning + produkter (om ej klart)
-**Mål**: Alla 12 produkter har `field_configurator_schema` ifyllt korrekt
-
-**Sub-tasks:**
-- Verifiera vilka produkter som saknar schema
-- Drush-skript för att fylla i schema per produkt
-- Alternativ: CSV-import om schema-fält stöds via Feeds
-
-**Not:** Kan göras parallellt med SESSION 2-5 om Stefan fyller i manuellt via admin UI.
-
----
-
-## Öppna frågor att besvara i SESSION 1
-
-1. **Är `field_configurator_schema` redan ifyllt på de 12 produkterna?**
-   - Om nej → måste fyllas i (SESSION 6 eller manuellt)
-   
-2. **Har varje Commerce-produkt en dummy-variation?**
-   - Commerce kräver minst en variation för att en produkt ska vara köpbar
-   - Vår `configurator_item` kanske kringgår detta — måste verifieras
-   
-3. **Hur ska konfiguratorn läggas in på produktsidan?**
-   - Option A: Block via Layout Builder (rekommenderas — ingen template)
-   - Option B: Direkt i product template (kräver godkännande)
-   - Option C: Pseudo-field via `hook_entity_extra_field_info` (elegant men kräver PHP)
-   
-4. **Priset på `configurator_item`**
-   - Offert-flöde → pris = 0, men måste visas som "Offert" eller tomt
-   - Alternativ: Partner-pris via JSON:API och PriceResolver
-
----
-
-## Nästa steg
-
-→ Starta SESSION 1:
-1. Verifiera produkter och schema-status via Drush
-2. Godkänn modulstruktur
-3. Skapa filer
-
+| Fråga | Svar | Session |
+|-------|------|---------|
+| Schema ifyllt på alla 12? | ✅ Ja | SESSION 1 |
+| Dummy-varianter finns? | ✅ Ja | SESSION 2 |
+| Order item type? | `qoute` med extra fält | SESSION 2 |
+| Schema-exponering? | `drupalSettings` via preprocess | SESSION 3 |
+| Var renderas konfiguratorn? | Block plugin i Layout Builder | SESSION 3 |
+| Variation ID i JS? | ⏳ Via drupalSettings i SESSION 4 | SESSION 4 |
+| Commerce dropdowns döljas? | ⏳ SESSION 5 | SESSION 5 |

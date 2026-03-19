@@ -4,14 +4,47 @@
  * @file
  * TritonLED Configurator module.
  *
- * Provides a custom order item type (configurator_item) for quote-based
- * LED luminaire ordering. The configurator reads a JSON schema from
- * field_configurator_schema on commerce_product, renders step-by-step
- * dropdowns with dependsOn logic, builds the SKU dynamically in JS,
- * and adds the result directly to cart as a configurator_item order item.
- *
- * No Commerce product variations are required.
- *
- * @see /docs/tasks/task-015-session-plan.md
- * @see /docs/tasks/task-015-konfigurator-arkitektur.md
+ * Reads field_configurator_schema from commerce_product, exposes it via
+ * drupalSettings, and attaches the configurator library on product pages
+ * that have a schema defined.
  */
+
+use Drupal\commerce_product\Entity\ProductInterface;
+
+/**
+ * Implements hook_preprocess_commerce_product().
+ */
+function tritonled_configurator_preprocess_commerce_product(&$variables) {
+  /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
+  $product = $variables['product_entity'] ?? NULL;
+
+  if (!$product instanceof ProductInterface) {
+    return;
+  }
+
+  if (!$product->hasField('field_configurator_schema') || $product->get('field_configurator_schema')->isEmpty()) {
+    return;
+  }
+
+  $schema_json = $product->get('field_configurator_schema')->value;
+  $schema = json_decode($schema_json, TRUE);
+  if (!$schema) {
+    return;
+  }
+
+  // Find the CONFIGURATOR-{id} dummy variation ID for this product.
+  $variation_id = NULL;
+  foreach ($product->getVariations() as $variation) {
+    if (str_starts_with($variation->getSku(), 'CONFIGURATOR-')) {
+      $variation_id = (int) $variation->id();
+      break;
+    }
+  }
+
+  $variables['#attached']['library'][] = 'tritonled_configurator/configurator';
+  $variables['#attached']['drupalSettings']['tritonConfigurator'] = [
+    'productId' => (int) $product->id(),
+    'variationId' => $variation_id,
+    'schema' => $schema,
+  ];
+}

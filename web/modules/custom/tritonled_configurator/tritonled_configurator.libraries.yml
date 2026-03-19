@@ -1,0 +1,6 @@
+configurator:
+  js:
+    js/configurator.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
