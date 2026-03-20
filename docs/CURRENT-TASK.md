@@ -43,22 +43,21 @@
 - ✅ Variation ID hämtas automatiskt via preprocess hook (söker CONFIGURATOR-prefix)
 - ✅ Verifierat: `M-A0C8-J19N1` är giltig kombination
 
-### SESSION 5b — Nästa (Responsive Image bildväxling)
+### SESSION 5b — Klar (delvis)
 
 **Mål:** Responsive Image bildväxling via namnkonvention + field_configurator_media
 
-**Arkitekturbeslut + implementation (SESSION 5b) ✅:**
-- ✅ `field_configurator_media` på produkten med namnkonvention `{imagePrefix}-{kod}`
-- ✅ Media omdöpta: TM-C, TM-E, TM-V, TM-B, TM-W, TM-default + alla serier
-- ✅ View mode `configurator_image` på media.image + commerce_product
-- ✅ Responsive Image Style `product_responsive` via formatter
-- ✅ `imagePictures` byggs i preprocess-hook — 6 poster per produkt
-- ✅ `ConfiguratorBlock` renderar default-bild server-side (bara en media-entitet)
-- ✅ JS `updateImage()` byter `src`/`srcset` på `<img>` inuti `.triton-configurator-image`
-- ✅ Inga CSS-tricks — ingen onödig rendering
+**Implementerat ✅:**
+- `field_configurator_media` på produkten med namnkonvention `{imagePrefix}-{kod}`
+- Media omdöpta: TM-C, TM-E, TM-V, TM-B, TM-W, TM-default
+- View mode `configurator_image` på media.image — endast bild, inget author/datum/thumbnail
+- `imagePictures` byggs i preprocess-hook — 6 poster per produkt (verifierat)
+- `ConfiguratorImageBlock` — separat placerbart block i Layout Builder (`tritonled_configurator_image_block`)
+- `ConfiguratorBlock` — rensat, renderar bara konfigurator-UI
+- JS `maybeUpdateImage()` byter `src`/`srcset` på `<img>` inuti `.triton-configurator-image`
+- MAX BASE end-to-end verifierat ✅
 
 **⏳ Återstår:**
-- Test MAX BASE end-to-end (5b-08)
 - `field_configurator_media` på led_luminaire_srow (5b-07)
 - imagePrefix + visual på produkter 16–26 (5b-09)
 - Koppla media till respektive produkt (5b-10)
