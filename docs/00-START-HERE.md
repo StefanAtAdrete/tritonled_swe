@@ -236,6 +236,14 @@ vendor/bin/drush cr
 
 ## 📊 Senaste Viktiga Beslut
 
+### Konfigurator bildväxling — separata block (2026-03-20)
+- ✅ `ConfiguratorImageBlock` = separat block plugin för bilden — placeras fritt i Layout Builder
+- ✅ `ConfiguratorBlock` = bara konfigurator-UI (dropdowns, SKU, knapp)
+- ✅ `#prefix`/`#suffix` fungerar INTE på media-render-arrayer — använd `'#type' => 'container'` som wrapper
+- ✅ View mode `configurator_image` på media.image: alla fält utom `Image` måste sättas till Disabled (Radix renderar allt i Content-regionen)
+- ✅ `imagePictures` byggs server-side i preprocess, JS byter bara `src`/`srcset` på befintlig `<img>`
+- Se: `03-solutions/configurator-image-switching.md`
+
 ### Feeds import-ordning och store-koppling (2026-03-06)
 - ✅ Products-feed ALLTID FÖRST → sätter store-koppling på produkten
 - ✅ Variations-feed SEDAN → importerar varianter
