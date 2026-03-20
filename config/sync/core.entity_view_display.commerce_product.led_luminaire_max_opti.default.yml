@@ -323,23 +323,6 @@ third_party_settings:
                 margin_bottom_3: margin_bottom_3
                 h1_title: 0
                 padding_3: 0
-          cd216dc3-d85c-4072-a85a-0dcb3c77b0d3:
-            uuid: cd216dc3-d85c-4072-a85a-0dcb3c77b0d3
-            region: blb_region_col_1
-            configuration:
-              id: 'field_block:commerce_product:led_luminaire_max_opti:field_configurator_media'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: entity_reference_entity_view
-                label: above
-                settings:
-                  view_mode: default
-                  link: false
-                third_party_settings: {  }
-            weight: 7
-            additional: {  }
         third_party_settings: {  }
       -
         layout_id: layout_onecol

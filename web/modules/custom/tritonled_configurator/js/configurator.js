@@ -93,7 +93,7 @@
             autoSelectFirst();
             // autoSelectFirst calls updateVisibility/updateSku/updateButton
             // internally — also fire image update for this step.
-            maybeUpdateImage(step);
+            maybeUpdateImage();
           });
 
           col.appendChild(select);
@@ -190,39 +190,85 @@
         }
         updateSku();
         updateButton();
-        // Fire image update for all imageMap steps.
-        steps.forEach(function (step) {
-          if (selections[step.id]) {
-            maybeUpdateImage(step);
-          }
-        });
+        // Update image based on current visual selections.
+        maybeUpdateImage();
       }
 
       // ------------------------------------------------------------------ //
-      // Image switching
+      // Image switching — SESSION 5b
+      // Matches active visual step selections against imagePictures entries,
+      // picks the best match (most conditions met), falls back to default.
+      // Replaces the img element inside field--name-field-configurator-media.
       // ------------------------------------------------------------------ //
 
-      function maybeUpdateImage(step) {
-        // Always read imageMap from schema.steps (live drupalSettings reference).
-        var liveStep = schema.steps.find(function(s){ return s.id === step.id; });
-        if (!liveStep || !liveStep.imageMap) return;
-        var val = selections[step.id];
-        if (!val || !liveStep.imageMap[val]) return;
-        var imgUrl = liveStep.imageMap[val];
+      function maybeUpdateImage() {
+        var pictures = config.imagePictures;
+        if (!pictures || !pictures.length) return;
 
-        // Dispatch custom event for external listeners (e.g. product image block).
-        var event = new CustomEvent('triton:configurator:image', {
-          bubbles: true,
-          detail: { url: imgUrl, stepId: step.id, code: val },
+        // Collect active visual selections.
+        var visualSelections = {};
+        steps.forEach(function(step) {
+          if (step.visual && selections[step.id]) {
+            visualSelections[step.id] = selections[step.id];
+          }
         });
-        container.dispatchEvent(event);
 
-        // Update the main product image directly.
-        var productImg = document.querySelector('.field--name-field-product-media img, .field--name-field-media-image img');
-        if (productImg) {
-          productImg.src = imgUrl;
-          productImg.srcset = '';
+        // Score each picture entry — count matching conditions.
+        var best = null;
+        var bestScore = -1;
+
+        pictures.forEach(function(entry) {
+          var conditions = entry.conditions;
+          var keys = Object.keys(conditions);
+
+          // Default entry (empty conditions) scores 0 — always a candidate.
+          if (keys.length === 0) {
+            if (bestScore < 0) {
+              best = entry;
+              bestScore = 0;
+            }
+            return;
+          }
+
+          // Count matches.
+          var score = 0;
+          var allMatch = true;
+          keys.forEach(function(k) {
+            if (visualSelections[k] === conditions[k]) {
+              score++;
+            } else {
+              allMatch = false;
+            }
+          });
+
+          if (allMatch && score > bestScore) {
+            best = entry;
+            bestScore = score;
+          }
+        });
+
+        if (!best) return;
+
+        // Find the image container — field_configurator_media img.
+        var imgEl = document.querySelector(
+          '.field--name-field-configurator-media img, ' +
+          '.field--name-field-product-media img'
+        );
+        if (!imgEl) return;
+
+        // Parse the new img from the picture HTML string.
+        var tmp = document.createElement('div');
+        tmp.innerHTML = best.html;
+        var newImg = tmp.querySelector('img');
+        if (!newImg) return;
+
+        // Replace src + srcset on existing element (preserves CSS/classes).
+        imgEl.src = newImg.getAttribute('src') || '';
+        imgEl.srcset = newImg.getAttribute('srcset') || '';
+        if (newImg.getAttribute('sizes')) {
+          imgEl.sizes = newImg.getAttribute('sizes');
         }
+        imgEl.loading = 'eager'; // Already in viewport — load immediately.
       }
 
       // ------------------------------------------------------------------ //
