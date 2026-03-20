@@ -1,0 +1,62 @@
+uuid: 31f0373d-a7d6-4323-a06f-93913b1d4cc8
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - core.entity_view_mode.commerce_product.configurator_image
+    - field.field.commerce_product.led_luminaire_max_opti.body
+    - field.field.commerce_product.led_luminaire_max_opti.feeds_item
+    - field.field.commerce_product.led_luminaire_max_opti.field_brand
+    - field.field.commerce_product.led_luminaire_max_opti.field_configurator_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_configurator_schema
+    - field.field.commerce_product.led_luminaire_max_opti.field_datasheet
+    - field.field.commerce_product.led_luminaire_max_opti.field_features
+    - field.field.commerce_product.led_luminaire_max_opti.field_hero_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_producers
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_categories
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_series
+    - field.field.commerce_product.led_luminaire_max_opti.field_short_description
+    - field.field.commerce_product.led_luminaire_max_opti.field_show_in_hero
+    - field.field.commerce_product.led_luminaire_max_opti.layout_builder__layout
+id: commerce_product.led_luminaire_max_opti.configurator_image
+targetEntityType: commerce_product
+bundle: led_luminaire_max_opti
+mode: configurator_image
+content:
+  field_configurator_media:
+    type: entity_reference_entity_view
+    label: hidden
+    settings:
+      view_mode: configurator_image
+      link: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  body: true
+  created: true
+  feeds_item: true
+  field_brand: true
+  field_configurator_schema: true
+  field_datasheet: true
+  field_features: true
+  field_hero_media: true
+  field_producers: true
+  field_product_categories: true
+  field_product_media: true
+  field_series: true
+  field_short_description: true
+  field_show_in_hero: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  title: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true
