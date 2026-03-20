@@ -4,6 +4,7 @@ namespace Drupal\tritonled_configurator\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -11,13 +12,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Provides the TritonLED Product Configurator block.
  *
- * Renders a container div that the configurator.js behavior attaches to.
- * The JS reads its schema from drupalSettings.tritonConfigurator (set by
- * tritonled_configurator_preprocess_commerce_product) and builds the UI.
- *
- * Place this block via Layout Builder on product pages for:
- * - led_luminaire_max_opti
- * - led_luminaire_srow
+ * Renders the configurator UI + the default product image (from
+ * field_configurator_media, view mode configurator_image). JS handles
+ * image switching by replacing src/srcset on the rendered img element.
  *
  * @Block(
  *   id = "tritonled_configurator_block",
@@ -35,11 +32,25 @@ class ConfiguratorBlock extends BlockBase implements ContainerFactoryPluginInter
   protected RouteMatchInterface $routeMatch;
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected EntityTypeManagerInterface $entityTypeManager;
+
+  /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RouteMatchInterface $route_match) {
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    RouteMatchInterface $route_match,
+    EntityTypeManagerInterface $entity_type_manager,
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->routeMatch = $route_match;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -50,7 +61,8 @@ class ConfiguratorBlock extends BlockBase implements ContainerFactoryPluginInter
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('current_route_match')
+      $container->get('current_route_match'),
+      $container->get('entity_type.manager'),
     );
   }
 
@@ -58,10 +70,23 @@ class ConfiguratorBlock extends BlockBase implements ContainerFactoryPluginInter
    * {@inheritdoc}
    */
   public function build(): array {
-    // The div that configurator.js attaches to.
-    // drupalSettings.tritonConfigurator is set by the preprocess hook
-    // only when the product has field_configurator_schema filled in.
-    return [
+    $build = [];
+
+    // Render default image from field_configurator_media if available.
+    $product = $this->routeMatch->getParameter('commerce_product');
+    if ($product && $product->hasField('field_configurator_media') && !$product->get('field_configurator_media')->isEmpty()) {
+      // Render only the first (default) media entity.
+      $media = $product->get('field_configurator_media')->first()->entity;
+      if ($media) {
+        $view_builder = $this->entityTypeManager->getViewBuilder('media');
+        $build['image'] = $view_builder->view($media, 'configurator_image');
+        $build['image']['#prefix'] = '<div class="triton-configurator-image">';
+        $build['image']['#suffix'] = '</div>';
+      }
+    }
+
+    // The configurator UI div — configurator.js attaches here.
+    $build['configurator'] = [
       '#type' => 'html_tag',
       '#tag' => 'div',
       '#attributes' => [
@@ -69,6 +94,8 @@ class ConfiguratorBlock extends BlockBase implements ContainerFactoryPluginInter
         'id' => 'triton-configurator',
       ],
     ];
+
+    return $build;
   }
 
   /**

@@ -47,17 +47,23 @@
 
 **Mål:** Responsive Image bildväxling via namnkonvention + field_configurator_media
 
-**Arkitekturbeslut (SESSION 5b):**
-- ✅ Dedikerat fält `field_configurator_media` på produkten (skapat på led_luminaire_max_opti)
-- ✅ Namnkonvention: `{imagePrefix}-{visuellkod1}{visuellkod2}` (t.ex. TM-C1, TM-E2)
-- ✅ Responsive Image Style `product_responsive` — PHP renderar `<picture>`, JS byter element
-- ✅ `visual: true` på steg som påverkar produktens utseende (endcap, color)
-- ✅ Fallback: `{imagePrefix}-default`
-- ✅ Fungerar bara för konfigurator-produkter
+**Arkitekturbeslut + implementation (SESSION 5b) ✅:**
+- ✅ `field_configurator_media` på produkten med namnkonvention `{imagePrefix}-{kod}`
+- ✅ Media omdöpta: TM-C, TM-E, TM-V, TM-B, TM-W, TM-default + alla serier
+- ✅ View mode `configurator_image` på media.image + commerce_product
+- ✅ Responsive Image Style `product_responsive` via formatter
+- ✅ `imagePictures` byggs i preprocess-hook — 6 poster per produkt
+- ✅ `ConfiguratorBlock` renderar default-bild server-side (bara en media-entitet)
+- ✅ JS `updateImage()` byter `src`/`srcset` på `<img>` inuti `.triton-configurator-image`
+- ✅ Inga CSS-tricks — ingen onödig rendering
+
+**⏳ Återstår:**
+- Test MAX BASE end-to-end (5b-08)
+- `field_configurator_media` på led_luminaire_srow (5b-07)
+- imagePrefix + visual på produkter 16–26 (5b-09)
+- Koppla media till respektive produkt (5b-10)
 
 **Se fullständig plan:** `/docs/tasks/task-015-session-5b-bildvaxling.md`
-
-**STOP — kör `ddev drush cex -y` och commit innan SESSION 5b startar.**
 
 ### Kommande sessioner
 | Session | Fokus |

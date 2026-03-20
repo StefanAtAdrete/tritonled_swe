@@ -249,11 +249,8 @@
 
         if (!best) return;
 
-        // Find the image container — field_configurator_media img.
-        var imgEl = document.querySelector(
-          '.field--name-field-configurator-media img, ' +
-          '.field--name-field-product-media img'
-        );
+        // Find the image — rendered by ConfiguratorBlock inside .triton-configurator-image.
+        var imgEl = document.querySelector('.triton-configurator-image img');
         if (!imgEl) return;
 
         // Parse the new img from the picture HTML string.
