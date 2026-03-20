@@ -1,0 +1,11 @@
+uuid: 29fa5c8b-f0f8-4d7c-b813-1964f94e829b
+langcode: en
+status: true
+dependencies:
+  module:
+    - media
+id: media.configurator_image
+label: 'Configurator Image'
+description: null
+targetEntityType: media
+cache: true
