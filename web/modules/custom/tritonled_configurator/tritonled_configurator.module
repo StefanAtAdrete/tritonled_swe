@@ -7,9 +7,13 @@
  * Reads field_configurator_schema from commerce_product, exposes it via
  * drupalSettings, and attaches the configurator library on product pages
  * that have a schema defined.
+ *
+ * SESSION 5b: Adds responsive image picture rendering via
+ * field_configurator_media + naming convention {imagePrefix}-{codes}.
  */
 
 use Drupal\commerce_product\Entity\ProductInterface;
+use Drupal\media\MediaInterface;
 
 /**
  * Implements hook_preprocess_commerce_product().
@@ -41,10 +45,166 @@ function tritonled_configurator_preprocess_commerce_product(&$variables) {
     }
   }
 
+  // Build responsive image pictures from field_configurator_media.
+  $image_pictures = [];
+  if ($product->hasField('field_configurator_media') && !$product->get('field_configurator_media')->isEmpty()) {
+    $image_pictures = _tritonled_configurator_build_image_pictures($product, $schema);
+  }
+
   $variables['#attached']['library'][] = 'tritonled_configurator/configurator';
   $variables['#attached']['drupalSettings']['tritonConfigurator'] = [
     'productId' => (int) $product->id(),
     'variationId' => $variation_id,
     'schema' => $schema,
+    'imagePictures' => $image_pictures,
   ];
+}
+
+/**
+ * Builds an array of rendered <picture> HTML keyed by visual step conditions.
+ *
+ * Reads media entities from field_configurator_media, matches them against
+ * the naming convention {imagePrefix}-{visualCode1}{visualCode2}, and renders
+ * each as a responsive image <picture> element.
+ *
+ * Returns an array of:
+ * [
+ *   ['conditions' => ['endcap' => 'C', 'color' => '1'], 'html' => '<picture>...'],
+ *   ['conditions' => [], 'html' => '<picture>...'],  // default fallback
+ * ]
+ *
+ * @param \Drupal\commerce_product\Entity\ProductInterface $product
+ *   The product entity.
+ * @param array $schema
+ *   The decoded configurator schema.
+ *
+ * @return array
+ *   Array of picture entries with conditions and rendered HTML.
+ */
+function _tritonled_configurator_build_image_pictures(ProductInterface $product, array $schema): array {
+  $image_prefix = $schema['imagePrefix'] ?? NULL;
+  if (!$image_prefix) {
+    return [];
+  }
+
+  // Identify visual steps (steps that affect product appearance).
+  $visual_steps = array_filter($schema['steps'] ?? [], fn($step) => !empty($step['visual']));
+  $visual_step_ids = array_column($visual_steps, 'id');
+
+  // Build a map of media name => rendered picture HTML.
+  // Only load media from field_configurator_media on this product.
+  $media_map = [];
+  foreach ($product->get('field_configurator_media') as $item) {
+    /** @var \Drupal\media\MediaInterface $media */
+    $media = $item->entity;
+    if (!$media instanceof MediaInterface) {
+      continue;
+    }
+    $name = $media->getName();
+    $rendered = _tritonled_configurator_render_media($media);
+    if ($rendered) {
+      $media_map[$name] = $rendered;
+    }
+  }
+
+  if (empty($media_map)) {
+    return [];
+  }
+
+  // Build picture entries for all possible combinations of visual step values.
+  $pictures = [];
+
+  // Collect all option codes per visual step.
+  $step_options = [];
+  foreach ($visual_steps as $step) {
+    $step_options[$step['id']] = array_column($step['options'], 'code');
+  }
+
+  // Generate all combinations recursively.
+  $combinations = _tritonled_configurator_combinations($step_options);
+
+  foreach ($combinations as $combo) {
+    // Build media name from combination: {imagePrefix}-{code1}{code2}...
+    $suffix = implode('', array_values($combo));
+    $media_name = $image_prefix . '-' . $suffix;
+
+    if (!isset($media_map[$media_name])) {
+      continue;
+    }
+
+    // Build conditions array using visual step IDs in schema order.
+    $conditions = [];
+    foreach ($visual_step_ids as $step_id) {
+      if (isset($combo[$step_id])) {
+        $conditions[$step_id] = $combo[$step_id];
+      }
+    }
+
+    $pictures[] = [
+      'conditions' => $conditions,
+      'html' => $media_map[$media_name],
+    ];
+  }
+
+  // Add default fallback: {imagePrefix}-default.
+  $default_name = $image_prefix . '-default';
+  if (isset($media_map[$default_name])) {
+    $pictures[] = [
+      'conditions' => [],
+      'html' => $media_map[$default_name],
+    ];
+  }
+
+  return $pictures;
+}
+
+/**
+ * Renders a media entity as a responsive image <picture> HTML string.
+ *
+ * Uses the configurator_image view mode which is configured with
+ * Responsive Image Style product_responsive.
+ *
+ * @param \Drupal\media\MediaInterface $media
+ *   The media entity to render.
+ *
+ * @return string|null
+ *   Rendered HTML string or NULL on failure.
+ */
+function _tritonled_configurator_render_media(MediaInterface $media): ?string {
+  $view_builder = \Drupal::entityTypeManager()->getViewBuilder('media');
+  $build = $view_builder->view($media, 'configurator_image');
+  $rendered = \Drupal::service('renderer')->renderInIsolation($build);
+  $html = (string) $rendered;
+  // Extract just the <picture> element.
+  if (preg_match('/<picture[\s\S]*?<\/picture>/i', $html, $matches)) {
+    return $matches[0];
+  }
+  // Fallback: return <img> if no picture element (e.g. no responsive image).
+  if (preg_match('/<img[^>]+>/i', $html, $matches)) {
+    return $matches[0];
+  }
+  return NULL;
+}
+
+/**
+ * Generates all combinations of values from an associative array of options.
+ *
+ * @param array $options
+ *   Associative array of stepId => [code1, code2, ...].
+ *
+ * @return array
+ *   Array of associative arrays: [stepId => code, ...].
+ */
+function _tritonled_configurator_combinations(array $options): array {
+  $result = [[]];
+  foreach ($options as $step_id => $codes) {
+    $new_result = [];
+    foreach ($result as $existing) {
+      foreach ($codes as $code) {
+        $new_result[] = $existing + [$step_id => $code];
+      }
+    }
+    $result = $new_result;
+  }
+  return $result;
 }
