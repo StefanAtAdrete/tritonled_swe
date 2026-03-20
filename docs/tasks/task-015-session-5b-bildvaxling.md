@@ -177,12 +177,14 @@ Bilder som behöver laddas upp och namnges:
 |------|-------------|--------|
 | 5b-01 | Uppdatera JSON-schema: imagePrefix + visual-flagga | ⏳ |
 | 5b-02 | Ladda upp och namnge media i field_configurator_media | ⏳ |
-| 5b-03 | preprocess-hook: build imagePictures | ⏳ |
-| 5b-04 | configurator.js: updateImage() med picture-byte | ⏳ |
-| 5b-05 | Layout Builder: byt bildblock till field_configurator_media | ⏳ |
-| 5b-06 | Ta bort gamla imageMap från steg i schema | ⏳ |
+| 5b-03 | preprocess-hook: build imagePictures | ✅ |
+| 5b-04 | configurator.js: updateImage() med srcset-byte | ✅ |
+| 5b-05 | ConfiguratorBlock renderar default-bild server-side | ✅ |
+| 5b-06 | Ta bort gamla imageMap från steg i schema | ✅ |
 | 5b-07 | Lägg till field_configurator_media på led_luminaire_srow | ⏳ |
 | 5b-08 | Test MAX BASE end-to-end | ⏳ |
+| 5b-09 | imagePrefix + visual-flagga på OPTI/SROW-produkter (16-26) | ⏳ |
+| 5b-10 | Koppla TM*/TO*/TS* media till respektive produkt | ⏳ |
 
 ---
 
