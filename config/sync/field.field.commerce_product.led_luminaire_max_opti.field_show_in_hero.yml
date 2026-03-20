@@ -1,0 +1,23 @@
+uuid: 57e05fa0-b00d-4e4f-884d-06d3101c55bf
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.storage.commerce_product.field_show_in_hero
+id: commerce_product.led_luminaire_max_opti.field_show_in_hero
+field_name: field_show_in_hero
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: 'Show in hero'
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

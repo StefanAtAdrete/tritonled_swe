@@ -1,0 +1,474 @@
+uuid: 4988c442-b23e-44d5-b866-c2ce3f44a524
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.field.commerce_product.led_luminaire_max_opti.body
+    - field.field.commerce_product.led_luminaire_max_opti.feeds_item
+    - field.field.commerce_product.led_luminaire_max_opti.field_brand
+    - field.field.commerce_product.led_luminaire_max_opti.field_configurator_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_configurator_schema
+    - field.field.commerce_product.led_luminaire_max_opti.field_datasheet
+    - field.field.commerce_product.led_luminaire_max_opti.field_features
+    - field.field.commerce_product.led_luminaire_max_opti.field_hero_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_producers
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_categories
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_media
+    - field.field.commerce_product.led_luminaire_max_opti.field_series
+    - field.field.commerce_product.led_luminaire_max_opti.field_short_description
+    - field.field.commerce_product.led_luminaire_max_opti.field_show_in_hero
+    - field.field.commerce_product.led_luminaire_max_opti.layout_builder__layout
+  module:
+    - bootstrap_layout_builder
+    - fences
+    - file
+    - layout_builder
+    - layout_discovery
+    - text
+    - tritonled_configurator
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+          context_mapping: {  }
+        components:
+          b3eec9e7-dcb6-411f-a047-ac242a69fe7e:
+            uuid: b3eec9e7-dcb6-411f-a047-ac242a69fe7e
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          2cc84e7a-1b85-4dc3-8698-0199eb74a380:
+            uuid: 2cc84e7a-1b85-4dc3-8698-0199eb74a380
+            region: blb_region_col_2
+            configuration:
+              id: tritonled_configurator_block
+              label: Produktkonfigurator
+              label_display: visible
+              provider: tritonled_configurator
+              context_mapping: {  }
+            weight: 2
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                padding_3: 0
+          140a1eac-a22a-4759-81a1-22dcd3e84257:
+            uuid: 140a1eac-a22a-4759-81a1-22dcd3e84257
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_brand'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: visually_hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 2
+            additional: {  }
+          806543ef-4b49-4a54-806c-6a33c38fd507:
+            uuid: 806543ef-4b49-4a54-806c-6a33c38fd507
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_datasheet'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: file_default
+                label: inline
+                settings:
+                  use_description_as_link_text: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 3
+            additional: {  }
+          862f1e09-e02f-467b-8dec-06a31d51b68c:
+            uuid: 862f1e09-e02f-467b-8dec-06a31d51b68c
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_product_categories'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 4
+            additional: {  }
+          b336702c-9b32-4686-908b-051f1e0e913a:
+            uuid: b336702c-9b32-4686-908b-051f1e0e913a
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:body'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 5
+            additional: {  }
+          eb7ae638-080b-4432-9053-a50a8c0039a0:
+            uuid: eb7ae638-080b-4432-9053-a50a8c0039a0
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_producers'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 6
+            additional: {  }
+          a8ab7d2e-6cdc-4206-9429-956bb9507e4c:
+            uuid: a8ab7d2e-6cdc-4206-9429-956bb9507e4c
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_product_media'
+              label: 'Product media'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_entity_view
+                label: above
+                settings:
+                  view_mode: splide
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                h1_title: 0
+                padding_3: 0
+          cd216dc3-d85c-4072-a85a-0dcb3c77b0d3:
+            uuid: cd216dc3-d85c-4072-a85a-0dcb3c77b0d3
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_configurator_media'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_entity_view
+                label: above
+                settings:
+                  view_mode: default
+                  link: false
+                third_party_settings: {  }
+            weight: 7
+            additional: {  }
+        third_party_settings: {  }
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components: {  }
+        third_party_settings: {  }
+id: commerce_product.led_luminaire_max_opti.default
+targetEntityType: commerce_product
+bundle: led_luminaire_max_opti
+mode: default
+content:
+  body:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 4
+    region: blb_region_col_1
+  field_brand:
+    type: string
+    label: visually_hidden
+    settings:
+      link_to_entity: false
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 1
+    region: blb_region_col_1
+  field_configurator_media:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 8
+    region: blb_region_col_1
+  field_datasheet:
+    type: file_default
+    label: inline
+    settings:
+      use_description_as_link_text: false
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 2
+    region: blb_region_col_1
+  field_hero_media:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 0
+    region: blb_region_col_1
+  field_producers:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 5
+    region: blb_region_col_1
+  field_product_categories:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 3
+    region: blb_region_col_1
+  field_product_media:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 7
+    region: blb_region_col_1
+  field_show_in_hero:
+    type: boolean
+    label: above
+    settings:
+      format: default
+      format_custom_false: ''
+      format_custom_true: ''
+    third_party_settings: {  }
+    weight: 6
+    region: blb_region_col_1
+hidden:
+  created: true
+  feeds_item: true
+  field_configurator_schema: true
+  field_features: true
+  field_series: true
+  field_short_description: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  title: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true

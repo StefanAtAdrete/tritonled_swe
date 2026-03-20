@@ -1,0 +1,33 @@
+uuid: e6e0a7b1-c471-4b46-8506-a2bc9a7df5ba
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.storage.commerce_product.field_configurator_media
+    - media.type.image
+    - media.type.remote_video
+    - media.type.video
+id: commerce_product.led_luminaire_max_opti.field_configurator_media
+field_name: field_configurator_media
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: 'Configurator media'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+      remote_video: remote_video
+      video: video
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: image
+field_type: entity_reference

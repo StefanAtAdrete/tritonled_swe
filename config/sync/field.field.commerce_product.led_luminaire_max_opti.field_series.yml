@@ -1,0 +1,19 @@
+uuid: 5b0d20cc-6b4f-4f9e-aed2-f1f4d01a987e
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.storage.commerce_product.field_series
+id: commerce_product.led_luminaire_max_opti.field_series
+field_name: field_series
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: 'Product Series'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

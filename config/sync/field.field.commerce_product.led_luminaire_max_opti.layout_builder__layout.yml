@@ -1,0 +1,21 @@
+uuid: f5ee8d6b-405a-4656-9851-e0f19dd06041
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - field.storage.commerce_product.layout_builder__layout
+  module:
+    - layout_builder
+id: commerce_product.led_luminaire_max_opti.layout_builder__layout
+field_name: layout_builder__layout
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: Layout
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: layout_section
