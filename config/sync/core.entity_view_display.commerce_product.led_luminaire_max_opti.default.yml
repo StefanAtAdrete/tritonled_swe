@@ -207,7 +207,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 2
+            weight: 4
             additional: {  }
           806543ef-4b49-4a54-806c-6a33c38fd507:
             uuid: 806543ef-4b49-4a54-806c-6a33c38fd507
@@ -232,7 +232,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 3
+            weight: 5
             additional: {  }
           862f1e09-e02f-467b-8dec-06a31d51b68c:
             uuid: 862f1e09-e02f-467b-8dec-06a31d51b68c
@@ -248,7 +248,7 @@ third_party_settings:
                 settings:
                   link: true
                 third_party_settings: {  }
-            weight: 4
+            weight: 6
             additional: {  }
           b336702c-9b32-4686-908b-051f1e0e913a:
             uuid: b336702c-9b32-4686-908b-051f1e0e913a
@@ -272,7 +272,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 5
+            weight: 7
             additional: {  }
           eb7ae638-080b-4432-9053-a50a8c0039a0:
             uuid: eb7ae638-080b-4432-9053-a50a8c0039a0
@@ -288,35 +288,18 @@ third_party_settings:
                 settings:
                   link: true
                 third_party_settings: {  }
-            weight: 6
+            weight: 8
             additional: {  }
-          a8ab7d2e-6cdc-4206-9429-956bb9507e4c:
-            uuid: a8ab7d2e-6cdc-4206-9429-956bb9507e4c
+          d1d6233c-f866-4f2a-9069-771b4112a0ee:
+            uuid: d1d6233c-f866-4f2a-9069-771b4112a0ee
             region: blb_region_col_1
             configuration:
-              id: 'field_block:commerce_product:led_luminaire_max_opti:field_product_media'
-              label: 'Product media'
+              id: tritonled_configurator_image_block
+              label: Konfigurator-bild
               label_display: '0'
-              provider: layout_builder
-              context_mapping:
-                entity: layout_builder.entity
-                view_mode: view_mode
-              formatter:
-                type: entity_reference_entity_view
-                label: above
-                settings:
-                  view_mode: splide
-                third_party_settings:
-                  fences:
-                    fences_field_tag: div
-                    fences_field_classes: ''
-                    fences_field_items_wrapper_tag: none
-                    fences_field_items_wrapper_classes: ''
-                    fences_field_item_tag: div
-                    fences_field_item_classes: ''
-                    fences_label_tag: div
-                    fences_label_classes: ''
-            weight: 0
+              provider: tritonled_configurator
+              context_mapping: {  }
+            weight: 3
             additional:
               layout_builder_styles_style:
                 tab_block_products: 0

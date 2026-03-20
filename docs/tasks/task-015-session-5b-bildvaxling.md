@@ -152,11 +152,15 @@ Ny funktion `updateImage()` — ersätter `maybeUpdateImage()`:
 
 ### Del 4 — Layout Builder
 
-Bildblocket på produktsidan ska peka på `field_configurator_media`
-(inte `field_product_media`) för konfigurator-produkter.
+**Arkitekturbeslut (SESSION 5b, 2026-03-20):**
+- `ConfiguratorImageBlock` = separat block plugin (`tritonled_configurator_image_block`)
+- `ConfiguratorBlock` = bara konfigurator-UI, ingen bild
+- Båda placeras fritt i Layout Builder — bilden vänster, konfiguratorn höger
+- JS hittar `.triton-configurator-image img` oavsett var blocket placeras
 
-View mode för `field_configurator_media`: ny eller befintlig som renderar
-media med Responsive Image Style `product_responsive`.
+**View mode `configurator_image` på media.image:**
+- Endast `Image` (field_media_image) i Content-region
+- `Authored by`, `Authored on`, `Thumbnail`, `Name`, `Language` → Disabled
 
 ---
 
@@ -179,10 +183,10 @@ Bilder som behöver laddas upp och namnges:
 | 5b-02 | Ladda upp och namnge media i field_configurator_media | ⏳ |
 | 5b-03 | preprocess-hook: build imagePictures | ✅ |
 | 5b-04 | configurator.js: updateImage() med srcset-byte | ✅ |
-| 5b-05 | ConfiguratorBlock renderar default-bild server-side | ✅ |
+| 5b-05 | ConfiguratorImageBlock — separat placerbart block i Layout Builder | ✅ |
 | 5b-06 | Ta bort gamla imageMap från steg i schema | ✅ |
 | 5b-07 | Lägg till field_configurator_media på led_luminaire_srow | ⏳ |
-| 5b-08 | Test MAX BASE end-to-end | ⏳ |
+| 5b-08 | Test MAX BASE end-to-end | ✅ |
 | 5b-09 | imagePrefix + visual-flagga på OPTI/SROW-produkter (16-26) | ⏳ |
 | 5b-10 | Koppla TM*/TO*/TS* media till respektive produkt | ⏳ |
 
