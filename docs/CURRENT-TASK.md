@@ -25,6 +25,16 @@
 - ✅ `configurator.js` — dropdowns + dependsOn + dependsOnAny + live SKU-display
 - ✅ Blocket placerat på MAX BASE-produktsidan, verifierat i webbläsaren
 
+### SESSION 5 ✅ Klar (2026-03-20)
+- ✅ Bootstrap-styling (row g-3, form-select, btn btn-primary, SKU-bar)
+- ✅ Auto-select med loop — fyller alla beroende steg vid sidladdning och vid val-byte
+- ✅ Antal-fält (input[type=number] + quantity i CartController)
+- ✅ Dölj Commerce egna dropdowns
+- ✅ imageMap i endcap-steget för MAX BASE (temporär lösning, ersätts av SESSION 5b)
+- ✅ JS bildväxling — maybeUpdateImage() med liveStep-fix
+- ✅ Cart POST + feedback fungerar end-to-end
+- ⚠️ Bildväxling via imageMap ersätts av SESSION 5b (namnkonvention + responsive image)
+
 ### SESSION 4 ✅ Klar (2026-03-18)
 - ✅ `tritonled_configurator.routing.yml` — custom route `/triton/configurator/add-to-cart`
 - ✅ `ConfiguratorCartController.php` — lägger till i cart via CartManager utan redirect
@@ -33,26 +43,21 @@
 - ✅ Variation ID hämtas automatiskt via preprocess hook (söker CONFIGURATOR-prefix)
 - ✅ Verifierat: `M-A0C8-J19N1` är giltig kombination
 
-### SESSION 5 — Nästa
+### SESSION 5b — Nästa (Responsive Image bildväxling)
 
-**Mål:** Styling (Bootstrap) + bildväxling (imageMap) + generalisering
+**Mål:** Responsive Image bildväxling via namnkonvention + field_configurator_media
 
-**Förberedelser gjorda:**
-- ✅ Bildkartläggning klar: `/docs/tasks/task-016e-bildkartlaggning.md`
-- ✅ Alla endcap-bilder identifierade per produktmodell (TM-, TMS-, TME-, TO-, TS-)
-- ✅ `imageMap`-format definierat för schemat
-- ✅ Saknade bilder identifierade (W3 för SROW/OPTI, CG för TME)
+**Arkitekturbeslut (SESSION 5b):**
+- ✅ Dedikerat fält `field_configurator_media` på produkten (skapat på led_luminaire_max_opti)
+- ✅ Namnkonvention: `{imagePrefix}-{visuellkod1}{visuellkod2}` (t.ex. TM-C1, TM-E2)
+- ✅ Responsive Image Style `product_responsive` — PHP renderar `<picture>`, JS byter element
+- ✅ `visual: true` på steg som påverkar produktens utseende (endcap, color)
+- ✅ Fallback: `{imagePrefix}-default`
+- ✅ Fungerar bara för konfigurator-produkter
 
-**Vad ska byggas:**
-1. Bootstrap-styling — 3-kolumns grid, labels, SKU-bar, knapp
-2. `imageMap` i `field_configurator_schema` för MAX BASE
-3. JS bildväxling vid endcap-val (DOM-event `triton:configurator:image`)
-4. Antal-fält (TASK-016d)
-5. Auto-select första giltiga kombination (TASK-016c)
-6. Placera blocket på alla 12 produktsidor
-7. Test OPTI BASE + SROW BASE
+**Se fullständig plan:** `/docs/tasks/task-015-session-5b-bildvaxling.md`
 
-**STOP — godkännande krävs** innan SESSION 5 startar.
+**STOP — kör `ddev drush cex -y` och commit innan SESSION 5b startar.**
 
 ### Kommande sessioner
 | Session | Fokus |

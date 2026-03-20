@@ -87,9 +87,12 @@
           select.addEventListener('change', function () {
             selections[step.id] = this.value;
             clearSelectionsAfter(step.id);
-            updateVisibility();
-            updateSku();
-            updateButton();
+            // Re-run auto-select to fill dependent steps after this one.
+            // autoSelectFirst skips steps that already have a value, so the
+            // user's current selection is preserved.
+            autoSelectFirst();
+            // autoSelectFirst calls updateVisibility/updateSku/updateButton
+            // internally — also fire image update for this step.
             maybeUpdateImage(step);
           });
 
@@ -162,28 +165,34 @@
       // ------------------------------------------------------------------ //
 
       function autoSelectFirst() {
-        steps.forEach(function (step) {
-          if (selections[step.id]) return; // Already selected.
-          var select = container.querySelector('select[data-step-id="' + step.id + '"]');
-          if (!select) return;
-          var col = container.querySelector('.configurator-step[data-step-id="' + step.id + '"]');
-          if (col && col.style.display === 'none') return;
+        // Loop until no new selections are made (handles dependsOn chains).
+        var changed = true;
+        var maxPasses = steps.length;
+        while (changed && maxPasses-- > 0) {
+          changed = false;
+          steps.forEach(function (step) {
+            if (selections[step.id]) return; // Already selected.
+            var select = container.querySelector('select[data-step-id="' + step.id + '"]');
+            if (!select) return;
 
-          for (var i = 0; i < step.options.length; i++) {
-            var option = step.options[i];
-            if (isOptionAvailable(option)) {
-              selections[step.id] = option.code;
-              select.value = option.code;
-              break;
+            for (var i = 0; i < step.options.length; i++) {
+              var option = step.options[i];
+              if (isOptionAvailable(option)) {
+                selections[step.id] = option.code;
+                select.value = option.code;
+                changed = true;
+                break;
+              }
             }
-          }
-        });
-        updateVisibility();
+          });
+          // Update visibility after each pass so dependsOn unlocks next steps.
+          updateVisibility();
+        }
         updateSku();
         updateButton();
-        // Fire image update for the first imageMap step.
+        // Fire image update for all imageMap steps.
         steps.forEach(function (step) {
-          if (step.imageMap && selections[step.id]) {
+          if (selections[step.id]) {
             maybeUpdateImage(step);
           }
         });
