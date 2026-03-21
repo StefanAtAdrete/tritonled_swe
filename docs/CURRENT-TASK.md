@@ -1,8 +1,8 @@
 # Aktuell Task
 
 **Task**: TASK-015 (Produktkonfigurator)
-**Status**: In Progress — SESSION 4 klar, SESSION 5 nästa
-**Senast uppdaterad**: 2026-03-18
+**Status**: In Progress — SESSION 5b delvis klar
+**Senast uppdaterad**: 2026-03-21
 
 ---
 
@@ -25,16 +25,6 @@
 - ✅ `configurator.js` — dropdowns + dependsOn + dependsOnAny + live SKU-display
 - ✅ Blocket placerat på MAX BASE-produktsidan, verifierat i webbläsaren
 
-### SESSION 5 ✅ Klar (2026-03-20)
-- ✅ Bootstrap-styling (row g-3, form-select, btn btn-primary, SKU-bar)
-- ✅ Auto-select med loop — fyller alla beroende steg vid sidladdning och vid val-byte
-- ✅ Antal-fält (input[type=number] + quantity i CartController)
-- ✅ Dölj Commerce egna dropdowns
-- ✅ imageMap i endcap-steget för MAX BASE (temporär lösning, ersätts av SESSION 5b)
-- ✅ JS bildväxling — maybeUpdateImage() med liveStep-fix
-- ✅ Cart POST + feedback fungerar end-to-end
-- ⚠️ Bildväxling via imageMap ersätts av SESSION 5b (namnkonvention + responsive image)
-
 ### SESSION 4 ✅ Klar (2026-03-18)
 - ✅ `tritonled_configurator.routing.yml` — custom route `/triton/configurator/add-to-cart`
 - ✅ `ConfiguratorCartController.php` — lägger till i cart via CartManager utan redirect
@@ -43,34 +33,35 @@
 - ✅ Variation ID hämtas automatiskt via preprocess hook (söker CONFIGURATOR-prefix)
 - ✅ Verifierat: `M-A0C8-J19N1` är giltig kombination
 
-### SESSION 5b — Klar (delvis)
+### SESSION 5 ✅ Klar (2026-03-20)
+- ✅ Bootstrap-styling (row g-3, form-select, btn btn-primary, SKU-bar)
+- ✅ Auto-select med loop — fyller alla beroende steg vid sidladdning och vid val-byte
+- ✅ Antal-fält (input[type=number] + quantity i CartController)
+- ✅ Dölj Commerce egna dropdowns
+- ✅ Cart POST + feedback fungerar end-to-end
 
-**Mål:** Responsive Image bildväxling via namnkonvention + field_configurator_media
+### SESSION 5b ✅ Klar för MAX BASE (2026-03-21)
+- ✅ Namnkonvention på media: `{imagePrefix}-{kod}` (TM-C, TM-E, TM-V, TM-B, TM-W, TM-default)
+- ✅ `field_configurator_media` på `led_luminaire_max_opti`
+- ✅ View mode `configurator_image` på media.image — endast bild (author/datum/thumbnail disabled)
+- ✅ preprocess-hook bygger `imagePictures` — 6 poster per produkt, verifierat
+- ✅ `ConfiguratorImageBlock` — separat placerbart block i Layout Builder (`tritonled_configurator_image_block`)
+- ✅ `ConfiguratorBlock` — rensat, renderar bara konfigurator-UI
+- ✅ JS `maybeUpdateImage()` byter `src`/`srcset` vid endcap-val — verifierat
+- ✅ MAX BASE end-to-end verifierat
+- ✅ Deploy: DB + filer synkade till produktion, Views-config exporterad
 
-**Implementerat ✅:**
-- `field_configurator_media` på produkten med namnkonvention `{imagePrefix}-{kod}`
-- Media omdöpta: TM-C, TM-E, TM-V, TM-B, TM-W, TM-default
-- View mode `configurator_image` på media.image — endast bild, inget author/datum/thumbnail
-- `imagePictures` byggs i preprocess-hook — 6 poster per produkt (verifierat)
-- `ConfiguratorImageBlock` — separat placerbart block i Layout Builder (`tritonled_configurator_image_block`)
-- `ConfiguratorBlock` — rensat, renderar bara konfigurator-UI
-- JS `maybeUpdateImage()` byter `src`/`srcset` på `<img>` inuti `.triton-configurator-image`
-- MAX BASE end-to-end verifierat ✅
-
-**⏳ Återstår:**
-- `field_configurator_media` på led_luminaire_srow (5b-07)
-- imagePrefix + visual på produkter 16–26 (5b-09)
-- Koppla media till respektive produkt (5b-10)
+**⏳ Återstår SESSION 5b:**
+- `field_configurator_media` på `led_luminaire_srow` (5b-07)
+- `imagePrefix` + `visual`-flagga i schema på produkter 16–26 (5b-09)
+- Ladda upp och koppla media till produkter 16–26 (5b-10)
 
 **Se fullständig plan:** `/docs/tasks/task-015-session-5b-bildvaxling.md`
 
-### Kommande sessioner
-| Session | Fokus |
-|---------|-------|
-| SESSION 5 | Styling + imageMap + bildväxling + antal + autoselect |
-| SESSION 6 | Produktseriesida (View) + specs-display live (TASK-017b) |
+---
 
-Se fullständig plan: `/docs/tasks/task-015-session-plan.md`
+## Nästa session startar med
+5b-07 → 5b-09 → 5b-10 → placera båda blocken på alla 12 produktsidor → SESSION 6
 
 ---
 
@@ -78,14 +69,13 @@ Se fullständig plan: `/docs/tasks/task-015-session-plan.md`
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-015 | 🔄 SESSION 4 klar | Produktkonfigurator |
+| TASK-015 | 🔄 SESSION 5b delvis klar | Produktkonfigurator |
+| TASK-015 SESSION 5b | 🔄 MAX BASE klar | field_configurator_media + bildväxling övriga produkter |
 | TASK-016b | Planned | SKU-placeholders vid ovalda steg |
-| TASK-016c | Planned | Auto-select första giltiga kombination |
-| TASK-016d | Planned | Antal-fält i konfiguratorn |
-| TASK-016e | Planned | Bildväxling vid endcap/color-val |
 | TASK-017b | Planned | Live specs-display + produktseriesida (View) |
-| TASK-016 | ✅ Completed | Navigation-styling |
 | TASK-017 | Planned | Cart block styling |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |
+| TASK-019 | In Progress | Klaro GDPR cookie consent |
+| TASK-016 | ✅ Completed | Navigation-styling |
 | TASK-020 | ✅ Completed | Produktarkitektur rebuild |
