@@ -1,0 +1,21 @@
+uuid: ae41a8c8-289c-4f17-a931-9465954f56d1
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_srow
+    - field.storage.commerce_product.layout_builder__layout
+  module:
+    - layout_builder
+id: commerce_product.led_luminaire_srow.layout_builder__layout
+field_name: layout_builder__layout
+entity_type: commerce_product
+bundle: led_luminaire_srow
+label: Layout
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: layout_section

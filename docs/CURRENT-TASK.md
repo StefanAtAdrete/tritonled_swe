@@ -1,8 +1,8 @@
 # Aktuell Task
 
 **Task**: TASK-015 (Produktkonfigurator)
-**Status**: In Progress — SESSION 5b delvis klar
-**Senast uppdaterad**: 2026-03-21
+**Status**: In Progress — SESSION 5b nästan klar
+**Senast uppdaterad**: 2026-03-23
 
 ---
 
@@ -40,28 +40,30 @@
 - ✅ Dölj Commerce egna dropdowns
 - ✅ Cart POST + feedback fungerar end-to-end
 
-### SESSION 5b ✅ Klar för MAX BASE (2026-03-21)
+### SESSION 5b ✅ Nästan klar (2026-03-23)
 - ✅ Namnkonvention på media: `{imagePrefix}-{kod}` (TM-C, TM-E, TM-V, TM-B, TM-W, TM-default)
-- ✅ `field_configurator_media` på `led_luminaire_max_opti`
-- ✅ View mode `configurator_image` på media.image — endast bild (author/datum/thumbnail disabled)
-- ✅ preprocess-hook bygger `imagePictures` — 6 poster per produkt, verifierat
-- ✅ `ConfiguratorImageBlock` — separat placerbart block i Layout Builder (`tritonled_configurator_image_block`)
-- ✅ `ConfiguratorBlock` — rensat, renderar bara konfigurator-UI
+- ✅ `field_configurator_media` på `led_luminaire_max_opti` och `led_luminaire_srow`
+- ✅ View mode `configurator_image` på media.image — endast bild
+- ✅ preprocess-hook bygger `imagePictures` — verifierat på MAX BASE
+- ✅ `ConfiguratorImageBlock` — separat placerbart block i Layout Builder
+- ✅ `ConfiguratorBlock` — renderar bara konfigurator-UI
 - ✅ JS `maybeUpdateImage()` byter `src`/`srcset` vid endcap-val — verifierat
-- ✅ MAX BASE end-to-end verifierat
-- ✅ Deploy: DB + filer synkade till produktion, Views-config exporterad
+- ✅ MAX BASE (produkt 15) end-to-end verifierat
+- ✅ Deploy: DB + filer synkade till produktion
+- ✅ 5b-07: `field_configurator_media` på `led_luminaire_srow` — fanns redan
+- ✅ 5b-09: `imagePrefix` på alla 12 produkter (15–26) — redan i DB
+- ✅ 5b-09: `visual: true` på `endcap` för alla 12 produkter — redan i DB
+- ✅ Beslut: `color` är INTE visual — inga bilder per färg finns
 
 **⏳ Återstår SESSION 5b:**
-- `field_configurator_media` på `led_luminaire_srow` (5b-07)
-- `imagePrefix` + `visual`-flagga i schema på produkter 16–26 (5b-09)
-- Ladda upp och koppla media till produkter 16–26 (5b-10)
+- 5b-10: Kartlägg vilka bilder som finns → ladda upp och koppla till produkter 16–26
 
 **Se fullständig plan:** `/docs/tasks/task-015-session-5b-bildvaxling.md`
 
 ---
 
 ## Nästa session startar med
-5b-07 → 5b-09 → 5b-10 → placera båda blocken på alla 12 produktsidor → SESSION 6
+5b-10: Kartlägg befintliga bilder → ladda upp → koppla till produkter 16–26 → placera båda blocken på alla 12 produktsidor → SESSION 6
 
 ---
 
@@ -69,8 +71,8 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-015 | 🔄 SESSION 5b delvis klar | Produktkonfigurator |
-| TASK-015 SESSION 5b | 🔄 MAX BASE klar | field_configurator_media + bildväxling övriga produkter |
+| TASK-015 | 🔄 SESSION 5b nästan klar | Produktkonfigurator |
+| TASK-015 SESSION 5b | 🔄 5b-10 återstår | Bilder för produkter 16–26 |
 | TASK-016b | Planned | SKU-placeholders vid ovalda steg |
 | TASK-017b | Planned | Live specs-display + produktseriesida (View) |
 | TASK-017 | Planned | Cart block styling |
