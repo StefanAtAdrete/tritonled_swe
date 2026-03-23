@@ -1,7 +1,7 @@
 # TASK-017b — Produktseriesidor + Taxonomi-struktur
 
 **Skapad**: 2026-03-23
-**Status**: Planned — inväntar Stefan OK
+**Status**: 🔄 In Progress — Steg 1-3 klara (2026-03-23)
 **Prioritet**: Hög
 **Relaterad**: TASK-015 (Konfigurator), TASK-013 (Attribut-cleanup)
 
@@ -60,20 +60,20 @@ Inspirerad av: `https://triton-solutions.co/sw/catalogue/industrial/linear`
 
 ## Implementation — steg-för-steg
 
-### Steg 1 — Taxonomy terms
-- Skapa terms i `product_categories`: MAX, OPTI, SROW
-- Skapa ny vocabulary `product_type` med terms: Base, Sensor, Emergency, Emergency Daylight
-- Skapa term i `producers`: TritonLED
-- Allt via `ddev drush php:eval` → `cex`
+### Steg 1 — Taxonomy terms ✅
+- MAX (tid=13), OPTI (tid=14), SROW (tid=15) i `product_categories`
+- Ny vocabulary `product_type`: Base (16), Sensor (17), Emergency (18), Emergency Daylight (19)
+- TritonLED (tid=20) i `producers`
+- Config exporterad, commit: `[TASK-017b-01]`
 
-### Steg 2 — Nytt fält `field_product_type`
+### Steg 2 — Nytt fält `field_product_type` ✅
 - Entity reference → `product_type` taxonomy
-- Lägg till på `led_luminaire_max_opti` och `led_luminaire_srow`
-- Via `ddev drush php:eval` → `cex`
+- Tillagd på `led_luminaire_max_opti` och `led_luminaire_srow`
+- Också lade till `field_product_categories` och `field_producers` på `led_luminaire_srow` (saknades)
 
-### Steg 3 — Koppla produkter till taxonomi
-- Sätt `field_product_categories`, `field_product_type`, `field_producers` på alla 12 produkter
-- Via `ddev drush php:eval`
+### Steg 3 — Koppla produkter till taxonomi ✅
+- Alla 12 produkter kopplade korrekt till serie, typ och producent
+- Verifierat via Drush
 
 ### Steg 4 — View mode för produktkort
 - Skapa view mode `series_card` på `commerce_product`
