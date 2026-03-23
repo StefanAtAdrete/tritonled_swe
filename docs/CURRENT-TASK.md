@@ -1,7 +1,7 @@
 # Aktuell Task
 
 **Task**: TASK-015 (Produktkonfigurator)
-**Status**: In Progress — SESSION 5b nästan klar
+**Status**: In Progress — SESSION 5b KLAR, SESSION 6 väntar
 **Senast uppdaterad**: 2026-03-23
 
 ---
@@ -40,7 +40,7 @@
 - ✅ Dölj Commerce egna dropdowns
 - ✅ Cart POST + feedback fungerar end-to-end
 
-### SESSION 5b ✅ Nästan klar (2026-03-23)
+### SESSION 5b ✅ KLAR (2026-03-23)
 - ✅ Namnkonvention på media: `{imagePrefix}-{kod}` (TM-C, TM-E, TM-V, TM-B, TM-W, TM-default)
 - ✅ `field_configurator_media` på `led_luminaire_max_opti` och `led_luminaire_srow`
 - ✅ View mode `configurator_image` på media.image — endast bild
@@ -49,21 +49,23 @@
 - ✅ `ConfiguratorBlock` — renderar bara konfigurator-UI
 - ✅ JS `maybeUpdateImage()` byter `src`/`srcset` vid endcap-val — verifierat
 - ✅ MAX BASE (produkt 15) end-to-end verifierat
-- ✅ Deploy: DB + filer synkade till produktion
 - ✅ 5b-07: `field_configurator_media` på `led_luminaire_srow` — fanns redan
-- ✅ 5b-09: `imagePrefix` på alla 12 produkter (15–26) — redan i DB
-- ✅ 5b-09: `visual: true` på `endcap` för alla 12 produkter — redan i DB
-- ✅ Beslut: `color` är INTE visual — inga bilder per färg finns
-
-**⏳ Återstår SESSION 5b:**
-- 5b-10: Kartlägg vilka bilder som finns → ladda upp och koppla till produkter 16–26
-
-**Se fullständig plan:** `/docs/tasks/task-015-session-5b-bildvaxling.md`
+- ✅ 5b-09: `imagePrefix` + `visual=[endcap]` på alla 12 produkter — redan i DB
+- ✅ Beslut: `color` är INTE visual — inga bilder per färg
+- ✅ Beslut: SROW har BARA Cable Gland (C) — verifierat mot triton-solutions.co
+- ✅ 5b-10: Alla produkter har minst default-bild — fallback fungerar
+- ✅ SROW Layout Builder-layout skapad (blb_col_2, ConfiguratorImageBlock + ConfiguratorBlock)
+- ✅ Båda blocken verifierade i DOM på produkt 24 (SROW BASE)
+- ✅ `task-016e-bildkartlaggning.md` uppdaterad — SROW-fel rensade
+- ✅ Config exporterad, commit: `[TASK-015-5b]`
 
 ---
 
-## Nästa session startar med
-5b-10: Kartlägg befintliga bilder → ladda upp → koppla till produkter 16–26 → placera båda blocken på alla 12 produktsidor → SESSION 6
+## Nästa session — SESSION 6
+
+Konfiguratorn är komplett på alla 12 produkter. Nästa steg:
+- Verifiera konfigurator + bildväxling på ett urval av produkter (MAX-S, OPTI, SROW)
+- Planera SESSION 6: live specs-display / produktseriesida (TASK-017b)
 
 ---
 
@@ -71,8 +73,7 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-015 | 🔄 SESSION 5b nästan klar | Produktkonfigurator |
-| TASK-015 SESSION 5b | 🔄 5b-10 återstår | Bilder för produkter 16–26 |
+| TASK-015 | ✅ SESSION 5b klar | Produktkonfigurator |
 | TASK-016b | Planned | SKU-placeholders vid ovalda steg |
 | TASK-017b | Planned | Live specs-display + produktseriesida (View) |
 | TASK-017 | Planned | Cart block styling |
