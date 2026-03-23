@@ -74,8 +74,8 @@ Konfiguratorn är komplett på alla 12 produkter. Nästa steg:
 | Task | Status | Beskrivning |
 |------|--------|-------------|
 | TASK-015 | ✅ SESSION 5b klar | Produktkonfigurator |
-| TASK-016b | Planned | SKU-placeholders vid ovalda steg |
-| TASK-017b | Planned | Live specs-display + produktseriesida (View) |
+| TASK-016b | ✅ Completed | SKU-placeholders — löst av auto-select i SESSION 5 |
+| TASK-017b | 📋 Plan klar — inväntar OK | Produktseriesidor + taxonomi-struktur |
 | TASK-017 | Planned | Cart block styling |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |

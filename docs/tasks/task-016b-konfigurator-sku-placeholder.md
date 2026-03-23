@@ -1,7 +1,7 @@
 # Task 016b: Konfigurator — Omstart vid ändring
 
 **Skapad**: 2026-03-18  
-**Status**: Planned  
+**Status**: ✅ KLAR (2026-03-23) — löst av auto-select i SESSION 5. Alla steg fylls alltid i automatiskt, SKU är alltid komplett.  
 **Prioritet**: Hög — UX-problem  
 **Relaterad**: TASK-015
 
