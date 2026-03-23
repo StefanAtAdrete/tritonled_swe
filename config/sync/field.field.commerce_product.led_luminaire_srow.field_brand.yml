@@ -1,0 +1,19 @@
+uuid: 9e88aa5c-eb88-4fa5-8254-57001219bce7
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_srow
+    - field.storage.commerce_product.field_brand
+id: commerce_product.led_luminaire_srow.field_brand
+field_name: field_brand
+entity_type: commerce_product
+bundle: led_luminaire_srow
+label: Brand/Manufacturer
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

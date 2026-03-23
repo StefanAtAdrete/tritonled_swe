@@ -5,15 +5,24 @@ dependencies:
   config:
     - commerce_product.commerce_product_type.led_luminaire_srow
     - core.entity_view_mode.commerce_product.series_card
+    - field.field.commerce_product.led_luminaire_srow.body
+    - field.field.commerce_product.led_luminaire_srow.field_brand
     - field.field.commerce_product.led_luminaire_srow.field_configurator_media
     - field.field.commerce_product.led_luminaire_srow.field_configurator_schema
+    - field.field.commerce_product.led_luminaire_srow.field_datasheet
+    - field.field.commerce_product.led_luminaire_srow.field_features
+    - field.field.commerce_product.led_luminaire_srow.field_hero_media
     - field.field.commerce_product.led_luminaire_srow.field_producers
     - field.field.commerce_product.led_luminaire_srow.field_product_categories
+    - field.field.commerce_product.led_luminaire_srow.field_product_media
     - field.field.commerce_product.led_luminaire_srow.field_product_type
+    - field.field.commerce_product.led_luminaire_srow.field_short_description
+    - field.field.commerce_product.led_luminaire_srow.field_show_in_hero
     - field.field.commerce_product.led_luminaire_srow.layout_builder__layout
   module:
     - blazy
     - layout_builder
+    - string_field_formatter
 third_party_settings:
   layout_builder:
     enabled: false
@@ -35,6 +44,16 @@ content:
     third_party_settings: {  }
     weight: 0
     region: content
+  field_short_description:
+    type: plain_string_formatter
+    label: hidden
+    settings:
+      link_to_entity: false
+      wrap_tag: _none
+      wrap_class: ''
+    third_party_settings: {  }
+    weight: 0
+    region: content
   title:
     type: blazy_title
     label: hidden
@@ -47,11 +66,18 @@ content:
     weight: 0
     region: content
 hidden:
+  body: true
   created: true
+  field_brand: true
   field_configurator_schema: true
+  field_datasheet: true
+  field_features: true
+  field_hero_media: true
   field_producers: true
   field_product_categories: true
+  field_product_media: true
   field_product_type: true
+  field_show_in_hero: true
   langcode: true
   layout_builder__layout: true
   stores: true
