@@ -7,7 +7,8 @@
       "slug": "srow-base",
       "productName": "Triton SROW Gen. 3 (Base) IP54/IP65",
       "skuPrefix": "S-",
-      "note": "3 längder (0,6/1,2/1,8m). Unika attribut: chips (48/72) och ipClass (IP54/IP65). Watt beror på chips+längd. Ingen CRI-väljare. Bara Cable Gland.",
+      "imagePrefix": "TS",
+      "note": "3 längder (0,6/1,2/1,8m). Unika attribut: chips (48/72) och ipClass (IP54/IP65). Watt beror på chips+längd. Ingen CRI-väljare. Bara Cable Gland — endcap alltid C, bildväxling sker ej på endcap för SROW.",
       "steps": [
         {
           "id": "length",
@@ -30,6 +31,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland" }
           ]
@@ -104,6 +106,7 @@
       "slug": "srow-e",
       "productName": "Triton SROW-E Gen. 3. (Emergency)",
       "skuPrefix": "SE-",
+      "imagePrefix": "TSE",
       "note": "Endast 0,8m. Endast 48 chips. Nödljus 3W. IP54/IP65-val finns.",
       "steps": [
         {
@@ -124,6 +127,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)" }
           ]
@@ -184,6 +188,7 @@
       "slug": "srow-ed",
       "productName": "Triton SROW-ED Gen. 3. (Emergency + Daylight) IP54/IP65",
       "skuPrefix": "SED-",
+      "imagePrefix": "TSED",
       "note": "Endast 0,8m. Dubbla ljuskretsar (drivdon 5/6/7). 48 eller 72 chips. IP54/IP65-val. Watt beror på chips.",
       "steps": [
         {
@@ -205,6 +210,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland" }
           ]

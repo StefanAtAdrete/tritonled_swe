@@ -7,6 +7,7 @@
       "slug": "opti-base",
       "productName": "Triton OPTI Gen. 4 (BASE)",
       "skuPrefix": "O-",
+      "imagePrefix": "TO",
       "note": "Längder: 0,6/1,2/1,7/2,0m. 3 watt per längd. Optik W=80° (inte 90° som MAX).",
       "steps": [
         {
@@ -31,6 +32,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
@@ -102,6 +104,7 @@
       "slug": "opti-s",
       "productName": "Triton OPTI-S Gen. 4 (Sensor)",
       "skuPrefix": "OS-",
+      "imagePrefix": "TOS",
       "note": "Längder: 0,8/1,4/1,9/2,2m (sensor tar extra plats). Samma watt-värden som opti-base. Cable Gland = IP20 (inte IP43).",
       "steps": [
         {
@@ -126,6 +129,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
@@ -209,6 +213,7 @@
       "slug": "opti-e",
       "productName": "Triton OPTI-E Gen. 4. (Emergency)",
       "skuPrefix": "OE-",
+      "imagePrefix": "TOE",
       "note": "Endast 0,8m. Endast Ra80. Nödljus 3W. Sensor=batteritid. Cable Gland tillgänglig (skillnad mot MAX-E).",
       "steps": [
         {
@@ -229,6 +234,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] },
@@ -296,6 +302,7 @@
       "slug": "opti-ed",
       "productName": "Triton OPTI-ED + Daylight Gen. 4. (Emergency+ Daylight)",
       "skuPrefix": "OED-",
+      "imagePrefix": "TOED",
       "note": "Endast 0,8m. Dubbla ljuskretsar. Drivdon 5/6/7 (samma som MAX-ED). Ra80+Ra90. Watt: 21/31/44W (samma som opti-base längd A).",
       "steps": [
         {
@@ -317,6 +324,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] },

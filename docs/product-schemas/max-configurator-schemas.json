@@ -7,6 +7,7 @@
       "slug": "max-base",
       "productName": "Triton MAX Gen. 3 (BASE)",
       "skuPrefix": "M-",
+      "imagePrefix": "TM",
       "steps": [
         {
           "id": "length",
@@ -30,6 +31,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2", "3"] }] },
@@ -100,6 +102,7 @@
       "slug": "max-pro",
       "productName": "Triton MAX-PRO Gen. 3 (BASE)",
       "skuPrefix": "MP-",
+      "imagePrefix": "TMP",
       "note": "Bara 2 längder (1,5/2,0m). Bara DALI2/B2LD2 — ingen On/Off. Bara 2 watt-varianter (101W/135W).",
       "steps": [
         {
@@ -121,6 +124,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["2", "3"] }] },
@@ -180,6 +184,7 @@
       "slug": "max-s",
       "productName": "Triton MAX-S Gen. 3. (Sensor)",
       "skuPrefix": "MS-",
+      "imagePrefix": "TMS",
       "note": "Längderna är 0,7/1,2/1,7/2,2m (sensorn tar extra plats). Sensor-fältet = sensortyp.",
       "steps": [
         {
@@ -203,6 +208,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "C", "label": "Cable Gland (IP43)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "3"] }, { "stepId": "length", "codes": ["C", "D"] }] },
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "3"] }] },
@@ -286,6 +292,7 @@
       "slug": "max-e",
       "productName": "Triton MAX-E Gen. 3. (Emergency)",
       "skuPrefix": "ME-",
+      "imagePrefix": "TME",
       "note": "Endast 0,7m. Endast Ra80. Nödljus 3W. Sensor-fältet = batteritid (1H/3H). Ingen Cable Gland.",
       "steps": [
         {
@@ -306,6 +313,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0", "2"] }] },
             { "code": "V", "label": "Wago Grey (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["0"] }] },
@@ -372,6 +380,7 @@
       "slug": "max-ed",
       "productName": "Triton MAX-ED + Daylight Gen. 3. (Emergency+ Daylight)",
       "skuPrefix": "MED-",
+      "imagePrefix": "TMED",
       "note": "Endast 0,7m. Dubbla ljuskretsar. Helt andra drivdon-koder (5/6/7). Sensor-fältet = batteritid. Ra80+Ra90.",
       "steps": [
         {
@@ -393,6 +402,7 @@
         {
           "id": "endcap",
           "skuPart": "middle",
+          "visual": true,
           "options": [
             { "code": "E", "label": "EnstoNet (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5", "6", "7"] }] },
             { "code": "V", "label": "Wago Grey (IP20)", "dependsOn": [{ "stepId": "driver", "codes": ["5"] }] },
