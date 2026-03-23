@@ -109,39 +109,28 @@ Använd TM- (MAX BASE) som fallback tills egna bilder finns.
 
 ## SROW BASE (TS-) — produkt 24
 
+⚠️ SROW har BARA Cable Gland (C) som endcap — verifierat mot triton-solutions.co 2026-03-23.
+Bilderna TS-EN, TS-W1, TS-W2 som listades tidigare existerar inte som produktvarianter.
+
 | Kod | Fil | URL |
 |-----|-----|-----|
 | C | TS_CG(s).png | `/sites/default/files/2026-03/TS_CG%28s%29.png` |
-| E | TS_EN(s).png | `/sites/default/files/2026-03/TS_EN%28s%29.png` |
-| V | TS_W1(s).png | `/sites/default/files/2026-03/TS_W1%28s%29.png` |
-| B | TS_W2(s).png | `/sites/default/files/2026-03/TS_W2%28s%29.png` |
-| W | Saknas | — |
 
 ---
 
-## SROW-S (TSS-) — produkt 24 (variant)
+## SROW-S (TSS-) — utgår
 
-| Kod | Fil | URL |
-|-----|-----|-----|
-| C | TSSCG(s-).png | `/sites/default/files/2026-03/TSSCG%28s-%29.png` |
-| E | TSSEN(s-).png | `/sites/default/files/2026-03/TSSEN%28s-%29.png` |
-| V | TSSW1(s-).png | `/sites/default/files/2026-03/TSSW1%28s-%29.png` |
-| B | TSSW2(s-).png | `/sites/default/files/2026-03/TSSW2%28s-%29.png` |
-| W | Saknas | — |
+⚠️ SROW-S existerar inte som separat produkt — borttagen från kartläggningen.
 
 ---
 
 ## SROW-E (TSE-) — produkt 25
 
+⚠️ SROW-E har BARA Cable Gland (C) som endcap — verifierat mot triton-solutions.co 2026-03-23.
+
 | Kod | Fil | URL |
 |-----|-----|-----|
-| C | Saknas | — |
-| E | TSEW1(s-).png ⚠️ fel namn? | `/sites/default/files/2026-03/TSEW1%28s-%29.png` |
-| V | TSEW1(s-).png | `/sites/default/files/2026-03/TSEW1%28s-%29.png` |
-| B | TSEW2(s-).png | `/sites/default/files/2026-03/TSEW2%28s-%29.png` |
-| W | TSEW3(s-).png | `/sites/default/files/2026-03/TSEW3%28s-%29.png` |
-
-⚠️ TSE-namngivning är inkonsekvent — behöver verifieras mot faktiska bilder.
+| C | Saknas — använd TS-default som fallback | — |
 
 ---
 
