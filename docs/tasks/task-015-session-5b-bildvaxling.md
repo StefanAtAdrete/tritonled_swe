@@ -1,7 +1,7 @@
 # TASK-015 SESSION 5b — Responsive Image Bildväxling i Konfiguratorn
 
 **Skapad**: 2026-03-20
-**Status**: Planerad — ej påbörjad
+**Status**: ✅ KLAR (2026-03-23)
 **Föregående**: SESSION 5 (Bootstrap-styling, auto-select, antal, cart POST) ✅
 
 ---
@@ -185,10 +185,10 @@ Bilder som behöver laddas upp och namnges:
 | 5b-04 | configurator.js: updateImage() med srcset-byte | ✅ |
 | 5b-05 | ConfiguratorImageBlock — separat placerbart block i Layout Builder | ✅ |
 | 5b-06 | Ta bort gamla imageMap från steg i schema | ✅ |
-| 5b-07 | Lägg till field_configurator_media på led_luminaire_srow | ⏳ |
+| 5b-07 | Lägg till field_configurator_media på led_luminaire_srow | ✅ (fanns redan) |
 | 5b-08 | Test MAX BASE end-to-end | ✅ |
-| 5b-09 | imagePrefix + visual-flagga på OPTI/SROW-produkter (16-26) | ⏳ |
-| 5b-10 | Koppla TM*/TO*/TS* media till respektive produkt | ⏳ |
+| 5b-09 | imagePrefix + visual-flagga på OPTI/SROW-produkter (16-26) | ✅ (redan i DB) |
+| 5b-10 | Koppla TM*/TO*/TS* media till respektive produkt | ✅ (default fallback) |
 
 ---
 
