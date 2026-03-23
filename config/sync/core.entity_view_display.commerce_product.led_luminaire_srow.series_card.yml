@@ -1,0 +1,64 @@
+uuid: ec2e5080-737c-4e93-9f30-b60640202e8c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_srow
+    - core.entity_view_mode.commerce_product.series_card
+    - field.field.commerce_product.led_luminaire_srow.field_configurator_media
+    - field.field.commerce_product.led_luminaire_srow.field_configurator_schema
+    - field.field.commerce_product.led_luminaire_srow.field_producers
+    - field.field.commerce_product.led_luminaire_srow.field_product_categories
+    - field.field.commerce_product.led_luminaire_srow.field_product_type
+    - field.field.commerce_product.led_luminaire_srow.layout_builder__layout
+  module:
+    - blazy
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: false
+    allow_custom: false
+id: commerce_product.led_luminaire_srow.series_card
+targetEntityType: commerce_product
+bundle: led_luminaire_srow
+mode: series_card
+content:
+  field_configurator_media:
+    type: blazy_entity
+    label: hidden
+    settings:
+      view_mode: ''
+      grid: ''
+      grid_medium: ''
+      grid_small: ''
+      style: ''
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  title:
+    type: blazy_title
+    label: hidden
+    settings:
+      delimiter: '|'
+      tag: small
+      break: false
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  field_configurator_schema: true
+  field_producers: true
+  field_product_categories: true
+  field_product_type: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true
