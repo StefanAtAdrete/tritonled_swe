@@ -21,13 +21,16 @@
 - ✅ Ny taxonomy-term `PRO` (tid=21) skapad i `product_type`
 - ✅ MAX-PRO (produkt 16) fick `field_product_type = PRO`
 - ✅ Filter i `featured_products`-vyn: `field_product_type = Base` → visar nu 3 kort (MAX, OPTI, SROW)
+- ✅ Tre separata Views-block (block_max, block_opti, block_srow) med list groups
+- ✅ List groups: bild + serienamn + undermodeller med länk per rad
+- ✅ cards.css uppdaterad: 16:9 aspect-ratio på alla skärmstorlekar
+- ✅ TASK-021, TASK-022, TASK-023 dokumenterade
 - ✅ Config exporterad, commit: `[TASK-017b] Filter Featured Products to BASE only, add PRO product_type term`
-- ✅ TASK-021 (syskonprodukter-block) dokumenterad
-- ✅ TASK-022 (översättning SV/EN) dokumenterad
 
-**Nästa steg i TASK-017b:**
-- Bygga seriesidor med contextual filter (steg 5c i session2-views.md)
-- Fixa series_card view mode (titel = länk)
+**Nästa steg — nästa session:**
+- `ddev drush cex -y` + commit för Views-ändringar (list groups, cards.css)
+- TASK-023: Konfigurator mobiloptimering (Bootstrap custom dropdowns)
+- TASK-021: Syskonprodukter-block på produktsidan
 
 ---
 
@@ -59,6 +62,7 @@
 | TASK-017b | 🔄 In Progress — SESSION 2 | Produktseriesidor + Views |
 | TASK-021 | Planned | Syskonprodukter-block på produktsidan |
 | TASK-022 | Planned | Översättning SV/EN — block, innehåll, produkter |
+| TASK-023 | Planned | Konfigurator mobiloptimering — Bootstrap dropdowns |
 | TASK-017 | Planned | Cart block styling |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |

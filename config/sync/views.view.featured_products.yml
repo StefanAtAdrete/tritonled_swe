@@ -7,12 +7,14 @@ dependencies:
     - commerce_product.commerce_product_type.led_luminaire_srow
     - field.storage.commerce_product.field_product_media
     - field.storage.commerce_product.field_series
+    - image.style.thumbnail
     - taxonomy.vocabulary.product_type
   content:
     - 'taxonomy_term:product_type:8647bf60-ee63-479c-8b9a-9ac6ffed3eaa'
   module:
     - commerce
     - commerce_product
+    - media
     - taxonomy
     - views_bootstrap
 id: featured_products
@@ -561,8 +563,8 @@ display:
           default_row_class: false
           grid_class: ''
           col_xs: col-12
-          col_sm: col-sm-6
-          col_md: col-md-4
+          col_sm: col-sm-auto
+          col_md: col-md-auto
           col_lg: none
           col_xl: none
       row:
@@ -860,6 +862,72 @@ display:
           type: entity_reference_entity_view
           settings:
             view_mode: card
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_product_media_1:
+          id: field_product_media_1
+          table: commerce_product__field_product_media
+          field: field_product_media
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: ''
+          exclude: true
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: target_id
+          type: media_thumbnail
+          settings:
+            image_link: content
+            image_style: thumbnail
+            image_loading:
+              attribute: lazy
           group_column: target_id
           group_columns: {  }
           group_rows: true
