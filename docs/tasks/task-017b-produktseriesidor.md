@@ -1,7 +1,7 @@
 # TASK-017b — Produktseriesidor + Taxonomi-struktur
 
 **Skapad**: 2026-03-23
-**Status**: 🔄 In Progress — Steg 1-3 klara (2026-03-23)
+**Status**: 🔄 In Progress — Steg 1-4 delvis klara (2026-03-23)
 **Prioritet**: Hög
 **Relaterad**: TASK-015 (Konfigurator), TASK-013 (Attribut-cleanup)
 
@@ -75,15 +75,19 @@ Inspirerad av: `https://triton-solutions.co/sw/catalogue/industrial/linear`
 - Alla 12 produkter kopplade korrekt till serie, typ och producent
 - Verifierat via Drush
 
-### Steg 4 — View mode för produktkort
-- Skapa view mode `series_card` på `commerce_product`
-- Visar: bild (field_product_media), titel, kort beskrivning, länk
-- Via admin UI → `cex`
+### Steg 4 — View mode för produktkort ✅
+- View mode `series_card` skapad på `commerce_product`
+- Aktiverad på `led_luminaire_max_opti` och `led_luminaire_srow`
+- Fält i Content-region: `title`, `field_short_description`, `field_configurator_media` (alla label hidden)
+- Saknade fält tillagda på SROW: body, field_brand, field_datasheet, field_features, field_hero_media, field_product_media, field_short_description, field_show_in_hero
+- Config exporterad, commit: `[TASK-017b-03]`
 
-### Steg 5 — Views
-- **Översiktssida** (`/produkter`): grupperar på `field_product_categories`, ett kort per serie
-- **Seriesida** (`/produkter/%`): taxonomy term page, filtrerar på `field_product_categories`
-- Bootstrap Layout Builder-klasser för layout
+### Steg 5 — Views ⏳
+- Vy `produktserier` skapad (machine name: `produktserier`)
+- URL: `/produkter`
+- Show: Product view mode (men view mode är fortfarande "default" — måste sättas till "series_card")
+- **⏳ Återstår:** ändra view mode till series_card, lägga till filter på field_product_categories, skapa seriesida
+- Se TASK-017b-SESSION2 för detaljerad plan
 
 ---
 

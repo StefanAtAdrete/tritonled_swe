@@ -63,9 +63,10 @@
 
 ## Nästa session — SESSION 6
 
-Konfiguratorn är komplett på alla 12 produkter. Nästa steg:
-- Verifiera konfigurator + bildväxling på ett urval av produkter (MAX-S, OPTI, SROW)
-- Planera SESSION 6: live specs-display / produktseriesida (TASK-017b)
+**TASK-017b SESSION 2** — Views för produktseriesidor
+Läs: `/docs/tasks/task-017b-session2-views.md` för fullständig plan.
+
+Första steget: öppna `/en/admin/structure/views/view/produktserier` och ändra view mode till `series_card`.
 
 ---
 
@@ -75,7 +76,7 @@ Konfiguratorn är komplett på alla 12 produkter. Nästa steg:
 |------|--------|-------------|
 | TASK-015 | ✅ SESSION 5b klar | Produktkonfigurator |
 | TASK-016b | ✅ Completed | SKU-placeholders — löst av auto-select i SESSION 5 |
-| TASK-017b | 🔄 In Progress — steg 1-3 klara | Produktseriesidor + taxonomi-struktur |
+| TASK-017b | 🔄 In Progress — steg 1-4 klara, steg 5 påbörjat | Produktseriesidor + Views |
 | TASK-017 | Planned | Cart block styling |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |
