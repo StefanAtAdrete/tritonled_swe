@@ -115,6 +115,43 @@ Link to entity: Yes  ← Detta måste aktiveras
 
 ---
 
+## Steg 6 — Taxonomy `connection_type` + badges på Series Card
+
+### Bakgrund
+För att visa tillgängliga anslutningstyper (Cable Gland, EnstoNet, Wago W1/W2/W3) på produktkorten
+behöver vi en ny taxonomy. Detta möjliggör även Search API + Facets-filtrering på anslutningstyp.
+
+### Ny taxonomy: `connection_type`
+
+| Term | SKU-kod | Gäller |
+|------|---------|--------|
+| Cable Gland | C | Alla serier |
+| EnstoNet | E | MAX, OPTI |
+| Wago W1 | V | MAX, OPTI |
+| Wago W2 (DALI Blue) | B | MAX, OPTI |
+| Wago W3 (Infinity) | W | MAX, OPTI |
+
+### Nytt fält: `field_connection_type`
+- Entity reference, multiple värden
+- Lägg till på `led_luminaire_max_opti` och `led_luminaire_srow`
+- Koppla varje produkt till rätt anslutningstyper via Drush
+
+### Koppling produkter → connection_type
+| Produkter | Anslutningstyper |
+|-----------|------------------|
+| MAX BASE, MAX-PRO, MAX-S | CG, EN, W1, W2, W3 |
+| MAX-E, MAX-ED | EN, W1, W2, W3 (ingen CG-bild) |
+| OPTI BASE, OPTI-S, OPTI-E, OPTI-ED | CG, EN, W1, W2, W3 |
+| SROW BASE, SROW-E, SROW-ED | Cable Gland |
+
+### Badges på Series Card
+- Lägg till `field_connection_type` i Series Card view mode
+- Formatter: Rendered entity (taxonomy term label) eller Label
+- Renderas som Bootstrap badges (`badge bg-secondary`)
+- Ingen preprocess-hook behövs — hanteras via field formatter + CSS
+
+---
+
 ## Öppna frågor
 
 | Fråga | Svar |
@@ -123,3 +160,4 @@ Link to entity: Yes  ← Detta måste aktiveras
 | Ska taxonomy-termerna ha egna bilder? | Ja — eller återanvänd default-produktbild per serie |
 | URL-format för seriesida | `/produkter/serie/max` (taxonomy term slug) |
 | Ska seriesidan ha Layout Builder? | Nej — Views räcker |
+| Badges-formatter för connection_type? | Avgörs vid implementation — Label eller Rendered entity |
