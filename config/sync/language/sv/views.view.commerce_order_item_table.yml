@@ -1,0 +1,28 @@
+display:
+  default:
+    display_title: Huvud
+    display_options:
+      exposed_form:
+        options:
+          submit_button: Applicera
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
+      fields:
+        title:
+          label: Titel
+          separator: ', '
+        unit_price__number:
+          label: Enhetspris
+          separator: ', '
+        quantity:
+          label: Antal
+          separator: ', '
+        total_price__number:
+          label: 'Totalt pris'
+          separator: ', '
+      arguments:
+        order_item_id:
+          exception:
+            title: Alla
