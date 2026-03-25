@@ -137,6 +137,10 @@ final class ToolPluginBase extends FunctionCallBase implements ExecutableFunctio
         if ($definition instanceof EntityContextDefinition || $definition->getDataType() === 'entity') {
           // If the output is an entity, we can provide a link to it.
           $entity = $this->getPluginInstance()->getOutputValue($key);
+          if (!$entity) {
+            $output .= "\nOutput for " . $key . ": NULL (no entity)";
+            continue;
+          }
           $output .= "\n";
 
           // Get the entity's langcode for the artifact.

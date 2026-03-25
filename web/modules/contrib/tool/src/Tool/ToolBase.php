@@ -66,15 +66,26 @@ abstract class ToolBase extends PluginBase implements ToolInterface, ContainerFa
   /**
    * {@inheritdoc}
    */
+  public function checkRequirements(): void {
+    // No requirements by default.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function execute(): static {
     try {
       $args = $this->getExecutableValues();
+      $this->result = $this->doExecute($args);
     }
     catch (\InvalidArgumentException $e) {
       $this->result = ExecutableResult::failure(new TranslatableMarkup('Tool execution failed due to invalid input: @message', ['@message' => $e->getMessage()]));
       return $this;
     }
-    $this->result = $this->doExecute($args);
+    catch (\Throwable $e) {
+      $this->result = ExecutableResult::failure(new TranslatableMarkup('Tool execution failed: @message', ['@message' => $e->getMessage()]));
+      return $this;
+    }
     // If result is successful, we need to check for provided context values.
     if ($this->result->isSuccess()) {
       // If the action provides context values, we need to set the values.
@@ -134,7 +145,7 @@ abstract class ToolBase extends PluginBase implements ToolInterface, ContainerFa
    * {@inheritdoc}
    */
   public function getResultMessage(): TranslatableMarkup {
-    if ($this->result === NULL) {
+    if (!isset($this->result)) {
       throw new \BadMethodCallException('The action message cannot be retrieved until the action ::execute() method has been called.');
     }
     return $this->result->getMessage();
@@ -144,7 +155,7 @@ abstract class ToolBase extends PluginBase implements ToolInterface, ContainerFa
    * {@inheritdoc}
    */
   public function getResultStatus(): bool {
-    if ($this->result === NULL) {
+    if (!isset($this->result)) {
       throw new \BadMethodCallException('The action status cannot be retrieved until the action ::execute() method has been called.');
     }
     return $this->result->isSuccess();
@@ -154,7 +165,7 @@ abstract class ToolBase extends PluginBase implements ToolInterface, ContainerFa
    * {@inheritdoc}
    */
   public function getResult(): ExecutableResult {
-    if ($this->result === NULL) {
+    if (!isset($this->result)) {
       throw new \BadMethodCallException('The action result cannot be retrieved until the action ::execute() method has been called.');
     }
     return $this->result;

@@ -18,6 +18,19 @@ use Drupal\tool\TypedOutputsInterface;
 interface ToolInterface extends ExecutableResultInterface, TypedInputsInterface, TypedOutputsInterface, CacheableDependencyInterface, PluginWithFormsInterface {
 
   /**
+   * Checks that requirements for this tool are met.
+   *
+   * Override this method to verify static prerequisites such as API keys or
+   * Drupal configuration values being present. This is not intended to
+   * validate runtime state (e.g. stale credentials, network availability).
+   *
+   * @throws \Drupal\tool\Exception\RequirementsException
+   *   Thrown when a required configuration dependency is absent, with a
+   *   message describing what is missing.
+   */
+  public function checkRequirements(): void;
+
+  /**
    * Checks access for the tool.
    *
    * @param \Drupal\Core\Session\AccountInterface|null $account

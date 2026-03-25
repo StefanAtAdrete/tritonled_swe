@@ -6,6 +6,8 @@ namespace Drupal\Tests\canvas\Kernel\Config;
 
 // cspell:ignore sofie componente extraño
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas\Entity\JavaScriptComponent;
 use Drupal\canvas\Exception\ConstraintViolationException;
 use Drupal\Tests\canvas\Traits\BetterConfigDependencyManagerTrait;
@@ -13,10 +15,9 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests validation of JavaScriptComponent entities.
- *
- * @group canvas
- * @group JavaScriptComponents
  */
+#[Group('canvas')]
+#[Group('JavaScriptComponents')]
 #[RunTestsInSeparateProcesses]
 class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTestBase {
 
@@ -162,9 +163,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
     yield 'integer' => ["integer", [42, 1988, 1992, 2024], ["42" => "42", "1988" => "1988", "1992" => "1992", "2024" => "2024"], NULL];
   }
 
-  /**
-   * @dataProvider providerValidEnumsAndExamples
-   */
+  #[DataProvider('providerValidEnumsAndExamples')]
   public function testValidEnumsAndExamples(string $json_schema_type, array $enum_and_examples_both, array $meta_enum, ?array $expected_typecasting): void {
     $this->entity->set('props', [
       'tested_enum_prop' => [
@@ -188,9 +187,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
     $this->assertSame($expected, $this->entity->get('props')['tested_enum_prop']['examples']);
   }
 
-  /**
-   * @dataProvider providerInvalidEnumsAndExamples
-   */
+  #[DataProvider('providerInvalidEnumsAndExamples')]
   public function testInvalidEnumsAndExamples(string $json_schema_type, array $enum_and_examples_both, ?array $meta_enum, array $indexed_validation_errors, array $expected_validation_errors = []): void {
     $this->entity->set('props', [
       'tested_enum_prop' => array_merge([
@@ -279,7 +276,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
             'The "meta:enum" keys for the "tested_enum_prop" prop enum cannot contain a dot. Offending key: "3.14"',
             'The values for the "tested_enum_prop" prop enum must be defined in "meta:enum". Missing keys: "3_14"',
           ],
-          'props.tested_enum_prop' => "'enum' is an unknown key because props.tested_enum_prop.type is number (see config schema type canvas.json_schema.prop.number).",
+          'props.tested_enum_prop' => "'enum' is an unknown key because props.tested_enum_prop.type is number (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.number).",
         ],
       ],
       'Invalid number' => [
@@ -293,7 +290,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
             'The "meta:enum" keys for the "tested_enum_prop" prop enum cannot contain a dot. Offending key: "3.14"',
             'The values for the "tested_enum_prop" prop enum must be defined in "meta:enum". Missing keys: "3_14"',
           ],
-          'props.tested_enum_prop' => "'enum' is an unknown key because props.tested_enum_prop.type is number (see config schema type canvas.json_schema.prop.number).",
+          'props.tested_enum_prop' => "'enum' is an unknown key because props.tested_enum_prop.type is number (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.number).",
           'props.tested_enum_prop.examples.0' => 'This value should be of the correct primitive type.',
           'props.tested_enum_prop.examples.3' => 'This value should not be null.',
         ],
@@ -317,7 +314,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
       ],
     ]);
     $this->assertValidationErrors([
-      'props.some_boolean' => "'enum' is an unknown key because props.some_boolean.type is boolean (see config schema type canvas.json_schema.prop.boolean).",
+      'props.some_boolean' => "'enum' is an unknown key because props.some_boolean.type is boolean (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.boolean).",
       'props.some_boolean.examples.1' => 'This value should not be null.',
     ]);
   }
@@ -345,10 +342,250 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
         'examples' => [$example],
       ],
     ]);
-    $expected_validation_errors = is_null($validation_error)
+    $expected_validation_errors = \is_null($validation_error)
       ? []
       : ['' => 'Prop "beep" has invalid example value: [] ' . $validation_error];
     $this->assertValidationErrors($expected_validation_errors);
+  }
+
+  /**
+   * Tests `type: array` validation and edge cases.
+   */
+  #[DataProvider('providerTestArrayPropDefinition')]
+  public function testArrayPropDefinition(array $array_prop, array $expected_errors): void {
+    $this->entity->set('props', ['array_prop_name' => $array_prop]);
+    $this->assertValidationErrors($expected_errors);
+  }
+
+  public static function providerTestArrayPropDefinition(): \Generator {
+    yield 'Invalid: array with maxItems <2' => [
+      [
+        'type' => 'array',
+        'title' => 'Weirdly Wrapped String',
+        'items' => ['type' => 'string'],
+        'maxItems' => 1,
+        'examples' => [['o hai, I make zero sense']],
+      ],
+      [
+        '' => 'The "maxItems" restriction on arrays (if set) must be at least 2, but got 1 on prop "array_prop_name". Use a non-array type for single-value props.',
+        'props.array_prop_name.maxItems' => 'This value should be <em class="placeholder">2</em> or more.',
+      ],
+    ];
+    yield 'Valid: string array with format' => [
+      [
+        'type' => 'array',
+        'title' => 'Links',
+        'items' => ['type' => 'string', 'format' => 'uri-reference'],
+        'examples' => [['/foo', '/bar']],
+      ],
+      [],
+    ];
+    yield 'Invalid: string array with format and an example violating the format' => [
+      [
+        'type' => 'array',
+        'title' => 'Links',
+        'items' => ['type' => 'string', 'format' => 'uri'],
+        'examples' => [
+          ['/foo', 'https://example.com/bar', 'baz', 'https://drupal.org/project/canvas'],
+        ],
+      ],
+      [
+        '' => "Prop \"array_prop_name\" has invalid example value: [[0]] Invalid URL format\n[[2]] Invalid URL format",
+      ],
+    ];
+    yield 'Valid: string array with maxItems' => [
+      [
+        'type' => 'array',
+        'title' => 'Tags',
+        'items' => ['type' => 'string'],
+        'maxItems' => 5,
+        'examples' => [['Tag A', 'Tag B']],
+      ],
+      [],
+    ];
+    yield 'Valid: integer array without maxItems' => [
+      [
+        'type' => 'array',
+        'title' => 'Scores',
+        'items' => ['type' => 'integer'],
+        'examples' => [[1, 2, 3]],
+      ],
+      [],
+    ];
+    yield 'Valid: HTML string array' => [
+      [
+        'type' => 'array',
+        'title' => 'Rich Quotes',
+        'items' => [
+          'type' => 'string',
+          'contentMediaType' => 'text/html',
+          'x-formatting-context' => 'block',
+        ],
+        'examples' => [
+          [
+            '<p>This is a paragraph with <strong>bold</strong> text.</p><ul><li>List item 1</li><li>List item 2</li></ul>',
+            '<p><strong>Hello</strong>, world!</p>',
+          ],
+        ],
+      ],
+      [],
+    ];
+    yield 'Valid: boolean array' => [
+      [
+        'type' => 'array',
+        'title' => 'Flags',
+        'items' => ['type' => 'boolean'],
+        'examples' => [[TRUE, FALSE]],
+      ],
+      [],
+    ];
+    yield 'Valid: number array' => [
+      [
+        'type' => 'array',
+        'title' => 'Prices',
+        'items' => ['type' => 'number'],
+        'examples' => [[1.99, 9.99]],
+      ],
+      [],
+    ];
+    yield 'Invalid: example exceeds maxItems — maxItems is validated against examples' => [
+      [
+        'type' => 'array',
+        'title' => 'Scores',
+        'items' => ['type' => 'integer'],
+        'maxItems' => 3,
+        'examples' => [[1, 2, 3, 4]],
+      ],
+      [
+        '' => "Prop \"array_prop_name\" has invalid example value: [] There must be a maximum of 3 items in the array, 4 found",
+      ],
+    ];
+    // `array` is a valid JSON Schema type but excluded from Canvas's items
+    // Choice constraint (nested arrays are not supported by Drupal's Field
+    // API). Using `array` here rather than a truly invalid type (e.g.
+    // `unknown`) ensures only the config schema Choice violation fires and
+    // not the SDC JSON Schema validator, which would also reject types that
+    // are not valid JSON Schema at all.
+    yield 'Invalid: nested array items not supported — config schema Choice + no storable prop shape' => [
+      [
+        'type' => 'array',
+        'title' => 'Bad Items',
+        'items' => ['type' => 'array'],
+      ],
+      [
+        '' => 'Drupal Canvas does not know of a field type/widget to allow populating the <code>array_prop_name</code> prop, with the shape <code>{"type":"array","items":{"type":"array"}}</code>.',
+        'props.array_prop_name.items' => "'items' is a required key because props.array_prop_name.items.type is array (see config schema type canvas.json_schema.prop_shape.array).",
+        'props.array_prop_name.items.type' => 'The value you selected is not a valid choice.',
+      ],
+    ];
+
+    yield 'Invalid: missing items schema' => [
+      [
+        'type' => 'array',
+        'title' => 'Missing Items',
+        // No examples - when items is missing, examples can't be validated
+        // since the type resolution depends on items.type.
+      ],
+      [
+        '' => 'Drupal Canvas does not know of a field type/widget to allow populating the <code>array_prop_name</code> prop, with the shape <code>{"type":"array"}</code>.',
+        'props.array_prop_name' => "'items' is a required key because props.array_prop_name.type is array (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.array).",
+      ],
+    ];
+
+    yield 'Invalid: integer array with string examples' => [
+      [
+        'type' => 'array',
+        'title' => 'Scores',
+        'items' => ['type' => 'integer'],
+        'examples' => [['not', 'integers']],
+      ],
+      [
+        '' => "Prop \"array_prop_name\" has invalid example value: [[0]] String value found, but an integer is required\n[[1]] String value found, but an integer is required",
+        'props.array_prop_name.examples.0.0' => 'This value should be of the correct primitive type.',
+        'props.array_prop_name.examples.0.1' => 'This value should be of the correct primitive type.',
+      ],
+    ];
+
+    yield 'Invalid: number array with string examples' => [
+      [
+        'type' => 'array',
+        'title' => 'Prices',
+        'items' => ['type' => 'number'],
+        'examples' => [['not', 'numbers']],
+      ],
+      [
+        '' => "Prop \"array_prop_name\" has invalid example value: [[0]] String value found, but a number is required\n[[1]] String value found, but a number is required",
+        'props.array_prop_name.examples.0.0' => 'This value should be of the correct primitive type.',
+        'props.array_prop_name.examples.0.1' => 'This value should be of the correct primitive type.',
+      ],
+    ];
+
+    yield 'Valid: object array prop' => [
+      [
+        'type' => 'array',
+        'title' => 'Images',
+        'items' => [
+          'type' => 'object',
+          '$ref' => 'json-schema-definitions://canvas.module/image',
+        ],
+        'examples' => [
+          [
+            [
+              'src' => 'https://example.com/image1.png',
+              'alt' => 'First image',
+              'width' => 800,
+              'height' => 600,
+            ],
+            [
+              'src' => 'https://example.com/image2.png',
+              'alt' => 'Second image',
+              'width' => 1200,
+              'height' => 900,
+            ],
+          ],
+        ],
+      ],
+      [],
+    ];
+
+    yield 'Invalid: object array with wrong keys' => [
+      [
+        'type' => 'array',
+        'title' => 'Images',
+        'items' => [
+          'type' => 'object',
+          '$ref' => 'json-schema-definitions://canvas.module/image',
+        ],
+        'examples' => [
+          [
+            [
+              // Missing required 'src', has invalid key 'url'.
+              'url' => 'https://example.com/image.png',
+              'alt' => 'Image',
+            ],
+          ],
+        ],
+      ],
+      [
+        '' => 'Prop "array_prop_name" has invalid example value: [[0].src] The property src is required',
+        'props.array_prop_name.examples.0.0' => "'src' is a required key.",
+        'props.array_prop_name.examples.0.0.url' => "'url' is not a supported key.",
+      ],
+    ];
+    // `type: object` without `$ref` fails at the config schema level because
+    // $ref is required in canvas.json_schema.item.object, matching the same
+    // requirement as canvas.json_schema.prop_shape.object.
+    yield 'Invalid: object items without $ref — config schema required key + no storable prop shape' => [
+      [
+        'type' => 'array',
+        'title' => 'Objects',
+        'items' => ['type' => 'object'],
+      ],
+      [
+        '' => 'Drupal Canvas does not know of a field type/widget to allow populating the <code>array_prop_name</code> prop, with the shape <code>{"type":"array","items":{"type":"object"}}</code>.',
+        'props.array_prop_name.items' => "'\$ref' is a required key because props.array_prop_name.items.type is object (see config schema type canvas.json_schema.prop_shape.object).",
+      ],
+    ];
   }
 
   /**
@@ -404,8 +641,8 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
       '' => 'Prop "some_object" has invalid example value: [src] The property src is required',
       'props.some_object.enum.0' => 'This value should not be null.',
       'props.some_object.examples.0' => [
-        'This value should not be blank.',
         "'src' is a required key.",
+        'This value should not be blank.',
       ],
       'props.some_object.examples.1' => 'This value should not be null.',
       'props.some_object.examples.4.src' => 'This value should be a valid URI reference.',
@@ -421,9 +658,8 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
    *   Array of entity values.
    * @param array $expected_errors
    *   Expected validation errors.
-   *
-   * @dataProvider providerTestEntityShapes
    */
+  #[DataProvider('providerTestEntityShapes')]
   public function testEntityShapes(array $shape, array $expected_errors): void {
     $this->entity = JavaScriptComponent::create($shape);
     // Strip out the prefix added by https://www.drupal.org/node/3549909. This
@@ -492,8 +728,8 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
         [
           '' => "In component canvas:test-unknown-prop-type:\nUnable to find class/interface \"unknown\" specified in the prop \"mixed_up_prop\" for the component \"canvas:test-unknown-prop-type\".",
           'props.mixed_up_prop' => [
-            "'enum' is an unknown key because props.mixed_up_prop.type is unknown (see config schema type canvas.json_schema.prop.*).",
-            "'meta:enum' is an unknown key because props.mixed_up_prop.type is unknown (see config schema type canvas.json_schema.prop.*).",
+            "'enum' is an unknown key because props.mixed_up_prop.type is unknown (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.*).",
+            "'meta:enum' is an unknown key because props.mixed_up_prop.type is unknown (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.*).",
           ],
           'props.mixed_up_prop.type' => 'The value you selected is not a valid choice.',
         ],
@@ -814,7 +1050,7 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
         ],
         [
           '' => 'Drupal Canvas does not know of a field type/widget to allow populating the <code>image</code> prop, with the shape <code>{"type":"object"}</code>.',
-          'props.image' => '\'$ref\' is a required key because props.image.type is object (see config schema type canvas.json_schema.prop.object).',
+          'props.image' => '\'$ref\' is a required key because props.image.type is object (see config schema type canvas.json_schema.prop.*||canvas.json_schema.prop_shape.object).',
           'props.image.examples.0.alt' => "'alt' is not a supported key.",
           'props.image.examples.0.height' => "'height' is not a supported key.",
           'props.image.examples.0.src' => "'src' is not a supported key.",
@@ -862,6 +1098,86 @@ class JavaScriptComponentValidationTest extends BetterConfigEntityValidationTest
           'props.image.examples.0.height' => "'height' is not a supported key.",
           'props.image.examples.0.src' => "'src' is not a supported key.",
           'props.image.examples.0.width' => "'width' is not a supported key.",
+        ],
+      ],
+      'Valid: array prop (string items, with maxItems, required, with example)' => [
+        [
+          'machineName' => 'test-array-prop',
+          'name' => 'Test',
+          'props' => [
+            'tags' => [
+              'type' => 'array',
+              'title' => 'Tags',
+              'items' => ['type' => 'string'],
+              'maxItems' => 10,
+              'examples' => [
+                ['Tag A', 'Tag B'],
+              ],
+            ],
+          ],
+          'required' => ['tags'],
+          'slots' => [],
+          'js' => [
+            'original' => 'console.log("Test")',
+            'compiled' => 'console.log("Test")',
+          ],
+          'css' => [
+            'original' => '.test { display: none; }',
+            'compiled' => '.test{display:none;}',
+          ],
+          'dataDependencies' => [],
+        ],
+        [],
+      ],
+      'Valid: array prop (integer items, no maxItems, optional, no example)' => [
+        [
+          'machineName' => 'test-array-integer-prop',
+          'name' => 'Test',
+          'props' => [
+            'scores' => [
+              'type' => 'array',
+              'title' => 'Scores',
+              'items' => ['type' => 'integer'],
+            ],
+          ],
+          'slots' => [],
+          'js' => [
+            'original' => 'console.log("Test")',
+            'compiled' => 'console.log("Test")',
+          ],
+          'css' => [
+            'original' => '.test { display: none; }',
+            'compiled' => '.test{display:none;}',
+          ],
+          'dataDependencies' => [],
+        ],
+        [],
+      ],
+      'Invalid: required array prop with no example' => [
+        [
+          'machineName' => 'test-required-array-no-example',
+          'name' => 'Test',
+          'props' => [
+            'tags' => [
+              'type' => 'array',
+              'title' => 'Tags',
+              'items' => ['type' => 'string'],
+            ],
+          ],
+          'required' => ['tags'],
+          'slots' => [],
+          'js' => [
+            'original' => 'console.log("Test")',
+            'compiled' => 'console.log("Test")',
+          ],
+          'css' => [
+            'original' => '.test { display: none; }',
+            'compiled' => '.test{display:none;}',
+          ],
+          'dataDependencies' => [],
+        ],
+        [
+          '' => 'Prop "tags" is required, but does not have example value',
         ],
       ],
       'Valid: markup prop' => [

@@ -47,6 +47,8 @@ describe.runIf(isConfigured)('api service integration', () => {
       'canvas_test_code_components_using_get_page_data',
       'canvas_test_code_components_using_imports',
       'canvas_test_code_components_vanilla_image',
+      'canvas_test_code_components_with_array_enums',
+      'canvas_test_code_components_with_array_props',
       'canvas_test_code_components_with_enums',
       'canvas_test_code_components_with_link_prop',
       'canvas_test_code_components_with_no_props',
@@ -112,6 +114,8 @@ describe.runIf(isConfigured)('api service integration', () => {
       'canvas_test_code_components_using_get_page_data',
       'canvas_test_code_components_using_imports',
       'canvas_test_code_components_vanilla_image',
+      'canvas_test_code_components_with_array_enums',
+      'canvas_test_code_components_with_array_props',
       'canvas_test_code_components_with_enums',
       'canvas_test_code_components_with_link_prop',
       'canvas_test_code_components_with_no_props',
@@ -141,6 +145,9 @@ describe.runIf(isConfigured)('api service integration', () => {
         original: '',
         compiled: '',
       },
+      imports: null,
+      assets: null,
+      shared: null,
     });
     const updatedAssetLibrary = await apiService.updateGlobalAssetLibrary({
       css: {

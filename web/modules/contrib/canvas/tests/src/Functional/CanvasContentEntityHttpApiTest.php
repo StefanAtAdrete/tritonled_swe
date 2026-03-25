@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Functional;
 
+use Drupal\canvas\ComponentSource\ComponentSourceManager;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Url;
 use Drupal\canvas\AutoSave\AutoSaveManager;
@@ -16,13 +20,17 @@ use Drupal\user\Entity\Role;
 use Drupal\user\UserInterface;
 use GuzzleHttp\RequestOptions;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Psr\Http\Message\ResponseInterface;
 
 /**
- * @covers \Drupal\canvas\Controller\ApiContentControllers
- * @group canvas
+ * Tests Canvas Content Entity Http Api.
+ *
  * @internal
+ * @legacy-covers \Drupal\canvas\Controller\ApiContentControllers
  */
 #[RunTestsInSeparateProcesses]
+#[Group('canvas')]
+#[Group('#slow')]
 final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
 
   /**
@@ -30,6 +38,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
    */
   protected static $modules = [
     'canvas',
+    'canvas_test_sdc',
   ];
 
   /**
@@ -37,38 +46,70 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
    */
   protected $defaultTheme = 'stark';
 
+
+  /**
+   * @todo Test GET/PATCH here instead / on top of the new test(s)?
+   */
+
+  protected array $pages;
+
   /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
-    Page::create([
-      'title' => "Page 1",
-      'status' => TRUE,
-      'path' => ['alias' => "/page-1"],
-    ])->save();
-    Page::create([
-      'title' => "Page 2",
-      'status' => FALSE,
-    ])->save();
-    Page::create([
-      'title' => "Page 3",
-      'status' => TRUE,
-      'path' => ['alias' => "/page-3"],
-    ])->save();
+    $this->pages = [
+      Page::create([
+        'title' => "Page 1",
+        'status' => TRUE,
+        'path' => ['alias' => "/page-1"],
+      ]),
+      Page::create([
+        'title' => self::NEW_PAGE_TITLE,
+        'status' => FALSE,
+      ]),
+      Page::create([
+        'title' => "Page 3",
+        'status' => TRUE,
+        'path' => ['alias' => "/page-3"],
+      ]),
+    ];
+    foreach ($this->pages as $page) {
+      $page->save();
+    }
+    foreach ($this->pages as $page) {
+      $page->save();
+    }
     // Set the page 2 to be the homepage.
     $this->config('system.site')
       ->set('page.front', '/page/2')
       ->save();
   }
 
-  public function testPost(): void {
+  public function testPostWithData(): void {
+    $this->container->get(ComponentSourceManager::class)->generateComponents('sdc', ['canvas_test_sdc:heading']);
     $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
     $request_options = [
       RequestOptions::HEADERS => [
         'Content-Type' => 'application/json',
       ],
-      RequestOptions::JSON => [],
+      RequestOptions::JSON => [
+        'title' => 'This is my new content title',
+        'status' => TRUE,
+        'path' => '/my-awesome-new-page',
+        'components' => [
+          [
+            "uuid" => "4c3482ac-4635-4ba9-aaf4-eb86892d77a1",
+            "component_id" => "sdc.canvas_test_sdc.heading",
+            "component_version" => "8c01a2bdb897a810",
+            "inputs" => [
+              'text' => 'My custom header',
+              'style' => 'secondary',
+              'element' => 'h3',
+            ],
+          ],
+        ],
+      ],
     ];
 
     $this->assertAuthenticationAndAuthorization($url, 'POST');
@@ -78,10 +119,101 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     Role::load('authenticated')?->grantPermission(Page::CREATE_PERMISSION)->save();
     $response = $this->makeApiRequest('POST', $url, $request_options);
     $this->assertSame(201, $response->getStatusCode());
-    $this->assertSame(
-      '{"entity_type":"canvas_page","entity_id":"4"}',
-      (string) $response->getBody()
-    );
+    $this->assertPostResponse($response, [
+      'entity_type' => Page::ENTITY_TYPE_ID,
+      'entity_id' => '4',
+      'title' => 'This is my new content title',
+      'path' => Url::fromUri('base://my-awesome-new-page')->toString(),
+      'components' => [
+        [
+          'parent_uuid' => NULL,
+          'slot' => NULL,
+          "uuid" => "4c3482ac-4635-4ba9-aaf4-eb86892d77a1",
+          "component_id" => "sdc.canvas_test_sdc.heading",
+          'component_version' => '8c01a2bdb897a810',
+          "inputs" => [
+            'text' => 'My custom header',
+            'style' => 'secondary',
+            'element' => 'h3',
+          ],
+          'label' => NULL,
+        ],
+      ],
+    ]);
+  }
+
+  public function testPostWithInvalidData(): void {
+    $this->container->get(ComponentSourceManager::class)->generateComponents('sdc', ['canvas_test_sdc:heading']);
+    $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
+    $request_options = [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+      ],
+      RequestOptions::JSON => [
+        'title' => 'This is my new content title',
+        'status' => TRUE,
+        'path' => '/my-awesome-new-page',
+        'components' => [
+          [
+            "uuid" => "4c3482ac-4635-4ba9-aaf4-eb86892d77a1",
+            "component_id" => "sdc.canvas_test_sdc.heading",
+            // A component version that doesn't exist.
+            "component_version" => "incorrect-component-version",
+            "inputs" => [
+              'text' => 'My custom header',
+              'style' => 'secondary',
+              'element' => 'h3',
+            ],
+          ],
+        ],
+      ],
+    ];
+
+    $this->assertAuthenticationAndAuthorization($url, 'POST');
+
+    $request_options['headers']['X-CSRF-Token'] = $this->drupalGet('session/token');
+    // Authenticated, authorized, with CSRF token: 201.
+    Role::load('authenticated')?->grantPermission(Page::CREATE_PERMISSION)->save();
+    $response = $this->makeApiRequest('POST', $url, $request_options);
+    $this->assertSame(422, $response->getStatusCode());
+    $this->assertPostResponse($response, [
+      'errors' => [
+        [
+          'detail' => "'incorrect-component-version' is not a version that exists on component config entity 'sdc.canvas_test_sdc.heading'. Available versions: '8c01a2bdb897a810'.",
+          'source' => [
+            'pointer' => 'components.0.component_version',
+          ],
+        ],
+      ],
+    ]);
+  }
+
+  public function testPostWithNoData(): void {
+    $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
+    $request_options = [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+      ],
+      RequestOptions::JSON => [
+        // The clientInstanceId is mandatory if no other data is sent!
+        'clientInstanceId' => 'client-123',
+      ],
+    ];
+
+    $this->assertAuthenticationAndAuthorization($url, 'POST');
+
+    $request_options['headers']['X-CSRF-Token'] = $this->drupalGet('session/token');
+    // Authenticated, authorized, with CSRF token: 201.
+    Role::load('authenticated')?->grantPermission(Page::CREATE_PERMISSION)->save();
+    $response = $this->makeApiRequest('POST', $url, $request_options);
+    $this->assertSame(201, $response->getStatusCode());
+    $this->assertPostResponse($response, [
+      'entity_type' => Page::ENTITY_TYPE_ID,
+      'entity_id' => '4',
+      'title' => 'Untitled page',
+      'path' => Url::fromUri('base://page/4')->toString(),
+      'components' => [],
+    ]);
   }
 
   public function testList(): void {
@@ -109,6 +241,8 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
         'id' => 1,
         'title' => 'Page 1',
         'status' => TRUE,
+        'isNew' => FALSE,
+        'hasUnsavedStatusChange' => FALSE,
         'path' => base_path() . 'page-1',
         'autoSaveLabel' => NULL,
         'autoSavePath' => NULL,
@@ -116,14 +250,18 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
           // @todo https://www.drupal.org/i/3498525 should standardize arguments.
           CanvasUriDefinitions::LINK_REL_EDIT => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/1')->toString(),
         ],
         'internalPath' => '/page/1',
+        'uuid' => $this->pages[0]->uuid(),
       ],
       // Page 2 has no path alias.
       '2' => [
         'id' => 2,
-        'title' => 'Page 2',
+        'title' => self::NEW_PAGE_TITLE,
         'status' => FALSE,
+        'isNew' => TRUE,
+        'hasUnsavedStatusChange' => FALSE,
         'path' => base_path() . 'page/2',
         'autoSaveLabel' => NULL,
         'autoSavePath' => NULL,
@@ -133,11 +271,14 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/2')->toString(),
         ],
         'internalPath' => '/page/2',
+        'uuid' => $this->pages[1]->uuid(),
       ],
       '3' => [
         'id' => 3,
         'title' => 'Page 3',
         'status' => TRUE,
+        'isNew' => FALSE,
+        'hasUnsavedStatusChange' => FALSE,
         'path' => base_path() . 'page-3',
         'autoSaveLabel' => NULL,
         'autoSavePath' => NULL,
@@ -145,8 +286,10 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
           // @todo https://www.drupal.org/i/3498525 should standardize arguments.
           CanvasUriDefinitions::LINK_REL_EDIT => Url::fromUri('base:/canvas/editor/canvas_page/3')->toString(),
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/3')->toString(),
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/3')->toString(),
         ],
         'internalPath' => '/page/3',
+        'uuid' => $this->pages[2]->uuid(),
       ],
     ];
     $this->assertEquals(
@@ -167,6 +310,8 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
           'id' => 1,
           'title' => 'Page 1',
           'status' => TRUE,
+          'isNew' => FALSE,
+          'hasUnsavedStatusChange' => FALSE,
           'path' => base_path() . 'page-1',
           'autoSaveLabel' => NULL,
           'autoSavePath' => NULL,
@@ -174,8 +319,10 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
             // @todo https://www.drupal.org/i/3498525 should remove the hardcoded `canvas_page` from these.
             CanvasUriDefinitions::LINK_REL_EDIT => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
             CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
+            CanvasUriDefinitions::LINK_REL_UNPUBLISH => Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/1')->toString(),
           ],
           'internalPath' => '/page/1',
+          'uuid' => $this->pages[0]->uuid(),
         ],
       ],
       $search_body
@@ -242,10 +389,12 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
   }
 
   /**
+   * Tests list meta operations.
+   *
    * @param list<string> $extraCacheContexts
    * @param list<string> $extraCacheTags
-   * @dataProvider metaOperationsProvider
    */
+  #[DataProvider('metaOperationsProvider')]
   public function testListMetaOperations(array $permissions, array $expectedLinks, array $extraCacheContexts = [], array $extraCacheTags = []): void {
     $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
     array_walk($expectedLinks, fn(&$value) => $value = Url::fromUri($value)->toString());
@@ -278,6 +427,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
         [
           CanvasUriDefinitions::LINK_REL_EDIT => 'base:/canvas/editor/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => 'base:/canvas/editor/canvas_page/1',
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => 'base:/canvas/api/v0/content/auto-save/canvas_page/1',
         ],
       ],
       'can edit and delete' => [
@@ -285,6 +435,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
         [
           CanvasUriDefinitions::LINK_REL_EDIT => 'base:/canvas/editor/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => 'base:/canvas/editor/canvas_page/1',
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => 'base:/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_DELETE => 'base:/canvas/api/v0/content/canvas_page/1',
         ],
       ],
@@ -293,6 +444,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
         [
           CanvasUriDefinitions::LINK_REL_EDIT => 'base:/canvas/editor/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => 'base:/canvas/editor/canvas_page/1',
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => 'base:/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_DUPLICATE => 'base:/canvas/api/v0/content/canvas_page',
           CanvasUriDefinitions::LINK_REL_DELETE => 'base:/canvas/api/v0/content/canvas_page/1',
         ],
@@ -302,6 +454,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
         [
           CanvasUriDefinitions::LINK_REL_EDIT => 'base:/canvas/editor/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => 'base:/canvas/editor/canvas_page/1',
+          CanvasUriDefinitions::LINK_REL_UNPUBLISH => 'base:/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_DUPLICATE => 'base:/canvas/api/v0/content/canvas_page',
         ],
         ['headers:X-Something'],
@@ -368,21 +521,23 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
       [
         CanvasUriDefinitions::LINK_REL_EDIT => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
         CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/1')->toString(),
+        CanvasUriDefinitions::LINK_REL_UNPUBLISH => Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/1')->toString(),
         CanvasUriDefinitions::LINK_REL_DELETE => Url::fromUri('base:/canvas/api/v0/content/canvas_page/1')->toString(),
       ],
       $body['1']['links'],
-      'Links for page 1 should include delete operation.'
+      'Links for page 1 should include delete and unpublish operations.'
     );
     // Assert links for page 3.
     \assert(\array_key_exists('3', $body) && \array_key_exists('links', $body['3']));
     $this->assertEquals(
       [
         CanvasUriDefinitions::LINK_REL_EDIT => Url::fromUri('base:/canvas/editor/canvas_page/3')->toString(),
+        CanvasUriDefinitions::LINK_REL_UNPUBLISH => Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/3')->toString(),
         CanvasUriDefinitions::LINK_REL_DELETE => Url::fromUri('base:/canvas/api/v0/content/canvas_page/3')->toString(),
         CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE => Url::fromUri('base:/canvas/editor/canvas_page/3')->toString(),
       ],
       $body['3']['links'],
-      'Links for page 3 should include delete operation.'
+      'Links for page 3 should include delete and unpublish operations.'
     );
   }
 
@@ -392,13 +547,23 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
       RequestOptions::HEADERS => [
         'Content-Type' => 'application/json',
       ],
-      RequestOptions::JSON => ['entity_id' => '10'],
+      RequestOptions::JSON => [
+        'entity_id' => '10',
+        // The clientInstanceId is mandatory for duplicating an entity!
+        'clientInstanceId' => 'client-434',
+      ],
     ];
 
     $this->assertAuthenticationAndAuthorization($url, 'POST');
     // Authenticated, authorized, with CSRF token: 204.
     $request_options['headers']['X-CSRF-Token'] = $this->drupalGet('session/token');
     Role::load('authenticated')?->grantPermission(Page::CREATE_PERMISSION)->save();
+    // Grant 'access content' permission so the user can view published pages
+    // to duplicate them.
+    Role::load('authenticated')?->grantPermission('access content')->save();
+    // Grant 'edit canvas_page' permission so the user can view unpublished
+    // pages (needed when duplicating a duplicate, which is unpublished).
+    Role::load('authenticated')?->grantPermission(Page::EDIT_PERMISSION)->save();
 
     // Try to duplicate a non-existent entity.
     $response = $this->makeApiRequest('POST', $url, $request_options);
@@ -414,7 +579,10 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     self::assertFalse($original->get('path')->isEmpty());
     self::assertNotNull($original->get('path')->first()?->get('alias')->getValue());
 
-    $request_options[RequestOptions::JSON] = ['entity_id' => $original->id()];
+    $request_options[RequestOptions::JSON] = [
+      'entity_id' => $original->id(),
+      'clientInstanceId' => 'client-132',
+    ];
 
     // Test module will return view access forbidden for canvas_page id 1 instance.
     $this->container->get('module_installer')->install(['canvas_test_access']);
@@ -432,10 +600,14 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     // Duplicate Page 1 entity.
     $response = $this->makeApiRequest('POST', $url, $request_options);
     $this->assertSame(201, $response->getStatusCode());
-    $this->assertSame(
-      '{"entity_type":"canvas_page","entity_id":"4"}',
-      (string) $response->getBody()
-    );
+    $this->assertPostResponse($response, [
+      'entity_type' => Page::ENTITY_TYPE_ID,
+      'entity_id' => '4',
+      'title' => 'Page 1 (Copy)',
+      'status' => FALSE,
+      'path' => Url::fromUri('base://page/4')->toString(),
+      'components' => [],
+    ]);
     $duplicate_1 = \Drupal::entityTypeManager()->getStorage('canvas_page')->load(4);
     \assert($duplicate_1 instanceof ContentEntityInterface);
     $this->assertEquals('Page 1 (Copy)', $duplicate_1->label());
@@ -447,14 +619,20 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     $auto_save_manager->saveEntity($duplicate_1);
 
     $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
-    $request_options[RequestOptions::JSON] = ['entity_id' => $duplicate_1->id()];
+    $request_options[RequestOptions::JSON] = [
+      'entity_id' => $duplicate_1->id(),
+      'clientInstanceId' => 'client-434',
+    ];
     $response = $this->makeApiRequest('POST', $url, $request_options);
     $this->assertSame(201, $response->getStatusCode());
-    $this->assertSame(
-      '{"entity_type":"canvas_page","entity_id":"5"}',
-      (string) $response->getBody()
-    );
-
+    $this->assertPostResponse($response, [
+      'entity_type' => Page::ENTITY_TYPE_ID,
+      'entity_id' => '5',
+      'title' => 'Title from temp store (Copy)',
+      'status' => FALSE,
+      'path' => Url::fromUri('base://page/5')->toString(),
+      'components' => [],
+    ]);
     $duplicate_2 = \Drupal::entityTypeManager()->getStorage('canvas_page')->load(5);
     \assert($duplicate_2 instanceof EntityInterface);
     // Test that the data from the temp store is present.
@@ -463,6 +641,187 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     // Autosaved data is empty in duplicate.
     self::assertTrue($auto_save_manager->getAutoSaveEntity($duplicate_2)->isEmpty());
     self::assertNull($duplicate_2->get('path')->first()?->get('alias')->getValue());
+  }
+
+  /**
+   * Assert values from a response body contents.
+   *
+   * This is to avoid having to ::assertSame() on values we don't really care
+   * about for the purpose of that test.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $response
+   *   The received response object.
+   * @param array<string, mixed> $expected_map
+   *   The expected values on the response body contents.
+   */
+  private function assertPostResponse(ResponseInterface $response, array $expected_map): void {
+    $responseBody = (string) $response->getBody();
+    self::assertIsString($responseBody);
+    self::assertJson($responseBody);
+    $decodedBody = \json_decode($responseBody, TRUE);
+    foreach ($expected_map as $key => $value) {
+      $this->assertSame($decodedBody[$key], $value);
+    }
+  }
+
+  /**
+   * Tests unpublishing and publishing canvas pages via the PATCH API.
+   */
+  public function testPatchUnpublishPublish(): void {
+    $request_options = [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+      ],
+    ];
+
+    // Test unpublishing a published page.
+    $url = Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/1');
+
+    // Test authentication and authorization for PATCH.
+    $this->assertAuthenticationAndAuthorization($url, 'PATCH');
+
+    $request_options['headers']['X-CSRF-Token'] = $this->drupalGet('session/token');
+    Role::load('authenticated')?->grantPermission(Page::EDIT_PERMISSION)->save();
+
+    // Test that unexpected fields in request body return an error.
+    $request_options[RequestOptions::JSON] = ['status' => FALSE, 'unexpected_field' => 'value'];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(400, $response->getStatusCode());
+    $response_data = json_decode((string) $response->getBody(), TRUE);
+    $this->assertStringContainsString('Unexpected fields in request body:', $response_data['error']);
+    $this->assertStringContainsString('unexpected_field', $response_data['error']);
+
+    // Test that missing 'status' field returns an error.
+    $request_options[RequestOptions::JSON] = [];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(400, $response->getStatusCode());
+    $this->assertSame(
+      ['error' => 'Missing required field: status'],
+      json_decode((string) $response->getBody(), TRUE)
+    );
+
+    // Unpublish page 1 (published -> unpublished).
+    $request_options[RequestOptions::JSON] = ['status' => FALSE];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(204, $response->getStatusCode());
+
+    // Verify the page is unpublished via auto-save.
+    $page_1 = Page::load(1);
+    \assert($page_1 instanceof Page);
+    $this->assertTrue($page_1->isPublished(), 'Original page should still be published.');
+
+    $autoSaveManager = $this->container->get(AutoSaveManager::class);
+    $autoSaveData = $autoSaveManager->getAutoSaveEntity($page_1);
+    $this->assertFalse($autoSaveData->isEmpty(), 'Auto-save data should exist.');
+    \assert($autoSaveData->entity instanceof EntityPublishedInterface);
+    $this->assertFalse($autoSaveData->entity->isPublished(), 'Auto-saved page should be unpublished.');
+
+    // Test publishing an unpublished page.
+    $request_options[RequestOptions::JSON] = ['status' => TRUE];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(204, $response->getStatusCode());
+
+    // Verify the auto-save is now empty because both original and auto-save are published.
+    $autoSaveData = $autoSaveManager->getAutoSaveEntity($page_1);
+    $this->assertTrue($autoSaveData->isEmpty(), 'Auto-save should be empty when it matches the original.');
+
+    // Try to unpublish the homepage (page 2).
+    // First, publish page 2 so it can be unpublished.
+    $page_2 = Page::load(2);
+    \assert($page_2 instanceof Page);
+    $page_2->setPublished()->save();
+
+    $url = Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/2');
+    $request_options[RequestOptions::JSON] = ['status' => FALSE];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(403, $response->getStatusCode());
+    $this->assertSame(
+      ['error' => 'Cannot unpublish the homepage. Please set a different page as the homepage first.'],
+      json_decode((string) $response->getBody(), TRUE)
+    );
+
+    // Verify that unpublish/publish operations work correctly with clientInstanceId.
+    $url = Url::fromUri('base:/canvas/api/v0/content/auto-save/canvas_page/3');
+    $request_options[RequestOptions::JSON] = [
+      'status' => FALSE,
+      'clientInstanceId' => 'test-client-123',
+    ];
+    $response = $this->makeApiRequest('PATCH', $url, $request_options);
+    $this->assertSame(204, $response->getStatusCode());
+
+    $page_3 = Page::load(3);
+    \assert($page_3 instanceof Page);
+    $autoSaveData = $autoSaveManager->getAutoSaveEntity($page_3);
+    $this->assertFalse($autoSaveData->isEmpty());
+    \assert($autoSaveData->entity instanceof EntityPublishedInterface);
+    $this->assertFalse($autoSaveData->entity->isPublished());
+  }
+
+  /**
+   * Tests the presence of unpublish and publish links in the canvas page list API.
+   */
+  public function testUnpublishPublishLinksInList(): void {
+    $url = Url::fromUri('base:/canvas/api/v0/content/canvas_page');
+
+    $user = $this->createUser([Page::EDIT_PERMISSION], 'edit_canvas_page_user');
+    \assert($user instanceof UserInterface);
+    $this->drupalLogin($user);
+
+    // Get the initial list.
+    $body = $this->assertExpectedResponse('GET', $url, [], 200, ['url.query_args:search', 'user.permissions'], [AutoSaveManager::CACHE_TAG, 'config:system.site', 'http_response', 'canvas_page:2', 'canvas_page_list'], 'UNCACHEABLE (request policy)', 'MISS');
+    \assert(\is_array($body));
+
+    // Page 1 is published, should have unpublish link and set-as-homepage link.
+    \assert(\array_key_exists('1', $body) && \array_key_exists('links', $body['1']));
+    $this->assertArrayHasKey(CanvasUriDefinitions::LINK_REL_UNPUBLISH, $body['1']['links'], 'Published page should have unpublish link.');
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_PUBLISH, $body['1']['links'], 'Published page should not have publish link.');
+    $this->assertArrayHasKey(CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE, $body['1']['links'], 'Published page should have set-as-homepage link.');
+    $this->assertFalse($body['1']['isNew'], 'Published page should not be marked as new.');
+
+    // Page 2 is unpublished draft (never published), should have set-as-homepage link but not unpublish or publish link.
+    \assert(\array_key_exists('2', $body) && \array_key_exists('links', $body['2']));
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_UNPUBLISH, $body['2']['links'], 'Draft page should not have unpublish link.');
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_PUBLISH, $body['2']['links'], 'Draft page should not have publish link.');
+    $this->assertArrayHasKey(CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE, $body['2']['links'], 'Draft page should have set-as-homepage link.');
+    $this->assertTrue($body['2']['isNew'], 'Draft page should be marked as new.');
+
+    // Create an unpublished page (published then unpublished).
+    $unpublished_page = Page::create([
+      'title' => 'Unpublished Page',
+      'status' => TRUE,
+    ]);
+    $unpublished_page->save();
+    $unpublished_page->setNewRevision(TRUE);
+    $unpublished_page->setUnpublished()->save();
+
+    // Fetch the list again and check the unpublished page.
+    $body = $this->assertExpectedResponse('GET', $url, [], 200, ['url.query_args:search', 'user.permissions'], [AutoSaveManager::CACHE_TAG, 'config:system.site', 'http_response', 'canvas_page:2', 'canvas_page_list'], 'UNCACHEABLE (request policy)', 'MISS');
+    \assert(\is_array($body));
+
+    $unpublished_page_id = (string) $unpublished_page->id();
+    \assert(\array_key_exists($unpublished_page_id, $body) && \array_key_exists('links', $body[$unpublished_page_id]));
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_UNPUBLISH, $body[$unpublished_page_id]['links'], 'Unpublished page should not have unpublish link.');
+    $this->assertArrayHasKey(CanvasUriDefinitions::LINK_REL_PUBLISH, $body[$unpublished_page_id]['links'], 'Unpublished page should have publish link.');
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE, $body[$unpublished_page_id]['links'], 'Unpublished page should not have set-as-homepage link.');
+    $this->assertFalse($body[$unpublished_page_id]['isNew'], 'Unpublished page should not be marked as new.');
+    $this->assertFalse($body[$unpublished_page_id]['status'], 'Unpublished page should have status false.');
+
+    // Test that auto-save unpublish operation shows correct links.
+    $autoSaveManager = $this->container->get(AutoSaveManager::class);
+    $page_1 = Page::load(1);
+    \assert($page_1 instanceof Page);
+    $page_1->setUnpublished();
+    $autoSaveManager->saveEntity($page_1);
+
+    $body = $this->assertExpectedResponse('GET', $url, [], 200, ['url.query_args:search', 'user.permissions'], [AutoSaveManager::CACHE_TAG, 'config:system.site', 'http_response', 'canvas_page:2', 'canvas_page_list'], 'UNCACHEABLE (request policy)', 'MISS');
+    \assert(\is_array($body));
+
+    // Page 1 now has auto-save with unpublished status.
+    \assert(\array_key_exists('1', $body) && \array_key_exists('links', $body['1']));
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_UNPUBLISH, $body['1']['links'], 'Page with auto-saved unpublished status should not have unpublish link.');
+    $this->assertArrayHasKey(CanvasUriDefinitions::LINK_REL_PUBLISH, $body['1']['links'], 'Page with auto-saved unpublished status should have publish link (revert).');
+    $this->assertArrayNotHasKey(CanvasUriDefinitions::LINK_REL_SET_AS_HOMEPAGE, $body['1']['links'], 'Page with auto-saved unpublished status should not have set-as-homepage link.');
+    $this->assertFalse($body['1']['status'], 'Page should show auto-saved unpublished status.');
   }
 
   private function assertAuthenticationAndAuthorization(Url $url, string $method): void {
@@ -493,6 +852,7 @@ final class CanvasContentEntityHttpApiTest extends HttpApiTestBase {
     $error = match ($method) {
       'POST' => "The 'create canvas_page' permission is required.",
       'DELETE' => "The 'delete canvas_page' permission is required.",
+      'PATCH' => "The 'edit canvas_page' permission is required.",
       // GET method
       default => "The 'edit canvas_page' permission is required.",
     };

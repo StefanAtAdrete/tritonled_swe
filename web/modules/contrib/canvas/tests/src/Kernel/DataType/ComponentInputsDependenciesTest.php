@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\DataType;
 
+use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas\PropSource\PropSource;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\canvas\Entity\Page;
@@ -25,11 +26,13 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * @covers \Drupal\canvas\Plugin\DataType\ComponentInputs::calculateDependencies
+ * Tests Component Inputs Dependencies.
+ *
  * @see \Drupal\Tests\canvas\Unit\DataType\ComponentInputsTest
- * @group canvas
+ * @legacy-covers \Drupal\canvas\Plugin\DataType\ComponentInputs::calculateDependencies
  */
 #[RunTestsInSeparateProcesses]
+#[Group('canvas')]
 class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
 
   use ComponentTreeItemListInstantiatorTrait;
@@ -109,6 +112,7 @@ class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
       'body' => [['value' => 'My test node body', 'summary' => 'Body Summary', 'format' => 'plain_text']],
       'field_hero' => $image_field_sample_value,
     ]);
+    self::assertEntityIsValid($node);
     $node->save();
 
     $this->generateComponentConfig();
@@ -146,7 +150,7 @@ class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
       'uuid' => $uuid->generate(),
       'component_id' => 'sdc.canvas_test_sdc.heading',
       'inputs' => [
-        'heading' => [
+        'text' => [
           'sourceType' => PropSource::EntityField->value,
           'expression' => 'ℹ︎␜entity:node:alpha␝body␞␟value',
         ],
@@ -216,13 +220,10 @@ class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
         'image.style.canvas_parametrized_width',
         'node.type.alpha',
         'field.field.node.alpha.field_hero',
-        'image.style.canvas_parametrized_width',
         'node.type.alpha',
         'field.field.node.alpha.field_hero',
-        'image.style.canvas_parametrized_width',
         'node.type.alpha',
         'field.field.node.alpha.field_hero',
-        'image.style.canvas_parametrized_width',
       ],
       'content' => [
         'file:file:' . $file_uuid,

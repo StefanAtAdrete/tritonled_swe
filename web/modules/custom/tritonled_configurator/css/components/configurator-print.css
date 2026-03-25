@@ -1,0 +1,144 @@
+/**
+ * @file
+ * Configurator Specs block — screen + print styles.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Screen styles                                                        */
+/* ------------------------------------------------------------------ */
+
+.configurator-specs-wrapper {
+  margin-top: 1.5rem;
+}
+
+.specs-table th.specs-label-col {
+  width: 40%;
+  font-weight: 600;
+  background-color: #f8f9fa;
+}
+
+/* Hide rows where JS sets data-spec-hidden="true" */
+.specs-row[data-spec-hidden="true"] {
+  display: none;
+}
+
+/* Print image — hidden on screen, shown in print */
+.specs-print-image {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Print styles                                                         */
+/* ------------------------------------------------------------------ */
+
+@media print {
+
+  /* Hide everything */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only specs block and all its children */
+  #configurator-specs,
+  #configurator-specs * {
+    visibility: visible;
+  }
+
+  /* Position specs block at very top of page */
+  #configurator-specs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 10mm 15mm;
+    box-sizing: border-box;
+    background: #fff;
+  }
+
+  /* Hide spec rows that are not relevant for this product */
+  .specs-row[data-spec-hidden="true"] {
+    display: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0;
+    size: A4 portrait;
+  }
+
+  body {
+    font-size: 11pt;
+    color: #000;
+  }
+
+  /* Print header */
+  .specs-print-header {
+    display: block !important;
+    visibility: visible !important;
+    margin-bottom: 1rem;
+  }
+
+  .specs-print-logo strong {
+    font-size: 18pt;
+    letter-spacing: 0.05em;
+  }
+
+  .specs-print-contact {
+    font-size: 9pt;
+    color: #444;
+  }
+
+  /* Print image */
+  .specs-print-image {
+    display: block !important;
+    visibility: visible !important;
+    float: right;
+    width: 180px;
+    margin: 0 0 1rem 1.5rem;
+  }
+
+  .specs-print-image img {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Table */
+  .specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    clear: none;
+  }
+
+  .specs-table th,
+  .specs-table td {
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+  }
+
+  .specs-table th.specs-label-col {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    width: 40%;
+  }
+
+  /* Print footer */
+  .specs-print-footer {
+    display: block !important;
+    visibility: visible !important;
+    clear: both;
+    margin-top: 2rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #ccc;
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* Hide print button and screen heading */
+  #configurator-print-btn,
+  .specs-screen-heading {
+    display: none !important;
+  }
+
+}

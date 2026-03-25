@@ -48,8 +48,6 @@ class EntityHooks {
    *
    * @param array $entity_types
    *   The entity type definitions.
-   *
-   * @phpstan-ignore-next-line
    */
   #[Hook('entity_type_build')]
   public function entityTypeBuild(array &$entity_types): void {
@@ -64,16 +62,18 @@ class EntityHooks {
         continue;
       }
       $type = $owner->configEntityTypeId();
-      /**
-       * @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types
-       */
-      $entity_types[$type]
-        ->setAccessClass(AccessControlHandler::class)
-        ->setListBuilderClass(ListBuilder::class)
-        ->setLinkTemplate('collection', '/' . $basePath)
-        ->setFormClass('delete', DeleteForm::class)
-        ->setLinkTemplate('edit-form', '/' . $basePath . '/{' . $type . '}/edit')
-        ->setLinkTemplate('delete-form', '/' . $basePath . '/{' . $type . '}/delete');
+      if (isset($entity_types[$type])) {
+        /**
+        * @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types
+        */
+        $entity_types[$type]
+          ->setAccessClass(AccessControlHandler::class)
+          ->setListBuilderClass(ListBuilder::class)
+          ->setLinkTemplate('collection', '/' . $basePath)
+          ->setFormClass('delete', DeleteForm::class)
+          ->setLinkTemplate('edit-form', '/' . $basePath . '/{' . $type . '}/edit')
+          ->setLinkTemplate('delete-form', '/' . $basePath . '/{' . $type . '}/delete');
+      }
     }
     $alreadyRunning = FALSE;
   }
@@ -86,8 +86,6 @@ class EntityHooks {
    *
    * @return array
    *   An array of operations.
-   *
-   * @phpstan-ignore-next-line
    */
   #[Hook('entity_operation')]
   public function entityOperation(EntityInterface $entity): array {
@@ -196,9 +194,41 @@ class EntityHooks {
   }
 
   /**
-   * Implements hook_modules_installed().
+   * Implements hook_entity_operation_alter().
    *
-   * @phpstan-ignore-next-line
+   * When a model uses the fallback modeler and there are more than two modelers
+   * available, the default edit operation would lead to an access denied
+   * response because there is no way to auto-switch to a single modeler.
+   * Remove the edit button in that case.
+   *
+   * @param array $operations
+   *   The operations array.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
+   */
+  #[Hook('entity_operation_alter')]
+  public function entityOperationAlter(array &$operations, EntityInterface $entity): void {
+    if (!isset($operations['edit'])) {
+      return;
+    }
+    $modelers = $this->modelerManager->getAllInstances();
+    if (count($modelers) <= 2) {
+      return;
+    }
+    if (
+      $entity instanceof ConfigEntityInterface &&
+      ($owner = $this->modelerApiService->findOwner($entity)) &&
+      $owner->configEntityBasePath()
+    ) {
+      $modeler = $owner->getModeler($entity);
+      if ($modeler === NULL || $modeler->getPluginId() === 'fallback') {
+        unset($operations['edit']);
+      }
+    }
+  }
+
+  /**
+   * Implements hook_modules_installed().
    */
   #[Hook('modules_installed')]
   public function modulesInstalled(array $modules, bool $is_syncing): void {

@@ -12,6 +12,9 @@ use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\ai\AiProviderInterface;
 use Drupal\ai\AiProviderPluginManager;
+use Drupal\ai\Dto\StructuredOutputSchema;
+use Drupal\ai\Guardrail\AiGuardrailHelper;
+use Drupal\ai\Guardrail\AiGuardrailSetInterface;
 use Drupal\ai\OperationType\Chat\ChatInput;
 use Drupal\ai\OperationType\Chat\ChatMessage;
 use Drupal\ai\OperationType\Chat\StreamedChatMessageIteratorInterface;
@@ -62,6 +65,8 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
    *   The AI Function Calls.
    * @param \Drupal\ai\Service\FunctionCalling\FunctionGroupPluginManager $functionGroupPluginManager
    *   The AI Function Groups.
+   * @param \Drupal\ai\Guardrail\AiGuardrailHelper $aiGuardrailHelper
+   *   The AI Guardrail Helper.
    */
   public function __construct(
     array $configuration,
@@ -74,6 +79,7 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
     protected Renderer $renderer,
     protected FunctionCallPluginManager $functionCallPluginManager,
     protected FunctionGroupPluginManager $functionGroupPluginManager,
+    protected AiGuardrailHelper $aiGuardrailHelper,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $requestStack, $aiProviderHelper, $explorerHelper, $providerManager);
   }
@@ -93,6 +99,7 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
       $container->get('renderer'),
       $container->get('plugin.manager.ai.function_calls'),
       $container->get('plugin.manager.ai.function_groups'),
+      $container->get('ai.guardrail_helper'),
     );
   }
 
@@ -177,7 +184,7 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
     ];
 
     $form['left']['advanced']['json_schema_detail']['json_schema'] = [
-      '#type' => 'textarea',
+      '#type' => 'ai_json_schema',
       '#title' => $this->t('JSON Schema/Structured Output'),
       '#description' => $this->t('If the provider supports structured JSON, you can enter the JSON schema here.'),
       '#attributes' => [
@@ -191,15 +198,15 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
       '#open' => FALSE,
     ];
 
-    $options = [];
+    $function_call_options = [];
     foreach ($this->functionCallPluginManager->getDefinitions() as $plugin_id => $definition) {
       $group = $definition['group'];
       if ($group && $this->functionGroupPluginManager->hasDefinition($group)) {
         $group_details = $this->functionGroupPluginManager->getDefinition($group);
-        $options[(string) $group_details['group_name']][$plugin_id] = $definition['name'] . ' (' . $definition['provider'] . ')';
+        $function_call_options[(string) $group_details['group_name']][$plugin_id] = $definition['name'] . ' (' . $definition['provider'] . ')';
       }
       else {
-        $options['Other'][$plugin_id] = $definition['name'] . ' (' . $definition['provider'] . ')';
+        $function_call_options['Other'][$plugin_id] = $definition['name'] . ' (' . $definition['provider'] . ')';
       }
 
     }
@@ -209,13 +216,30 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
       '#title' => $this->t('Function Calling'),
       '#description' => $this->t('The function to add to the call.'),
       '#required' => FALSE,
-      '#options' => $options,
+      '#options' => $function_call_options,
     ];
 
     $form['left']['advanced']['function_call_detail']['execute'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Execute Function Call'),
       '#description' => $this->t('If you want to execute the function call and show the output.'),
+    ];
+
+    $form['left']['advanced']['guardrails_detail'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Guardrails'),
+      '#open' => FALSE,
+    ];
+
+    $guardrail_set_options = array_map(function (AiGuardrailSetInterface $guardrail_set) {
+      return $guardrail_set->label();
+    }, $this->aiGuardrailHelper->getRepository()->getAllGuardrailSets());
+    $form['left']['advanced']['guardrails_detail']['guardrail_set'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Guardrail Set'),
+      '#description' => $this->t('The guardrails set to apply to the call.'),
+      '#required' => FALSE,
+      '#options' => ['' => $this->t('- Select -')] + $guardrail_set_options,
     ];
 
     $form['left']['submit_wrapper'] = [
@@ -314,18 +338,36 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
         $input->setChatTools(new ToolsInput($functions));
       }
 
+      $input = $this->aiGuardrailHelper->applyGuardrailSetToChatInput($values['guardrail_set'], $input);
+
       // Check for system message.
       if ($form_state->getValue('system_message')) {
         $input->setSystemPrompt($form_state->getValue('system_message'));
       }
 
-      if ($form_state->getValue('json_schema')) {
-        $input->setChatStructuredJsonSchema(Json::decode($form_state->getValue('json_schema')));
-      }
-
       $message = NULL;
       $response = NULL;
+
       try {
+
+        if ($form_state->getValue('json_schema')) {
+          $schema = Json::decode($form_state->getValue('json_schema'));
+          if (!is_array($schema) || (!isset($schema['schema']) && !isset($schema['properties']))) {
+            throw new \InvalidArgumentException("The JSON schema is not valid JSON or does not decode to an array. It has to include the schema/properties key.");
+          }
+          $schema_part = !empty($schema['schema']) ? $schema['schema'] : $schema;
+          $name = !empty($schema['name']) ? $schema['name'] : 'json_schema';
+          $description = !empty($schema['description']) ? $schema['description'] : '';
+          $strict = !empty($schema['strict']) ? (bool) $schema['strict'] : FALSE;
+          $structured = new StructuredOutputSchema(
+            json_schema: $schema_part,
+            name: $name,
+            description: $description,
+            strict: $strict,
+          );
+          $input->setChatStructuredJsonSchema($structured);
+        }
+
         // If we should stream.
         if ($form_state->getValue('streamed')) {
           $input->setStreamedOutput(TRUE);
@@ -568,6 +610,11 @@ final class ChatGenerator extends AiApiExplorerPluginBase {
       $code['code']['#value'] .= '&nbsp;&nbsp;$functions[$tool->getName()] = $tool;<br>';
       $code['code']['#value'] .= '}<br>';
       $code['code']['#value'] .= '$input->setChatTools(new \Drupal\ai\OperationType\Chat\Tools\ToolsInput($functions));<br><br>';
+    }
+
+    if (!empty($form_state->getValue('guardrail_set'))) {
+      $code['code']['#value'] .= '$ai_guardrail_helper = \Drupal::service(\'ai.guardrail_helper\');<br>';
+      $code['code']['#value'] .= '$input = $ai_guardrail_helper->applyGuardrailSetToChatInput(\'' . $form_state->getValue('guardrail_set') . '\', $input);<br><br>';
     }
 
     $code['code']['#value'] .= "\$ai_provider = \Drupal::service('ai.provider')->createInstance('" . $form_state->getValue('chat_ai_provider') . '\');<br>';

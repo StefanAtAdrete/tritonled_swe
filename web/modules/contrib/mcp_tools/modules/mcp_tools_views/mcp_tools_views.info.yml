@@ -8,7 +8,7 @@ dependencies:
   - drupal:views
 lifecycle: experimental
 
-# Information added by Drupal.org packaging script on 2026-02-26
-version: '1.0.0-beta5'
+# Information added by Drupal.org packaging script on 2026-03-10
+version: '1.0.0-beta7'
 project: 'mcp_tools'
-datestamp: 1772139264
+datestamp: 1773123141

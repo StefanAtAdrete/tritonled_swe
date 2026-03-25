@@ -65,7 +65,7 @@ final class CanvasTemplateRenderer implements MainContentRendererInterface {
    *   Array of all dependencies, including nested ones.
    */
   private function resolveLibraryDependencies(string $library, array &$collected_dependencies = []): array {
-    if (in_array($library, $collected_dependencies, TRUE)) {
+    if (\in_array($library, $collected_dependencies, TRUE)) {
       return [];
     }
 
@@ -81,7 +81,7 @@ final class CanvasTemplateRenderer implements MainContentRendererInterface {
 
     $dependencies = [];
     foreach ($library_info['dependencies'] as $dependency) {
-      if (!in_array($dependency, $collected_dependencies, TRUE)) {
+      if (!\in_array($dependency, $collected_dependencies, TRUE)) {
         $collected_dependencies[] = $dependency;
         $dependencies[] = $dependency;
         $nested_dependencies = $this->resolveLibraryDependencies($dependency, $collected_dependencies);
@@ -146,8 +146,8 @@ final class CanvasTemplateRenderer implements MainContentRendererInterface {
     // The first time (and perhaps other times?) this renderer runs, the
     // libraries query parameter is compressed. We decompress anything requiring
     // it here.
-    if (isset($ajax_page_state['libraries']) && !is_array($ajax_page_state['libraries'])) {
-      if (is_array($ajax_page_state['libraries'])) {
+    if (isset($ajax_page_state['libraries']) && !\is_array($ajax_page_state['libraries'])) {
+      if (\is_array($ajax_page_state['libraries'])) {
         $ajax_page_state['libraries'] = \array_map(
           fn($item) => str_contains($item, '/') ? $item : UrlHelper::uncompressQueryParameter($item),
           $ajax_page_state['libraries'],

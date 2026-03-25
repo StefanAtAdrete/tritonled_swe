@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Plugin\Field\FieldType;
 
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Drupal\canvas\PropSource\PropSource;
+use Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
@@ -22,12 +25,12 @@ use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
 use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
-/**
- * @coversDefaultClass \Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem
- * @group canvas
- */
+#[CoversClass(ComponentTreeItem::class)]
+#[CoversClass(ValidComponentTreeItemConstraintValidator::class)]
+#[Group('canvas')]
 #[RunTestsInSeparateProcesses]
 class ComponentTreeItemTest extends CanvasKernelTestBase {
 
@@ -63,8 +66,8 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   }
 
   /**
-   * @covers ::setValue
-   * @covers ::onChange
+   * @legacy-covers ::setValue
+   * @legacy-covers ::onChange
    */
   public function testSetValue(): void {
     $this->generateComponentConfig();
@@ -78,8 +81,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
     $component->createVersion('bcf3fbf52a2b169b')
       ->setSettings($settings)
       ->save();
-    $violations = $component->getTypedData()->validate();
-    self::assertSame([], self::violationsToArray($violations));
+    self::assertEntityIsValid($component);
     self::assertCount(2, $component->getVersions());
 
     // A helper method to set 2 instances of the exact same component to two
@@ -103,6 +105,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
         ],
       ]);
       $violations = $item_list->validate();
+      // @phpcs:ignore Canvas.Tests.KernelTestBase.RequireAssertEntityIsValid
       self::assertSame([], self::violationsToArray($violations));
       self::assertInstanceOf(ComponentTreeItem::class, $item_list->get(0));
       self::assertInstanceOf(ComponentTreeItem::class, $item_list->get(1));
@@ -128,7 +131,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   /**
    * @testWith ["not-a-uuid", {"0.parent_uuid": "This is not a valid UUID."}]
    *           ["", {"0.parent_uuid": "This value should not be blank."}]
-   * @covers \Drupal\canvas\Plugin\Validation\Constraint\ComponentTreeStructureConstraintValidator
+   * @legacy-covers \Drupal\canvas\Plugin\Validation\Constraint\ComponentTreeStructureConstraintValidator
    */
   public function testInvalidParentUuid(string $parent_uuid, array $expected_violations): void {
     $this->generateComponentConfig();
@@ -159,7 +162,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
    *           ["invalid_", {"1.slot": "<em class=\"placeholder\">&quot;invalid_&quot;</em> is not a valid slot name."}]
    *           [null, {"1.slot": "Invalid component tree item with UUID <em class=\"placeholder\">8b6b47ec-1167-433b-975d-e2d97739f5a6</em>. A slot name must be present if a parent uuid is provided."}]
    *           ["the_body", {}]
-   * @covers \Drupal\canvas\Plugin\Validation\Constraint\ComponentTreeStructureConstraintValidator
+   * @legacy-covers \Drupal\canvas\Plugin\Validation\Constraint\ComponentTreeStructureConstraintValidator
    */
   public function testInvalidSlot(?string $slot, array $expected_violations): void {
     $root_uuid = '947c196f-f108-43fd-a446-03a08100d579';
@@ -191,7 +194,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   }
 
   /**
-   * @covers \Drupal\canvas\Plugin\Validation\Constraint\ValidConfigEntityVersionConstraintValidator
+   * @legacy-covers \Drupal\canvas\Plugin\Validation\Constraint\ValidConfigEntityVersionConstraintValidator
    */
   public function testInvalidVersion(): void {
     $root_uuid = '947c196f-f108-43fd-a446-03a08100d579';
@@ -228,12 +231,12 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   }
 
   /**
-   * @covers ::getParentUuid
-   * @covers ::getParentComponentTreeItem
-   * @covers ::getSlot
-   * @covers ::getComponentId
-   * @covers ::getComponent
-   * @covers ::getUuid
+   * @legacy-covers ::getParentUuid
+   * @legacy-covers ::getParentComponentTreeItem
+   * @legacy-covers ::getSlot
+   * @legacy-covers ::getComponentId
+   * @legacy-covers ::getComponent
+   * @legacy-covers ::getUuid
    */
   public function testConvenienceMethods(): void {
     $root_uuid = '947c196f-f108-43fd-a446-03a08100d579';
@@ -376,7 +379,6 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
           'canvas.component.sdc.canvas_test_sdc.image',
           'canvas.component.sdc.canvas_test_sdc.my-cta',
           'field.field.node.article.field_hero',
-          'image.style.canvas_parametrized_width',
           'node.type.article',
         ],
         'content' => [],
@@ -490,21 +492,20 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
       'field_canvas_test.0.component_id' => "The 'canvas.component.sdc.sdc_test.missing' config does not exist.",
     ];
     $test_cases['inputs invalid, using entity field prop sources'][] = [
-      \sprintf('field_canvas_test.0.inputs.%s.heading', self::UUID_DYNAMIC_STATIC_CARD_2) => 'The property heading is required.',
       'field_canvas_test.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading-2' => 'Component `9145b0da-85a1-4ee7-ad1d-b1b63614aed6`: the `heading-2` prop is not defined.',
+      \sprintf('field_canvas_test.0.inputs.%s.heading', self::UUID_DYNAMIC_STATIC_CARD_2) => 'The property heading is required.',
       'field_canvas_test.0' => "The 'entity-field' prop source type must be absent.",
-      \sprintf('field_canvas_test.1.inputs.%s.heading', self::UUID_DYNAMIC_STATIC_CARD_3) => 'The property heading is required.',
       'field_canvas_test.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading-1' => 'Component `dab1145b-c5d5-4779-9be8-0a41c2d8ed29`: the `heading-1` prop is not defined.',
+      \sprintf('field_canvas_test.1.inputs.%s.heading', self::UUID_DYNAMIC_STATIC_CARD_3) => 'The property heading is required.',
       'field_canvas_test.1' => "The 'entity-field' prop source type must be absent.",
       'field_canvas_test.2' => "The 'entity-field' prop source type must be absent.",
     ];
     $test_cases['inputs invalid, using entity field prop sources'][] = ['access content'];
 
-    // If inputs are invalid, we get an OutOfRangeException thrown.
-    $test_cases['inputs invalid, using only static prop sources'][] = [];
-    $test_cases['inputs invalid, using only static prop sources'][] = [];
-    $test_cases['inputs invalid, using only static prop sources'][] = \OutOfRangeException::class;
-    $test_cases['inputs invalid, using only static prop sources'][] = "'heading-x' is not a prop on this version of the Component 'Single-directory component: <em class=\"placeholder\">Canvas test SDC with props but no slots</em>'.";
+    $test_cases['inputs invalid, using only static prop sources'][] = [
+      \sprintf('field_canvas_test.0.inputs.%s.heading-x', self::UUID_DYNAMIC_STATIC_CARD_2) => 'Component `9145b0da-85a1-4ee7-ad1d-b1b63614aed6`: the `heading-x` prop is not defined.',
+      \sprintf('field_canvas_test.0.inputs.%s.heading', self::UUID_DYNAMIC_STATIC_CARD_2) => 'The property heading is required.',
+    ];
 
     $test_cases['inputs invalid, using only static inputs with a StaticPropSource deviating from that defined in the referenced Component entity version'][] = [
       \sprintf('field_canvas_test.0.inputs.%s', self::UUID_DYNAMIC_STATIC_CARD_2) => 'Using a static prop source that deviates from the configuration for Component <em class="placeholder">sdc.canvas_test_sdc.props-no-slots</em> at version <em class="placeholder">b1e991f726a2a266</em>.',
@@ -527,15 +528,13 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   }
 
   /**
-   * @coversClass \Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator
    * @param array $field_values
    * @param array $expected_violations
    * @param list<string> $permissions
    * @param ?class-string<\Throwable> $expected_exception
    * @param ?string $exception_message
-   *
-   * @dataProvider providerInvalidField
    */
+  #[DataProvider('providerInvalidField')]
   public function testInvalidField(array $field_values, array $expected_violations, array $permissions = [], ?string $expected_exception = NULL, ?string $exception_message = NULL): void {
     $this->installEntitySchema('path_alias');
     $this->setUpCurrentUser(permissions: $permissions);
@@ -547,7 +546,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
     ]);
     if ($expected_exception !== NULL) {
       $this->expectException($expected_exception);
-      \assert(is_string($exception_message));
+      \assert(\is_string($exception_message));
       $this->expectExceptionMessage($exception_message);
     }
     $violations = $node->validate();

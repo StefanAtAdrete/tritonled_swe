@@ -298,6 +298,14 @@ final class StaticPropSource extends PropSourceBase {
    * @see \Drupal\canvas\PropSource\StaticPropSource::denormalizeValue()
    */
   public static function isMinimalRepresentation(array $sdc_prop_source): void {
+    // A null value signals that the user explicitly removed
+    // an optional prop value. Validation of whether the prop
+    // is actually optional (i.e. not required) is handled separately by the
+    // ComponentValidator, so there is nothing more to check here.
+    if ($sdc_prop_source['value'] === NULL) {
+      return;
+    }
+
     $expression = StructuredDataPropExpression::fromString($sdc_prop_source['expression']);
     \assert($expression instanceof FieldTypeBasedPropExpressionInterface);
     $cardinality = $sdc_prop_source['sourceTypeSettings']['cardinality'] ?? NULL;
@@ -330,7 +338,7 @@ final class StaticPropSource extends PropSourceBase {
     // Multiple-cardinality StaticPropSources MUST store a list of minimal
     // representations.
     else {
-      if (!is_array($stored_value) || !array_is_list($stored_value)) {
+      if (!\is_array($stored_value) || !array_is_list($stored_value)) {
         throw new \LogicException('Multiple-cardinality prop source expects a list of values.');
       }
       // The deltas can be assumed to be 0-based and sequential.

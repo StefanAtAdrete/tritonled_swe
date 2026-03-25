@@ -93,21 +93,14 @@ final class ListAdapter extends TypedDataAdapterBase {
     // Check if there's a delta to remove from this rebuild.
     $remove_delta = $form_state->get(['list_adapter_remove_delta', $name]);
 
-    // Get values from the original data source.
+    // Build the values array, skipping the removed delta.
     $values = [];
     $delta = 0;
-    $source_delta = 0;
+
+    // First, add existing data items.
     foreach ($data as $item) {
-      // Skip the delta that was marked for removal.
-      if ($remove_delta !== NULL && $source_delta === $remove_delta) {
-        $source_delta++;
-        // Clear the remove flag after processing.
-        $form_state->set(['list_adapter_remove_delta', $name], NULL);
-        continue;
-      }
       $values[$delta] = $item;
       $delta++;
-      $source_delta++;
     }
 
     // Fill remaining slots with empty items up to items_count.
@@ -116,6 +109,15 @@ final class ListAdapter extends TypedDataAdapterBase {
       $new_item = $item_definition->getClass()::createInstance($item_definition);
       $values[$delta] = $new_item;
       $delta++;
+    }
+
+    // Now remove the item at the specified delta if requested.
+    if ($remove_delta !== NULL && isset($values[$remove_delta])) {
+      unset($values[$remove_delta]);
+      // Re-index the array to avoid gaps.
+      $values = array_values($values);
+      // Clear the remove flag after processing.
+      $form_state->set(['list_adapter_remove_delta', $name], NULL);
     }
     $element['#tree'] = TRUE;
     $element['#type'] = 'fieldset';
@@ -200,8 +202,11 @@ final class ListAdapter extends TypedDataAdapterBase {
   public function removeItem(array &$form, FormStateInterface $form_state): void {
     $triggering_element = $form_state->getTriggeringElement();
     $delta = $triggering_element['#delta'];
-    $list_parents = array_slice($triggering_element['#array_parents'], 0, -3);
-    $name = implode('_', $list_parents);
+    // Remove 'items', delta, and 'remove' from the end to get the list
+    // element's parents.
+    $parents = array_slice($triggering_element['#array_parents'], 0, -3);
+    $name = implode('_', $parents);
+
     // Track which delta to remove.
     $form_state->set(['list_adapter_remove_delta', $name], $delta);
 
@@ -241,14 +246,133 @@ final class ListAdapter extends TypedDataAdapterBase {
     $list_definition = $data->getDataDefinition();
     $item_definition = $list_definition->getItemDefinition();
     $result = [];
-    foreach ($values['items'] as $delta => $item_value) {
-      // Get the appropriate adapter for the item type.
-      $item_adapter = $this->getAdapterInstance($item_definition, "items][{$delta}");
-      $item_form_state = SubformState::createForSubform($form['items'][$delta], $form, $form_state);
-      $item_data = $item_definition->getClass()::createInstance($item_definition);
-      $item_adapter->extractFormValues($item_data, $form['items'][$delta], $item_form_state);
-      $result[] = $item_data->getValue();
+    if (!empty($values['items'])) {
+      foreach ($values['items'] as $delta => $item_value) {
+        // Get the appropriate adapter for the item type.
+        $item_adapter = $this->getAdapterInstance($item_definition, "items][{$delta}");
+        $item_form_state = SubformState::createForSubform($form['items'][$delta], $form, $form_state);
+        $item_data = $item_definition->getClass()::createInstance($item_definition);
+        $item_adapter->extractFormValues($item_data, $form['items'][$delta], $item_form_state);
+        $value = $item_data->getValue();
+        // Skip NULL or empty values - don't add empty items to the list.
+        if ($value !== NULL && $value !== '') {
+          $result[] = $value;
+        }
+      }
     }
+    // Always set an array, even if empty. This ensures config schema
+    // consistency and avoids NULL values for sequences.
+    $data->setValue($result);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSchemaDefinition(DataDefinitionInterface $data_definition): array {
+    $schema = parent::getSchemaDefinition($data_definition);
+    $schema['type'] = 'sequence';
+
+    /** @var \Drupal\Core\TypedData\ListDataDefinitionInterface $list_definition */
+    $list_definition = $data_definition;
+    $item_definition = $list_definition->getItemDefinition();
+
+    $adapter = $this->getAdapterInstance($item_definition, 'sequence');
+    $sequence_schema = $adapter->getSchemaDefinition($item_definition);
+
+    // Add FullyValidatable constraint to the sequence item mapping.
+    if ($sequence_schema['type'] === 'mapping' && !isset($sequence_schema['constraints']['FullyValidatable'])) {
+      $sequence_schema['constraints']['FullyValidatable'] = [];
+    }
+
+    $schema['sequence'] = $sequence_schema;
+
+    return $schema;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfigurationFromData(TypedDataInterface $data): array {
+    $value = $data->getValue();
+
+    // If the value is NULL or empty array, store empty array.
+    if ($value === NULL || (is_array($value) && empty($value))) {
+      return ['value' => []];
+    }
+
+    // If it's not an array, store empty array.
+    if (!is_array($value)) {
+      return ['value' => []];
+    }
+
+    /** @var \Drupal\Core\TypedData\ListDataDefinitionInterface $list_definition */
+    $list_definition = $data->getDataDefinition();
+    $item_definition = $list_definition->getItemDefinition();
+    $adapter = $this->getAdapterInstance($item_definition, 'list_item');
+
+    // Convert each item using its adapter.
+    $result = [];
+    foreach ($value as $item_value) {
+      // Create a temporary typed data object for the item.
+      $item_data = $item_definition->getClass()::createInstance($item_definition);
+      $item_data->setValue($item_value);
+
+      // Use the adapter to get configuration.
+      $item_config = $adapter->getConfigurationFromData($item_data);
+      $config_value = $item_config['value'] ?? NULL;
+
+      // Skip NULL or empty values.
+      if ($config_value !== NULL && $config_value !== '') {
+        $result[] = $config_value;
+      }
+    }
+
+    return ['value' => $result];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setDataFromConfiguration(TypedDataInterface $data, array $configuration): void {
+    if (!isset($configuration['value'])) {
+      return;
+    }
+
+    $config_value = $configuration['value'];
+
+    // If NULL or empty, set empty array.
+    if ($config_value === NULL || (is_array($config_value) && empty($config_value))) {
+      $data->setValue([]);
+      return;
+    }
+
+    // If it's not an array, set empty array.
+    if (!is_array($config_value)) {
+      $data->setValue([]);
+      return;
+    }
+
+    /** @var \Drupal\Core\TypedData\ListDataDefinitionInterface $list_definition */
+    $list_definition = $data->getDataDefinition();
+    $item_definition = $list_definition->getItemDefinition();
+    $adapter = $this->getAdapterInstance($item_definition, 'list_item_from_config');
+
+    // Convert each config item back to runtime format.
+    $result = [];
+    foreach ($config_value as $item_config_value) {
+      // Create a temporary typed data object for the item.
+      $item_data = $item_definition->getClass()::createInstance($item_definition);
+
+      // Use the adapter to load from configuration.
+      $adapter->setDataFromConfiguration($item_data, ['value' => $item_config_value]);
+
+      $runtime_value = $item_data->getValue();
+      // Skip NULL or empty values.
+      if ($runtime_value !== NULL && $runtime_value !== '') {
+        $result[] = $runtime_value;
+      }
+    }
+
     $data->setValue($result);
   }
 
