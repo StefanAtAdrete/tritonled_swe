@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource;
 
+use Drupal\canvas\Entity\ContentTemplate;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery;
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
 use Drupal\Core\Cache\Cache;
@@ -36,38 +41,34 @@ use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\canvas\Kernel\BrokenComponentManager;
 use Drupal\Tests\canvas\Kernel\BrokenPluginManagerInterface;
-use Drupal\Tests\canvas\Kernel\Traits\CiModulePathTrait;
-use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
 use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
-use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\TestFileCreationTrait;
-use Drupal\Tests\user\Traits\UserCreationTrait;
 use Twig\Error\Error;
 use Twig\Error\RuntimeError;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Twig\Error\SyntaxError;
 
 /**
- * @coversDefaultClass \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponent
- * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery
- * @group canvas
- * @group canvas_component_sources
+ * Tests Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponent.
+ *
  * @phpstan-import-type ComponentConfigEntityId from \Drupal\canvas\Entity\Component
  * @phpstan-import-type SingleComponentInputArray from \Drupal\canvas\Plugin\DataType\ComponentInputs
+ * @legacy-covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery
  */
 #[RunTestsInSeparateProcesses]
+#[CoversClass(SingleDirectoryComponent::class)]
+#[Group('canvas')]
+#[Group('canvas_component_sources')]
 final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxComponentSourceBaseTestBase {
 
-  use ConstraintViolationsTestTrait;
   use SingleDirectoryComponentTreeTestTrait;
-  use CiModulePathTrait;
-  use CrawlerTrait;
   use MediaTypeCreationTrait;
   use TestFileCreationTrait;
   use ContentTypeCreationTrait;
-  use UserCreationTrait;
+
+  protected const string UUID_PARTLY_DYNAMIC_HERO = '6eda12fa-c990-4292-8399-31491fae4a52';
 
   /**
    * {@inheritdoc}
@@ -111,20 +112,22 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
   }
 
   /**
-   * @depends testDiscovery
-   */
+ * Tests get client side info.
+ */
+  #[Depends('testDiscovery')]
   public function testGetClientSideInfo(array $component_ids): void {
     $this->installEntitySchema('node');
     $this->installConfig('node');
     $this->createContentType(['type' => 'article']);
+    $this->expectedDefaultComponentInstallCount++;
     parent::testGetClientSideInfo($component_ids);
   }
 
   /**
    * All test module SDCs must either have a Component or a reason why not.
    *
-   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::discover
-   * @covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::checkRequirements
+   * @legacy-covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::discover
+   * @legacy-covers \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponentDiscovery::checkRequirements
    */
   public function testDiscovery(): array {
     // Nothing discovered initially.
@@ -144,6 +147,9 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       ],
       'sdc.canvas_test_sdc.html-invalid-format' => [
         'Invalid value "invalid" for "x-formatting-context". Valid values are "inline" and "block".',
+      ],
+      'sdc.canvas_test_sdc.image-gallery-nonsensical' => [
+        'The "maxItems" restriction on arrays (if set) must be at least 2, but got 1 on prop "images". Use a non-array type for single-value props.',
       ],
       'sdc.canvas_test_sdc.image-required-with-invalid-example' => [
         'Prop "image" has invalid example value: [src] The property src is required',
@@ -211,6 +217,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       'sdc.canvas_test_sdc.card-with-stream-wrapper-image',
       'sdc.canvas_test_sdc.columns',
       'sdc.canvas_test_sdc.component-mismatch-meta-enum',
+      'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items',
       'sdc.canvas_test_sdc.component-no-meta-enum',
       'sdc.canvas_test_sdc.crash',
       'sdc.canvas_test_sdc.date',
@@ -226,6 +233,7 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
       'sdc.canvas_test_sdc.image-optional-without-example',
       'sdc.canvas_test_sdc.image-required-with-example',
       'sdc.canvas_test_sdc.image-without-ref',
+      'sdc.canvas_test_sdc.mixed-images-with-example',
       'sdc.canvas_test_sdc.my-cta',
       'sdc.canvas_test_sdc.my-hero',
       'sdc.canvas_test_sdc.my-section',
@@ -251,9 +259,8 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
 
   /**
    * Tests the shape-matched `prop_field_definitions` for the eligible SDCs.
-   *
-   * @depends testDiscovery
    */
+  #[Depends('testDiscovery')]
   public function testSettings(array $component_ids): void {
     $settings = $this->getAllSettings($component_ids);
     self::assertSame(self::getExpectedSettings(), $settings);
@@ -282,9 +289,9 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::getReferencedPluginClass
-   * @depends testDiscovery
+   * @legacy-covers ::getReferencedPluginClass
    */
+  #[Depends('testDiscovery')]
   public function testGetReferencedPluginClass(array $component_ids): void {
     self::assertSame(
       // All SDCs use the same plugin class!
@@ -298,12 +305,13 @@ final class SingleDirectoryComponentTest extends GeneratedFieldExplicitInputUxCo
    *
    * @param array<ComponentConfigEntityId> $component_ids
    *
-   * @covers ::renderComponent
-   * @depends testDiscovery
+   * @legacy-covers ::renderComponent
    */
+  #[Depends('testDiscovery')]
   public function testRenderComponentLive(array $component_ids): void {
     $this->installEntitySchema('node');
     $this->installConfig('node');
+    $this->expectedDefaultComponentInstallCount++;
     $this->createContentType(['type' => 'article']);
     $this->assertNotEmpty($component_ids);
 
@@ -738,6 +746,20 @@ HTML,
           ],
         ],
       ],
+      'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items' => [
+        'cacheability' => $default_cacheability,
+        'html' => '<div>
+  Colors: red, blue
+</div>
+
+',
+        'attachments' => [
+          'library' => [
+            'core/components.canvas_test_sdc--component-mismatch-meta-enum-array-items',
+            'core/components.canvas_test_sdc--component-mismatch-meta-enum-array-items',
+          ],
+        ],
+      ],
       'sdc.canvas_test_sdc.component-no-meta-enum' => [
         'cacheability' => $default_cacheability,
         'html' => '<span  data-component-id="canvas_test_sdc:component-no-meta-enum">
@@ -1030,6 +1052,16 @@ HTML
           ],
         ],
       ],
+      'sdc.canvas_test_sdc.mixed-images-with-example' => [
+        'html' => '<img class="primary" src="https://example.com/cat.jpg" alt="Primary default image" /><img class="secondary" src="https://example.com/cat.jpg" alt="Secondary default image" /><img class="required" src="https://example.com/cat.jpg" alt="Required default image" />',
+        'cacheability' => $default_cacheability,
+        'attachments' => [
+          'library' => [
+            'core/components.canvas_test_sdc--mixed-images-with-example',
+            'core/components.canvas_test_sdc--mixed-images-with-example',
+          ],
+        ],
+      ],
     ], $rendered);
   }
 
@@ -1091,35 +1123,46 @@ HTML
   }
 
   /**
-   * @covers ::getExplicitInput
-   * @dataProvider providerComponentResolving
+   * Tests get explicit input.
+   *
+   * @legacy-covers ::getExplicitInput
    */
-  public function testGetExplicitInput(array $component_item_value, array $expected_props_for_uuids, ?array $permissions = NULL): void {
+  #[DataProvider('providerComponentResolving')]
+  public function testGetExplicitInput(array $component_item_value, array $expected_props_for_uuids, array $permissions): void {
     $this->generateComponentConfig();
     $this->installEntitySchema('node');
-    $this->container->get('module_installer')->install(['canvas_test_config_node_article']);
-    $node = Node::create([
-      'title' => 'Test node',
-      'type' => 'article',
-      'field_canvas_test' => $component_item_value,
-    ]);
-    $canvas_field_item = $node->field_canvas_test[0];
-    if ($permissions !== NULL) {
-      // If we are setting permissions to check access, we need to save the node,
-      // but we cannot use $permissions for the user saving the node because we
-      // may be testing insufficient permissions. So we temporarily set a user with
-      // 'access content' permission to save the node, then use the permissions
-      // we are testing with.
-      $this->setUpCurrentUser(permissions: ['access content']);
-      $node->save();
-      $this->setUpCurrentUser(permissions: $permissions);
-    }
+    $this->installConfig(['node']);
+    NodeType::create(['type' => 'article', 'name' => 'Article'])->save();
 
+    // Create a sample "article" node.
+    $node = Node::create(['title' => 'Test node', 'type' => 'article']);
+    self::assertEntityIsValid($node);
+    $node->save();
+
+    // Create a template for "article" nodes, to allow populating it using
+    // entity field data.
+    $template = ContentTemplate::create([
+      'content_entity_type_id' => 'node',
+      'content_entity_type_bundle' => 'article',
+      'content_entity_type_view_mode' => 'full',
+      'component_tree' => $component_item_value,
+    ]);
+    self::assertEntityIsValid($template);
+    $template->save();
+
+    // Resolve the inputs for the first component instance aka first field item.
+    $canvas_field_item = $template->getComponentTree()[0];
+    // Test as a visitor with the specified permissions.
+    $this->setUpCurrentUser(permissions: $permissions);
     $this->assertInstanceOf(ComponentTreeItem::class, $canvas_field_item);
     $actual_props = array_combine(
       \array_keys($expected_props_for_uuids),
       \array_map(
-        fn (string $uuid) => $canvas_field_item->getComponent()?->getComponentSource()->getExplicitInput($uuid, $canvas_field_item)['resolved'],
+        fn (string $uuid) => $canvas_field_item->getComponent()?->getComponentSource()->getExplicitInput(
+          uuid: $uuid,
+          item: $canvas_field_item,
+          host_entity: $node,
+        )['resolved'],
         \array_keys($expected_props_for_uuids)
       )
     );
@@ -1128,20 +1171,20 @@ HTML
 
   public static function providerComponentResolving(): array {
     $test_cases = static::getValidTreeTestCases();
-    $invalid_test_cases = static::getInvalidTreeTestCases();
-    // Only 1 invalid case will allow to call
-    // \Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem::resolveComponentProps()
-    // without an exception.
-    $test_cases['invalid UUID, missing component_id key'] = $invalid_test_cases['invalid UUID, missing component_id key'];
-    $test_cases['invalid UUID, missing component_id key'][] = [];
     $test_cases['valid values using static inputs'][] = [
       'dynamic-static-card2df' => [
         'heading' => new EvaluationResult('They say I am static, but I want to believe I can change!'),
       ],
     ];
+    // No permissions needed.
+    $test_cases['valid values using static inputs'][] = [];
+
     $test_cases['valid values for propless component'][] = [
       'propless-component-uuid' => [],
     ];
+    // No permissions needed.
+    $test_cases['valid values for propless component'][] = [];
+
     $test_cases['valid value for optional explicit input using an URL prop shape, with default value'][] = [
       'optional-url-with-default-value' => [
         'heading' => new EvaluationResult('Gracie says hi!'),
@@ -1156,8 +1199,11 @@ HTML
         ),
       ],
     ];
+    // No permissions needed.
+    $test_cases['valid value for optional explicit input using an URL prop shape, with default value'][] = [];
+
     $hero_with_dynamic_sources = [
-      'uuid' => 'partly-dynamic-hero',
+      'uuid' => self::UUID_PARTLY_DYNAMIC_HERO,
       'component_id' => 'sdc.canvas_test_sdc.my-hero',
       'component_version' => 'a681ae184a8f6b7f',
       'inputs' => [
@@ -1178,7 +1224,7 @@ HTML
         $hero_with_dynamic_sources,
       ],
       [
-        'partly-dynamic-hero' => [
+        self::UUID_PARTLY_DYNAMIC_HERO => [
           // Permanent cacheability because populated by StaticPropSource
           // without references.
           'heading' => new EvaluationResult('hello, world!'),
@@ -1208,7 +1254,7 @@ HTML
         $hero_with_dynamic_sources,
       ],
       [
-        'partly-dynamic-hero' => [
+        self::UUID_PARTLY_DYNAMIC_HERO => [
           'heading' => new EvaluationResult('hello, world!'),
           // Node access-dependent cacheability because DynamicPropSource.
           'subheading' => new EvaluationResult(
@@ -1231,7 +1277,7 @@ HTML
   protected function generateCrashTestDummyComponentTree(string $component_id, array $inputs, bool $assertCount = TRUE): ComponentTreeItemList {
     if (str_starts_with($component_id, 'sdc.canvas_broken_sdcs.')) {
       // This component needs an extra module.
-      $this->assertCount(0, $this->componentStorage->loadMultiple());
+      $this->assertCount($this->expectedDefaultComponentInstallCount, $this->componentStorage->loadMultiple());
       \Drupal::service(ModuleInstallerInterface::class)->install(['canvas_broken_sdcs']);
 
       // Now call the parent, but don't assert the count of components, as we've
@@ -1294,6 +1340,34 @@ HTML
       'expected_validation_errors' => [],
       'expected_exception' => NULL,
       'expected_output_selector' => 'h1:contains("test")',
+    ];
+
+    // Garbage (non-existent) prop should result in:
+    // - validation error (since 1.1.0)
+    // - hydration failing (`::getExplicitInput()` throwing an exception)
+    // TRICKY: This did not trigger a validation error before 1.1.0. Component
+    // instances created before 1.1.0 may still exist (they are not
+    // automatically updated), so expect the exception that occurs during
+    // hydration to appear similar to a rendering exception.
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::getExplicitInput()
+    // @see https://www.drupal.org/project/canvas/issues/3524401
+    yield "SDC with extraneous prop, validation error (since 1.1.0), with hydration exception visible similar to rendering exception" => [
+      'component_id' => 'sdc.canvas_test_sdc.crash',
+      'inputs' => [
+        // Do not trigger a crash in the render logic.
+        'crash' => FALSE,
+        // But instead trigger a crash during hydration.
+        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::getExplicitInput()
+        'hydration_should_fail_on_this_non_existent_value' => TRUE,
+      ],
+      'expected_validation_errors' => [
+        '2.inputs.3204a711-a1bd-401d-9ce0-895665487eaa.hydration_should_fail_on_this_non_existent_value' => 'Component `3204a711-a1bd-401d-9ce0-895665487eaa`: the `hydration_should_fail_on_this_non_existent_value` prop is not defined.',
+      ],
+      'expected_exception' => [
+        'class' => \OutOfRangeException::class,
+        'message' => '\'hydration_should_fail_on_this_non_existent_value\' is not a prop on this version of the Component \'Single-directory component: <em class="placeholder">Canvas test SDC that crashes when &#039;crash&#039; prop is TRUE</em>\'.',
+      ],
+      'expected_output_selector' => NULL,
     ];
 
     yield "SDC with valid props, with exception" => [
@@ -1838,6 +1912,25 @@ HTML
           ],
         ],
       ],
+      'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items' => [
+        'prop_field_definitions' => [
+          'colors' => [
+            'required' => FALSE,
+            'field_type' => 'list_string',
+            'cardinality' => -1,
+            'field_storage_settings' => [
+              'allowed_values_function' => 'canvas_load_allowed_values_for_component_prop',
+            ],
+            'field_instance_settings' => [],
+            'field_widget' => 'options_select',
+            'default_value' => [
+              0 => ['value' => 'red'],
+              1 => ['value' => 'blue'],
+            ],
+            'expression' => 'ℹ︎list_string␟value',
+          ],
+        ],
+      ],
       'sdc.canvas_test_sdc.component-no-meta-enum' => [
         'prop_field_definitions' => [
           'style' => [
@@ -2096,6 +2189,43 @@ HTML
             'field_storage_settings' => [],
             'field_instance_settings' => [],
             'field_widget' => 'image_image',
+            'default_value' => [],
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+          ],
+        ],
+      ],
+      'sdc.canvas_test_sdc.mixed-images-with-example' => [
+        'prop_field_definitions' => [
+          'primary_image' => [
+            'required' => FALSE,
+            'field_type' => 'image',
+            'field_storage_settings' => [],
+            'field_instance_settings' => [],
+            'field_widget' => 'image_image',
+            // ⚠️ Empty default value.
+            // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::exampleValueRequiresEntity()
+            'default_value' => [],
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+          ],
+          'secondary_image' => [
+            'required' => FALSE,
+            'field_type' => 'image',
+            'field_storage_settings' => [],
+            'field_instance_settings' => [],
+            'field_widget' => 'image_image',
+            // ⚠️ Empty default value.
+            // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::exampleValueRequiresEntity()
+            'default_value' => [],
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+          ],
+          'required_image' => [
+            'required' => TRUE,
+            'field_type' => 'image',
+            'field_storage_settings' => [],
+            'field_instance_settings' => [],
+            'field_widget' => 'image_image',
+            // ⚠️ Empty default value.
+            // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::exampleValueRequiresEntity()
             'default_value' => [],
             'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
           ],
@@ -2577,9 +2707,11 @@ HTML
   }
 
   /**
-   * @covers ::calculateDependencies
-   * @depends testDiscovery
+   * Tests calculate dependencies.
+   *
+   * @legacy-covers ::calculateDependencies
    */
+  #[Depends('testDiscovery')]
   public function testCalculateDependencies(array $component_ids): void {
     self::assertSame([
       'sdc.canvas_test_sdc.attributes' => [
@@ -2639,9 +2771,6 @@ HTML
         ],
       ],
       'sdc.canvas_test_sdc.card-with-stream-wrapper-image' => [
-        'config' => [
-          0 => 'image.style.canvas_parametrized_width',
-        ],
         'content' => [],
         'module' => [
           'core',
@@ -2659,6 +2788,13 @@ HTML
         ],
       ],
       'sdc.canvas_test_sdc.component-mismatch-meta-enum' => [
+        'module' => [
+          'core',
+          'options',
+          'canvas_test_sdc',
+        ],
+      ],
+      'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items' => [
         'module' => [
           'core',
           'options',
@@ -2779,6 +2915,16 @@ HTML
         ],
       ],
       'sdc.canvas_test_sdc.image-without-ref' => [
+        'config' => [
+          'image.style.canvas_parametrized_width',
+        ],
+        'module' => [
+          'file',
+          'image',
+          'canvas_test_sdc',
+        ],
+      ],
+      'sdc.canvas_test_sdc.mixed-images-with-example' => [
         'config' => [
           'image.style.canvas_parametrized_width',
         ],
@@ -3688,6 +3834,53 @@ HTML
         ],
         'transforms' => [],
       ],
+      'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items' => [
+        'expected_output_selectors' => [
+          ':contains("red")',
+          ':contains("blue")',
+        ],
+        'source' => 'Module component',
+        'metadata' => ['slots' => []],
+        'propSources' => [
+          'colors' => [
+            'required' => FALSE,
+            'jsonSchema' => [
+              'type' => 'array',
+              'items' => [
+                'type' => 'string',
+                'enum' => [
+                  'red',
+                  'blue',
+                  'green_light',
+                  'yellow',
+                ],
+                'meta:enum' => [
+                  'red' => 'Red',
+                  'blue' => 'Blue',
+                  'green.light' => 'Light Green',
+                  'yellow' => 'Yellow',
+                ],
+              ],
+            ],
+            'sourceType' => 'static:field_item:list_string',
+            'expression' => 'ℹ︎list_string␟value',
+            'sourceTypeSettings' => [
+              'storage' => [
+                'allowed_values_function' => 'canvas_load_allowed_values_for_component_prop',
+              ],
+              'cardinality' => -1,
+            ],
+            'default_values' => [
+              'source' => [
+                0 => ['value' => 'red'],
+                1 => ['value' => 'blue'],
+              ],
+              'resolved' => ['red', 'blue'],
+            ],
+          ],
+        ],
+        'transforms' => [],
+      ],
       'sdc.canvas_test_sdc.component-no-meta-enum' => [
         'expected_output_selectors' => [
           'span:contains("me")',
@@ -4370,6 +4563,117 @@ HTML
                 'alt' => 'Alternative text',
                 'width' => 800,
                 'height' => 600,
+              ],
+            ],
+          ],
+        ],
+        'transforms' => [],
+      ],
+      'sdc.canvas_test_sdc.mixed-images-with-example' => [
+        'expected_output_selectors' => [
+          'img.primary[src="https://example.com/cat.jpg"]',
+          'img.secondary[src="https://example.com/cat.jpg"]',
+          'img.required[src="https://example.com/cat.jpg"]',
+        ],
+        'source' => 'Module component',
+        'metadata' => ['slots' => []],
+        'propSources' => [
+          'primary_image' => [
+            'required' => FALSE,
+            'jsonSchema' => [
+              'type' => 'object',
+              'title' => 'image',
+              'required' => ['src'],
+              'properties' => [
+                'src' => [
+                  'title' => 'Image URL',
+                  'type' => 'string',
+                  'format' => 'uri-reference',
+                  'contentMediaType' => 'image/*',
+                  'x-allowed-schemes' => ['http', 'https'],
+                  'id' => 'json-schema-definitions://canvas.module/image-uri',
+                ],
+                'alt' => ['title' => 'Alternative text', 'type' => 'string'],
+                'width' => ['title' => 'Image width', 'type' => 'integer'],
+                'height' => ['title' => 'Image height', 'type' => 'integer'],
+              ],
+              'id' => 'json-schema-definitions://canvas.module/image',
+            ],
+            'sourceType' => 'static:field_item:image',
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+            'default_values' => [
+              'source' => [],
+              'resolved' => [
+                'src' => 'https://example.com/cat.jpg',
+                'alt' => 'Primary default image',
+                'width' => 600,
+                'height' => 400,
+              ],
+            ],
+          ],
+          'secondary_image' => [
+            'required' => FALSE,
+            'jsonSchema' => [
+              'type' => 'object',
+              'title' => 'image',
+              'required' => ['src'],
+              'properties' => [
+                'src' => [
+                  'title' => 'Image URL',
+                  'type' => 'string',
+                  'format' => 'uri-reference',
+                  'contentMediaType' => 'image/*',
+                  'x-allowed-schemes' => ['http', 'https'],
+                  'id' => 'json-schema-definitions://canvas.module/image-uri',
+                ],
+                'alt' => ['title' => 'Alternative text', 'type' => 'string'],
+                'width' => ['title' => 'Image width', 'type' => 'integer'],
+                'height' => ['title' => 'Image height', 'type' => 'integer'],
+              ],
+              'id' => 'json-schema-definitions://canvas.module/image',
+            ],
+            'sourceType' => 'static:field_item:image',
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+            'default_values' => [
+              'source' => [],
+              'resolved' => [
+                'src' => 'https://example.com/cat.jpg',
+                'alt' => 'Secondary default image',
+                'width' => 600,
+                'height' => 400,
+              ],
+            ],
+          ],
+          'required_image' => [
+            'required' => TRUE,
+            'jsonSchema' => [
+              'type' => 'object',
+              'title' => 'image',
+              'required' => ['src'],
+              'properties' => [
+                'src' => [
+                  'title' => 'Image URL',
+                  'type' => 'string',
+                  'format' => 'uri-reference',
+                  'contentMediaType' => 'image/*',
+                  'x-allowed-schemes' => ['http', 'https'],
+                  'id' => 'json-schema-definitions://canvas.module/image-uri',
+                ],
+                'alt' => ['title' => 'Alternative text', 'type' => 'string'],
+                'width' => ['title' => 'Image width', 'type' => 'integer'],
+                'height' => ['title' => 'Image height', 'type' => 'integer'],
+              ],
+              'id' => 'json-schema-definitions://canvas.module/image',
+            ],
+            'sourceType' => 'static:field_item:image',
+            'expression' => 'ℹ︎image␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+            'default_values' => [
+              'source' => [],
+              'resolved' => [
+                'src' => 'https://example.com/cat.jpg',
+                'alt' => 'Required default image',
+                'width' => 600,
+                'height' => 400,
               ],
             ],
           ],
@@ -5249,9 +5553,11 @@ HTML
   }
 
   /**
-   * @covers ::inputToClientModel
-   * @dataProvider explicitsInputsProvider
+   * Tests input to client model.
+   *
+   * @legacy-covers ::inputToClientModel
    */
+  #[DataProvider('explicitsInputsProvider')]
   public function testInputToClientModel(string $component_id, array $explicit_input, array $expected_client_model):void {
     $this->generateComponentConfig();
 
@@ -5272,15 +5578,17 @@ HTML
   }
 
   /**
+   * Tests client model to input.
+   *
    * @param array{source: SingleComponentInputArray, resolved: array<string, mixed>} $clientModel
    * @param ?array $nodeValues
    * @param ?array $expectedInput
    * @param ?class-string<\Throwable> $expectedExceptionClass
    * @param ?string $expectedExceptionMessage
    *
-   * @covers ::clientModelToInput
-   * @dataProvider providerClientModelToInput
+   * @legacy-covers ::clientModelToInput
    */
+  #[DataProvider('providerClientModelToInput')]
   public function testClientModelToInput(array $clientModel, ?array $nodeValues, ?array $expectedInput, ?string $expectedExceptionClass, ?string $expectedExceptionMessage): void {
     $this->generateComponentConfig();
     $component = Component::load('sdc.canvas_test_sdc.my-hero');
@@ -5570,20 +5878,9 @@ HTML
     $image->save();
     return [
       'image' => [
-        'sourceType' => 'static:field_item:entity_reference',
-        'value' => ['target_id' => $image->id()],
         // This expression resolves `src` to the image's public URL.
         // @see \Drupal\canvas\Hook\ShapeMatchingHooks::mediaLibraryStorablePropShapeAlter()
-        'expression' => 'ℹ︎entity_reference␟entity␜␜entity:media:image␝field_media_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
-        'sourceTypeSettings' => [
-          'storage' => ['target_type' => 'media'],
-          'instance' => [
-            'handler' => 'default:media',
-            'handler_settings' => [
-              'target_bundles' => ['image' => 'image'],
-            ],
-          ],
-        ],
+        ['target_id' => $image->id()],
       ],
     ];
   }
@@ -5631,6 +5928,44 @@ HTML
           'sourceType' => 'static:field_item:string',
           'value' => [['value' => 'Valid heading']],
           'expression' => 'ℹ︎string␟value',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function providerGetOptionsForExplicitInputEnumProp(): array {
+    return [
+      // The test SDC has a mismatch between enum values and meta:enum keys.
+      // The method returns ALL enum values with labels from meta:enum where
+      // available, or the value itself as the label where not.
+      'non-array enum prop' => [
+        'component_id' => 'sdc.canvas_test_sdc.component-mismatch-meta-enum',
+        'prop_name' => 'style',
+        'expected_options' => [
+          // From enum: ['small', 'big', 'huge', 'contains.dots']
+          // From meta:enum: {small: 'Small', tiny: 'Tiny', contains.dots: 'Contains dots'}
+          // Result: enum values with meta:enum labels where available.
+          'small' => 'Small',
+          'big' => 'big',
+          'huge' => 'huge',
+          'contains.dots' => 'Contains dots',
+        ],
+      ],
+      'array-type enum prop with items' => [
+        'component_id' => 'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items',
+        'prop_name' => 'colors',
+        'expected_options' => [
+          // From enum: ['red', 'blue', 'green_light', 'yellow']
+          // From meta:enum: {red: 'Red', blue: 'Blue', green.light: 'Light Green', yellow: 'Yellow'}
+          // Note: For array-type props, the meta:enum is returned directly from
+          // the items schema, so keys come from meta:enum.
+          'red' => 'Red',
+          'blue' => 'Blue',
+          'green.light' => 'Light Green',
+          'yellow' => 'Yellow',
         ],
       ],
     ];

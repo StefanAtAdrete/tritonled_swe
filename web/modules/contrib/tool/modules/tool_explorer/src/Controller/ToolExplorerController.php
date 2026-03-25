@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\tool_explorer\Controller;
 
-use Drupal\Core\Render\RendererInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Extension\ModuleExtensionList;
+use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\tool\Tool\ToolManager;
+use Drupal\tool\TypedData\Adapter\TypedDataAdapterTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Controller for Tool Explorer pages.
  */
 class ToolExplorerController extends ControllerBase {
+
+  use TypedDataAdapterTrait;
 
   /**
    * Constructs a ToolExplorerController object.
@@ -24,10 +29,13 @@ class ToolExplorerController extends ControllerBase {
    *   The tool plugin manager.
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer service.
+   * @param \Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
+   *   The module extension list service.
    */
   public function __construct(
     protected ToolManager $toolManager,
     protected RendererInterface $renderer,
+    protected ModuleExtensionList $moduleExtensionList,
   ) {
   }
 
@@ -38,6 +46,7 @@ class ToolExplorerController extends ControllerBase {
     return new static(
       $container->get('plugin.manager.tool'),
       $container->get('renderer'),
+      $container->get('extension.list.module'),
     );
   }
 
@@ -169,6 +178,76 @@ class ToolExplorerController extends ControllerBase {
         ],
         '#rows' => $input_rows,
       ];
+
+      // Add config schema section.
+      $provider_module = $definition->getProvider();
+      $schema_file_path = $this->moduleExtensionList->getPath($provider_module) . '/config/schema/' . $provider_module . '.schema.yml';
+      $schema_exists = file_exists($schema_file_path);
+      $definition_exists = FALSE;
+      if ($schema_exists) {
+        $schema_content = file_get_contents($schema_file_path);
+        $schema_key = 'tool.plugin.' . $plugin_id;
+        $definition_exists = strpos($schema_content, $schema_key . ':') !== FALSE;
+      }
+      // Open if schema is missing.
+      $build['config_schema'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Config Schema (@status)', ['@status' => $definition_exists ? $this->t('Exists') : $this->t('Missing')]),
+        '#open' => !$definition_exists,
+      ];
+
+      if ($schema_exists) {
+        if ($definition_exists) {
+          // Schema exists - show the actual schema.
+          $build['config_schema']['message'] = [
+            '#type' => 'item',
+            '#markup' => '<div class="messages messages--status">' . $this->t('Schema file exists at: @path', ['@path' => $schema_file_path]) . '</div>',
+          ];
+
+          // Parse and display the actual schema.
+          $all_schemas = Yaml::parse($schema_content);
+          if (isset($all_schemas[$schema_key])) {
+            $build['config_schema']['actual'] = [
+              '#type' => 'item',
+              '#title' => $this->t('Actual Schema'),
+              '#markup' => '<pre>' . Yaml::dump([$schema_key => $all_schemas[$schema_key]], 10, 2) . '</pre>',
+            ];
+          }
+        }
+        else {
+          // Schema file exists but doesn't contain this tool's schema.
+          $build['config_schema']['warning'] = [
+            '#type' => 'item',
+            '#markup' => '<div class="messages messages--warning">' .
+            $this->t('Schema file exists at @path but does not contain a schema for this tool. Add the following schema:', ['@path' => $schema_file_path]) .
+            '</div>',
+          ];
+
+          $suggested_schema = $this->buildSuggestedConfigSchema($definition->getInputDefinitions());
+          $build['config_schema']['suggested'] = [
+            '#type' => 'item',
+            '#title' => $this->t('Suggested Schema to Add'),
+            '#markup' => '<pre>' . Yaml::dump([$schema_key => $suggested_schema], 10, 2) . '</pre>',
+          ];
+        }
+      }
+      else {
+        // Schema file doesn't exist at all.
+        $build['config_schema']['warning'] = [
+          '#type' => 'item',
+          '#markup' => '<div class="messages messages--warning">' .
+          $this->t('No schema file found. Create @path with the following content:', ['@path' => $schema_file_path]) .
+          '</div>',
+        ];
+
+        $suggested_schema = $this->buildSuggestedConfigSchema($definition->getInputDefinitions());
+        $schema_key = 'tool.plugin.' . $plugin_id;
+        $build['config_schema']['suggested'] = [
+          '#type' => 'item',
+          '#title' => $this->t('Suggested Schema'),
+          '#markup' => '<pre>' . Yaml::dump([$schema_key => $suggested_schema], 10, 2) . '</pre>',
+        ];
+      }
     }
 
     // Display output definitions.
@@ -238,6 +317,33 @@ class ToolExplorerController extends ControllerBase {
 
     $definition = $this->toolManager->getDefinition($plugin_id);
     return $this->t('Execute: @label', ['@label' => $definition->getLabel() ?? $plugin_id]);
+  }
+
+  /**
+   * Builds a suggested config schema array from input definitions.
+   *
+   * @param \Drupal\tool\TypedData\InputDefinitionInterface[] $input_definitions
+   *   The input definitions.
+   *
+   * @return array
+   *   The suggested config schema array.
+   */
+  protected function buildSuggestedConfigSchema(array $input_definitions): array {
+    $schema = [
+      'type' => 'mapping',
+      'mapping' => [],
+    ];
+
+    foreach ($input_definitions as $name => $input_definition) {
+      $data_definition = $input_definition->getDataDefinition();
+      $adapter = $this->getAdapterInstance($data_definition, $name);
+      $schema['mapping'][$name] = $adapter->getSchemaDefinition($data_definition);
+    }
+
+    // Add FullyValidatable constraint to the root mapping.
+    $schema['constraints']['FullyValidatable'] = [];
+
+    return $schema;
   }
 
 }

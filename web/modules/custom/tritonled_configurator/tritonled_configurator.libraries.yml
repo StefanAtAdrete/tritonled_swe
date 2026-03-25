@@ -4,3 +4,8 @@ configurator:
   dependencies:
     - core/drupal
     - core/drupalSettings
+
+configurator_print:
+  css:
+    component:
+      css/components/configurator-print.css: {}

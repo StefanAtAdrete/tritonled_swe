@@ -88,7 +88,7 @@ final class CanvasBuilder extends ControllerBase {
     // by scanning for keys named 'message <number>', and
     // assembling them into an ordered 'messages' array, while cleaning up old keys
     // as we use $prompt['messages'] for further processing .
-    if (!isset($prompt['messages']) || !is_array($prompt['messages'])) {
+    if (!isset($prompt['messages']) || !\is_array($prompt['messages'])) {
       $messages = [];
       $keys_to_remove = [];
       foreach ($prompt as $key => $value) {
@@ -114,7 +114,7 @@ final class CanvasBuilder extends ControllerBase {
       $allowed_image_types = ['image/jpeg', 'image/png'];
       $mime_type = $file->getClientMimeType();
 
-      if (!in_array($mime_type, $allowed_image_types, TRUE)) {
+      if (!\in_array($mime_type, $allowed_image_types, TRUE)) {
         return new JsonResponse([
           'status' => FALSE,
           'message' => 'Only image files are allowed (jpeg, png, jpg).',
@@ -196,7 +196,7 @@ final class CanvasBuilder extends ControllerBase {
       AiAgentStatusItemTypes::Finished,
     ]);
     $default = $this->providerService->getDefaultProviderForOperationType('chat');
-    if (!is_array($default) || empty($default['provider_id']) || empty($default['model_id'])) {
+    if (!\is_array($default) || empty($default['provider_id']) || empty($default['model_id'])) {
       return new JsonResponse([
         'status' => FALSE,
         'message' => 'No default provider found.',
@@ -260,7 +260,7 @@ final class CanvasBuilder extends ControllerBase {
           if ($tool instanceof BuilderResponseFunctionCallInterface) {
             $response = array_merge($response, $tool->getStructuredOutput());
           }
-          if (in_array($tool->getPluginId(), ['ai_agents::ai_agent::canvas_page_builder_agent', 'ai_agents::ai_agent::canvas_template_builder_agent'], TRUE)) {
+          if (\in_array($tool->getPluginId(), ['ai_agents::ai_agent::canvas_page_builder_agent', 'ai_agents::ai_agent::canvas_template_builder_agent'], TRUE)) {
             $this->canvasAiTempStore->deleteData(CanvasAiTempStore::CURRENT_LAYOUT_KEY);
           }
         }

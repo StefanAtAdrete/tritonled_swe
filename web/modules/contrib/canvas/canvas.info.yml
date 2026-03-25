@@ -22,6 +22,9 @@ dependencies:
   # @see \Drupal\datetime\Plugin\Field\FieldType\DateTimeItem
   # @see \Drupal\canvas\JsonSchemaInterpreter\JsonSchemaStringFormat::computeStorablePropShape()
   - drupal:datetime
+  # To manage uploaded build artifacts as File entities with file_usage tracking.
+  # @see \Drupal\canvas\Controller\ApiArtifactController
+  - drupal:file
   # To support the json-schema-definitions://canvas.module/image prop shape.
   # @see \Drupal\image\Plugin\Field\FieldType\ImageItem
   # @see \Drupal\canvas\JsonSchemaInterpreter\JsonSchemaType::computeStorablePropShape()
@@ -48,7 +51,7 @@ test_dependencies:
   # For the 5 other components we're using in tests.
   - drupal:sdc_test
 
-# Information added by Drupal.org packaging script on 2026-02-26
-version: '1.2.0'
+# Information added by Drupal.org packaging script on 2026-03-24
+version: '1.3.2'
 project: 'canvas'
-datestamp: 1772144516
+datestamp: 1774394893

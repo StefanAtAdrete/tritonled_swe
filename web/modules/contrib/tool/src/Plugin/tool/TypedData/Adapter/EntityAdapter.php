@@ -179,16 +179,48 @@ final class EntityAdapter extends TypedDataAdapterBase implements ContainerFacto
   /**
    * {@inheritdoc}
    */
-  public function extractConfigurationValues(TypedDataInterface $data): void {
-    if (isset($this->configuration['entity_type_id'], $this->configuration['entity_id'])) {
-      $entity = $this->entityTypeManager->getStorage($this->configuration['entity_type_id'])->load($this->configuration['entity_id']);
-      if ($entity) {
-        $data->setValue($entity);
-      }
-      else {
-        $data->setValue(NULL);
-      }
+  public function getConfigurationFromData(TypedDataInterface $data): array {
+    $value = $data->getValue();
+
+    // Convert entity objects to config-safe array format.
+    if ($value instanceof ContentEntityInterface) {
+      return [
+        'value' => [
+          'entity_type_id' => $value->getEntityTypeId(),
+          'entity_id' => (int) $value->id(),
+        ],
+      ];
     }
+
+    // NULL or other values.
+    return ['value' => $value];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setDataFromConfiguration(TypedDataInterface $data, array $configuration): void {
+    if (!isset($configuration['value'])) {
+      return;
+    }
+
+    $config_value = $configuration['value'];
+
+    // If it's already an entity, use it directly.
+    if ($config_value instanceof ContentEntityInterface) {
+      $data->setValue($config_value);
+      return;
+    }
+
+    // If it's an array with entity_type_id and entity_id, load the entity.
+    if (is_array($config_value) && isset($config_value['entity_type_id'], $config_value['entity_id'])) {
+      $entity = $this->entityTypeManager->getStorage($config_value['entity_type_id'])->load($config_value['entity_id']);
+      $data->setValue($entity ?? NULL);
+      return;
+    }
+
+    // Fallback: set NULL.
+    $data->setValue(NULL);
   }
 
   /**
@@ -196,6 +228,48 @@ final class EntityAdapter extends TypedDataAdapterBase implements ContainerFacto
    */
   public function errorElement(array $element, ConstraintViolationInterface $violation, FormStateInterface $form_state) {
     return $element['entity_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSchemaDefinition(DataDefinitionInterface $data_definition): array {
+    $schema = [
+      'type' => 'mapping',
+    ];
+
+    $label = $data_definition->getLabel();
+    if ($label) {
+      $schema['label'] = (string) $label;
+    }
+
+    // Define the structure for entity references with separate type and id.
+    $schema['mapping'] = [
+      'entity_type_id' => [
+        'type' => 'string',
+        'label' => 'Entity type',
+        'constraints' => [
+          'NotNull' => [],
+        ],
+      ],
+      'entity_id' => [
+        'type' => 'integer',
+        'label' => 'Entity ID',
+        'constraints' => [
+          'NotNull' => [],
+        ],
+      ],
+    ];
+
+    // Add validation constraints based on the data definition.
+    if ($data_definition->isRequired()) {
+      $schema['constraints']['NotNull'] = [];
+    }
+    else {
+      $schema['nullable'] = TRUE;
+    }
+
+    return $schema;
   }
 
 }

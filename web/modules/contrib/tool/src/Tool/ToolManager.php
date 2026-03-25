@@ -38,11 +38,6 @@ final class ToolManager extends DefaultPluginManager {
       if (!isset($forms['execute'])) {
         $definition->addForm('execute', 'Drupal\tool\Form\ExecuteToolPluginForm');
       }
-      if (is_subclass_of($definition->getClass(), ConditionToolInterface::class)) {
-        foreach ($definition->getClass()::defineOutputDefinitions() as $name => $output_definition) {
-          $definition->addOutputDefinition($name, $output_definition);
-        }
-      }
     }
   }
 

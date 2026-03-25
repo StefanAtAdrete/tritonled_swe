@@ -22,33 +22,164 @@ npm install @drupal-canvas/cli
 
 ### Configuration
 
-Settings can be configured using:
+The Canvas CLI uses two types of configuration:
 
-1. Command-line arguments;
-1. Environment variables;
-1. A project `.env` file;
-1. A global `.canvasrc` file in your home directory.
+- **canvas.config.json** - Repository-committed configuration for values tied to
+  your codebase structure (where files are stored, build output locations)
+- **.env** - Environmental configuration and secrets that should not be tracked
+  in version control (site URLs, OAuth credentials)
 
-These are applied in order of precedence from highest to lowest. You can copy
-the
+#### canvas.config.json (Optional)
+
+This file is an optional configuration file that contains values tied to how
+your codebase is structured and should be the same for all developers working on
+the project. These values are committed to version control.
+
+Create a `canvas.config.json` file in your project root with any of these
+properties:
+
+```json
+{
+  "componentDir": "./components",
+  "pagesDir": "./pages",
+  "aliasBaseDir": "src",
+  "outputDir": "dist",
+  "globalCssPath": "./src/components/global.css"
+}
+```
+
+**Properties:**
+
+| Property        | Default                         | Description                                                                                                               |
+| --------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `componentDir`  | `process.cwd()`                 | Directory where Code Components are stored in the filesystem.                                                             |
+| `pagesDir`      | `"./pages"`                     | Directory where page specs are stored in the filesystem.                                                                  |
+| `aliasBaseDir`  | `"src"`                         | Base directory for module resolution when using path aliases in your components. Tied to your project's import structure. |
+| `outputDir`     | `"dist"`                        | Build output directory (similar to Vite's `build.outDir`). Defines where compiled assets are generated.                   |
+| `globalCssPath` | `"./src/components/global.css"` | Path to the global CSS file.                                                                                              |
+
+If `canvas.config.json` is not present, the CLI will use the default values
+shown above.
+
+If you still have `CANVAS_COMPONENT_DIR` set in your shell, `.env`, or
+`.canvasrc`, the CLI will warn you and offer to create or update
+`canvas.config.json` with `componentDir`.
+
+#### .env
+
+This file contains environmental configuration that varies between environments
+(local development, staging, production) and secrets that must never be
+committed to version control.
+
+Configuration sources are applied in order of precedence from highest to lowest:
+
+1. Command-line arguments
+2. Environment variables
+3. Project `.env` file
+4. Global `.canvasrc` file in your home directory
+
+You can copy the
 [`.env.example` file](https://git.drupalcode.org/project/canvas/-/blob/1.x/cli/.env.example)
 to get started.
 
-| CLI argument      | Environment variable   | Description                                                   |
-| ----------------- | ---------------------- | ------------------------------------------------------------- |
-| `--site-url`      | `CANVAS_SITE_URL`      | Base URL of your Drupal site.                                 |
-| `--client-id`     | `CANVAS_CLIENT_ID`     | OAuth client ID.                                              |
-| `--client-secret` | `CANVAS_CLIENT_SECRET` | OAuth client secret.                                          |
-| `--dir`           | `CANVAS_COMPONENT_DIR` | Directory where code components are stored in the filesystem. |
-| `--scope`         | `CANVAS_SCOPE`         | (Optional) Space-separated list of OAuth scopes to request.   |
+| CLI argument      | Environment variable   | Description                                                                                                                                       |
+| ----------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--site-url`      | `CANVAS_SITE_URL`      | Base URL of your Drupal site. Can point to different environments (local dev, staging, production).                                               |
+| `--client-id`     | `CANVAS_CLIENT_ID`     | OAuth client ID. Different environments may have different OAuth clients with different permissions.                                              |
+| `--client-secret` | `CANVAS_CLIENT_SECRET` | OAuth client secret. This is a secret credential that must never be committed to version control.                                                 |
+| `--scope`         | `CANVAS_SCOPE`         | (Optional) Space-separated list of OAuth scopes to request. Tied to your specific Drupal site's OAuth configuration. Defaults to standard scopes. |
 
 **Note:** The `--scope` parameter defaults to
 `"canvas:js_component canvas:asset_library"`, which are the default scopes
 provided by the Drupal Canvas OAuth module (`canvas_oauth`).
 
+#### Configuration Precedence
+
+The CLI uses different precedence rules depending on the type of configuration:
+
+**For canvas.config.json properties** (`componentDir`, `pagesDir`,
+`aliasBaseDir`, `outputDir`, `globalCssPath`):
+
+Configuration sources are applied in order of precedence from highest to lowest:
+
+1. **Command-line arguments** (e.g., `--dir`, `--alias-base-dir`,
+   `--output-dir`) - Highest priority
+2. **canvas.config.json** - Values defined in your project's config file
+3. **Default values** - Built-in defaults if nothing else is specified
+
+Example: If you have `"componentDir": "./components"` in `canvas.config.json`
+but run `npx canvas build --dir ./my-components`, the CLI will use
+`./my-components`.
+
+**For .env properties** (`siteUrl`, `clientId`, `clientSecret`, `scope`):
+
+Configuration sources are applied in order of precedence from highest to lowest:
+
+1. **Command-line arguments** (e.g., `--site-url`, `--client-id`) - Highest
+   priority
+2. **Environment variables** (e.g., `CANVAS_SITE_URL`, `CANVAS_CLIENT_ID`) - Set
+   in your shell or CI/CD environment
+3. **Project `.env` file** - Values defined in your project's `.env` file
+4. **Global `.canvasrc` file** - Values in your home directory's `.canvasrc`
+5. **Default values** - Built-in defaults if nothing else is specified
+
+Example: If you have `CANVAS_SITE_URL=https://dev.example.com` in your `.env`
+file but run `npx canvas download --site-url https://prod.example.com`, the CLI
+will use `https://prod.example.com`.
+
+## Supported Imports in Canvas Code Components
+
+Canvas Code Components support the following import patterns. Unsupported
+patterns are caught by the `drupal-canvas/component-imports` ESLint rule during
+[`npx canvas validate`](#validate). See [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) for
+the full list of unsupported patterns.
+
+### Third-Party npm Packages
+
+Any npm package installed in your project can be imported:
+
+```js
+import { motion } from 'motion/react';
+import * as Accordion from '@radix-ui/react-accordion';
+```
+
+> **Important:** Third-party packages are bundled and uploaded as vendor
+> artifacts. This requires using [`npx canvas push`](#push) — the deprecated
+> `upload` command does not support third party imports.
+
+### Shared Local Modules via `@/` Alias
+
+Utilities and helpers can be imported from shared locations **outside** of any
+component directory using the `@/` alias:
+
+```js
+import { formatPrice } from '@/lib/helpers';
+```
+
+> **Important:** Shared local imports are bundled and uploaded as artifacts.
+> This requires using [`npx canvas push`](#push) — the deprecated `upload`
+> command does not support local import bundling.
+
+> **Note:** Importing from _within_ another component's directory (e.g.
+> `@/components/pricing/helpers`) is not supported. Move shared code to a
+> non-component location such as `@/lib/`.
+
+### Other Canvas Code Components
+
+Other Canvas Code Components can be imported using the `@/` alias:
+
+```js
+import Button from '@/components/button';
+```
+
+---
+
 ## Commands
 
 ### `download`
+
+> 🚨 DEPRECATED: This command is deprecated. Please use the new
+> `npx canvas pull` command instead. [See pull command here.](#pull)
 
 Download components to your local filesystem.
 
@@ -144,6 +275,56 @@ downloaded by default and can be controlled with `--skip-css` to exclude them or
 
 ---
 
+### `pull`
+
+Pull code components and global CSS to your local filesystem.
+
+**Usage:**
+
+```bash
+npx canvas pull [options]
+```
+
+**Options:**
+
+- `-d, --dir <directory>`: Component directory (defaults to `componentDir` from
+  `canvas.config.json` or current working directory)
+- `-y, --yes`: Skip all confirmation prompts (non-interactive mode)
+- `--skip-overwrite`: Skip items that already exist locally
+
+**About prompts:**
+
+- Without flags: Prompts for confirmation before pulling
+- With `--yes`: Fully non-interactive (suitable for CI/CD)
+- With `--skip-overwrite`: Skips items that already exist locally
+- With both `--yes --skip-overwrite`: Fully non-interactive and only pulls new
+  items
+
+**Examples:**
+
+Pull everything:
+
+```bash
+npx canvas pull
+```
+
+Pull only new items (skip existing):
+
+```bash
+npx canvas pull --skip-overwrite
+```
+
+Fully non-interactive, only pull new items:
+
+```bash
+npx canvas pull --yes --skip-overwrite
+```
+
+Pulls all components and global CSS from your site. Use `--skip-overwrite` to
+skip items that already exist locally.
+
+---
+
 ### `scaffold`
 
 Create a new code component scaffold for Drupal Canvas.
@@ -163,12 +344,106 @@ Creates a new component directory with example files (`component.yml`,
 
 ### `build`
 
-Build local components and Tailwind CSS assets.
+Build local components, vendor dependencies, and Tailwind CSS assets using
+automatic component discovery.
 
 **Usage:**
 
 ```bash
 npx canvas build [options]
+```
+
+**Options:**
+
+- `-d, --dir <directory>`: Directory to scan for components (defaults to
+  `componentDir` from `canvas.config.json` or current working directory)
+- `--alias-base-dir <directory>`: Base directory for module resolution (defaults
+  to `"src"` from `canvas.config.json`)
+- `--output-dir <directory>`: Build output directory (defaults to `"dist"` from
+  `canvas.config.json`)
+- `--no-tailwind`: Skip Tailwind CSS build
+- `-y, --yes`: Skip confirmation prompts (non-interactive mode)
+
+**Examples:**
+
+Build all discovered components:
+
+```bash
+npx canvas build
+```
+
+Build components in a specific directory:
+
+```bash
+npx canvas build --dir ./my-components
+```
+
+Build with custom output directory:
+
+```bash
+npx canvas build --output-dir ./build
+```
+
+Build with custom alias base directory:
+
+```bash
+npx canvas build --alias-base-dir lib
+```
+
+Build without Tailwind CSS:
+
+```bash
+npx canvas build --no-tailwind
+```
+
+Non-interactive mode for CI/CD:
+
+```bash
+npx canvas build --yes
+```
+
+CI/CD without Tailwind:
+
+```bash
+npx canvas build --yes --no-tailwind
+```
+
+This command automatically discovers all components in the specified directory
+(or `componentDir` from `canvas.config.json`) and builds them with Vite-powered
+optimized bundling:
+
+1. **Component Discovery** - Automatically finds all valid components using the
+   discovery package
+2. **Component Build** For each component, a `dist` directory will be created
+   containing the compiled output. Additionally, a top-level `dist` directory
+   (or configured `outputDir`) will be created, which will be used for the
+   generated Tailwind CSS assets.
+3. **Import Analysis** - Analyzes and categorizes third-party packages and local
+   alias imports
+4. **Vendor Bundling** - Uses Vite to create optimized bundles for third-party
+   dependencies in `dist/vendor/` with proper code splitting and minification
+5. **Local Import Bundling** - Uses Vite to bundle local alias imports (e.g.,
+   `@/utils`) into `dist/local/`
+6. **Tailwind CSS** - Generates Tailwind CSS for all components
+7. **Manifest Generation** - Creates `canvas-manifest.json` with import maps for
+   all bundled dependencies
+
+The build output is optimized for production use with Vite's code splitting,
+tree-shaking, and dependency management.
+
+---
+
+### `build-d`
+
+> 🚨 DEPRECATED: This command is deprecated. Please use the new
+> `npx canvas build` command instead. [See build command here.](#build)
+
+Build local components and Tailwind CSS assets.
+
+**Usage:**
+
+```bash
+npx canvas build-d [options]
 ```
 
 **Options:**
@@ -228,6 +503,9 @@ be created, which will be used for the generated Tailwind CSS assets.
 ---
 
 ### `upload`
+
+> 🚨 DEPRECATED: This command is deprecated. Please use the new
+> `npx canvas push` command instead. [See push command here.](#push)
 
 Build and upload local components and global CSS assets.
 
@@ -307,6 +585,53 @@ builds and uploads global Tailwind CSS assets unless `--no-tailwind` is
 specified. Global CSS upload can be controlled with `--skip-css` to exclude it
 or `--css-only` to upload only CSS without components. Existing components on
 the site will be updated if they already exist.
+
+---
+
+### `push`
+
+Build and push all local components, global CSS, and build artifacts to Drupal.
+
+**Usage:**
+
+```bash
+npx canvas push [options]
+```
+
+**Options:**
+
+- `-d, --dir <directory>`: Directory to scan for components (defaults to
+  `componentDir` from `canvas.config.json` or current working directory)
+- `-y, --yes`: Skip confirmation prompts (non-interactive mode)
+
+**Examples:**
+
+Push all discovered components:
+
+```bash
+npx canvas push
+```
+
+Push components in a specific directory:
+
+```bash
+npx canvas push --dir ./my-components
+```
+
+Non-interactive mode for CI/CD:
+
+```bash
+npx canvas push --yes
+```
+
+This command discovers components, analyzes and bundles dependencies, builds
+Tailwind CSS, and uploads everything to your Drupal site including:
+
+1. **Components** - Built and uploaded as js_component config entities
+2. **Global CSS** - Tailwind CSS assets uploaded as asset_library
+3. **Vendor artifacts** - Bundled third-party dependencies
+4. **Local artifacts** - Bundled local imports (e.g., `@/utils`)
+5. **Shared chunks** - Common code shared between vendor bundles
 
 ---
 

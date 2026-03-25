@@ -5,7 +5,6 @@ namespace Drupal\tool\Normalizer;
 use Drupal\Core\TypedData\Plugin\DataType\Email;
 use Drupal\Core\TypedData\Plugin\DataType\FloatData;
 use Drupal\Core\TypedData\Plugin\DataType\IntegerData;
-use Drupal\Core\TypedData\Plugin\DataType\Map;
 use Drupal\Core\TypedData\Type\BooleanInterface;
 use Drupal\Core\TypedData\Type\DecimalInterface;
 use Drupal\Core\TypedData\Type\DurationInterface;
@@ -80,12 +79,13 @@ class LegacyTypedDataNormalizer extends ComplexDataNormalizer {
    * {@inheritdoc}
    */
   public function getSupportedTypes(?string $format): array {
-    // Add check if core supported instead.
-    return [
-      '*' => !class_exists("Drupal\Core\Serialization\Attributes\JsonSchema"),
-      TypedDataInterface::class => ($format === 'json_schema'),
-      Map::class => FALSE,
-    ];
+    if ($format !== 'json_schema') {
+      return [];
+    }
+    if (!class_exists("Drupal\Core\Serialization\Attribute\JsonSchema")) {
+      return ['*' => TRUE];
+    }
+    return [TypedDataInterface::class => TRUE];
   }
 
 }

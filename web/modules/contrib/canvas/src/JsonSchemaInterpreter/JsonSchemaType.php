@@ -26,7 +26,7 @@ use Drupal\canvas\TypedData\BetterEntityDataDefinition;
  *   `hook_canvas_storable_prop_shape_alter()`
  * - Drupal field instances' props thanks to hardcoded knowledge about Drupal
  *   validation constraint equivalents: `::toDataTypeShapeRequirements()`, used
- *   by \Drupal\canvas\ShapeMatcher\JsonSchemaFieldInstanceMatcher
+ *   by \Drupal\canvas\ShapeMatcher\EntityFieldPropSourceMatcher
  *
  * KNOWN UNKNOWNS.
  *
@@ -105,7 +105,7 @@ enum JsonSchemaType: string {
    * @see \Drupal\Core\Theme\Component\ComponentMetadata::parseSchemaInfo
    */
   public static function fromSdcPropJsonSchema(array $schema) : static {
-    $type = is_array($schema['type'])
+    $type = \is_array($schema['type'])
       ? $schema['type'][0]
       : $schema['type'];
     return JsonSchemaType::from($type);
@@ -121,7 +121,7 @@ enum JsonSchemaType: string {
    * @param JsonSchema $schema
    *
    * @see \Drupal\canvas\PropSource\EntityFieldPropSource
-   * @see \Drupal\canvas\JsonSchemaFieldInstanceMatcher
+   * @see \Drupal\canvas\ShapeMatcher\EntityFieldPropSourceMatcher
    */
   public function toDataTypeShapeRequirements(array $schema): DataTypeShapeRequirement|DataTypeShapeRequirements|false {
     return match ($this) {
@@ -266,7 +266,10 @@ enum JsonSchemaType: string {
       }
 
       if (\array_key_exists('maxItems', $schema) && $schema['maxItems'] < 2) {
-        throw new \InvalidArgumentException('Nonsensical array size limit specified.');
+        throw new \InvalidArgumentException(\sprintf(
+          'The "maxItems" value must be at least 2 for array types, but got %d. Use a non-array type for single-value props.',
+          $schema['maxItems'],
+        ));
       }
       return new StorablePropShape(
         // The original shape, not the item shape.
@@ -303,7 +306,7 @@ enum JsonSchemaType: string {
         // Require $ref to be resolved, because that might add some of the other
         // keywords.
         \array_key_exists('$ref', $schema) => NULL,
-        \array_key_exists('enum', $schema) => match(in_array('', $schema['enum'], TRUE)) {
+        \array_key_exists('enum', $schema) => match(\in_array('', $schema['enum'], TRUE)) {
           // The empty string is not a sensible enum value. To indicate
           // optionality, the prop should be made optional.
           TRUE => NULL,

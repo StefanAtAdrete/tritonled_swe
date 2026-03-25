@@ -1,7 +1,12 @@
 import { promises as fs } from 'node:fs';
-import { parse as parseYaml } from 'yaml';
+import { load as parseYaml } from 'js-yaml';
 
-import type { ComponentMetadata, DiscoveryResult } from './types';
+import type {
+  ComponentMetadata,
+  DiscoveredComponent,
+  DiscoveryResult,
+  DiscoveryWarning,
+} from './types';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -23,9 +28,10 @@ function validateRawMetadata(
     );
   }
 
-  if (raw.props !== undefined && !isRecord(raw.props)) {
+  const isEmptyPropsArray = Array.isArray(raw.props) && raw.props.length === 0;
+  if (raw.props !== undefined && !isRecord(raw.props) && !isEmptyPropsArray) {
     throw new Error(
-      `Invalid "props" in ${metadataPath}: expected an object, got ${typeof raw.props}.`,
+      `Invalid "props" in ${metadataPath}: expected an object or empty array, got ${typeof raw.props}.`,
     );
   }
 
@@ -41,7 +47,9 @@ function validateRawMetadata(
     );
   }
 
-  if (raw.slots !== undefined && !isRecord(raw.slots)) {
+  // Allow empty array as equivalent to no slots.
+  const isEmptyArray = Array.isArray(raw.slots) && raw.slots.length === 0;
+  if (raw.slots !== undefined && !isRecord(raw.slots) && !isEmptyArray) {
     throw new Error(
       `Invalid "slots" in ${metadataPath}: expected an object, got ${typeof raw.slots}.`,
     );
@@ -86,7 +94,7 @@ function validateRawMetadata(
  * Loads and parses component metadata from YAML files for all discovered
  * components.
  *
- * @param discoveryResult - Discovery result from `discoverCodeComponents()`
+ * @param discoveryResult - Discovery result from `discoverCanvasProject()`
  * @returns Array of parsed component metadata
  */
 export async function loadComponentsMetadata(
@@ -116,4 +124,52 @@ export async function loadComponentsMetadata(
       return metadata;
     }),
   );
+}
+
+/**
+ * Detects duplicate machineName values across discovered components.
+ *
+ * @param components - Array of discovered components (from discovery result)
+ * @param metadata - Parallel array of component metadata (from loadComponentsMetadata)
+ * @returns Array of warnings for any machineName appearing more than once
+ */
+export function findDuplicateMachineNames(
+  components: DiscoveredComponent[],
+  metadata: ComponentMetadata[],
+): DiscoveryWarning[] {
+  // Group components by machineName
+  const byMachineName = new Map<
+    string,
+    Array<{ component: DiscoveredComponent; metadata: ComponentMetadata }>
+  >();
+
+  for (let i = 0; i < components.length; i++) {
+    const component = components[i];
+    const meta = metadata[i];
+    const machineName = meta.machineName;
+
+    const existing = byMachineName.get(machineName);
+    if (existing) {
+      existing.push({ component, metadata: meta });
+    } else {
+      byMachineName.set(machineName, [{ component, metadata: meta }]);
+    }
+  }
+
+  // Generate warnings for duplicates
+  const warnings: DiscoveryWarning[] = [];
+
+  for (const [machineName, entries] of byMachineName) {
+    if (entries.length > 1) {
+      const paths = entries
+        .map((e) => e.component.relativeDirectory)
+        .join(', ');
+      warnings.push({
+        code: 'duplicate_machine_name',
+        message: `Duplicate machineName "${machineName}" found in ${entries.length} components: ${paths}`,
+      });
+    }
+  }
+
+  return warnings;
 }

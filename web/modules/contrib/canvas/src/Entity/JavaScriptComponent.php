@@ -159,8 +159,8 @@ final class JavaScriptComponent extends ConfigEntityBase implements CanvasAssetI
     // TRICKY: config entity properties may allow NULL, but only valid, saved
     // config entities are ever normalized: those that have passed validation
     // against config schema.
-    \assert(is_array($this->js));
-    \assert(is_array($this->css));
+    \assert(\is_array($this->js));
+    \assert(\is_array($this->css));
     $linkCollection = $this->getEntityOperations();
     return ClientSideRepresentation::create(
       values: [
@@ -197,9 +197,9 @@ final class JavaScriptComponent extends ConfigEntityBase implements CanvasAssetI
     // TRICKY: config entity properties may allow NULL, but only valid, saved
     // config entities are ever normalized: those that have passed validation
     // against config schema.
-    \assert(is_array($this->props));
-    \assert(is_array($this->slots));
-    \assert(is_string($this->uuid));
+    \assert(\is_array($this->props));
+    \assert(\is_array($this->slots));
+    \assert(\is_string($this->uuid));
 
     // If there's an auto-saved version of this code component, load that
     // instead to generate the preview. JsComponent::renderComponent() *already*
@@ -307,6 +307,11 @@ final class JavaScriptComponent extends ConfigEntityBase implements CanvasAssetI
    * @see docs/adr/0005-Keep-the-front-end-simple.md
    */
   public function updateFromClientSide(array $data): void {
+    // Normalize props: move enum/meta:enum from array level to items level.
+    if (!empty($data['props'])) {
+      \assert(\is_array($data['props']));
+      $data['props'] = $this->normalizePropsSchema($data['props']);
+    }
     foreach (array_intersect_key($data, array_flip([
       'machineName',
       'name',
@@ -438,7 +443,7 @@ final class JavaScriptComponent extends ConfigEntityBase implements CanvasAssetI
     $this->props = $props;
     // If a required prop was removed, we need to remove it from the list of
     // required props.
-    if (!is_null($this->required)) {
+    if (!\is_null($this->required)) {
       $this->required = \array_intersect(\array_keys($props), $this->required);
     }
     return $this;
@@ -604,6 +609,71 @@ final class JavaScriptComponent extends ConfigEntityBase implements CanvasAssetI
    */
   public function getAssetLibraryDependencies(): array {
     return \array_map(static fn (string $dependency): string => \sprintf('canvas/canvasData.%s', $dependency), $this->dataDependencies['drupalSettings'] ?? []);
+  }
+
+  /**
+   * Normalizes the props schema by moving enum/meta:enum from array to items.
+   *
+   * For array types, enum and meta:enum should be defined on the items schema,
+   * not on the array itself. This method ensures compatibility with the
+   * canvas.json_schema.yml config schema.
+   *
+   * @param array $props
+   *   The props schema to normalize.
+   *
+   * @return array
+   *   The normalized props schema.
+   */
+  private function normalizePropsSchema(array $props): array {
+    foreach ($props as &$prop_schema) {
+      if (!\is_array($prop_schema)) {
+        continue;
+      }
+
+      // @todo Removed this in https://drupal.org/i/3516754 when validation
+      //   correctly determines that `[[]]` does not actually contain example
+      //   values.
+      if (isset($prop_schema['examples'])) {
+        \assert(\is_array($prop_schema['examples']));
+        $prop_schema['examples'] = $prop_schema['examples'] === [[]] ? [] : $prop_schema['examples'];
+      }
+
+      // Determine the type (handle both string and array forms).
+      $type = \is_array($prop_schema['type'] ?? '')
+        ? $prop_schema['type'][0]
+        : ($prop_schema['type'] ?? '');
+
+      // For array types with items, move enum/meta:enum/x-translation-context
+      // from the array level into items, then rebuild the prop in canonical
+      // key order: title, type, examples, items, …rest.
+      if ($type === 'array' && isset($prop_schema['items'])) {
+        $keys_to_move = ['enum', 'meta:enum', 'x-translation-context'];
+        foreach ($keys_to_move as $key) {
+          if (\array_key_exists($key, $prop_schema)) {
+            $prop_schema['items'][$key] = $prop_schema[$key];
+            unset($prop_schema[$key]);
+          }
+        }
+
+        // Rebuild in canonical order so assertSame() key-order checks pass.
+        $canonical_order = ['title', 'type', 'examples', 'items'];
+        $reordered = [];
+        foreach ($canonical_order as $key) {
+          if (\array_key_exists($key, $prop_schema)) {
+            $reordered[$key] = $prop_schema[$key];
+          }
+        }
+        // Append any remaining keys that are not in the canonical list.
+        foreach ($prop_schema as $key => $value) {
+          if (!\array_key_exists($key, $reordered)) {
+            $reordered[$key] = $value;
+          }
+        }
+        $prop_schema = $reordered;
+      }
+    }
+
+    return $props;
   }
 
 }

@@ -25,7 +25,7 @@ use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\MissingComponentInputsException;
 use Drupal\canvas\Plugin\DataType\ConfigEntityVersionAdapter;
-use Drupal\canvas\PropSource\ContentAwareDependentInterface;
+use Drupal\canvas\PropExpressions\StructuredData\ContentAwareDependentInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -118,6 +118,9 @@ use Symfony\Component\Validator\ConstraintViolationList;
 class ComponentTreeItem extends FieldItemBase {
 
   public const string PLUGIN_ID = 'component_tree';
+
+  // @todo Decide what the best location is for this constant.
+  public const string VIOLATION_CODE_GARBAGE_INPUT = 'garbage';
 
   use ComponentTreeItemListInstantiatorTrait;
 
@@ -435,7 +438,7 @@ class ComponentTreeItem extends FieldItemBase {
    */
   // @phpstan-ignore-next-line method.childParameterType
   public function setValue($values, $notify = TRUE): void {
-    if (is_array($values)) {
+    if (\is_array($values)) {
       parent::setValue($values, FALSE);
       $pairs = [
         ['component_id', 'component'],
@@ -472,7 +475,7 @@ class ComponentTreeItem extends FieldItemBase {
     // if there already is a validation error for a missing key, another
     // validation error for an invalid value is not helpful.
     // @see \Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator
-    if (!is_array($values) || !\array_key_exists('inputs', $values)) {
+    if (!\is_array($values) || !\array_key_exists('inputs', $values)) {
       $this->getProperties()['inputs']->applyDefaultValue(FALSE);
     }
 
@@ -665,7 +668,7 @@ class ComponentTreeItem extends FieldItemBase {
     // It will be triggered with config schema validation instead.
     // @see \Drupal\canvas\Entity\Component::save()
     $version = $this->get('component_version')->getValue();
-    if ($version && in_array($version, $component?->getVersions() ?? [], TRUE)) {
+    if ($version && \in_array($version, $component?->getVersions() ?? [], TRUE)) {
       $component?->loadVersion($version);
     }
     $source = $component?->getComponentSource();

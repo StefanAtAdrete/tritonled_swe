@@ -24,12 +24,12 @@ trait TypedInputsTrait {
   use DependencySerializationTrait;
   use TypedDataTrait;
 
-  const string STORAGE_CONFIGURATION = 'config';
-  const string STORAGE_INPUT = 'input';
-  const string INPUT_SOURCE_INPUT = 'input';
-  const string INPUT_SOURCE_CONFIG = 'config';
-  const string INPUT_SOURCE_LOCKED = 'locked';
-  const string INPUT_SOURCE_DEFAULT = 'default';
+  const STORAGE_CONFIGURATION = 'config';
+  const STORAGE_INPUT = 'input';
+  const INPUT_SOURCE_INPUT = 'input';
+  const INPUT_SOURCE_CONFIG = 'config';
+  const INPUT_SOURCE_LOCKED = 'locked';
+  const INPUT_SOURCE_DEFAULT = 'default';
 
   /**
    * The input definitions for this plugin.

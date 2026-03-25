@@ -64,12 +64,11 @@ const rule: EslintRule.RuleModule = {
     },
   },
   create(context: EslintRule.RuleContext): EslintRule.RuleListener {
-    if (!isComponentYmlFile(context)) {
+    if (!isComponentYmlFile(context.filename)) {
       return {};
     }
 
     return {
-      // @ts-expect-error - YAMLPair is a valid listener from eslint-plugin-yml
       YAMLPair(node: AST.YAMLPair) {
         const keyName = getYAMLStringValue(node.key);
         if (keyName !== 'props') {

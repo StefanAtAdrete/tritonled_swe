@@ -6,7 +6,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
-use Drupal\Core\Messenger\Messenger;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\TypedData\TypedDataTrait;
 use Drupal\tool\TypedData\Adapter\TypedDataAdapterTrait;
 
@@ -20,11 +20,11 @@ class ExecuteToolPluginForm extends ToolPluginFormBase implements ContainerInjec
   /**
    * Constructs a ToolExplorerController object.
    *
-   * @param \Drupal\Core\Messenger\Messenger $messenger
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger service.
    */
   public function __construct(
-    protected Messenger $messenger,
+    protected MessengerInterface $messenger,
   ) {
   }
 

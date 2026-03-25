@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall;
 
+use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas_ai\Plugin\AiFunctionCall\CreateComponent;
 use Drupal\Component\Serialization\Json;
-use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
 use Drupal\canvas\Entity\JavaScriptComponent;
 use Drupal\Tests\canvas_ai\Traits\FunctionalCallTestTrait;
 use Symfony\Component\Yaml\Yaml;
 
 /**
  * Tests for the CreateComponent function call plugin.
- *
- * @group canvas_ai
  */
-final class CreateComponentTest extends KernelTestBase {
+#[Group('canvas_ai')]
+final class CreateComponentTest extends CanvasKernelTestBase {
 
   use FunctionalCallTestTrait;
 
@@ -33,9 +33,6 @@ final class CreateComponentTest extends KernelTestBase {
   protected static $modules = [
     'ai',
     'ai_agents',
-    'canvas',
-    'system',
-    'user',
     'canvas_ai',
   ];
 
