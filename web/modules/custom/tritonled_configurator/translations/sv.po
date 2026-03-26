@@ -1,0 +1,89 @@
+# Swedish translation for tritonled_configurator module.
+msgid ""
+msgstr ""
+"Project-Id-Version: tritonled_configurator\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: sv\n"
+
+# ConfiguratorSpecsBlock — headings and labels
+msgid "Technical specifications"
+msgstr "Tekniska specifikationer"
+
+msgid "Length"
+msgstr "Längd"
+
+msgid "Driver"
+msgstr "Driver"
+
+msgid "Connection"
+msgstr "Anslutning"
+
+msgid "CRI"
+msgstr "CRI"
+
+msgid "Sensor / Battery"
+msgstr "Sensor / Batteri"
+
+msgid "Color temperature"
+msgstr "Färgtemperatur"
+
+msgid "Power (W)"
+msgstr "Effekt (W)"
+
+msgid "Luminous flux (lm)"
+msgstr "Ljusflöde (lm)"
+
+msgid "Efficacy (lm/W)"
+msgstr "Ljuseffektivitet (lm/W)"
+
+msgid "Optics"
+msgstr "Optik"
+
+msgid "Color"
+msgstr "Färg"
+
+msgid "Chips"
+msgstr "Chips"
+
+msgid "IP class"
+msgstr "IP-klass"
+
+msgid "Print / Save as PDF"
+msgstr "Skriv ut / Spara som PDF"
+
+# configurator.js — UI strings
+msgid "— Select —"
+msgstr "— Välj —"
+
+msgid "Quantity:"
+msgstr "Antal:"
+
+msgid "Add to quote"
+msgstr "Lägg i offert"
+
+msgid "Adding…"
+msgstr "Lägger till…"
+
+msgid "Added ✓"
+msgstr "Tillagd ✓"
+
+msgid "✓ Added to quote! SKU: @sku"
+msgstr "✓ Tillagd i offerten! SKU: @sku"
+
+msgid "Power"
+msgstr "Effekt"
+
+msgid "Please select an option for all steps."
+msgstr "Välj ett alternativ för alla steg."
+
+msgid "Configuration error: missing variation ID."
+msgstr "Konfigurationsfel: saknar variation ID."
+
+msgid "Error: @msg"
+msgstr "Fel: @msg"
+
+msgid "Product added to cart."
+msgstr "Produkt tillagd i offerten."

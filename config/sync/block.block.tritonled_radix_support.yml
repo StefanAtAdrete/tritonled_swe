@@ -1,0 +1,23 @@
+uuid: 530ecbe8-ba9e-459e-b427-464a5fa4546e
+langcode: en
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
+  module:
+    - block_content
+  theme:
+    - tritonled_radix
+id: tritonled_radix_support
+theme: tritonled_radix
+region: footer
+weight: -8
+provider: null
+plugin: 'block_content:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
+settings:
+  id: 'block_content:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
+  label: Support
+  label_display: visible
+  provider: block_content
+  view_mode: full
+visibility: {  }

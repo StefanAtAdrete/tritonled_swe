@@ -11,7 +11,7 @@ dependencies:
 id: tritonled_radix_views_block__tritonled_cookie_settings_block_1
 theme: tritonled_radix
 region: footer
-weight: 0
+weight: -6
 provider: null
 plugin: 'views_block:tritonled_cookie_settings-block_1'
 settings:
