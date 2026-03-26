@@ -1,0 +1,23 @@
+uuid: ccb7a925-9d07-419c-aabd-7ee64ece1b51
+langcode: sv
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
+  module:
+    - block_content
+  theme:
+    - tritonled_radix
+id: tritonled_radix_invoice
+theme: tritonled_radix
+region: footer
+weight: -7
+provider: null
+plugin: 'block_content:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
+settings:
+  id: 'block_content:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
+  label: Fakturor
+  label_display: visible
+  provider: block_content
+  view_mode: full
+visibility: {  }

@@ -1,0 +1,23 @@
+uuid: 34ac8af6-8474-420a-aa6e-a7bc6409497b
+langcode: en
+status: true
+dependencies:
+  content:
+    - 'block_content:basic:60dcec53-6faa-4bc1-a2f9-0a7c0cfd2ad9'
+  module:
+    - block_content
+  theme:
+    - tritonled_radix
+id: tritonled_radix_offertforfragan
+theme: tritonled_radix
+region: footer
+weight: -9
+provider: null
+plugin: 'block_content:60dcec53-6faa-4bc1-a2f9-0a7c0cfd2ad9'
+settings:
+  id: 'block_content:60dcec53-6faa-4bc1-a2f9-0a7c0cfd2ad9'
+  label: 'Get a quote'
+  label_display: visible
+  provider: block_content
+  view_mode: full
+visibility: {  }

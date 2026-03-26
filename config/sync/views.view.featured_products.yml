@@ -621,6 +621,228 @@ display:
       tags:
         - 'config:field.storage.commerce_product.field_product_media'
         - 'config:field.storage.commerce_product.field_series'
+  block_2:
+    id: block_2
+    display_title: 'Other MAX models'
+    display_plugin: block
+    position: 5
+    display_options:
+      title: 'Other MAX models'
+      fields:
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: custom
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<div class=\"syskon-block d-flex flex-wrap gap-2 align-items-center py-2\">\r\n  <span class=\"text-muted small me-1\">MAX-serien:</span>\r\n  <a href=\"/product/triton-max\" class=\"btn btn-outline-secondary btn-sm\">MAX</a>\r\n  <a href=\"/product/triton-max-pro\" class=\"btn btn-outline-secondary btn-sm\">MAX-PRO</a>\r\n  <a href=\"/product/triton-max-s-gen-3-sensor\" class=\"btn btn-outline-secondary btn-sm\">MAX-S Sensor</a>\r\n  <a href=\"/product/triton-max-e-gen-3-emergency\" class=\"btn btn-outline-secondary btn-sm\">MAX-E Emergency</a>\r\n  <a href=\"/product/triton-max-ed-daylight-gen-3\" class=\"btn btn-outline-secondary btn-sm\">MAX-ED Emergency+Daylight</a>\r\n</div>"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+      filters: {  }
+      filter_groups:
+        operator: OR
+        groups: {  }
+      defaults:
+        title: false
+        fields: false
+        filters: false
+        filter_groups: false
+      display_description: 'Siblings MAX'
+      display_extenders: {  }
+      block_description: 'Other MAX models'
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+      tags: {  }
+  block_3:
+    id: block_3
+    display_title: 'Other OPTI models'
+    display_plugin: block
+    position: 5
+    display_options:
+      title: 'Other OPTI models'
+      fields:
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: custom
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<div class=\"syskon-block d-flex flex-wrap gap-2 align-items-center py-2\">\r\n  <span class=\"text-muted small me-1\">OPTI-serien:</span>\r\n  <a href=\"/product/triton-opti\" class=\"btn btn-outline-secondary btn-sm\">OPTI</a>\r\n  <a href=\"/product/triton-opti-s-gen-4-sensor\" class=\"btn btn-outline-secondary btn-sm\">OPTI-S Sensor</a>\r\n  <a href=\"/product/triton-opti-e-gen-4-emergency\" class=\"btn btn-outline-secondary btn-sm\">OPTI-E Emergency</a>\r\n  <a href=\"/product/triton-opti-ed-daylight-gen-4\" class=\"btn btn-outline-secondary btn-sm\">OPTI-ED Emergency+Daylight</a>\r\n</div>"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+      filters: {  }
+      filter_groups:
+        operator: OR
+        groups: {  }
+      defaults:
+        title: false
+        fields: false
+        filters: false
+        filter_groups: false
+      display_description: 'Siblings OPTI'
+      display_extenders: {  }
+      block_description: 'Other OPTI models'
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+      tags: {  }
+  block_4:
+    id: block_4
+    display_title: 'Other SROW models'
+    display_plugin: block
+    position: 5
+    display_options:
+      title: 'Other SROW models'
+      fields:
+        nothing:
+          id: nothing
+          table: views
+          field: nothing
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: custom
+          label: ''
+          exclude: false
+          alter:
+            alter_text: true
+            text: "<div class=\"syskon-block d-flex flex-wrap gap-2 align-items-center py-2\">\r\n  <span class=\"text-muted small me-1\">SROW-serien:</span>\r\n  <a href=\"/product/triton-srow-ip54ip65\" class=\"btn btn-outline-secondary btn-sm\">SROW</a>\r\n  <a href=\"/product/triton-srow-e-gen-3-emergency\" class=\"btn btn-outline-secondary btn-sm\">SROW-E Emergency</a>\r\n  <a href=\"/product/triton-srow-ed-gen-3-emergency-daylight\" class=\"btn btn-outline-secondary btn-sm\">SROW-ED Emergency+Daylight</a>\r\n</div>"
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+      filters: {  }
+      filter_groups:
+        operator: OR
+        groups: {  }
+      defaults:
+        title: false
+        fields: false
+        filters: false
+        filter_groups: false
+      display_description: 'Siblings SROW'
+      display_extenders: {  }
+      block_description: 'Other SROW models'
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+      tags: {  }
   block_max:
     id: block_max
     display_title: 'Block MAX'
@@ -950,7 +1172,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">MAX</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/en/product/triton-max\" class=\"list-group-item list-group-item-action py-2\">MAX <small class=\"text-muted d-block\">Standardmodell</small></a>\r\n<a href=\"/en/product/triton-max-pro\" class=\"list-group-item list-group-item-action py-2\">MAX-PRO <small class=\"text-muted d-block\">Pro-modell</small></a>\r\n<a href=\"/en/product/triton-max-s-gen-3-sensor\" class=\"list-group-item list-group-item-action py-2\">MAX-S <small class=\"text-muted d-block\">Med sensor</small></a>\r\n<a href=\"/en/product/triton-max-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">MAX-E <small class=\"text-muted d-block\">Med nödbelysning</small></a>\r\n<a href=\"/en/product/triton-max-ed-daylight-gen-3\" class=\"list-group-item list-group-item-action py-2\">MAX-ED <small class=\"text-muted d-block\">Nödbelysning + dagsljus</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">MAX</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-max\" class=\"list-group-item list-group-item-action py-2\">MAX <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-max-pro\" class=\"list-group-item list-group-item-action py-2\">MAX-PRO <small class=\"text-muted d-block\">Pro model</small></a>\r\n<a href=\"/product/triton-max-s-gen-3-sensor\" class=\"list-group-item list-group-item-action py-2\">MAX-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-max-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">MAX-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-max-ed-daylight-gen-3\" class=\"list-group-item list-group-item-action py-2\">MAX-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -1285,7 +1507,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">OPTI</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/en/product/triton-opti\" class=\"list-group-item list-group-item-action py-2\">OPTI <small class=\"text-muted d-block\">Standardmodell</small></a>\r\n<a href=\"/en/product/triton-opti-s-gen-4-sensor\" class=\"list-group-item list-group-item-action py-2\">OPTI-S <small class=\"text-muted d-block\">Med sensor</small></a>\r\n<a href=\"/en/product/triton-opti-e-gen-4-emergency\" class=\"list-group-item list-group-item-action py-2\">OPTI-E <small class=\"text-muted d-block\">Med nödbelysning</small></a>\r\n<a href=\"/en/product/triton-opti-ed-daylight-gen-4\" class=\"list-group-item list-group-item-action py-2\">OPTI-ED <small class=\"text-muted d-block\">Nödbelysning + dagsljus</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">OPTI</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-opti\" class=\"list-group-item list-group-item-action py-2\">OPTI <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-opti-s-gen-4-sensor\" class=\"list-group-item list-group-item-action py-2\">OPTI-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-opti-e-gen-4-emergency\" class=\"list-group-item list-group-item-action py-2\">OPTI-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-opti-ed-daylight-gen-4\" class=\"list-group-item list-group-item-action py-2\">OPTI-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -1837,7 +2059,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">SROW</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/en/product/triton-srow-ip54ip65\" class=\"list-group-item list-group-item-action py-2\">SROW <small class=\"text-muted d-block\">Standardmodell IP54/IP65</small></a>\r\n<a href=\"/en/product/triton-srow-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">SROW-E <small class=\"text-muted d-block\">Med nödbelysning</small></a>\r\n<a href=\"/en/product/triton-srow-ed-gen-3-emergency-daylight\" class=\"list-group-item list-group-item-action py-2\">SROW-ED <small class=\"text-muted d-block\">Nödbelysning + dagsljus</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">SROW</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-srow-ip54ip65\" class=\"list-group-item list-group-item-action py-2\">SROW <small class=\"text-muted d-block\">Standard model IP54/IP65</small></a>\r\n<a href=\"/product/triton-srow-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">SROW-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-srow-ed-gen-3-emergency-daylight\" class=\"list-group-item list-group-item-action py-2\">SROW-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
             make_link: false
             path: ''
             absolute: false

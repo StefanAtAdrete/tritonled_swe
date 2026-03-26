@@ -34,6 +34,9 @@ class ConfiguratorSpecsBlock extends BlockBase {
       $table_rows .= '</tr>' . "\n";
     }
 
+    $print_btn_label = $this->t('Print / Save as PDF');
+    $specs_heading   = $this->t('Technical specifications');
+
     $markup = '<div class="configurator-specs" id="configurator-specs" aria-live="polite">'
       . "\n"
 
@@ -50,7 +53,7 @@ class ConfiguratorSpecsBlock extends BlockBase {
       . "\n"
 
       // Screen heading (hidden when printing).
-      . '<h3 class="specs-screen-heading h5 mb-3 d-print-none">Tekniska specifikationer</h3>'
+      . '<h3 class="specs-screen-heading h5 mb-3 d-print-none">' . $specs_heading . '</h3>'
       . "\n"
 
       // Print image — hidden on screen, filled by JS, shown in print.
@@ -83,11 +86,10 @@ class ConfiguratorSpecsBlock extends BlockBase {
       . '</div>'
       . "\n"
 
-      // Print button (hidden when printing).
-      // onclick added via JS — Drupal XSS strips inline event handlers.
+      // Print button — onclick added via JS (Drupal XSS strips inline handlers).
       . '<div class="d-print-none mt-3">'
       . '<button type="button" class="btn btn-outline-secondary btn-sm" id="configurator-print-btn">'
-      . '<i class="bi bi-printer me-1"></i> Skriv ut / Spara som PDF'
+      . '<i class="bi bi-printer me-1"></i> ' . $print_btn_label
       . '</button>'
       . '</div>'
       . "\n"
@@ -112,23 +114,23 @@ class ConfiguratorSpecsBlock extends BlockBase {
   }
 
   /**
-   * Returns spec row definitions: spec_id => label.
+   * Returns spec row definitions: spec_id => translated label.
    */
   protected function specRows(): array {
     return [
-      'length'   => 'Längd',
-      'driver'   => 'Driver',
-      'endcap'   => 'Anslutning',
-      'cri'      => 'CRI',
-      'sensor'   => 'Sensor / Batteri',
-      'kelvin'   => 'Färgtemperatur',
-      'watt'     => 'Effekt (W)',
-      'lumen'    => 'Ljusflöde (lm)',
-      'efficacy' => 'Ljuseffektivitet (lm/W)',
-      'optic'    => 'Optik',
-      'color'    => 'Färg',
-      'chips'    => 'Chips',
-      'ip_class' => 'IP-klass',
+      'length'   => $this->t('Length'),
+      'driver'   => $this->t('Driver'),
+      'endcap'   => $this->t('Connection'),
+      'cri'      => $this->t('CRI'),
+      'sensor'   => $this->t('Sensor / Battery'),
+      'kelvin'   => $this->t('Color temperature'),
+      'watt'     => $this->t('Power (W)'),
+      'lumen'    => $this->t('Luminous flux (lm)'),
+      'efficacy' => $this->t('Efficacy (lm/W)'),
+      'optic'    => $this->t('Optics'),
+      'color'    => $this->t('Color'),
+      'chips'    => $this->t('Chips'),
+      'ip_class' => $this->t('IP class'),
     ];
   }
 

@@ -17,6 +17,9 @@
  *
  * TASK-021 adds:
  * - markActiveSibling() — highlights current product in sibling badges block
+ *
+ * TASK-022 adds:
+ * - Drupal.t() on all hardcoded UI strings for SV/EN translation
  */
 
 (function (Drupal, drupalSettings) {
@@ -46,8 +49,7 @@
         commerceForm.style.display = 'none';
       }
 
-      // Mark active sibling badge — TASK-021
-      // Finds .syskon-block links and highlights the one matching current path.
+      // Mark active sibling badge — TASK-021.
       markActiveSibling();
 
       // ------------------------------------------------------------------ //
@@ -80,7 +82,7 @@
 
           var placeholder = document.createElement('option');
           placeholder.value = '';
-          placeholder.textContent = '— Välj —';
+          placeholder.textContent = Drupal.t('— Select —');
           placeholder.disabled = true;
           placeholder.selected = true;
           select.appendChild(placeholder);
@@ -131,7 +133,7 @@
         var qtyLabel = document.createElement('label');
         qtyLabel.htmlFor = 'configurator-qty';
         qtyLabel.className = 'form-label mb-0 small fw-semibold';
-        qtyLabel.textContent = 'Antal:';
+        qtyLabel.textContent = Drupal.t('Quantity:');
 
         var qty = document.createElement('input');
         qty.type = 'number';
@@ -146,7 +148,7 @@
         btn.id = 'configurator-submit';
         btn.type = 'button';
         btn.className = 'btn btn-primary';
-        btn.textContent = 'Lägg i offert';
+        btn.textContent = Drupal.t('Add to quote');
         btn.disabled = true;
         btn.addEventListener('click', submitToCart);
 
@@ -173,7 +175,6 @@
       function markActiveSibling() {
         var currentPath = window.location.pathname;
         document.querySelectorAll('.syskon-block a').forEach(function (a) {
-          // Normalize: strip language prefix (/en/, /sv/) for comparison.
           var href = a.getAttribute('href');
           var hrefPath = href.replace(/^\/(en|sv)\//, '/');
           var comparePath = currentPath.replace(/^\/(en|sv)\//, '/');
@@ -432,11 +433,11 @@
         var qty = parseInt(document.getElementById('configurator-qty').value, 10) || 1;
 
         if (!allStepsSelected()) {
-          setFeedback(feedback, 'error', 'Välj ett alternativ för alla steg.');
+          setFeedback(feedback, 'error', Drupal.t('Please select an option for all steps.'));
           return;
         }
         if (!variationId) {
-          setFeedback(feedback, 'error', 'Konfigurationsfel: saknar variation ID.');
+          setFeedback(feedback, 'error', Drupal.t('Configuration error: missing variation ID.'));
           return;
         }
 
@@ -444,16 +445,16 @@
         var data = JSON.stringify(selections);
 
         btn.disabled = true;
-        btn.textContent = 'Lägger till…';
+        btn.textContent = Drupal.t('Adding…');
         feedback.textContent = '';
 
         fetch(drupalSettings.path.baseUrl + 'session/token')
           .then(function (r) { return r.text(); })
           .then(function (token) { return doCartPost(token, sku, data, qty); })
           .catch(function (err) {
-            setFeedback(feedback, 'error', 'Fel: ' + err.message);
+            setFeedback(feedback, 'error', Drupal.t('Error: @msg', { '@msg': err.message }));
             btn.disabled = false;
-            btn.textContent = 'Lägg i offert';
+            btn.textContent = Drupal.t('Add to quote');
           });
       }
 
@@ -478,23 +479,23 @@
           .then(function (response) {
             if (!response.ok) {
               return response.json().then(function (err) {
-                throw new Error(err.message || 'Serverfel ' + response.status);
+                throw new Error(err.message || 'Server error ' + response.status);
               });
             }
             return response.json();
           })
           .then(function () {
-            setFeedback(feedback, 'success', '✓ Tillagd i offerten! SKU: ' + sku);
-            btn.textContent = 'Tillagd ✓';
+            setFeedback(feedback, 'success', Drupal.t('✓ Added to quote! SKU: @sku', { '@sku': sku }));
+            btn.textContent = Drupal.t('Added ✓');
             btn.classList.replace('btn-primary', 'btn-success');
             if (Drupal.ajax) {
               Drupal.announce(Drupal.t('Product added to cart.'));
             }
           })
           .catch(function (err) {
-            setFeedback(feedback, 'error', 'Fel: ' + err.message);
+            setFeedback(feedback, 'error', Drupal.t('Error: @msg', { '@msg': err.message }));
             btn.disabled = false;
-            btn.textContent = 'Lägg i offert';
+            btn.textContent = Drupal.t('Add to quote');
           });
       }
 
@@ -561,16 +562,17 @@
 
       function getLabelForStep(stepId) {
         var labels = {
-          length:  'Längd',
-          driver:  'Driver',
-          endcap:  'Anslutning',
-          cri:     'CRI',
-          chips:   'Chips',
-          kelvin:  'Färgtemperatur',
-          watt:    'Effekt',
-          optic:   'Optik',
-          color:   'Färg',
-          ipClass: 'IP-klass',
+          length:  Drupal.t('Length'),
+          driver:  Drupal.t('Driver'),
+          endcap:  Drupal.t('Connection'),
+          cri:     Drupal.t('CRI'),
+          chips:   Drupal.t('Chips'),
+          kelvin:  Drupal.t('Color temperature'),
+          watt:    Drupal.t('Power'),
+          optic:   Drupal.t('Optics'),
+          color:   Drupal.t('Color'),
+          sensor:  Drupal.t('Sensor / Battery'),
+          ipClass: Drupal.t('IP class'),
         };
         return labels[stepId] || stepId;
       }
