@@ -14,6 +14,9 @@
  * - parseWattLabel() — parses "22W 3771lm 400mA 171lm/W" into components
  * - Print button click handler attached via JS (onclick stripped by Drupal XSS)
  * - syncPrintImage() — mirrors configurator image src into specs-print-img
+ *
+ * TASK-021 adds:
+ * - markActiveSibling() — highlights current product in sibling badges block
  */
 
 (function (Drupal, drupalSettings) {
@@ -42,6 +45,10 @@
       if (commerceForm) {
         commerceForm.style.display = 'none';
       }
+
+      // Mark active sibling badge — TASK-021
+      // Finds .syskon-block links and highlights the one matching current path.
+      markActiveSibling();
 
       // ------------------------------------------------------------------ //
       // Render
@@ -160,6 +167,26 @@
       }
 
       // ------------------------------------------------------------------ //
+      // Active sibling marking — TASK-021
+      // ------------------------------------------------------------------ //
+
+      function markActiveSibling() {
+        var currentPath = window.location.pathname;
+        document.querySelectorAll('.syskon-block a').forEach(function (a) {
+          // Normalize: strip language prefix (/en/, /sv/) for comparison.
+          var href = a.getAttribute('href');
+          var hrefPath = href.replace(/^\/(en|sv)\//, '/');
+          var comparePath = currentPath.replace(/^\/(en|sv)\//, '/');
+
+          if (hrefPath === comparePath) {
+            a.classList.remove('btn-outline-secondary');
+            a.classList.add('btn-primary');
+            a.setAttribute('aria-current', 'page');
+          }
+        });
+      }
+
+      // ------------------------------------------------------------------ //
       // Auto-select first valid combination
       // ------------------------------------------------------------------ //
 
@@ -254,20 +281,17 @@
         }
         imgEl.loading = 'eager';
 
-        // Mirror to print image placeholder.
         syncPrintImage(imgEl.src);
       }
 
       // ------------------------------------------------------------------ //
       // Sync print image — TASK-024
-      // Copies the current configurator image src into the hidden print img.
       // ------------------------------------------------------------------ //
 
       function syncPrintImage(src) {
         var printImg = document.getElementById('specs-print-img');
         if (!printImg) return;
         if (!src) {
-          // Fallback: use whatever is currently in the configurator image.
           var configImg = document.querySelector('.triton-configurator-image img');
           src = configImg ? configImg.src : '';
         }
@@ -282,7 +306,7 @@
         var specsEl = document.getElementById('configurator-specs');
         if (!specsEl) return;
 
-        // Attach print button handler once (onclick stripped by Drupal XSS).
+        // Attach print button handler once.
         var printBtn = document.getElementById('configurator-print-btn');
         if (printBtn && !printBtn.dataset.printAttached) {
           printBtn.dataset.printAttached = 'true';
@@ -298,24 +322,19 @@
           if (row) row.setAttribute('data-spec-hidden', value ? 'false' : 'true');
         }
 
-        // Product name.
         var nameEl = specsEl.querySelector('[data-spec="product-name"]');
         if (nameEl) nameEl.textContent = schema.productName || '—';
 
-        // SKU.
         var skuEl = specsEl.querySelector('[data-spec="sku"]');
         if (skuEl) skuEl.textContent = buildSku();
 
-        // Print date.
         var dateEl = specsEl.querySelector('[data-spec="print-date"]');
         if (dateEl) {
           dateEl.textContent = new Date().toLocaleDateString('sv-SE');
         }
 
-        // Sync print image (initial load — before maybeUpdateImage runs).
         syncPrintImage();
 
-        // Step-based specs.
         var stepIds = ['length', 'driver', 'endcap', 'cri', 'sensor', 'kelvin', 'optic', 'color', 'chips', 'ip_class'];
         stepIds.forEach(function (stepId) {
           var step = steps.find(function (s) { return s.id === stepId; });
@@ -332,7 +351,6 @@
           setSpec(stepId, option ? option.label : code);
         });
 
-        // Watt — parsed into watt, lumen, efficacy rows.
         var wattStep = steps.find(function (s) { return s.id === 'watt'; });
         var wattCode = selections['watt'];
         if (wattStep && wattCode) {

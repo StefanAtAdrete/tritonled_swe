@@ -1,103 +1,105 @@
-# TASK-022 — Översättning: Svenska/Engelska
+# Task 022: Översättning SV/EN — specs-block, views-block, innehåll
 
-**Skapad**: 2026-03-24
+**Created**: 2026-03-25
 **Status**: Planned
-**Prioritet**: Medel
+**Last Updated**: 2026-03-25
+**Related Tasks**: TASK-021, TASK-024
 
 ---
 
-## Mål
+## 1. DEFINE
 
-Säkerställa att alla block, allt innehåll och alla produkter fungerar korrekt på både svenska och engelska. Sajten ska vara fullt flerspråkig med konsekvent UX på båda språken.
+### Mål
+Säkerställa att sajten ser likadan ut och är korrekt översatt på både svenska och engelska.
 
----
+### Identifierade problem (2026-03-25)
 
-## DEFINE
+| Element | Problem | Lösning |
+|---|---|---|
+| `ConfiguratorSpecsBlock` — rubriker | "Tekniska specifikationer", "Längd", "Driver" etc. visas alltid på svenska | Drupal `t()` + `.po`-fil eller Interface Translation |
+| `ConfiguratorSpecsBlock` — kontaktuppgifter | Hårdkodad svenska i PHP | Antingen OK (samma info båda språk) eller konfigurerbart |
+| Views syskon-block — etikett | "OPTI-serien:", "MAX-serien:" | Översätt via Views Translate UI |
+| Produktnamn/beskrivningar | Hanteras via Drupal content translation | Verifiera att alla 12 produkter har SV-översättning |
+| "Skriv ut / Spara som PDF"-knapp | Hårdkodad svenska | `Drupal.t()` i JS |
 
 ### Acceptanskriterier
-- [ ] Alla 12 produkter har svenska och engelska titlar + beskrivningar
-- [ ] Konfiguratorn (dropdowns, labels, feedback-texter) visas på rätt språk
-- [ ] Featured Products-blocket fungerar på /en och /sv
-- [ ] Syskonprodukter-blocket (TASK-021) fungerar på båda språken
-- [ ] Taxonomy-termer översatta (product_categories, product_type, producers)
-- [ ] Navigation-menyer fungerar på båda språken
-- [ ] URL-alias fungerar per språk (/en/product/... och /sv/produkt/...)
-- [ ] Config exporterad och committad
+- [ ] Specs-blockets labels visas på rätt språk (SV/EN)
+- [ ] Print-knappens text är översatt
+- [ ] Syskon-block etiketter ("OPTI-serien:" / "OPTI series:") visas på rätt språk
+- [ ] Alla 12 produkter har SV-översättning
+- [ ] Sajten ser konsekvent ut på `/sv/` och `/en/`
 
 ---
 
-## PLAN
+## 2. PLAN
 
-### Del 1 — Produktinnehåll
+### Approach per element
 
-#### Produkter (commerce_product)
-- Titel, kort beskrivning, lång beskrivning
-- Metafält (SEO)
-- Alla 12 produkter
+#### ConfiguratorSpecsBlock labels — `t()` i PHP
+Byt hårdkodade strängar mot `$this->t('Längd')` etc. i `specRows()`.
+Lägg till engelska översättningar via **Admin → Configuration → Regional → Translations**.
 
-#### Produktvarianter (commerce_product_variation)
-- Attributvärden (om de är translatable)
+#### Print-knapp — `Drupal.t()` i JS
+`configurator.js` använder redan `Drupal.t()` på ett ställe.
+Byt `'Skriv ut / Spara som PDF'` → `Drupal.t('Print / Save as PDF')`.
+Lägg till svensk översättning i Interface Translation.
 
-#### Taxonomy-termer
-- `product_categories`: MAX, OPTI, SROW
-- `product_type`: Base, Sensor, Emergency, Emergency Daylight, PRO
-- `producers`: TritonLED
+#### Views syskon-block etiketter
+Gå till Views → Featured Products → Other [X] models → Translate.
+Lägg till svenska översättning av Custom text-fältet.
 
-### Del 2 — Block och UI-texter
+#### Produktöversättningar
+Verifiera att alla 12 produkter har SV-översättning via:
+`ddev drush php:eval` — se TASK-022 verify-kommando nedan.
 
-#### Konfiguratorn (tritonled_configurator)
-- Fältlabels (LÄNGD, DRIVER, ANSLUTNING, CRI, FÄRGTEMPERATUR, EFFEKT, OPTIK, FÄRG)
-- Knapptext ("Lägg i offert" / "Add to quote")
-- Feedback-texter ("Produkt tillagd!" / "Product added!")
-- SKU-label
-
-#### Custom blocks
-- Kontakta oss-knapp
-- Footer-innehåll
-
-#### Views
-- Featured Products block-titel
-- Syskonprodukter-block rubrik
-
-### Del 3 — Konfiguration
-
-#### Interface translation (admin/config/regional/translate)
-- Alla custom strings i JS och PHP
-
-#### URL-alias per språk
-- Verifiera att path_auto genererar rätt alias per språk
-
----
-
-## Tekniska detaljer
-
-### Drupal-moduler som hanterar detta
-- `content_translation` — produkter, taxonomy-termer
-- `locale` + `interface_translation` — UI-strängar
-- `path_auto` med språkspecifika patterns
-
-### Konfigurator-strängar (tritonled_configurator)
-Strängar i JS måste hanteras via `drupalSettings` eller `Drupal.t()`:
-```javascript
-// Rätt sätt
-Drupal.t('Add to quote')
-// Eller via drupalSettings från PHP
-drupalSettings.tritonConfigurator.strings.addToQuote
+### Verify-kommando
+```bash
+ddev drush php:eval '$products = \Drupal::entityTypeManager()->getStorage("commerce_product")->loadMultiple(); foreach ($products as $p) { $hasSv = $p->hasTranslation("sv"); echo $p->id() . " | " . $p->getTitle() . " | SV: " . ($hasSv ? "JA" : "NEJ") . PHP_EOL; }'
 ```
 
-### Prioritetsordning
-1. Produkttitlar + beskrivningar (mest synligt)
-2. Konfigurator UI-texter
-3. Taxonomy-termer
-4. Block-titlar och övrigt
+---
+
+## 3. IMPLEMENT
+
+### Steg 1 — ConfiguratorSpecsBlock: byt till t()
+- `specRows()` i `ConfiguratorSpecsBlock.php` → `$this->t('Längd')` etc.
+- Rubrik "Tekniska specifikationer" → `$this->t('Technical specifications')`
+- Print-knapp label → `$this->t('Print / Save as PDF')`
+
+### Steg 2 — configurator.js: Drupal.t()
+- `'Skriv ut / Spara som PDF'` → `Drupal.t('Print / Save as PDF')`
+- `'Antal:'` → `Drupal.t('Quantity')`
+- `'Lägg i offert'` → `Drupal.t('Add to quote')`
+- Övriga hårdkodade strängar
+
+### Steg 3 — Interface Translation
+- Admin → Configuration → Regional → Translations → Import/manual
+- Lägg till SV-översättningar för alla `t()`-strängar
+
+### Steg 4 — Views Translate
+- Other MAX models → Translate → Svenska
+- Other OPTI models → Translate → Svenska
+- Other SROW models → Translate → Svenska
+
+### Steg 5 — Verifiera produktöversättningar
+- Kör verify-kommandot ovan
+- Komplettera saknade översättningar
 
 ---
 
-## Öppna frågor
+## 4. VERIFY
 
-| Fråga | Svar |
-|-------|------|
-| Ska URL-alias vara /sv/produkt/ eller /sv/product/? | Avgörs — rekommendation: /sv/produkt/ |
-| Ska attributvärden (watt, CCT etc.) översättas? | Troligen nej — tekniska värden |
-| Finns redan content_translation aktiverat? | Verifiera vid start |
-| Ska konfigurator-labels komma från schema-JSON eller Drupal t()? | Avgörs vid implementation |
+- [ ] `/en/product/triton-opti` — specs-labels på engelska
+- [ ] `/sv/product/triton-opti` — specs-labels på svenska
+- [ ] Print-knapp rätt språk på båda
+- [ ] Syskon-block etikett rätt språk
+- [ ] Alla 12 produkter har SV
+
+---
+
+## 5. COMPLETION
+
+### Status: Planned
+
+### Nästa steg
+TASK-023: Konfigurator mobiloptimering
