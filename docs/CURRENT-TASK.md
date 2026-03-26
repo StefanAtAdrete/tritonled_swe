@@ -1,7 +1,7 @@
 # Aktuell Task
 
-**Task**: Config Split installation (ny session)
-**Status**: Planerad
+**Task**: Config Split installation
+**Status**: ✅ Klar
 **Senast uppdaterad**: 2026-03-26
 
 ---
@@ -42,7 +42,7 @@ Pre-commit hook finns som temporär lösning: `.git/hooks/pre-commit`
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| Config Split | Planerad | Separera lokal/prod config |
+| Config Split | ✅ Klar | Separera lokal/prod config |
 | TASK-022 | 🔄 Delvis klar | Översättning — Views syskon-block kvar |
 | TASK-023 | Planned | Konfigurator mobiloptimering |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
