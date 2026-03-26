@@ -31,6 +31,7 @@
         "drupal/commerce_checkout_order_fields": "^3.0",
         "drupal/commerce_feeds": "^1.0@alpha",
         "drupal/commerce_pricelist": "^2.16",
+        "drupal/config_split": "^2.0",
         "drupal/core-composer-scaffold": "^11.2",
         "drupal/core-project-message": "^11.2",
         "drupal/core-recipe-unpack": "^11.2",
