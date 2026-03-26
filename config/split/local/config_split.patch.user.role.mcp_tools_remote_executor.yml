@@ -1,0 +1,16 @@
+adding:
+  dependencies:
+    module:
+      - mcp_tools
+  permissions:
+    - 'mcp_tools use blocks'
+    - 'mcp_tools use config'
+    - 'mcp_tools use content'
+    - 'mcp_tools use discovery'
+    - 'mcp_tools use media'
+    - 'mcp_tools use menus'
+    - 'mcp_tools use site_health'
+    - 'mcp_tools use structure'
+    - 'mcp_tools use users'
+    - 'mcp_tools use views'
+removing: {  }
