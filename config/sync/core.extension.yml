@@ -138,10 +138,6 @@ module:
   text: 0
   token: 0
   tool: 0
-  tool_content: 0
-  tool_content_translation: 0
-  tool_entity: 0
-  tool_system: 0
   toolbar: 0
   tritonled_compat: 0
   tritonled_configurator: 0
