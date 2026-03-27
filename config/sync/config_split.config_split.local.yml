@@ -57,5 +57,8 @@ module:
   tool_entity: 0
   tool_system: 0
 theme: {  }
-complete_list: {  }
+complete_list:
+  - ai_provider_ollama.settings
+  - mcp_tools.settings
+  - mcp_tools_remote.settings
 partial_list: {  }

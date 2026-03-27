@@ -44,6 +44,7 @@
         "drupal/field_group": "^4.0",
         "drupal/field_permissions": "^1.5",
         "drupal/gin": "^5.0",
+        "drupal/honeypot": "^2.2",
         "drupal/image_effects": "^5.0",
         "drupal/inline_entity_form": "^3.0@RC",
         "drupal/klaro": "^3.0",

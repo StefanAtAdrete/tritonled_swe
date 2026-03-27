@@ -2,6 +2,8 @@ uuid: da21a433-55e6-43b6-8584-b0b4e4430030
 langcode: en
 status: true
 dependencies:
+  config:
+    - field.storage.commerce_order_item.field_configurator_sku
   module:
     - commerce_order
     - commerce_price
@@ -137,7 +139,7 @@ display:
           element_class: ''
           element_label_type: ''
           element_label_class: ''
-          element_label_colon: true
+          element_label_colon: false
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
@@ -148,7 +150,7 @@ display:
           click_sort_column: target_id
           type: entity_reference_entity_view
           settings:
-            view_mode: summary
+            view_mode: cart
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -216,6 +218,68 @@ display:
             strip_trailing_zeroes: false
             currency_display: symbol
           group_column: ''
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        field_configurator_sku:
+          id: field_configurator_sku
+          table: commerce_order_item__field_configurator_sku
+          field: field_configurator_sku
+          relationship: order_items
+          group_type: group
+          admin_label: ''
+          plugin_id: field
+          label: 'Configurator SKU'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings: {  }
+          group_column: value
           group_columns: {  }
           group_rows: true
           delta_limit: 0
@@ -307,10 +371,34 @@ display:
           row_class: ''
           default_row_class: true
           columns:
-            order_number: order_number
+            quantity: quantity
+            purchased_entity: purchased_entity
+            total_price__number: total_price__number
+            field_configurator_sku: purchased_entity
           default: '-1'
           info:
-            order_number:
+            quantity:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            purchased_entity:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            total_price__number:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: ''
+            field_configurator_sku:
               sortable: false
               default_sort_order: asc
               align: ''
@@ -323,6 +411,7 @@ display:
           empty_table: false
           caption: ''
           description: ''
+          class: ''
       row:
         type: fields
         options:
@@ -359,4 +448,5 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
-      tags: {  }
+      tags:
+        - 'config:field.storage.commerce_order_item.field_configurator_sku'

@@ -170,7 +170,6 @@ git commit -m "[TASK-NNN-01] Sub-task beskrivning"
 - **Base theme**: Radix
 - **CSS Framework**: Bootstrap 5.3 (via CDN)
 - **Layout**: Layout Builder + Bootstrap Layout Builder module
-
 - **Custom CSS**: Minimalt - endast i `css/components/` när absolut nödvändigt
 
 ### Commerce
@@ -208,7 +207,7 @@ git push origin main
 # 2. PÅ PRODUKTIONSSERVERN
 cd /home/tritonled/htdocs/tritonled.se
 git pull
-vendor/bin/drush cim -y
+vendor/bin/drush cim --partial -y
 vendor/bin/drush cr
 ```
 
@@ -236,11 +235,27 @@ vendor/bin/drush cr
 
 ## 📊 Senaste Viktiga Beslut
 
+### Konfigurator Bootstrap dropdowns (2026-03-27)
+- ✅ Native `<select>` ersatt med Bootstrap 5 custom dropdowns i `configurator.js`
+- ✅ Bootstrap/Popper.js hanterar positionering — öppnar alltid nedåt på mobil
+- ✅ Ingen backend-ändring — POST-data och CartController oförändrade
+- ✅ `updateVisibility()`, `autoSelectFirst()`, `clearSelectionsAfter()` uppdaterade för dropdown-struktur
+- ❌ Native `<select>` på mobil kan INTE styras med CSS — öppnar uppåt/nedåt baserat på viewport-position
+- Se: `tasks/task-023-konfigurator-mobiloptimering.md`
+
+### Konfigurator media-entiteter — namnkonvention (2026-03-27)
+- ✅ Media-namn MÅSTE matcha `{imagePrefix}-{endcap_code}` exakt (t.ex. `TM-C`, `TME-E`, `TMED-V`)
+- ✅ Om flera produktserier delar bilder: skapa separata media-entiteter med rätt prefix men peka på samma FID
+- ✅ MAX-PRO (TMP) och MAX-ED (TMED) återanvänder FIDs från TM/TME men har egna MIDs
+- ✅ `{imagePrefix}-default` = fallback-bild när inget endcap-val matchar
+- ❌ Döp INTE om befintliga media-entiteter — skapa nya med rätt namn istället (Approach B)
+- Media-MIDs per produkt: se CURRENT-TASK.md
+
 ### Konfigurator bildväxling — separata block (2026-03-20)
 - ✅ `ConfiguratorImageBlock` = separat block plugin för bilden — placeras fritt i Layout Builder
 - ✅ `ConfiguratorBlock` = bara konfigurator-UI (dropdowns, SKU, knapp)
 - ✅ `#prefix`/`#suffix` fungerar INTE på media-render-arrayer — använd `'#type' => 'container'` som wrapper
-- ✅ View mode `configurator_image` på media.image: alla fält utom `Image` måste sättas till Disabled (Radix renderar allt i Content-regionen)
+- ✅ View mode `configurator_image` på media.image: alla fält utom `Image` måste sättas till Disabled
 - ✅ `imagePictures` byggs server-side i preprocess, JS byter bara `src`/`srcset` på befintlig `<img>`
 - Se: `03-solutions/configurator-image-switching.md`
 
@@ -249,7 +264,7 @@ vendor/bin/drush cr
 - ✅ Variations-feed SEDAN → importerar varianter
 - ❌ Om produkten skapas manuellt utan products-feed → saknar store-koppling → 500-fel vid AJAX
 - ✅ `tritonled_compat` FeedsImportSubscriber rensar feeds_item automatiskt efter varje import
-- ✅ Feeds-tabeller: `commerce_product_variation__feeds_item` och `commerce_product__feeds_item` (INTE `feeds_item`)
+- ✅ Feeds-tabeller: `commerce_product_variation__feeds_item` och `commerce_product__feeds_item`
 - ✅ Products-CSV: en rad på engelska → svenska via Drupal Translate-UI
 - Se: `03-solutions/feeds-import-ordning.md`
 
@@ -272,8 +287,8 @@ vendor/bin/drush cr
 
 ### Bootstrap Layout Builder NULL-attribut bug (2026-02-26)
 - BLB sparar ibland `NULL` for `container_wrapper_attributes` och `section_attributes`
-- Orsakar `Warning: foreach() argument must be of type array|object, string given` i `NestedArray::mergeDeepArray()`
-- Fix: PHP-script som itererar sektioner och satter `[]` for NULL-varden
+- Orsakar `Warning: foreach() argument must be of type array|object, string given`
+- Fix: PHP-script som itererar sektioner och sätter `[]` för NULL-värden
 - Se: `tasks/task-006-footer-layout.md`
 
 ### Language config incident (2026-03-04)
@@ -283,94 +298,41 @@ vendor/bin/drush cr
 - ✅ Vid trasig language.negotiation: återskapa via `php:eval` med korrekt struktur
 - ✅ Vid blockerad `cim`: rensa config-objekt som beror på avinstallerade moduler via `php:eval` + `->delete()`
 - ✅ `cim --partial` fungerar bättre än full `cim` vid partiella problem
-- ⚠️ navigation-modulen (Drupal core experimental) är avinstallerad — orsakade `getPath() on null` på translation-routes med flerspråkighet aktiverat
-- ⚠️ Commerce translation-routes kräver explicit permission: `translate default commerce_product`, `translate commerce_product_variation`, `translate commerce_product_attribute`
+- ⚠️ navigation-modulen (Drupal core experimental) är avinstallerad
+- ⚠️ Commerce translation-routes kräver explicit permission
 
 ### Splide thumbnail overflow-fix (2026-03-01)
-- ❌ `border` på `.splide__slide` påverkar Splide's layoutberäkning → slides positioneras fel
-- ✅ Använd `outline` + `outline-offset: -2px` för aktiv-markering istället
+- ❌ `border` på `.splide__slide` påverkar Splide's layoutberäkning
+- ✅ Använd `outline` + `outline-offset: -2px` för aktiv-markering
 - ✅ `.splide--nav .splide__track { overflow: visible !important; }` fixar klippt första tumme
 - ✅ `trimSpace: move` i product_nav optionset
-- ✅ Splide ignorerar `!important` i CSS för overflow på track — måste sättas explicit
 
 ### lb_tabs + Layout Builder (2026-03-01)
-- ✅ `lb_tabs` skapar tabs-layout direkt i Layout Builder — varje region = en tab
-- ✅ Pseudo-fält (Electrical/Mechanical/Certifications) placeras som block i respektive tab
-- ✅ AJAX fungerar utan ändringar — EventSubscriber's ReplaceCommand träffar CSS-klasserna inuti tab-panerna
+- ✅ `lb_tabs` skapar tabs-layout direkt i Layout Builder
+- ✅ Pseudo-fält placeras som block i respektive tab
+- ✅ AJAX fungerar utan ändringar
 - ✅ Template reducerad till minimal wrapper: `<article>{{ product }}</article>`
-- ❌ Blanda INTE templatens grid med Layout Builder — välj ett system
+- ❌ Blanda INTE templatens grid med Layout Builder
 
 ### commerce_variation_blocks AJAX (2026-02-28)
 - ✅ Commerce använder **Events**, inte hooks, för AJAX-tillägg vid variantbyte
 - ✅ Rätt event: `ProductEvents::PRODUCT_VARIATION_AJAX_CHANGE` → `EventSubscriber`
 - ❌ `hook_commerce_product_variation_field_injection` existerar INTE
-- ✅ CSS-klass `commerce-variation-block--{view_mode}--{product_id}` på container → `ReplaceCommand`
-- ✅ Field Groups på Default view mode borttagna — redundanta när view modes hanterar grupperingen
-- ✅ REGEL: Läs alltid källkoden innan integration med contrib-modul
 - Se: `03-solutions/verify-before-implement.md`
 
 ### Produktsida attribut & styling (2026-02-27)
-- ✅ Attribut-väljare bytta från dropdowns till radiobuttons via Commerce form display
-- ✅ Radiobuttons stylade som pill-knappar via CSS (`.path-product .form-radios`)
-- ✅ CSS begränsad till `.path-product` för att undvika påverkan på andra sidor
+- ✅ Attribut-väljare bytta från dropdowns till radiobuttons
+- ✅ Radiobuttons stylade som pill-knappar via CSS
 - ✅ Bootstrap Icons CDN lagt till i `tritonled_radix.libraries.yml`
-- ✅ PDF-ikon på datasheet-länk via CSS `::before` + Bootstrap Icons unicode `\F63E`
-- ✅ Attributordning styrs av Manage form display på variationstypen (inte template)
-- ✅ Commerce visar bara attributvärden som finns i faktiska varianter — många watt-värden = många varianter (dummy-data)
-- ⏳ Datakvalitet/variantkombinationer — återkommer när riktig produktdata finns
-- ⏳ Navigation-modulen har bug med vissa admin-routes (`getPath() on null`) — workaround: navigera via admin-menyn
 
 ### Topbar + Navbar regioner (2026-02-27)
-- ✅ Lade till `topbar_left`, `topbar_right`, `navbar_left_2`, `navbar_left_3` som regioner i `tritonled_radix.info.yml`
-- ✅ SDC-komponenter (`radix:page-navigation`) kan INTE overridas från custom-tema — namespace löses alltid mot ursprungstemat
-- ✅ Rätt lösning: Bygg navbar direkt i `page--front.html.twig` och `page.html.twig` utan SDC-chain
-- ✅ Kom ihåg: startsidan använder `page--front.html.twig` — BÅDA templates måste uppdateras
-- ✅ `ms-auto` på region-wrapper pushar innehåll till höger i navbar flex-container
-- ✅ Topbar renderas villkorligt — syns bara om `topbar_left` eller `topbar_right` har block
-- ✅ `.topbar .block__title { font-size: 1rem; }` krävs — `fs-6` på block-wrapper ärver inte till h2
-- ✅ Two-row navbar: Topbar (account, cart) + Navbar (logo, huvudmeny) är B2B-standard
-
-### Radix page--front.html.twig (2026-02-26)
-- Startsidan anvander `page--front.html.twig`, INTE `page.html.twig`
-- `py-5` ar hardkodat i `radix:page` - maste overskriva med egen template som kopierar strukturen
-- `include with` i Twig mergar INTE variabler uppifran
-- Se: `tasks/task-006-footer-layout.md`
-
-### Skapa config-entiteter: ALLTID via Drush/admin UI (2026-02-26)
-- ❌ ALDRIG skapa taxonomy vocabularies, node types eller liknande via manuell YAML
-- Drupal genererar `uuid` och `_core.default_config_hash` automatiskt — utan dem misslyckas `cim`
-- ✅ Skapa via Drush php:eval eller admin UI, sedan `cex` för att få det i sync
-- Fält (field.storage, field.field) KAN skapas via YAML men beror på att entiteten redan finns i databasen
-- Om `cim` misslyckas med "entity does not have an ID" → skapa via Drush istället
-
-```bash
-# Exempel: skapa taxonomy vocabulary via Drush
-ddev drush php:eval "
-\$vocab = \Drupal\taxonomy\Entity\Vocabulary::create(['vid' => 'my_vocab', 'name' => 'My Vocab']);
-\$vocab->save();
-"
-ddev drush cex -y
-```
-
-### Blazy + Responsive Images i Featured Products (2026-02-26)
-- ✅ Blazy ersätter `<picture>` med `<img data-src>` — `fallback_image_style` är den style Blazy använder
-- ❌ Sätt ALDRIG `fallback_image_style` till en Scale-stil (t.ex. `max_325x325`) — olika bildformat ger olika höjder
-- ✅ Använd alltid Scale and Crop som `fallback_image_style` (t.ex. `card_medium`)
-- ✅ `commerce_product_variation.default.card` view display måste skapas explicit — finns inte automatiskt
-- Se: `tasks/task-003-featured-products.md`
-
-### Blazy Remote Video i Hero Carousel (2026-02-26)
-- ✅ Blazy `use_oembed` måste vara **aktiverat** för att YouTube-thumbnails ska renderas
-- ✅ Lägg alltid till `media--type-remote-video` i hero.css-regler (bredvid image/video)
-- ❌ Sätt ALDRIG `aspect-ratio` på `.media--blazy` — Blazy använder `padding-bottom`-trick
-- ✅ MutationObserver på `is-playing`-klassen för att pausa karusell vid videouppspelning
-- ✅ Undanta `.media--player` från slide-klick-navigering i JS
-- Se: `tasks/task-002-hero-carousel.md`
+- ✅ Lade till `topbar_left`, `topbar_right`, `navbar_left_2`, `navbar_left_3` som regioner
+- ✅ SDC-komponenter från Radix kan INTE overridas från child theme
+- ✅ Rätt lösning: Bygg navbar direkt i page-templates
 
 ### Responsive Images (2025-01-08)
 - ✅ 4:3 aspect ratio över ALLA breakpoints
 - ✅ Focal Point module
-- ✅ CSS aspect-ratio på containers
 - Se: `03-solutions/responsive-images.md`
 
 ### Layout Approach
@@ -394,9 +356,6 @@ view /Users/steffes/Projekt/tritonled/docs/[fil]
 
 ### 3. Fråga Stefan
 ❓ **Fråga ALLTID innan du gissar**
-- "Har vi redan löst detta?"
-- "Vilket är önskat beteende exakt?"
-- "Ska jag fortsätta till steg 6 (preprocess) eller finns annan lösning?"
 
 ## 📝 Arbetsflöde - Steg för steg
 
@@ -404,134 +363,64 @@ view /Users/steffes/Projekt/tritonled/docs/[fil]
 
 1. **Förstå**: Läs uppgiften och be om förtydliganden
 2. **Kolla docs**: Finns lösning i `03-solutions/`?
-3. **Välj beslutsträd**: 
-   - Allmän Drupal → `DRUPAL-DECISION-TREE.md`
-   - Commerce → `01-decision-trees/commerce-decision-tree.md`
-   - Theming → `01-decision-trees/theming-decision-tree.md`
-4. **Presentera plan**: 
-   - Problem
-   - Vilka steg i beslutsträdet
-   - Föreslagen lösning (med alternativ)
-   - Varför denna lösning
+3. **Välj beslutsträd**
+4. **Presentera plan**
 5. **Vänta på OK**
 6. **Implementera**
-7. **Testa**: Följ `04-workflows/testing-checklist.md`
-8. **Dokumentera**: Uppdatera `03-solutions/` om nytt
-
-### Vid design-uppgift:
-
-1. **Läs**: `04-workflows/design-testing.md` - Design Implementation Hierarchy
-2. **Analysera**: Följ ALLTID hierarkin:
-   - Bootstrap klasser FÖRST
-   - Core funktioner (responsive images, view modes)
-   - Kan core lösa det utan SDC?
-   - Views + templates (sista utväg)
-3. **Planera**: Skapa implementation plan
-4. **Presentera**: Visa plan för Stefan
-5. **Vänta på OK**
-6. **Implementera**: Layout Builder + Bootstrap
-7. **Testa**: Design testing checklist (responsive, accessibility, performance)
+7. **Testa**
+8. **Dokumentera**
 
 ## 🎨 Design → Implementation
 
 **KRITISK ORDNING (följ ALLTID):**
 1. **Bootstrap klasser FÖRST** - 80% kan lösas här
 2. **Core Drupal functions** - Responsive images, view modes, image styles
-3. **Kan core lösa det?** - Layout Builder, Views, field formatters, view modes
+3. **Kan core lösa det?** - Layout Builder, Views, field formatters
 4. **Views + minimal templates** - Endast om nödvändigt
 5. **SDC** - Sista utväg (nästan aldrig behövs)
-
-**Läs mer**: 
-- `04-workflows/design-testing.md` - Design Testing Framework
-- `04-workflows/sdc-workflow.md` - SDC (när absolut nödvändigt)
-- `02-standards/design-system.md` - Bootstrap + TritonLED standards
 
 ## 🧪 Testing
 
 **Efter varje ändring:**
 ```bash
-ddev drush cr                    # Cache rebuild
-ddev logs                        # Error check
+ddev drush cr
+ddev logs
 ddev drush watchdog:show --severity=Error
 ```
-
-**Browser:**
-- Firefox + Chrome
-- Desktop (≥1200px), Tablet (768-1199px), Mobile (<768px)
-- Console för JS-errors
-
-**Läs mer**: `04-workflows/testing-checklist.md`
 
 ## 📚 Fil-struktur
 
 ```
 /docs/
 ├── 00-START-HERE.md          ← Du är här
-├── CURRENT-TASK.md           ← Symlänk till aktiv task (läs efter 00-START-HERE)
+├── CURRENT-TASK.md           ← Läs efter 00-START-HERE
 ├── DRUPAL-DECISION-TREE.md   ← Huvudbeslutsträd
 ├── 01-decision-trees/
-│   ├── commerce-decision-tree.md
-│   └── theming-decision-tree.md
 ├── 02-standards/
-│   ├── coding-standards.md
-│   ├── module-preferences.md
-│   ├── approved-modules.md
-│   └── design-system.md
-├── 03-solutions/             ← Lärdomar från completade tasks
-│   ├── commerce-ajax-solution.md
-│   └── responsive-images.md
+├── 03-solutions/
 ├── 04-workflows/
-│   ├── design-testing.md
-│   ├── sdc-workflow.md
-│   └── testing-checklist.md
-└── tasks/                    ← Task-Driven Workflow
-    ├── TASK-TEMPLATE.md      ← Mall för alla tasks
-    ├── README.md
-    ├── task-001-hero-carousel.md
-    └── task-002-product-listing.md
+└── tasks/
 ```
 
 ## ⚠️ KRITISKT: Config export INNAN import
 
-**ALDRIG kör `ddev drush cim -y` direkt efter att nya YAML-filer lagts till i config/sync.**
-
-Drupal jämför config/sync mot aktiv databas-config. Filer som finns i databasen men
-INTE i config/sync kommer att **raderas** vid import.
-
-### Rätt arbetsflöde för config-ändringar:
-
 ```bash
-1. ddev drush cex -y       ← Exportera ALL aktiv config till config/sync FÖRST
-2. Lägg till/ändra YAML    ← Nu är alla befintliga filer redan där
-3. ddev drush cim -y       ← Importera — inget raderas, bara nytt läggs till
-4. ddev drush cr           ← Rensa cache
+1. ddev drush cex -y       ← Exportera FÖRST
+2. Lägg till/ändra YAML
+3. ddev drush cim -y       ← Importera
+4. ddev drush cr
 ```
-
-**Detta gäller ALLTID** — oavsett om du skriver YAML manuellt eller via admin UI.
-
----
 
 ## 🚀 Quick Commands
 
 ```bash
-# Cache
 ddev drush cr
-
-# Config export/import — KÖR ALLTID cex INNAN cim!
 ddev drush cex -y
 ddev drush cim -y
-
-# Module install
 ddev composer require drupal/[module]
 ddev drush en [module] -y
-
-# Watch logs
 ddev logs -f
-
-# DB backup
 ddev snapshot
-
-# DB restore
 ddev snapshot restore [name]
 ```
 
@@ -545,7 +434,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.3  
-**Skapad**: 2025-01-10  
-**Uppdaterad**: 2026-03-06 - Feeds import-ordning och store-koppling  
+**Version**: 2.4
+**Skapad**: 2025-01-10
+**Uppdaterad**: 2026-03-27 - TASK-023 Bootstrap dropdowns + media-namnkonvention
 **Författare**: Stefan + Claude

@@ -1,0 +1,18 @@
+{#
+/**
+ * @file
+ * TritonLED checkout page template.
+ *
+ * Identisk med page.html.twig förutom page content som wrappas i
+ * Bootstrap container — centrerar checkout-formuläret.
+ *
+ * @see page.html.twig
+ */
+#}
+{% extends 'tritonled_radix:page' %}
+
+{% block page_content %}
+  <div class="container py-5">
+    {{ page.content }}
+  </div>
+{% endblock %}

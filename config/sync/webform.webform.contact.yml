@@ -42,7 +42,7 @@ elements: |-
     '#type': webform_actions
     '#title': 'Submit button(s)'
     '#submit__label': 'Send message'
-css: container
+css: 'container mb-5'
 javascript: ''
 settings:
   ajax: false
@@ -87,6 +87,7 @@ settings:
   form_attributes:
     class:
       - container
+      - mb-5
   form_method: ''
   form_action: ''
   share: false
