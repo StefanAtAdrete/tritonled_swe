@@ -96,7 +96,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: '<a href="#" class="klaro-open">Cookie-inställningar</a>'
+            text: "<div class=\"field field--name-body field--type-text-with-summary field--label-hidden field__items\">\r\n<a href=\"#\" class=\"klaro-open\">Cookie-inställningar</a>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
@@ -217,6 +217,7 @@ display:
     position: 1
     display_options:
       display_extenders: {  }
+      block_description: Cookie
     cache_metadata:
       max-age: -1
       contexts:

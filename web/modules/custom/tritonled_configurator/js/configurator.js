@@ -20,6 +20,10 @@
  *
  * TASK-022 adds:
  * - Drupal.t() on all hardcoded UI strings for SV/EN translation
+ *
+ * TASK-023 adds:
+ * - Bootstrap custom dropdowns replace native <select> for mobile compatibility
+ * - Popper.js (via Bootstrap JS) handles positioning — always opens downward
  */
 
 (function (Drupal, drupalSettings) {
@@ -71,41 +75,60 @@
           var label = document.createElement('label');
           label.className = 'form-label fw-semibold small text-uppercase';
           label.textContent = getLabelForStep(step.id);
-          label.htmlFor = 'configurator-' + step.id;
           col.appendChild(label);
 
-          var select = document.createElement('select');
-          select.id = 'configurator-' + step.id;
-          select.name = step.id;
-          select.className = 'form-select form-select-sm';
-          select.dataset.stepId = step.id;
+          // Bootstrap dropdown wrapper.
+          var dropdownWrapper = document.createElement('div');
+          dropdownWrapper.className = 'dropdown w-100';
 
-          var placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = Drupal.t('— Select —');
-          placeholder.disabled = true;
-          placeholder.selected = true;
-          select.appendChild(placeholder);
+          var toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'btn btn-outline-secondary dropdown-toggle w-100 text-start';
+          toggle.setAttribute('data-bs-toggle', 'dropdown');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.dataset.stepId = step.id;
+          toggle.dataset.value = '';
+          toggle.textContent = Drupal.t('— Select —');
+
+          var menu = document.createElement('ul');
+          menu.className = 'dropdown-menu w-100';
+          menu.dataset.stepId = step.id;
 
           step.options.forEach(function (option) {
-            var opt = document.createElement('option');
-            opt.value = option.code;
-            opt.textContent = option.label;
-            select.appendChild(opt);
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.className = 'dropdown-item';
+            a.href = '#';
+            a.dataset.value = option.code;
+            a.dataset.stepId = step.id;
+            a.textContent = option.label;
+
+            a.addEventListener('click', function (e) {
+              e.preventDefault();
+              if (a.classList.contains('disabled') || a.hidden) return;
+
+              selections[step.id] = option.code;
+              toggle.textContent = option.label;
+              toggle.dataset.value = option.code;
+
+              // Mark active item.
+              menu.querySelectorAll('.dropdown-item').forEach(function (el) {
+                el.classList.remove('active');
+              });
+              a.classList.add('active');
+
+              clearSelectionsAfter(step.id);
+              autoSelectFirst();
+              maybeUpdateImage();
+            });
+
+            li.appendChild(a);
+            menu.appendChild(li);
           });
 
-          if (selections[step.id]) {
-            select.value = selections[step.id];
-          }
-
-          select.addEventListener('change', function () {
-            selections[step.id] = this.value;
-            clearSelectionsAfter(step.id);
-            autoSelectFirst();
-            maybeUpdateImage();
-          });
-
-          col.appendChild(select);
+          dropdownWrapper.appendChild(toggle);
+          dropdownWrapper.appendChild(menu);
+          col.appendChild(dropdownWrapper);
           stepsWrapper.appendChild(col);
         });
 
@@ -198,14 +221,27 @@
           changed = false;
           steps.forEach(function (step) {
             if (selections[step.id]) return;
-            var select = container.querySelector('select[data-step-id="' + step.id + '"]');
-            if (!select) return;
 
             for (var i = 0; i < step.options.length; i++) {
               var option = step.options[i];
               if (isOptionAvailable(option)) {
                 selections[step.id] = option.code;
-                select.value = option.code;
+
+                // Update toggle button text.
+                var toggle = container.querySelector('button[data-step-id="' + step.id + '"]');
+                if (toggle) {
+                  toggle.textContent = option.label;
+                  toggle.dataset.value = option.code;
+                }
+
+                // Mark active item in menu.
+                var menu = container.querySelector('ul[data-step-id="' + step.id + '"]');
+                if (menu) {
+                  menu.querySelectorAll('.dropdown-item').forEach(function (a) {
+                    a.classList.toggle('active', a.dataset.value === option.code);
+                  });
+                }
+
                 changed = true;
                 break;
               }
@@ -307,7 +343,6 @@
         var specsEl = document.getElementById('configurator-specs');
         if (!specsEl) return;
 
-        // Attach print button handler once.
         var printBtn = document.getElementById('configurator-print-btn');
         if (printBtn && !printBtn.dataset.printAttached) {
           printBtn.dataset.printAttached = 'true';
@@ -339,15 +374,9 @@
         var stepIds = ['length', 'driver', 'endcap', 'cri', 'sensor', 'kelvin', 'optic', 'color', 'chips', 'ip_class'];
         stepIds.forEach(function (stepId) {
           var step = steps.find(function (s) { return s.id === stepId; });
-          if (!step) {
-            setSpec(stepId, null);
-            return;
-          }
+          if (!step) { setSpec(stepId, null); return; }
           var code = selections[stepId];
-          if (!code) {
-            setSpec(stepId, null);
-            return;
-          }
+          if (!code) { setSpec(stepId, null); return; }
           var option = step.options.find(function (o) { return o.code === code; });
           setSpec(stepId, option ? option.label : code);
         });
@@ -362,8 +391,7 @@
             setSpec('lumen', parsed.lumen ? parsed.lumen + ' lm' : null);
             setSpec('efficacy', parsed.efficacy ? parsed.efficacy + ' lm/W' : null);
           }
-        }
-        else {
+        } else {
           setSpec('watt', null);
           setSpec('lumen', null);
           setSpec('efficacy', null);
@@ -505,29 +533,34 @@
       }
 
       // ------------------------------------------------------------------ //
-      // Visibility / dependsOn
+      // Visibility / dependsOn — TASK-023: uppdaterad för Bootstrap dropdown
       // ------------------------------------------------------------------ //
 
       function updateVisibility() {
         steps.forEach(function (step) {
-          var select = container.querySelector('select[data-step-id="' + step.id + '"]');
-          if (!select) return;
+          var menu = container.querySelector('ul[data-step-id="' + step.id + '"]');
+          var toggle = container.querySelector('button[data-step-id="' + step.id + '"]');
+          if (!menu || !toggle) return;
 
           var hasVisible = false;
+
           step.options.forEach(function (option) {
-            var optEl = select.querySelector('option[value="' + option.code + '"]');
-            if (!optEl) return;
+            var a = menu.querySelector('a[data-value="' + option.code + '"]');
+            if (!a) return;
             var visible = isOptionAvailable(option);
-            optEl.hidden = !visible;
-            optEl.disabled = !visible;
+            a.hidden = !visible;
+            a.classList.toggle('disabled', !visible);
             if (visible) hasVisible = true;
-            if (!visible && select.value === option.code) {
-              select.value = '';
+
+            // Reset selection if currently selected option becomes unavailable.
+            if (!visible && selections[step.id] === option.code) {
               selections[step.id] = '';
+              toggle.textContent = Drupal.t('— Select —');
+              toggle.dataset.value = '';
             }
           });
 
-          var col = select.closest('.configurator-step');
+          var col = toggle.closest('.configurator-step');
           if (col) col.style.display = hasVisible ? '' : 'none';
         });
       }
@@ -555,7 +588,20 @@
       function clearSelectionsAfter(stepId) {
         var found = false;
         steps.forEach(function (step) {
-          if (found) selections[step.id] = '';
+          if (found) {
+            selections[step.id] = '';
+            var toggle = container.querySelector('button[data-step-id="' + step.id + '"]');
+            if (toggle) {
+              toggle.textContent = Drupal.t('— Select —');
+              toggle.dataset.value = '';
+            }
+            var menu = container.querySelector('ul[data-step-id="' + step.id + '"]');
+            if (menu) {
+              menu.querySelectorAll('.dropdown-item').forEach(function (a) {
+                a.classList.remove('active');
+              });
+            }
+          }
           if (step.id === stepId) found = true;
         });
       }
