@@ -1,0 +1,60 @@
+uuid: 49035898-8200-44be-a617-a95f0ffe7a4d
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.led_luminaire_max_opti
+    - core.entity_view_mode.commerce_product_variation.cart
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_color
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_cri
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_driver
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_endcap
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_kelvin
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_length
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_optic
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_sensor
+    - field.field.commerce_product_variation.led_luminaire_max_opti.attribute_watt
+    - field.field.commerce_product_variation.led_luminaire_max_opti.feeds_item
+  module:
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: false
+    allow_custom: false
+id: commerce_product_variation.led_luminaire_max_opti.cart
+targetEntityType: commerce_product_variation
+bundle: led_luminaire_max_opti
+mode: cart
+content:
+  product_id:
+    type: entity_reference_label
+    label: visually_hidden
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  title:
+    type: string
+    label: visually_hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  attribute_color: true
+  attribute_cri: true
+  attribute_driver: true
+  attribute_endcap: true
+  attribute_kelvin: true
+  attribute_length: true
+  attribute_optic: true
+  attribute_sensor: true
+  attribute_watt: true
+  commerce_variation_cart_form: true
+  feeds_item: true
+  langcode: true
+  list_price: true
+  price: true
+  sku: true
