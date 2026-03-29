@@ -6,7 +6,7 @@ _core:
   default_config_hash: ETjeewYXUBo_zLRzIlijtavOYTyqTUkqyMsUM2x3FYo
 id: youtube
 label: YouTube
-description: 'YouTube is an online video sharing platform owned by Google.'
+description: 'YouTube är en videoplattform ägd av Google.'
 default: false
 required: false
 opt_out: false
