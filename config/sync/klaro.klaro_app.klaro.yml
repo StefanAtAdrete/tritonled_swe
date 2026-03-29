@@ -5,8 +5,8 @@ dependencies: {  }
 _core:
   default_config_hash: 5FaC8_PP76ON-gppVAhTdnHRYooCqaMf-cDj-tSBhos
 id: klaro
-label: 'Consent manager'
-description: 'Klaro! Cookie & Consent manager saves your consent status in the browser.'
+label: 'Samtyckeshanterare'
+description: 'Klaro! sparar ditt samtyckestatus i webbläsaren.'
 default: true
 required: true
 opt_out: false

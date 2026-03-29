@@ -6,7 +6,7 @@ _core:
   default_config_hash: U6qalwZKD1yRnEEimqvgovefpsmYuoXB7zSWZ_n-57U
 id: vimeo
 label: Vimeo
-description: 'Vimeo is a video sharing platform by Vimeo, LLC (USA).'
+description: 'Vimeo är en videoplattform från Vimeo, LLC (USA).'
 default: false
 required: false
 opt_out: false
