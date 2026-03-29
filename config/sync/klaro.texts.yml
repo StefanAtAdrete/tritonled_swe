@@ -2,37 +2,37 @@ _core:
   default_config_hash: FHr6psQnRtYvXa9wwVyQsT3ytUtv2w9OvbvbdMDq4a0
 langcode: en
 consentModal:
-  title: 'Use of personal data and cookies'
-  description: "Please choose the services and 3rd party applications we would like to use.\r\n"
+  title: 'Användning av personuppgifter och cookies'
+  description: "Välj vilka tjänster och tredjepartsappar vi får använda.\r\n"
   privacyPolicy:
-    name: 'privacy policy'
-    text: "To learn more, please read our {privacyPolicy}.\r\n"
+    name: 'integritetspolicy'
+    text: "Läs mer i vår {privacyPolicy}.\r\n"
     url: 'internal:/privacy-policy'
 consentNotice:
-  title: 'Use of personal data and cookies'
-  changeDescription: 'There were changes since your last visit, please update your consent.'
-  description: "We use cookies and process personal data for the following purposes: {purposes}.\r\n"
-  learnMore: Customize
-ok: Accept
-save: Save
-decline: Decline
-close: Close
-acceptAll: 'Accept all'
-acceptSelected: 'Accept selected'
+  title: 'Användning av personuppgifter och cookies'
+  changeDescription: 'Det har skett ändringar sedan ditt senaste besök, vänligen uppdatera ditt samtycke.'
+  description: "Vi använder cookies och behandlar personuppgifter för följande ändamål: {purposes}.\r\n"
+  learnMore: Anpassa
+ok: Acceptera
+save: Spara
+decline: Avböj
+close: Stäng
+acceptAll: 'Acceptera alla'
+acceptSelected: 'Acceptera valda'
 service:
   disableAll:
-    title: 'Toggle all services'
-    description: 'Use this switch to enable/disable all services.'
+    title: 'Aktivera/inaktivera alla tjänster'
+    description: 'Använd denna knapp för att aktivera eller inaktivera alla tjänster.'
   optOut:
-    title: (opt-out)
-    description: 'This service is loaded by default (opt-out possible).'
+    title: (avanmälan)
+    description: 'Denna tjänst laddas som standard (avanmälan möjlig).'
   required:
-    title: '(always required)'
-    description: 'This service is always required.'
-  purposes: Purposes
-  purpose: Purpose
+    title: '(alltid obligatorisk)'
+    description: 'Denna tjänst är alltid obligatorisk.'
+  purposes: Ändamål
+  purpose: Ändamål
 contextualConsent:
-  acceptAlways: Always
-  acceptOnce: 'Yes (this time)'
-  description: 'Load external content supplied by {title}?'
-poweredBy: 'Powered by Klaro!'
+  acceptAlways: Alltid
+  acceptOnce: 'Ja (den här gången)'
+  description: 'Ladda externt innehåll från {title}?'
+poweredBy: 'Drivs av Klaro!'
