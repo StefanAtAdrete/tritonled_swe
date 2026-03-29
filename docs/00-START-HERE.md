@@ -6,6 +6,52 @@
 
 ---
 
+## 🔄 Sessionsstruktur (ALLTID följa)
+
+### DEL 1 — START
+Claude gör vid varje sessionsstart:
+1. Läser denna fil (`00-START-HERE.md`)
+2. Läser `CURRENT-TASK.md`
+3. Presenterar: var vi är, öppna tasks, förslag på vad vi tar tag i
+
+Stefan kontrollerar:
+```bash
+ddev start
+ddev drush status
+```
+
+### DEL 2 — CHECKPOINT (mitt i session)
+**Claude påminner aktivt** när något av följande inträffar:
+- ✅ En task markeras som klar
+- ⏱️ Lång session utan naturligt avbrott
+- 🔀 Vi byter task/inriktning
+
+Claude säger då: *"✅ [TASK-NNN] klar. Dags för checkpoint — kör vi det nu?"*
+
+Checkpoint-steg:
+```bash
+ddev drush cex -y
+git add -A
+git commit -m "[TASK-NNN] Checkpoint: vad som är klart"
+```
+- Uppdatera `CURRENT-TASK.md` (status, vad återstår)
+- Stefan tar Backup & Migrate snapshot
+
+### DEL 3 — SESSIONSSLUT
+```bash
+ddev drush cex -y
+git add -A
+git commit -m "[TASK-NNN] Session slut: sammanfattning"
+git push origin main
+```
+- Uppdatera `CURRENT-TASK.md` + `00-START-HERE.md` (nya beslut)
+- Stefan tar Backup & Migrate snapshot (om inte nyligen gjort)
+- Deploy till prod om redo (se deploy-flöde nedan)
+
+**Detaljerad SOP**: `/docs/04-workflows/session-sop.md`
+
+---
+
 ## 🚨 KRITISKT: FILSYSTEM-REGLER (BRYTS ALDRIG!)
 
 ### Claude har tillgång till 2 datorer:
@@ -56,7 +102,7 @@ path: /Users/steffes/Projekt/tritonled/web/themes
 ## 📋 Snabbfakta
 
 - **Projekt**: TritonLED E-commerce (LED luminaires)
-- **CMS**: Drupal 11.2.9
+- **CMS**: Drupal 11.3.5
 - **Miljö**: DDEV lokal utveckling
 - **Theme**: Radix (Bootstrap 5.3)
 - **Layout**: Layout Builder + Bootstrap Layout Builder
@@ -234,6 +280,12 @@ vendor/bin/drush cr
 ---
 
 ## 📊 Senaste Viktiga Beslut
+
+### Session SOP (2026-03-29)
+- ✅ Sessionsstruktur dokumenterad i `04-workflows/session-sop.md`
+- ✅ Tre delar: Start, Checkpoint (mitt i), Slut
+- ✅ Claude påminner aktivt vid avklarad task eller byte av inriktning
+- ✅ Checkpoint inkluderar: cex, git commit, CURRENT-TASK.md, Backup & Migrate
 
 ### Konfigurator Bootstrap dropdowns (2026-03-27)
 - ✅ Native `<select>` ersatt med Bootstrap 5 custom dropdowns i `configurator.js`
@@ -434,7 +486,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.4
+**Version**: 2.5
 **Skapad**: 2025-01-10
-**Uppdaterad**: 2026-03-27 - TASK-023 Bootstrap dropdowns + media-namnkonvention
+**Uppdaterad**: 2026-03-29 - Sessionsstruktur (SOP) tillagd
 **Författare**: Stefan + Claude
