@@ -199,6 +199,7 @@ display:
           replica: false
           query_tags: {  }
       relationships: {  }
+      css_class: col-4
       header: {  }
       footer: {  }
       display_extenders: {  }
@@ -212,10 +213,11 @@ display:
       tags: {  }
   block_1:
     id: block_1
-    display_title: Block
+    display_title: 'Cookie Block'
     display_plugin: block
     position: 1
     display_options:
+      display_description: ''
       display_extenders: {  }
       block_description: Cookie
     cache_metadata:

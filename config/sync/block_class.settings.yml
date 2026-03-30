@@ -17,6 +17,12 @@ block_classes_stored:
   - p-0
   - menu--offcanvas-nav
   - align-top
+  - col-4
+  - col-3
+  - col-md-3
+  - col-12
+  - text-align-center
+  - align-self-start
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10

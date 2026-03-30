@@ -1,0 +1,7 @@
+/**
+ * Footer layout
+ */
+
+.footer__main .d-flex > .block {
+  align-self: flex-start;
+}

@@ -5,13 +5,17 @@ dependencies:
   config:
     - views.view.tritonled_cookie_settings
   module:
+    - block_class
     - views
   theme:
     - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: 'col-12 text-align-center'
 id: tritonled_radix_views_block__tritonled_cookie_settings_block_1
 theme: tritonled_radix
-region: footer
-weight: -6
+region: footer_bottom
+weight: -11
 provider: null
 plugin: 'views_block:tritonled_cookie_settings-block_1'
 settings:
