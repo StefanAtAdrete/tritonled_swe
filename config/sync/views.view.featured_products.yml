@@ -289,7 +289,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_variation_media }}{{ field_product_media }}</div>\r\n<div class=\"card-body\"><p class=\"card-title mb-0\">{{ title }}</p></div>\r\n</div></div>"
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_variation_media }}{{ field_product_media }}</div>\r\n<div class=\"card-body\"><p class=\"card-title mb-0\">{{ title }}</p></div>\r\n</div></div>"
             make_link: false
             path: ''
             absolute: false
@@ -563,8 +563,8 @@ display:
           default_row_class: false
           grid_class: ''
           col_xs: col-12
-          col_sm: col-sm-auto
-          col_md: col-md-auto
+          col_sm: none
+          col_md: none
           col_lg: none
           col_xl: none
       row:
@@ -1172,9 +1172,9 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">MAX</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-max\" class=\"list-group-item list-group-item-action py-2\">MAX <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-max-pro\" class=\"list-group-item list-group-item-action py-2\">MAX-PRO <small class=\"text-muted d-block\">Pro model</small></a>\r\n<a href=\"/product/triton-max-s-gen-3-sensor\" class=\"list-group-item list-group-item-action py-2\">MAX-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-max-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">MAX-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-max-ed-daylight-gen-3\" class=\"list-group-item list-group-item-action py-2\">MAX-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
-            make_link: false
-            path: ''
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">MAX</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-max\" class=\"list-group-item list-group-item-action py-2\">MAX <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-max-pro\" class=\"list-group-item list-group-item-action py-2\">MAX-PRO <small class=\"text-muted d-block\">Pro model</small></a>\r\n<a href=\"/product/triton-max-s-gen-3-sensor\" class=\"list-group-item list-group-item-action py-2\">MAX-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-max-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">MAX-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-max-ed-daylight-gen-3\" class=\"list-group-item list-group-item-action py-2\">MAX-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            make_link: true
+            path: '{{ view_commerce_product }}'
             absolute: false
             external: false
             replace_spaces: false
@@ -1507,9 +1507,9 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">OPTI</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-opti\" class=\"list-group-item list-group-item-action py-2\">OPTI <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-opti-s-gen-4-sensor\" class=\"list-group-item list-group-item-action py-2\">OPTI-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-opti-e-gen-4-emergency\" class=\"list-group-item list-group-item-action py-2\">OPTI-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-opti-ed-daylight-gen-4\" class=\"list-group-item list-group-item-action py-2\">OPTI-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
-            make_link: false
-            path: ''
+            text: "<div class=\"card h-100 border-1 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">OPTI</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-opti\" class=\"list-group-item list-group-item-action py-2\">OPTI <small class=\"text-muted d-block\">Standard model</small></a>\r\n<a href=\"/product/triton-opti-s-gen-4-sensor\" class=\"list-group-item list-group-item-action py-2\">OPTI-S <small class=\"text-muted d-block\">With sensor</small></a>\r\n<a href=\"/product/triton-opti-e-gen-4-emergency\" class=\"list-group-item list-group-item-action py-2\">OPTI-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-opti-ed-daylight-gen-4\" class=\"list-group-item list-group-item-action py-2\">OPTI-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            make_link: true
+            path: '{{ view_commerce_product }}'
             absolute: false
             external: false
             replace_spaces: false
@@ -2059,9 +2059,9 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-row flex-md-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">SROW</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-srow-ip54ip65\" class=\"list-group-item list-group-item-action py-2\">SROW <small class=\"text-muted d-block\">Standard model IP54/IP65</small></a>\r\n<a href=\"/product/triton-srow-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">SROW-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-srow-ed-gen-3-emergency-daylight\" class=\"list-group-item list-group-item-action py-2\">SROW-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
-            make_link: false
-            path: ''
+            text: "<div class=\"card h-100 border-0 shadow-sm bg-light bg-gradient bg-opacity-25\">\r\n<div class=\"d-flex flex-column\">\r\n<div class=\"card-img-wrap p-0\">{{ field_product_media }}</div>\r\n<div class=\"card-body\">\r\n<p class=\"card-title h5 mb-2\">SROW</p>\r\n<div class=\"list-group list-group-flush\">\r\n<a href=\"/product/triton-srow-ip54ip65\" class=\"list-group-item list-group-item-action py-2\">SROW <small class=\"text-muted d-block\">Standard model IP54/IP65</small></a>\r\n<a href=\"/product/triton-srow-e-gen-3-emergency\" class=\"list-group-item list-group-item-action py-2\">SROW-E <small class=\"text-muted d-block\">With emergency lighting</small></a>\r\n<a href=\"/product/triton-srow-ed-gen-3-emergency-daylight\" class=\"list-group-item list-group-item-action py-2\">SROW-ED <small class=\"text-muted d-block\">Emergency + daylight</small></a>\r\n</div>\r\n</div>\r\n</div>\r\n</div>"
+            make_link: true
+            path: '{{ view_commerce_product }}'
             absolute: false
             external: false
             replace_spaces: false

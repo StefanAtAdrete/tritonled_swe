@@ -1,0 +1,69 @@
+{#
+/**
+ * @file
+ * TritonLED override: Bootstrap 5 Carousel.
+ *
+ * Fixes Bootstrap 4 -> 5 syntax:
+ * - sr-only replaced with visually-hidden
+ * - data-slide replaced with data-bs-slide
+ * - data-target replaced with data-bs-target
+ * - data-slide-to replaced with data-bs-slide-to
+ */
+#}
+
+<div id="{{ id }}" class="carousel {{ effect }} slide"
+  data-bs-interval="{{ interval }}"
+  {% if ride %} data-bs-ride="carousel" {% endif %}
+  data-bs-pause="{% if pause %}hover{% else %}false{% endif %}"
+>
+
+  {# Indicators #}
+  {% if indicators %}
+    <div class="carousel-indicators">
+      {% for key, row in rows %}
+        <button type="button"
+          data-bs-target="#{{ id }}"
+          data-bs-slide-to="{{ key }}"
+          {% if loop.first %}class="active" aria-current="true"{% endif %}
+          aria-label="Slide {{ key + 1 }}">
+        </button>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# Slides #}
+  <div class="carousel-inner">
+    {% for row in rows %}
+      <div class="carousel-item{% if loop.first %} active{% endif %}">
+        {{ row.image }}
+        {% if row.title or row.description %}
+          {% if use_caption %}
+            <div class="carousel-caption d-none d-md-block">
+          {% endif %}
+          {% if row.title %}
+            <h3>{{ row.title }}</h3>
+          {% endif %}
+          {% if row.description %}
+            <p>{{ row.description }}</p>
+          {% endif %}
+          {% if use_caption %}
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Navigation — Bootstrap 5, enbart pilar #}
+  {% if navigation %}
+    <button class="carousel-control-prev" type="button" data-bs-target="#{{ id }}" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">{{ 'Previous'|t }}</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#{{ id }}" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">{{ 'Next'|t }}</span>
+    </button>
+  {% endif %}
+
+</div>

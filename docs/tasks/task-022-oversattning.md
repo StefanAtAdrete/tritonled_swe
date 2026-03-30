@@ -1,8 +1,8 @@
 # Task 022: Översättning SV/EN — specs-block, views-block, innehåll
 
 **Created**: 2026-03-25
-**Status**: Planned
-**Last Updated**: 2026-03-25
+**Status**: ✅ Completed
+**Last Updated**: 2026-03-30
 **Related Tasks**: TASK-021, TASK-024
 
 ---
@@ -99,7 +99,11 @@ ddev drush php:eval '$products = \Drupal::entityTypeManager()->getStorage("comme
 
 ## 5. COMPLETION
 
-### Status: Planned
+### Status: ✅ Completed — 2026-03-30
 
-### Nästa steg
-TASK-023: Konfigurator mobiloptimering
+### Genomfört
+- ConfiguratorSpecsBlock labels wrappade i `t()`
+- Print-knapp och JS-strängar wrappade i `Drupal.t()`
+- SV-översättningar tillagda via Interface Translation
+- Views syskon-block etiketter översatta
+- Produktöversättningar verifierade
