@@ -5,13 +5,17 @@ dependencies:
   content:
     - 'block_content:basic:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
   module:
+    - block_class
     - block_content
   theme:
     - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: 'col-md-3 col-12 align-self-start'
 id: tritonled_radix_support
 theme: tritonled_radix
 region: footer
-weight: -8
+weight: -9
 provider: null
 plugin: 'block_content:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
 settings:

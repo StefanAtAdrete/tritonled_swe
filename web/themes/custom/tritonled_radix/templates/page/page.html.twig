@@ -101,6 +101,30 @@
   } %}
 
   {# FOOTER #}
-  {% include 'radix:page-footer' %}
+  {% if page.footer or page.footer_bottom %}
+    <footer class="page__footer">
+
+      {# Sektion 1 — Huvud-footer #}
+      {% if page.footer %}
+        <div class="footer__main">
+          <div class="container">
+            <div class="d-flex flex-wrap align-items-start">
+              {{ page.footer }}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      {# Sektion 2 — Footer bottom #}
+      {% if page.footer_bottom %}
+        <div class="footer__bottom">
+          <div class="container">
+            {{ page.footer_bottom }}
+          </div>
+        </div>
+      {% endif %}
+
+    </footer>
+  {% endif %}
 
 </div>

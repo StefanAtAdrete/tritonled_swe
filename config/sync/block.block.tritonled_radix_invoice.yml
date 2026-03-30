@@ -11,11 +11,11 @@ dependencies:
     - tritonled_radix
 third_party_settings:
   block_class:
-    classes: align-top
+    classes: 'col-12 col-md-3 align-self-start'
 id: tritonled_radix_invoice
 theme: tritonled_radix
 region: footer
-weight: -7
+weight: -8
 provider: null
 plugin: 'block_content:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
 settings:
