@@ -6,6 +6,7 @@ dependencies:
     - field.field.node.customer_cases.body
     - field.field.node.customer_cases.field_cities
     - field.field.node.customer_cases.field_countries
+    - field.field.node.customer_cases.field_hero_media
     - field.field.node.customer_cases.field_media
     - field.field.node.customer_cases.field_partners
     - field.field.node.customer_cases.layout_builder__layout
@@ -156,6 +157,23 @@ third_party_settings:
             additional:
               layout_builder_styles_style:
                 padding_3: 0
+          c610659e-3bae-48b3-8495-9afb19e50a10:
+            uuid: c610659e-3bae-48b3-8495-9afb19e50a10
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:customer_cases:field_hero_media'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_entity_view
+                label: above
+                settings:
+                  view_mode: default
+                  link: false
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
         third_party_settings: {  }
       -
         layout_id: 'bootstrap_layout_builder:blb_col_2'
@@ -275,54 +293,86 @@ third_party_settings:
           remove_gutters: '0'
           context_mapping: {  }
         components:
-          84d1b175-2d3f-406a-86b2-db1aa967bbfc:
-            uuid: 84d1b175-2d3f-406a-86b2-db1aa967bbfc
-            region: blb_region_col_2
-            configuration:
-              id: 'field_block:node:customer_cases:field_partners'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: entity_reference_label
-                label: above
-                settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 4
-            additional: {  }
           9244ef8d-8a18-4eff-954f-14c857862335:
             uuid: 9244ef8d-8a18-4eff-954f-14c857862335
             region: blb_region_col_2
             configuration:
               id: 'field_block:node:customer_cases:field_countries'
+              label: Countries
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: entity_reference_label
-                label: above
+                label: visually_hidden
                 settings:
                   link: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                button_light: button_light
+                alert_light: 0
+                badges_standard: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
+                padding_3: 0
           8b1d6e21-cded-4dfc-906e-ec5fa315d6f6:
             uuid: 8b1d6e21-cded-4dfc-906e-ec5fa315d6f6
             region: blb_region_col_2
             configuration:
               id: 'field_block:node:customer_cases:field_cities'
+              label: Cities
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: entity_reference_label
-                label: above
+                label: visually_hidden
                 settings:
                   link: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 2
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                button_light: button_light
+                alert_light: 0
+                badges_standard: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
+                padding_3: 0
           79e715d3-86ee-47c8-8e4d-b09d9171534f:
             uuid: 79e715d3-86ee-47c8-8e4d-b09d9171534f
             region: blb_region_col_1
@@ -360,7 +410,7 @@ third_party_settings:
               label_display: '0'
               context_mapping:
                 entity: layout_builder.entity
-            weight: 3
+            weight: 4
             additional: {  }
           a833b0d1-262b-48f9-a627-979eff4a0968:
             uuid: a833b0d1-262b-48f9-a627-979eff4a0968
@@ -377,7 +427,7 @@ third_party_settings:
                 type: entity_reference_entity_view
                 label: visually_hidden
                 settings:
-                  view_mode: full
+                  view_mode: article_image_1_1
                 third_party_settings:
                   fences:
                     fences_field_tag: div
@@ -391,23 +441,29 @@ third_party_settings:
             weight: 0
             additional:
               layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
                 padding_3: 0
-          144fa668-0dc1-4d54-a189-d6436cad7cd6:
-            uuid: 144fa668-0dc1-4d54-a189-d6436cad7cd6
+          84d1b175-2d3f-406a-86b2-db1aa967bbfc:
+            uuid: 84d1b175-2d3f-406a-86b2-db1aa967bbfc
             region: blb_region_col_2
             configuration:
-              id: 'field_block:node:customer_cases:field_media'
-              label: Media
+              id: 'field_block:node:customer_cases:field_partners'
+              label: Partners
               label_display: '0'
               provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
                 view_mode: view_mode
               formatter:
-                type: entity_reference_entity_view
+                type: entity_reference_label
                 label: visually_hidden
                 settings:
-                  view_mode: full
+                  link: true
                 third_party_settings:
                   fences:
                     fences_field_tag: div
@@ -418,16 +474,35 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 5
+            weight: 3
             additional:
               layout_builder_styles_style:
+                tab_block_products: 0
+                button_light: button_light
+                alert_light: 0
+                badges_standard: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
                 padding_3: 0
         third_party_settings: {  }
 id: node.customer_cases.default
 targetEntityType: node
 bundle: customer_cases
 mode: default
-content: {  }
+content:
+  field_hero_media:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 1
+    region: blb_region_col_1
 hidden:
   body: true
   field_cities: true
