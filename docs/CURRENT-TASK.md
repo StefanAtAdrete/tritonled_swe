@@ -1,7 +1,5 @@
 # Aktuell Task
 
-**Task**: TASK-019 Klaro GDPR cookie consent — Översättningar
-**Status**: 🔄 In Progress (svenska language overrides kvar att verifiera)
 **Senast uppdaterad**: 2026-03-29
 
 ---
@@ -9,27 +7,21 @@
 ## Senast gjort: Session 2026-03-29
 
 ### Session SOP
-- Skapade `/docs/04-workflows/session-sop.md` med tre delar: Start, Checkpoint, Slut
-- Lade till `## 🔄 Sessionsstruktur` direkt i `00-START-HERE.md` (v2.5)
+- Skapade `/docs/04-workflows/session-sop.md`
+- Lade till `## 🔄 Sessionsstruktur` i `00-START-HERE.md` (v2.5)
 
 ### MCP-moduler avinstallerade
-- `mcp_tools`, `mcp_tools_views`, `mcp_tools_users`, `mcp_tools_structure`, `mcp_tools_stdio`, `mcp_tools_content`, `tool` avinstallerade via `cim --partial`
-- `mcp_tools.settings` och `mcp_tools_servers.settings` raderade från DB via `php:eval`
-- Samma åtgärd kördes på produktionsservern
-- `config/split/local/mcp_tools.settings.yml` raderad
+- Avinstallerade lokalt och på prod via `cim --partial`
+- `mcp_tools.settings` och `mcp_tools_servers.settings` raderade från DB
 
-### TASK-019 — Klaro GDPR översättningar
+### TASK-019 — Klaro GDPR ✅ Klar
 - `klaro.texts.yml` återställd till engelska källtexter
-- `language/sv/klaro.texts.yml` skapad med svenska texter
-- Alla `klaro.klaro_app.*` återställda till engelska
-- `language/sv/klaro.klaro_app.*` skapade för: cms, klaro, vimeo, youtube, bluesky, facebook, instagram, linkedin, x, tiktok, mastodon, mastodon_module, threads, ga, gtm, google_maps, google_recaptcha, matomo, matomo_cookies, posthog, leaflet, deepchat, ai_alt_text_generation, simple_popup_blocks, umami
-- `language/sv/klaro.klaro_purpose.*` skapade för: cms, external_content, analytics, advertising, security, livechat, styling
-- **OBS**: Language overrides måste sparas via `drush php:eval` — `cim` importerar INTE `language/sv/`-filer automatiskt för config entity translations
-- Kommando för att spara alla sv-overrides finns i sessionshistoriken (stort php:eval-block)
-
-### Viktigt lärdomar
-- Klaro config entity translations sparas via `Drupal::languageManager()->getLanguageConfigOverride('sv', $name)->setData($data)->save()`
-- `language/sv/*.yml`-filer i config/sync är INTE tillräckliga — måste köras via php:eval eller cim med speciell hantering
+- Svenska texter sparas via `getLanguageConfigOverride('sv', $name)->setData($data)->save()`
+- Alla `klaro.klaro_app.*` och `klaro.klaro_purpose.*` översatta till svenska
+- Footer template override skapad i `tritonled_radix`
+- Ny region `footer_bottom` tillagd i `tritonled_radix.info.yml`
+- `footer.css` skapad för footer-styling
+- **OBS**: Language overrides måste köras via `drush php:eval` — `cim` importerar inte `language/sv/`-filer automatiskt
 
 ---
 
@@ -37,8 +29,7 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-019 | 🔄 In Progress | Klaro — sv language overrides körs via php:eval |
-| TASK-022 | 🔄 Delvis klar | Översättning — Views syskon-block kvar |
+| TASK-022 | ✅ Klar | Översättning SV/EN |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |

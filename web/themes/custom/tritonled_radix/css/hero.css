@@ -4,13 +4,13 @@
  */
 
 /* Fullbredd - ingen padding från container */
-.view-hero {
+.view-hero-case {
   width: 100%;
   overflow: hidden;
 }
 
 /* Carousel-item: 1:1 mobil */
-.view-hero .carousel-item {
+.view-hero-case .carousel-item {
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
@@ -18,9 +18,9 @@
 }
 
 /* Media-wrapper fyller carousel-item */
-.view-hero .carousel-item .media--type-video,
-.view-hero .carousel-item .media--type-image,
-.view-hero .carousel-item .media--type-remote-video {
+.view-hero-case .carousel-item .media--type-video,
+.view-hero-case .carousel-item .media--type-image,
+.view-hero-case .carousel-item .media--type-remote-video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -29,15 +29,15 @@
 
 /* 4:1 desktop */
 @media (min-width: 768px) {
-  .view-hero .carousel-item {
+  .view-hero-case .carousel-item {
     aspect-ratio: 4 / 1;
   }
 }
 
 /* Media fyller hela carousel-item */
-.view-hero .carousel-item .media,
-.view-hero .carousel-item .field--name-field-media-image,
-.view-hero .carousel-item img {
+.view-hero-case .carousel-item .media,
+.view-hero-case .carousel-item .field--name-field-media-image,
+.view-hero-case .carousel-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -45,7 +45,7 @@
 }
 
 /* Video fyller hela carousel-item */
-.view-hero .carousel-item video {
+.view-hero-case .carousel-item video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -53,17 +53,17 @@
 }
 
 /* Mörk overlay för läsbarhet */
-.view-hero .carousel-item::after {
+.view-hero-case .carousel-item::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+  background: rgba(0, 0, 0, 0.4);
   pointer-events: none;
   z-index: 1;
 }
 
-/* Caption över overlay - visa alltid, Bootstrap döljer den på mobil som default */
-.view-hero .carousel-caption {
+/* Caption över overlay */
+.view-hero-case .carousel-caption {
   display: block !important;
   position: absolute;
   bottom: 1rem;
@@ -75,35 +75,35 @@
 }
 
 @media (min-width: 768px) {
-  .view-hero .carousel-caption {
+  .view-hero-case .carousel-caption {
     bottom: 2rem;
     left: 2rem;
     right: 2rem;
   }
 }
 
-.view-hero .carousel-caption a,
-.view-hero .carousel-caption h2,
-.view-hero .carousel-caption p {
+.view-hero-case .carousel-caption a,
+.view-hero-case .carousel-caption h2,
+.view-hero-case .carousel-caption p {
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.view-hero .carousel-caption a {
+.view-hero-case .carousel-caption a {
   font-size: 1.5rem;
   font-weight: 700;
   text-decoration: none;
 }
 
 @media (min-width: 768px) {
-  .view-hero .carousel-caption a {
+  .view-hero-case .carousel-caption a {
     font-size: 2.5rem;
   }
 }
 
 /* Navigeringsknappar */
-.view-hero .carousel-control-prev,
-.view-hero .carousel-control-next {
+.view-hero-case .carousel-control-prev,
+.view-hero-case .carousel-control-next {
   z-index: 3;
   width: 48px;
   height: 48px;
@@ -113,31 +113,17 @@
   opacity: 0.85;
 }
 
-.view-hero .carousel-control-prev {
+.view-hero-case .carousel-control-prev {
   left: 1rem;
 }
 
-.view-hero .carousel-control-next {
+.view-hero-case .carousel-control-next {
   right: 1rem;
 }
 
-/* Dölj sr-only text (Bootstrap 4 arv, BS5 använder visually-hidden) */
-.view-hero .carousel-control-prev .sr-only,
-.view-hero .carousel-control-next .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Pilikoner — lite större och tydligare */
-.view-hero .carousel-control-prev-icon,
-.view-hero .carousel-control-next-icon {
+/* Pilikoner */
+.view-hero-case .carousel-control-prev-icon,
+.view-hero-case .carousel-control-next-icon {
   width: 2rem;
   height: 2rem;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
