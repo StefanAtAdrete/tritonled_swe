@@ -1,0 +1,6 @@
+title: Respons
+handlers:
+  email_confirmation:
+    label: E-postbekräftelse
+  email_notification:
+    label: E-postmeddelande
