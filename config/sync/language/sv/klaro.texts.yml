@@ -1,31 +1,34 @@
 consentModal:
   title: 'Användning av personuppgifter och cookies'
-  description: 'Välj vilka tjänster och tredjepartsapplikationer vi får använda.'
+  description: "Välj vilka tjänster och tredjepartsappar vi får använda.\r\n"
   privacyPolicy:
-    name: Integritetspolicy
-    text: 'För att lära dig mer, vänligen läs vår {privacyPolicy}.'
-    url: 'internal:/integritetspolicy'
+    name: integritetspolicy
+    text: "Läs mer i vår {privacyPolicy}.\r\n"
 consentNotice:
   title: 'Användning av personuppgifter och cookies'
   changeDescription: 'Det har skett ändringar sedan ditt senaste besök, vänligen uppdatera ditt samtycke.'
-  description: 'Vi använder cookies och behandlar personuppgifter för följande ändamål: {purposes}.'
+  description: "Vi använder cookies och behandlar personuppgifter för följande ändamål: {purposes}.\r\n"
   learnMore: Anpassa
-ok: Godkänn
+ok: Acceptera
 save: Spara
 decline: Avböj
 close: Stäng
-acceptAll: 'Godkänn alla'
-acceptSelected: 'Godkänn valda'
+acceptAll: 'Acceptera alla'
+acceptSelected: 'Acceptera valda'
 service:
   disableAll:
-    title: 'Välj alla'
-    description: 'Använd den här reglaget för att aktivera/inaktivera alla tjänster.'
+    title: 'Aktivera/inaktivera alla tjänster'
+    description: 'Använd denna knapp för att aktivera eller inaktivera alla tjänster.'
   optOut:
-    description: 'Den här tjänsten laddas som standard (opt-out möjligt).'
-  purposes: Syften
-  purpose: Syfte
+    title: (avanmälan)
+    description: 'Denna tjänst laddas som standard (avanmälan möjlig).'
+  required:
+    title: '(alltid obligatorisk)'
+    description: 'Denna tjänst är alltid obligatorisk.'
+  purposes: Ändamål
+  purpose: Ändamål
 contextualConsent:
   acceptAlways: Alltid
-  acceptOnce: 'Ja (denna gång)'
+  acceptOnce: 'Ja (den här gången)'
   description: 'Ladda externt innehåll från {title}?'
 poweredBy: 'Drivs av Klaro!'
