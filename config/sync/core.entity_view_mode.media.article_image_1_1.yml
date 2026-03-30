@@ -1,0 +1,11 @@
+uuid: 1f701137-38b3-4b79-9b16-03bc27e449c8
+langcode: sv
+status: true
+dependencies:
+  module:
+    - media
+id: media.article_image_1_1
+label: 'Article image 1:1'
+description: null
+targetEntityType: media
+cache: true

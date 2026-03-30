@@ -16,7 +16,7 @@ provider: null
 plugin: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
 settings:
   id: 'block_content:7f8653e9-722f-4195-a3bc-acaa2441b941'
-  label: 'Cookie-settings footer'
+  label: Cookie-settings
   label_display: visible
   provider: block_content
   view_mode: full

@@ -300,6 +300,18 @@ footer.page__footer a:hover {
   color: var(--bs-white);
 }
 
+/* Featured Products — card-titel länk */
+.view-featured-products .card-title a {
+  color: #333;
+  text-decoration: none;
+}
+
+.view-featured-products .card-title a:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+
 /* Datasheet PDF link icon */
 .datasheet-link a::before {
   font-family: "bootstrap-icons";
