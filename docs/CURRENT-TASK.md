@@ -1,34 +1,35 @@
 # Aktuell Task
 
-**Task**: TASK-023 Konfigurator mobiloptimering ✅
-**Status**: ✅ Klar
-**Senast uppdaterad**: 2026-03-27
+**Task**: TASK-019 Klaro GDPR cookie consent — Översättningar
+**Status**: 🔄 In Progress (svenska language overrides kvar att verifiera)
+**Senast uppdaterad**: 2026-03-29
 
 ---
 
-## Senast gjort: Session 2026-03-27
+## Senast gjort: Session 2026-03-29
 
-### Bilder & Media
-- Bekräftade att TME-bilder (Emergency) redan finns i Drupal: MID 81-84, 101
-- Skapade TMED-media-entiteter för MAX-ED (product 19) som återanvänder TME-filerna:
-  - MID 112: TMED-E → FID 156
-  - MID 113: TMED-V → FID 157
-  - MID 114: TMED-B → FID 158
-  - MID 115: TMED-W → FID 159
-- Skapade TMP-media-entiteter för MAX-PRO (product 16) som återanvänder TM-filerna:
-  - MID 116: TMP-C → FID 151
-  - MID 117: TMP-E → FID 152
-  - MID 118: TMP-B → FID 154
-  - MID 119: TMP-W → FID 155
-  - MID 120: TMP-default → FID 151
-- MAX-PRO har ingen V (Wago Grey) — bara C, E, B, W per schema
+### Session SOP
+- Skapade `/docs/04-workflows/session-sop.md` med tre delar: Start, Checkpoint, Slut
+- Lade till `## 🔄 Sessionsstruktur` direkt i `00-START-HERE.md` (v2.5)
 
-### TASK-023 — Konfigurator mobiloptimering ✅
-- Ersatte native `<select>` med Bootstrap 5 custom dropdowns i `configurator.js`
-- Bootstrap/Popper.js hanterar positionering — öppnar alltid nedåt
-- Uppdaterade: `render()`, `autoSelectFirst()`, `updateVisibility()`, `clearSelectionsAfter()`
-- Ingen backend-ändring — POST-data oförändrad
-- Verifierat: tydligare UX på mobil
+### MCP-moduler avinstallerade
+- `mcp_tools`, `mcp_tools_views`, `mcp_tools_users`, `mcp_tools_structure`, `mcp_tools_stdio`, `mcp_tools_content`, `tool` avinstallerade via `cim --partial`
+- `mcp_tools.settings` och `mcp_tools_servers.settings` raderade från DB via `php:eval`
+- Samma åtgärd kördes på produktionsservern
+- `config/split/local/mcp_tools.settings.yml` raderad
+
+### TASK-019 — Klaro GDPR översättningar
+- `klaro.texts.yml` återställd till engelska källtexter
+- `language/sv/klaro.texts.yml` skapad med svenska texter
+- Alla `klaro.klaro_app.*` återställda till engelska
+- `language/sv/klaro.klaro_app.*` skapade för: cms, klaro, vimeo, youtube, bluesky, facebook, instagram, linkedin, x, tiktok, mastodon, mastodon_module, threads, ga, gtm, google_maps, google_recaptcha, matomo, matomo_cookies, posthog, leaflet, deepchat, ai_alt_text_generation, simple_popup_blocks, umami
+- `language/sv/klaro.klaro_purpose.*` skapade för: cms, external_content, analytics, advertising, security, livechat, styling
+- **OBS**: Language overrides måste sparas via `drush php:eval` — `cim` importerar INTE `language/sv/`-filer automatiskt för config entity translations
+- Kommando för att spara alla sv-overrides finns i sessionshistoriken (stort php:eval-block)
+
+### Viktigt lärdomar
+- Klaro config entity translations sparas via `Drupal::languageManager()->getLanguageConfigOverride('sv', $name)->setData($data)->save()`
+- `language/sv/*.yml`-filer i config/sync är INTE tillräckliga — måste köras via php:eval eller cim med speciell hantering
 
 ---
 
@@ -36,14 +37,11 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
+| TASK-019 | 🔄 In Progress | Klaro — sv language overrides körs via php:eval |
 | TASK-022 | 🔄 Delvis klar | Översättning — Views syskon-block kvar |
-| TASK-023 | ✅ Klar | Konfigurator mobiloptimering |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
-| TASK-017 | Planned | Cart block styling |
 | TASK-018 | In Progress | Cart page layout |
 | TASK-013 | In Progress | Attribut-cleanup |
-| TASK-019 | In Progress | Klaro GDPR cookie consent |
-| Config Split | ✅ Klar | Separera lokal/prod config |
 
 ---
 
