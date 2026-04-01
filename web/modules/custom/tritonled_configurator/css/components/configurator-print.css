@@ -33,106 +33,140 @@
 
 @media print {
 
-  /* Hide everything */
-  body * {
-    visibility: hidden;
-  }
-
-  /* Show only specs block and all its children */
-  #configurator-specs,
-  #configurator-specs * {
-    visibility: visible;
-  }
-
-  /* Position specs block at very top of page */
-  #configurator-specs {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 10mm 15mm;
-    box-sizing: border-box;
-    background: #fff;
-  }
-
-  /* Hide spec rows that are not relevant for this product */
-  .specs-row[data-spec-hidden="true"] {
-    display: none !important;
-  }
-
   /* Page setup */
   @page {
-    margin: 0;
+    margin: 15mm;
     size: A4 portrait;
   }
 
-  body {
+  /* Collapse body height so hidden elements don't generate extra pages */
+  html, body {
+    height: auto !important;
+    overflow: visible;
     font-size: 11pt;
     color: #000;
   }
 
-  /* Print header */
-  .specs-print-header {
+  /* Hide everything except the specs block */
+  body > *:not(#configurator-specs) {
+    display: none !important;
+  }
+
+  /* Specs block: natural flow */
+  #configurator-specs {
     display: block !important;
-    visibility: visible !important;
-    margin-bottom: 1rem;
+    position: static !important;
+    width: 100%;
+    padding: 0;
+    margin: 0;
   }
 
-  .specs-print-logo strong {
-    font-size: 18pt;
-    letter-spacing: 0.05em;
+  /* Hide spec rows not relevant for this product */
+  .specs-row[data-spec-hidden="true"] {
+    display: none !important;
   }
 
-  .specs-print-contact {
+  /* ---- Product info: name + SKU ---- */
+  .specs-product-info {
+    margin-bottom: 2mm;
+  }
+
+  .specs-product-info [data-spec="product-name"] {
+    font-size: 20pt;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1mm;
+    display: block;
+  }
+
+  .specs-product-info [data-spec="sku"] {
     font-size: 9pt;
-    color: #444;
+    color: #e04000;
+    font-family: monospace;
   }
 
-  /* Print image */
+  /* ---- Print image — full width, centered, below product name ---- */
   .specs-print-image {
     display: block !important;
-    visibility: visible !important;
-    float: right;
-    width: 180px;
-    margin: 0 0 1rem 1.5rem;
+    width: 100%;
+    margin: 3mm 0 3mm 0;
+    text-align: center;
+    background: #f8f8f8;
+    border-radius: 4px;
+    padding: 2mm;
+    box-sizing: border-box;
   }
 
   .specs-print-image img {
-    width: 100%;
+    max-width: 60%;
+    max-height: 40mm;
     height: auto;
+    display: block;
+    margin: 0 auto;
   }
 
-  /* Table */
+  /* ---- Table — clean white, no background ---- */
   .specs-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 10pt;
-    clear: none;
   }
 
   .specs-table th,
   .specs-table td {
-    border: 1px solid #ccc;
-    padding: 5px 8px;
+    border: 1px solid #ddd;
+    padding: 4px 8px;
   }
 
   .specs-table th.specs-label-col {
-    background-color: #f0f0f0 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    background: none !important;
     width: 40%;
+    font-weight: 600;
   }
 
-  /* Print footer */
+  /* ---- Print footer — logo left, contact right, generated below ---- */
   .specs-print-footer {
     display: block !important;
     visibility: visible !important;
-    clear: both;
-    margin-top: 2rem;
-    padding-top: 0.5rem;
+    margin-top: 8mm;
+    padding-top: 3mm;
     border-top: 1px solid #ccc;
     font-size: 9pt;
-    color: #666;
+  }
+
+  .specs-print-footer strong {
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  .specs-print-footer [data-spec="print-generated"] {
+    margin-top: 3mm;
+    color: #888;
+    font-size: 8pt;
+  }
+
+  /* ---- Static specs table — included inside #configurator-specs via JS clone ---- */
+  .static-specs-block-wrapper {
+    margin-top: 6mm;
+  }
+
+  .static-specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  .static-specs-table th,
+  .static-specs-table td {
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+  }
+
+  .static-specs-table th.specs-label-col,
+  .static-specs-table th {
+    background: none !important;
+    width: 40%;
+    font-weight: 600;
   }
 
   /* Hide print button and screen heading */

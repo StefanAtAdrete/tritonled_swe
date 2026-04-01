@@ -34,22 +34,12 @@ class ConfiguratorSpecsBlock extends BlockBase {
       $table_rows .= '</tr>' . "\n";
     }
 
-    $print_btn_label = $this->t('Print / Save as PDF');
-    $specs_heading   = $this->t('Technical specifications');
+    $specs_heading = $this->t('Technical specifications');
 
     $markup = '<div class="configurator-specs" id="configurator-specs" aria-live="polite">'
       . "\n"
 
-      // Print header (only visible when printing).
-      . '<div class="specs-print-header d-none d-print-flex justify-content-between align-items-start mb-3">'
-      . '<div class="specs-print-logo"><strong class="fs-4">TritonLED</strong></div>'
-      . '<div class="specs-print-contact text-end small">'
-      . '<div>TritonLED Sverige AB</div>'
-      . '<div>info@tritonled.se</div>'
-      . '<div>tritonled.se</div>'
-      . '</div>'
-      . '</div>'
-      . '<hr class="d-none d-print-block mt-0 mb-3">'
+      // No print header — logo/contact moved to footer (like SROW datasheet).
       . "\n"
 
       // Screen heading (hidden when printing).
@@ -64,7 +54,7 @@ class ConfiguratorSpecsBlock extends BlockBase {
 
       // Product name + SKU.
       . '<div class="specs-product-info mb-3">'
-      . '<div class="fw-bold fs-5" data-spec="product-name">—</div>'
+      . '<h2 class="specs-product-name h5 fw-bold mb-1" data-spec="product-name">—</h2>'
       . '<div class="text-muted small">SKU: <code data-spec="sku">—</code></div>'
       . '</div>'
       . "\n"
@@ -77,21 +67,21 @@ class ConfiguratorSpecsBlock extends BlockBase {
       . '</table>'
       . "\n"
 
-      // Print footer (only visible when printing).
-      . '<div class="specs-print-footer d-none d-print-block mt-4 pt-3 border-top small text-muted">'
-      . '<div class="d-flex justify-content-between">'
-      . '<span data-spec="print-date"></span>'
-      . '<span>tritonled.se</span>'
+      // Print footer — logo left, contact right, date + generated text bottom.
+      . '<div class="specs-print-footer d-none d-print-block mt-4 pt-3 border-top small">'
+      . '<div class="d-flex justify-content-between align-items-start mb-2">'
+      . '<strong class="fs-5">TritonLED</strong>'
+      . '<div class="text-end">'
+      . '<div>TritonLED Sverige AB</div>'
+      . '<div>info@tritonled.se</div>'
+      . '<div>tritonled.se</div>'
       . '</div>'
+      . '</div>'
+      . '<div class="text-muted" data-spec="print-generated"></div>'
       . '</div>'
       . "\n"
 
-      // Print button — onclick added via JS (Drupal XSS strips inline handlers).
-      . '<div class="d-print-none mt-3">'
-      . '<button type="button" class="btn btn-outline-secondary btn-sm" id="configurator-print-btn">'
-      . '<i class="bi bi-printer me-1"></i> ' . $print_btn_label
-      . '</button>'
-      . '</div>'
+      // Print button is now a separate PrintButtonBlock — placeable anywhere.
       . "\n"
 
       . '</div>';

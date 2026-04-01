@@ -28,6 +28,9 @@
  * TASK-025 adds:
  * - watt and optic steps get col-12 col-sm-6 (no col-md-4) for wider layout
  * - btn-sm on all dropdown toggle buttons for smaller text
+ *
+ * TASK-026 adds:
+ * - document.title set to SKU before window.print(), restored via afterprint event
  */
 
 (function (Drupal, drupalSettings) {
@@ -355,6 +358,46 @@
         if (printBtn && !printBtn.dataset.printAttached) {
           printBtn.dataset.printAttached = 'true';
           printBtn.addEventListener('click', function () {
+            // 1. Clone static specs into configurator-specs before footer.
+            var staticEl = document.getElementById('static-specs');
+            var cloneId = 'static-specs-print-clone';
+            var existing = document.getElementById(cloneId);
+            if (existing) existing.remove();
+            if (staticEl) {
+              var clone = staticEl.cloneNode(true);
+              clone.id = cloneId;
+              var footer = specsEl.querySelector('.specs-print-footer');
+              if (footer) {
+                specsEl.insertBefore(clone, footer);
+              } else {
+                specsEl.appendChild(clone);
+              }
+            }
+
+            // 2. Move #configurator-specs to body root (first child) so it renders on page 1.
+            var originalParent = specsEl.parentNode;
+            var originalNextSibling = specsEl.nextSibling;
+            document.body.insertBefore(specsEl, document.body.firstChild);
+
+            // 3. Set document title to SKU for PDF filename.
+            var sku = buildSku();
+            var originalTitle = document.title;
+            document.title = sku;
+
+            // 4. Restore after print.
+            window.addEventListener('afterprint', function restoreAll() {
+              document.title = originalTitle;
+              // Restore specsEl to original position.
+              if (originalNextSibling) {
+                originalParent.insertBefore(specsEl, originalNextSibling);
+              } else {
+                originalParent.appendChild(specsEl);
+              }
+              var c = document.getElementById(cloneId);
+              if (c) c.remove();
+              window.removeEventListener('afterprint', restoreAll);
+            });
+
             window.print();
           });
         }
@@ -372,9 +415,11 @@
         var skuEl = specsEl.querySelector('[data-spec="sku"]');
         if (skuEl) skuEl.textContent = buildSku();
 
-        var dateEl = specsEl.querySelector('[data-spec="print-date"]');
-        if (dateEl) {
-          dateEl.textContent = new Date().toLocaleDateString('sv-SE');
+        var generatedEl = specsEl.querySelector('[data-spec="print-generated"]');
+        if (generatedEl) {
+          var now = new Date();
+          var dateStr = now.toLocaleDateString('sv-SE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          generatedEl.textContent = Drupal.t('Generated on @date. This document is for information only.', { '@date': dateStr });
         }
 
         syncPrintImage();
