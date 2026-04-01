@@ -1,6 +1,28 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-03-29
+**Senast uppdaterad**: 2026-04-01
+
+---
+
+## Senast gjort: Session 2026-04-01
+
+### Prod-fel åtgärdade ✅
+- **Trusted host**: Lagt till `trusted_host_patterns` i `settings.php` på prod
+  - `^tritonled\.se$`, `^www\.tritonled\.se$`, `^preview\.affarsfabriken\.se$`
+- **Private directory**: Fixat via Emergency mode — `chown -R 1006:1006` på `/mnt/sdb1/.../private`
+- **Config Split**: Entity installerad + schema satt till 8003 + status=false via `drush php:eval`
+
+### SSH-access etablerad ✅
+- SSH fungerar på port **2222** (inte 22)
+- IP: `168.231.108.87`
+- Alias konfigurerat: `ssh tritonled`
+- SSH-nyckel: `~/.ssh/id_tritonled_new` (ed25519, ingen passphrase)
+- UFW uppdaterad att tillåta port 2222
+- Dokumenterat i `/docs/skills/server-management/SKILL.md`
+
+### server-management SKILL.md skapad ✅
+- Sökväg: `/docs/skills/server-management/SKILL.md`
+- Innehåller: SSH-access, rsync media-filer, deploy-flöde, felproblem, settings.php
 
 ---
 
@@ -29,10 +51,11 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
+| TASK-025 | ✅ Klar | Konfigurator dropdown-layout: watt/optic breddad, btn-sm |
 | TASK-022 | ✅ Klar | Översättning SV/EN |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
-| TASK-018 | In Progress | Cart page layout |
-| TASK-013 | In Progress | Attribut-cleanup |
+| TASK-018 | 🔄 In Progress | Cart page layout |
+| TASK-013 | 🔄 In Progress | Attribut-cleanup |
 
 ---
 
