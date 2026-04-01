@@ -9,6 +9,13 @@
       "skuPrefix": "S-",
       "imagePrefix": "TS",
       "note": "3 längder (0,6/1,2/1,8m). Unika attribut: chips (48/72) och ipClass (IP54/IP65). Watt beror på chips+längd. Ingen CRI-väljare. Bara Cable Gland — endcap alltid C, bildväxling sker ej på endcap för SROW.",
+      "staticSpecs": {
+        "lifetime": "72.000h/@49C",
+        "temperature": "15-30°C",
+        "material": "6061 Anodized Alloy",
+        "ik": "IK08",
+        "certifications": "CE (EMC, LVD, RoHS), EUR1"
+      },
       "steps": [
         {
           "id": "length",
@@ -108,6 +115,13 @@
       "skuPrefix": "SE-",
       "imagePrefix": "TSE",
       "note": "Endast 0,8m. Endast 48 chips. Nödljus 3W. IP54/IP65-val finns.",
+      "staticSpecs": {
+        "lifetime": "72.000h/@49C",
+        "temperature": "15-30°C",
+        "material": "6061 Anodized Alloy",
+        "ik": "IK08",
+        "certifications": "CE (EMC, LVD, RoHS), EUR1"
+      },
       "steps": [
         {
           "id": "length",
@@ -190,6 +204,13 @@
       "skuPrefix": "SED-",
       "imagePrefix": "TSED",
       "note": "Endast 0,8m. Dubbla ljuskretsar (drivdon 5/6/7). 48 eller 72 chips. IP54/IP65-val. Watt beror på chips.",
+      "staticSpecs": {
+        "lifetime": "72.000h/@49C",
+        "temperature": "15-30°C",
+        "material": "6061 Anodized Alloy",
+        "ik": "IK08",
+        "certifications": "CE (EMC, LVD, RoHS), EUR1"
+      },
       "steps": [
         {
           "id": "length",
