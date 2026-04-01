@@ -486,7 +486,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.5
+**Version**: 2.6
 **Skapad**: 2025-01-10
-**Uppdaterad**: 2026-03-29 - Sessionsstruktur (SOP) tillagd
+**Uppdaterad**: 2026-04-01 - TASK-025/026/027/028 klara
 **Författare**: Stefan + Claude
