@@ -51,6 +51,8 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
+| TASK-028 | ✅ Klar | staticSpecs i JSON-scheman + Drupal-import, verifierad alla 12 produkter |
+| TASK-027 | 🔵 Nästa | StaticSpecsBlock — nytt Layout Builder-block |
 | TASK-025 | ✅ Klar | Konfigurator dropdown-layout: watt/optic breddad, btn-sm |
 | TASK-022 | ✅ Klar | Översättning SV/EN |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
