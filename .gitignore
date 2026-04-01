@@ -185,8 +185,9 @@ yarn-error.log*
 # Håll config
 !/config/
 
-# Håll docs
+# Håll docs (men inte Claude-skills)
 !/docs/
+/docs/skills/
 
 # Håll scripts
 !/scripts/
