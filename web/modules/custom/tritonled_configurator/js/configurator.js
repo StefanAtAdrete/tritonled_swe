@@ -24,6 +24,10 @@
  * TASK-023 adds:
  * - Bootstrap custom dropdowns replace native <select> for mobile compatibility
  * - Popper.js (via Bootstrap JS) handles positioning — always opens downward
+ *
+ * TASK-025 adds:
+ * - watt and optic steps get col-12 col-sm-6 (no col-md-4) for wider layout
+ * - btn-sm on all dropdown toggle buttons for smaller text
  */
 
 (function (Drupal, drupalSettings) {
@@ -69,7 +73,11 @@
 
         steps.forEach(function (step) {
           var col = document.createElement('div');
-          col.className = 'col-12 col-sm-6 col-md-4 configurator-step';
+          // watt and optic need more space — never narrower than half width.
+          var wideSteps = ['watt', 'optic'];
+          col.className = wideSteps.indexOf(step.id) !== -1
+            ? 'col-12 col-sm-6 configurator-step'
+            : 'col-12 col-sm-6 col-md-4 configurator-step';
           col.dataset.stepId = step.id;
 
           var label = document.createElement('label');
@@ -83,7 +91,7 @@
 
           var toggle = document.createElement('button');
           toggle.type = 'button';
-          toggle.className = 'btn btn-outline-secondary dropdown-toggle w-100 text-start';
+          toggle.className = 'btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start';
           toggle.setAttribute('data-bs-toggle', 'dropdown');
           toggle.setAttribute('aria-expanded', 'false');
           toggle.dataset.stepId = step.id;
