@@ -5,7 +5,7 @@ features:
   favicon: 1
 logo:
   use_default: 0
-  path: 'public://TritonLED svg.svg'
+  path: 'public://TritonLED grey.svg'
 favicon:
   use_default: 1
   path: 'public://favicon-32x32.png'
