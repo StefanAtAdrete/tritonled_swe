@@ -18,10 +18,12 @@ dependencies:
     - field.field.commerce_product.led_luminaire_srow.field_short_description
     - field.field.commerce_product.led_luminaire_srow.field_show_in_hero
     - field.field.commerce_product.led_luminaire_srow.layout_builder__layout
+    - views.view.featured_products
   module:
     - bootstrap_layout_builder
     - layout_builder
     - tritonled_configurator
+    - views
 third_party_settings:
   layout_builder:
     enabled: true
@@ -153,15 +155,22 @@ third_party_settings:
             configuration:
               id: tritonled_configurator_block
               label: Produktkonfigurator
-              label_display: visible
+              label_display: '0'
               provider: tritonled_configurator
               context_mapping: {  }
-            weight: 0
+            weight: 1
             additional:
               layout_builder_styles_style:
                 tab_block_products: 0
                 margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
                 h1_title: 0
+                object_fit_cover: 0
                 padding_3: 0
           442308cf-6093-43a5-977e-090a75cde2f3:
             uuid: 442308cf-6093-43a5-977e-090a75cde2f3
@@ -178,6 +187,31 @@ third_party_settings:
                 tab_block_products: 0
                 margin_bottom_3: margin_bottom_3
                 h1_title: 0
+                padding_3: 0
+          60e4c7ab-c76d-4943-96f9-51dc591c22cd:
+            uuid: 60e4c7ab-c76d-4943-96f9-51dc591c22cd
+            region: blb_region_col_2
+            configuration:
+              id: 'views_block:featured_products-block_4'
+              label: ''
+              label_display: '0'
+              provider: views
+              context_mapping: {  }
+              views_label: ''
+              items_per_page: null
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
                 padding_3: 0
         third_party_settings: {  }
       -

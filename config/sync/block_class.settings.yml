@@ -23,6 +23,11 @@ block_classes_stored:
   - col-12
   - text-align-center
   - align-self-start
+  - btn
+  - btn-light
+  - w-25
+  - w-auto
+  - bg-opacity-25
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10
