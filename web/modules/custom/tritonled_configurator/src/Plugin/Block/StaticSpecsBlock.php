@@ -20,6 +20,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "tritonled_static_specs_block",
  *   admin_label = @Translation("Produktspecifikationer (statiska)"),
  *   category = @Translation("TritonLED"),
+ *   label = @Translation("Product specifications"),
+ *   label_display = "visible",
  * )
  */
 class StaticSpecsBlock extends BlockBase implements ContainerFactoryPluginInterface {
@@ -97,10 +99,7 @@ class StaticSpecsBlock extends BlockBase implements ContainerFactoryPluginInterf
       return [];
     }
 
-    $heading = $this->t('Product specifications');
-
     $markup = '<div class="static-specs-wrapper" id="static-specs">'
-      . '<h3 class="h5 mb-3 d-print-none">' . $heading . '</h3>'
       . '<table class="table table-sm table-bordered static-specs-table mb-3">'
       . '<tbody>'
       . $tableRows
