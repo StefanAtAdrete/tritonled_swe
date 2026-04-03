@@ -21,7 +21,7 @@ plugin: 'block_content:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
 settings:
   id: 'block_content:2fc1bcd9-8fdb-4829-9201-31ce00bdbceb'
   label: Support
-  label_display: visible
+  label_display: '0'
   provider: block_content
   view_mode: full
 visibility: {  }

@@ -38,7 +38,7 @@ settings:
     ckeditor5_codeBlock:
       languages:
         -
-          label: 'Plain text'
+          label: 'Ren text'
           language: plaintext
         -
           label: C
@@ -53,7 +53,7 @@ settings:
           label: CSS
           language: css
         -
-          label: Diff
+          label: Skillnad
           language: diff
         -
           label: HTML
@@ -95,7 +95,8 @@ settings:
         styles: true
       multiBlock: true
     ckeditor5_sourceEditing:
-      allowed_tags: {  }
+      allowed_tags:
+        - '<i class>'
 image_upload:
   status: true
   scheme: public

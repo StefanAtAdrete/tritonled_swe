@@ -21,7 +21,7 @@ plugin: 'block_content:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
 settings:
   id: 'block_content:0ab26dd8-9b4e-4f55-9e22-c96b8d078799'
   label: Fakturor
-  label_display: visible
+  label_display: '0'
   provider: block_content
   view_mode: full
 visibility: {  }

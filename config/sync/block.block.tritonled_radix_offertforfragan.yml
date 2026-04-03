@@ -21,7 +21,7 @@ plugin: 'block_content:60dcec53-6faa-4bc1-a2f9-0a7c0cfd2ad9'
 settings:
   id: 'block_content:60dcec53-6faa-4bc1-a2f9-0a7c0cfd2ad9'
   label: 'Get a quote'
-  label_display: visible
+  label_display: '0'
   provider: block_content
   view_mode: full
 visibility: {  }
