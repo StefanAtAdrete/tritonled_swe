@@ -16,7 +16,7 @@ third_party_settings:
 id: tritonled_radix_contactusbutton
 theme: tritonled_radix
 region: topbar_right
-weight: -6
+weight: -8
 provider: null
 plugin: 'block_content:4059c28d-8e75-44ee-9b08-ea8a8c8d7d59'
 settings:

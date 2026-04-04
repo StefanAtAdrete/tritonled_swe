@@ -28,6 +28,8 @@ block_classes_stored:
   - w-25
   - w-auto
   - bg-opacity-25
+  - d-flex
+  - d-inline-flex
 enable_attributes: true
 enable_auto_complete: true
 qty_classes_per_block: 10
