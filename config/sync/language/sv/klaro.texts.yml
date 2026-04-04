@@ -4,6 +4,7 @@ consentModal:
   privacyPolicy:
     name: integritetspolicy
     text: "Läs mer i vår {privacyPolicy}.\r\n"
+    url: 'internal:/privacy-policy'
 consentNotice:
   title: 'Användning av personuppgifter och cookies'
   changeDescription: 'Det har skett ändringar sedan ditt senaste besök, vänligen uppdatera ditt samtycke.'
