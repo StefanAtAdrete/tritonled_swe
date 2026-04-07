@@ -1,0 +1,13 @@
+uuid: 5c043966-9248-4510-87c7-d110b7e65dcf
+langcode: en
+status: true
+dependencies: {  }
+id: surge_protection
+label: 'Surge Protection'
+traits: {  }
+locked: false
+description: ''
+variationTypes:
+  - surge_protection
+multipleVariations: true
+injectVariationFields: true

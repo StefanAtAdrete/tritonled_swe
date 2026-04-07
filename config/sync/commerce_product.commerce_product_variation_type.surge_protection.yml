@@ -1,0 +1,10 @@
+uuid: 0fde5e93-46b5-4ade-a897-26f4c0adbdf1
+langcode: en
+status: true
+dependencies: {  }
+id: surge_protection
+label: 'Surge Protection'
+traits: {  }
+locked: false
+orderItemType: default
+generateTitle: true

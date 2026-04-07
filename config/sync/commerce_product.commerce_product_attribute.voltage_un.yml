@@ -1,0 +1,7 @@
+uuid: 9cec491e-61da-4bc0-a93c-660ff4c40e30
+langcode: en
+status: true
+dependencies: {  }
+id: voltage_un
+label: 'Nominell spänning Un'
+elementType: select

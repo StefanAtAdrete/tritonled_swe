@@ -1,0 +1,19 @@
+uuid: 812b9cf2-82ff-4fb1-9a45-2c6e79a83493
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.surge_protection
+    - field.storage.commerce_product.field_brand
+id: commerce_product.surge_protection.field_brand
+field_name: field_brand
+entity_type: commerce_product
+bundle: surge_protection
+label: Brand
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string
