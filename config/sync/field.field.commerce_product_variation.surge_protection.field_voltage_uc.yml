@@ -1,0 +1,23 @@
+uuid: c591fcfb-414f-4ff3-902d-040d4c37fe98
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.surge_protection
+    - field.storage.commerce_product_variation.field_voltage_uc
+id: commerce_product_variation.surge_protection.field_voltage_uc
+field_name: field_voltage_uc
+entity_type: commerce_product_variation
+bundle: surge_protection
+label: 'Max driftspanning Uc'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: V
+field_type: decimal

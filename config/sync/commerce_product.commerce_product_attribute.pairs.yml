@@ -1,0 +1,7 @@
+uuid: 78ea26ef-4e5a-4748-8590-5e9c7277fc1c
+langcode: en
+status: true
+dependencies: {  }
+id: pairs
+label: Par
+elementType: select

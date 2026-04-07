@@ -1,0 +1,92 @@
+uuid: a679f150-f0cf-48ca-a1f8-053c11eb7fd4
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.surge_protection
+    - field.field.commerce_product_variation.surge_protection.attribute_pairs
+    - field.field.commerce_product_variation.surge_protection.attribute_poles
+    - field.field.commerce_product_variation.surge_protection.attribute_voltage_un
+    - field.field.commerce_product_variation.surge_protection.field_discharge_imax
+    - field.field.commerce_product_variation.surge_protection.field_discharge_in
+    - field.field.commerce_product_variation.surge_protection.field_fuse_rating
+    - field.field.commerce_product_variation.surge_protection.field_impulse_iimp
+    - field.field.commerce_product_variation.surge_protection.field_isccr
+    - field.field.commerce_product_variation.surge_protection.field_protection_level_up
+    - field.field.commerce_product_variation.surge_protection.field_voltage_uc
+  module:
+    - commerce_price
+id: commerce_product_variation.surge_protection.default
+targetEntityType: commerce_product_variation
+bundle: surge_protection
+mode: default
+content:
+  attribute_pairs:
+    type: options_select
+    weight: 1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_poles:
+    type: options_select
+    weight: 2
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  attribute_voltage_un:
+    type: options_select
+    weight: 3
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  commerce_stock_always_in_stock:
+    type: boolean_checkbox
+    weight: 5
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  langcode:
+    type: language_select
+    weight: 2
+    region: content
+    settings:
+      include_locked: true
+    third_party_settings: {  }
+  list_price:
+    type: commerce_list_price
+    weight: -1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  price:
+    type: commerce_price_default
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  sku:
+    type: string_textfield
+    weight: -4
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 90
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+hidden:
+  created: true
+  field_discharge_imax: true
+  field_discharge_in: true
+  field_fuse_rating: true
+  field_impulse_iimp: true
+  field_isccr: true
+  field_protection_level_up: true
+  field_voltage_uc: true
+  uid: true
