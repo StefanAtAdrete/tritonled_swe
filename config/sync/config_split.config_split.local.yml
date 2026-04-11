@@ -61,4 +61,5 @@ complete_list:
   - ai_provider_ollama.settings
   - mcp_tools.settings
   - mcp_tools_remote.settings
+  - system.performance
 partial_list: {  }

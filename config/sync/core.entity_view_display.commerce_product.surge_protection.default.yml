@@ -8,13 +8,14 @@ dependencies:
     - field.field.commerce_product.surge_protection.field_current_type
     - field.field.commerce_product.surge_protection.field_product_media
     - field.field.commerce_product.surge_protection.field_spd_type
+    - field.field.commerce_product.surge_protection.layout_builder__layout
   module:
     - bootstrap_layout_builder
     - layout_builder
 third_party_settings:
   layout_builder:
     enabled: true
-    allow_custom: false
+    allow_custom: true
     sections:
       -
         layout_id: 'bootstrap_layout_builder:blb_col_2'
@@ -206,6 +207,164 @@ third_party_settings:
                 h1_title: 0
                 object_fit_cover: 0
                 padding_3: 0
+          54a63ae1-c94c-47bc-b051-e4c7a116f0aa:
+            uuid: 54a63ae1-c94c-47bc-b051-e4c7a116f0aa
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:surge_protection:default_variation'
+              label: 'Default variation'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 2
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
+                padding_3: 0
+          b6f73190-f8f3-4647-9001-095c4e9706a8:
+            uuid: b6f73190-f8f3-4647-9001-095c4e9706a8
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:surge_protection:variations'
+              label: Variations
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 3
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+          b0838ea9-dee7-4a2a-a3ba-3b263916d46b:
+            uuid: b0838ea9-dee7-4a2a-a3ba-3b263916d46b
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:surge_protection:field_current_type'
+              label: 'Strom typ'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: list_default
+                label: above
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 4
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+          e3f24287-b92a-4452-ae03-1c52a1b320fb:
+            uuid: e3f24287-b92a-4452-ae03-1c52a1b320fb
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:surge_protection:field_spd_type'
+              label: 'SPD Typ'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: list_default
+                label: above
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 5
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
         third_party_settings: {  }
 id: commerce_product.surge_protection.default
 targetEntityType: commerce_product
@@ -219,6 +378,7 @@ hidden:
   field_product_media: true
   field_spd_type: true
   langcode: true
+  layout_builder__layout: true
   stores: true
   title: true
   uid: true
