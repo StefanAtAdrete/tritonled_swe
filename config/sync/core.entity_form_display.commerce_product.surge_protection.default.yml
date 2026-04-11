@@ -7,6 +7,7 @@ dependencies:
     - field.field.commerce_product.surge_protection.feeds_item
     - field.field.commerce_product.surge_protection.field_brand
     - field.field.commerce_product.surge_protection.field_current_type
+    - field.field.commerce_product.surge_protection.field_product_category
     - field.field.commerce_product.surge_protection.field_product_media
     - field.field.commerce_product.surge_protection.field_product_sku
     - field.field.commerce_product.surge_protection.field_spd_type
@@ -24,6 +25,16 @@ content:
     weight: 10
     region: content
     settings: {  }
+    third_party_settings: {  }
+  field_product_category:
+    type: entity_reference_autocomplete
+    weight: 93
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
     third_party_settings: {  }
   field_product_sku:
     type: string_textfield

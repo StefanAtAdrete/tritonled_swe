@@ -14,6 +14,7 @@ dependencies:
     - field.field.commerce_product.led_luminaire_max_opti.field_hero_media
     - field.field.commerce_product.led_luminaire_max_opti.field_producers
     - field.field.commerce_product.led_luminaire_max_opti.field_product_categories
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_category
     - field.field.commerce_product.led_luminaire_max_opti.field_product_media
     - field.field.commerce_product.led_luminaire_max_opti.field_product_type
     - field.field.commerce_product.led_luminaire_max_opti.field_series
@@ -274,6 +275,22 @@ third_party_settings:
                 margin_bottom_3: margin_bottom_3
                 h1_title: 0
                 padding_3: 0
+          b6e9f3e6-19fd-413d-87d9-9300c2b7e4cc:
+            uuid: b6e9f3e6-19fd-413d-87d9-9300c2b7e4cc
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_max_opti:field_product_category'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 8
+            additional: {  }
         third_party_settings: {  }
       -
         layout_id: 'bootstrap_layout_builder:blb_col_1'
@@ -541,6 +558,14 @@ content:
       link: true
     third_party_settings: {  }
     weight: 3
+    region: blb_region_col_1
+  field_product_category:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 9
     region: blb_region_col_1
   field_product_media:
     type: entity_reference_entity_view

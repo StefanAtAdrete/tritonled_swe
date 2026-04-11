@@ -41,7 +41,7 @@ Skapa en tydlig och hållbar produkttypsstruktur i Drupal Commerce som:
 - [ ] CSV-mall dokumenterad per produkttyp
 - [ ] Minst en testimport per produkttyp genomförd
 
-**Godkänt av Stefan**: ⏳ Väntar
+**Godkänt av Stefan**: ✅
 
 ---
 
@@ -148,27 +148,42 @@ Ordning:
 
 ## 3. IMPLEMENT
 
-### Fas 1 — Taxonomy & gemensamma fält
-*(Ej påbörjad)*
+### Fas 1 — Taxonomy & gemensamma fält ✅ KLAR (2026-04-11)
 
-**Steg 1**: Skapa taxonomy `product_category`
-```
-Admin → Structure → Taxonomy → Add vocabulary
-Machine name: product_category
-```
-Lägg till termer: Linjär LED-armatur, Hallarmatur, Strålkastare, Mastarmatur, Gatu- och områdesarmatur, EX-klassad armatur
+**OBS**: Taxonomy machine name blev `product_categories` (med s) — inte `product_category`.
 
-**Steg 2**: Skapa gemensamma fält via `drush php:eval`
-*(Kommandon dokumenteras här när vi kör dem)*
+**Steg 1 ✅**: Taxonomy `product_categories` skapad
+- 6 termer på engelska (adminspråk): Linear LED Luminaire, Highbay, Floodlight, High Mast, Street & Area, EX / Hazardous
+- Svenska översättningar tillagda på alla termer
 
-**Steg 3**: `ddev drush cex -y` → commit
+**Steg 2 ✅**: Gemensamma fält skapade via `drush php:eval` (inuti `ddev ssh`, bash)
+- Mönster: enkelfnuttar + `?:` istället för `if (!...)` pga zsh/bash history expansion
+- `field_lumen` (integer)
+- `field_beam_angle` (integer)
+- `field_warranty` (integer)
+- `field_cable` (string)
+- `field_driver` (list_string)
+- `field_dimming` (list_string)
+- `field_ip_class` (list_string)
+- `field_mounting_type` (list_string)
+- `field_product_category` (entity_reference → taxonomy_term)
+
+**Steg 3 ✅**: `field_product_category` tilldelad på: max, opti, srow, surge_protection
+
+**Steg 4 ✅**: `ddev drush cex -y` + commit `[TASK-029] Fas 1`
 
 ---
 
 ### Fas 2 — Produkttyper
-*(Ej påbörjad)*
+*(Ej påbörjad — nästa session)*
 
-Skapas i denna ordning:
+Skapas i denna ordning via Commerce admin UI:
+```
+Commerce → Configuration → Product types → Add product type
+Commerce → Configuration → Product variation types → Add product variation type
+```
+- Order item type: ALLTID `quote` (aldrig `default`)
+
 1. `linear_led` — enklast, inga konfigurator-beroenden
 2. `highbay`
 3. `floodlight`
@@ -176,6 +191,8 @@ Skapas i denna ordning:
 5. `street_area`
 6. `ex_hazardous`
 7. `accessories`
+
+Efter varje typ: tilldela fält enligt fältöversikten i SKILL.md → `cex` → commit.
 
 ---
 

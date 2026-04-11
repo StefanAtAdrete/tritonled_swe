@@ -7,6 +7,7 @@ dependencies:
     - field.field.commerce_product.surge_protection.feeds_item
     - field.field.commerce_product.surge_protection.field_brand
     - field.field.commerce_product.surge_protection.field_current_type
+    - field.field.commerce_product.surge_protection.field_product_category
     - field.field.commerce_product.surge_protection.field_product_media
     - field.field.commerce_product.surge_protection.field_product_sku
     - field.field.commerce_product.surge_protection.field_spd_type
@@ -383,12 +384,36 @@ third_party_settings:
                 third_party_settings: {  }
             weight: 1
             additional: {  }
+          89d1474a-2b7c-40d9-9e97-d044103bee65:
+            uuid: 89d1474a-2b7c-40d9-9e97-d044103bee65
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:surge_protection:field_product_category'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 2
+            additional: {  }
         third_party_settings: {  }
 id: commerce_product.surge_protection.default
 targetEntityType: commerce_product
 bundle: surge_protection
 mode: default
 content:
+  field_product_category:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 1
+    region: blb_region_col_1
   field_product_sku:
     type: string
     label: above

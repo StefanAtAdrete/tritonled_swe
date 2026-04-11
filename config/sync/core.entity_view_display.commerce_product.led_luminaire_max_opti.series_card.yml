@@ -15,6 +15,7 @@ dependencies:
     - field.field.commerce_product.led_luminaire_max_opti.field_hero_media
     - field.field.commerce_product.led_luminaire_max_opti.field_producers
     - field.field.commerce_product.led_luminaire_max_opti.field_product_categories
+    - field.field.commerce_product.led_luminaire_max_opti.field_product_category
     - field.field.commerce_product.led_luminaire_max_opti.field_product_media
     - field.field.commerce_product.led_luminaire_max_opti.field_product_type
     - field.field.commerce_product.led_luminaire_max_opti.field_series
@@ -75,6 +76,7 @@ hidden:
   field_hero_media: true
   field_producers: true
   field_product_categories: true
+  field_product_category: true
   field_product_media: true
   field_product_type: true
   field_series: true

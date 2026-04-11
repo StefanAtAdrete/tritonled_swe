@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product.led_luminaire_srow.field_hero_media
     - field.field.commerce_product.led_luminaire_srow.field_producers
     - field.field.commerce_product.led_luminaire_srow.field_product_categories
+    - field.field.commerce_product.led_luminaire_srow.field_product_category
     - field.field.commerce_product.led_luminaire_srow.field_product_media
     - field.field.commerce_product.led_luminaire_srow.field_product_type
     - field.field.commerce_product.led_luminaire_srow.field_short_description
@@ -213,6 +214,22 @@ third_party_settings:
                 h1_title: 0
                 object_fit_cover: 0
                 padding_3: 0
+          2c56f912-3d26-4939-9be9-92f556242a89:
+            uuid: 2c56f912-3d26-4939-9be9-92f556242a89
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_srow:field_product_category'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
         third_party_settings: {  }
       -
         layout_id: 'bootstrap_layout_builder:blb_col_1'
@@ -397,7 +414,15 @@ id: commerce_product.led_luminaire_srow.default
 targetEntityType: commerce_product
 bundle: led_luminaire_srow
 mode: default
-content: {  }
+content:
+  field_product_category:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 0
+    region: blb_region_col_1
 hidden:
   body: true
   created: true
