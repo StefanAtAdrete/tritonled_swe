@@ -7,6 +7,7 @@ dependencies:
     - field.field.commerce_product_variation.surge_protection.attribute_pairs
     - field.field.commerce_product_variation.surge_protection.attribute_poles
     - field.field.commerce_product_variation.surge_protection.attribute_voltage_un
+    - field.field.commerce_product_variation.surge_protection.feeds_item
     - field.field.commerce_product_variation.surge_protection.field_discharge_imax
     - field.field.commerce_product_variation.surge_protection.field_discharge_in
     - field.field.commerce_product_variation.surge_protection.field_fuse_rating
@@ -82,6 +83,7 @@ content:
     third_party_settings: {  }
 hidden:
   created: true
+  feeds_item: true
   field_discharge_imax: true
   field_discharge_in: true
   field_fuse_rating: true
