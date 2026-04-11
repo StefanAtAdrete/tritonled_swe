@@ -1,0 +1,12 @@
+uuid: c9511a75-db12-4be8-bd87-e04861e2f035
+langcode: en
+status: true
+dependencies: {  }
+id: accessories
+label: Tillbehör
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true

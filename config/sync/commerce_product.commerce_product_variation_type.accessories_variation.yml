@@ -1,0 +1,10 @@
+uuid: 779702b3-0b8f-498a-80eb-e5a011d6972c
+langcode: en
+status: true
+dependencies: {  }
+id: accessories_variation
+label: 'Tillbehör Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true
