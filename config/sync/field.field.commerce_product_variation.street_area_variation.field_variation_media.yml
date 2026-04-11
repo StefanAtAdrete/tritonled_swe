@@ -1,0 +1,21 @@
+uuid: b4b2908d-6025-4797-83e7-43055a343297
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.street_area_variation
+    - field.storage.commerce_product_variation.field_variation_media
+id: commerce_product_variation.street_area_variation.field_variation_media
+field_name: field_variation_media
+entity_type: commerce_product_variation
+bundle: street_area_variation
+label: field_variation_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference

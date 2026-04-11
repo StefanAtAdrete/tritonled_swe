@@ -1,0 +1,12 @@
+uuid: c7fa76ce-419b-4fb9-ad4d-c616df2e0508
+langcode: en
+status: true
+dependencies: {  }
+id: street_area
+label: 'Gatu- och områdesarmatur'
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true

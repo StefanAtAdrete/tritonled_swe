@@ -1,0 +1,10 @@
+uuid: 8052fd3b-8d33-4d5f-b12f-cfae8ca2d670
+langcode: en
+status: true
+dependencies: {  }
+id: street_area_variation
+label: 'Gatu- och områdesarmatur Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true
