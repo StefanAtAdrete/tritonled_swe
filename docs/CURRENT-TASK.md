@@ -4,19 +4,30 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-029 Fas 1
+## ⏭️ Nästa session startar här: TASK-029 Fas 2
 
 **Läs**: `docs/tasks/task-029-produkttyper-faltstruktur.md`  
 **Läs**: `docs/skills/drupal-product-type/SKILL.md`  
 
-**Gör:**
-1. Skapa taxonomy `product_category` med 8 termer (admin UI)
-2. Skapa `field_product_category` (entity_reference → taxonomy)
-3. Skapa 8 gemensamma fält via `drush php:eval`
-4. Tilldela `field_product_category` på befintliga typer: max, opti, srow, surge_protection
-5. `ddev drush cex -y` + commit
+**Fas 1 klar** ✅  
+- Taxonomy `product_categories` skapad (machine name med s)
+- 6 termer: Linear LED Luminaire, Highbay, Floodlight, High Mast, Street & Area, EX / Hazardous
+- Svenska översättningar tillagda på alla termer
+- 9 fält skapade: `field_lumen`, `field_beam_angle`, `field_warranty`, `field_cable`, `field_driver`, `field_dimming`, `field_ip_class`, `field_mounting_type`, `field_product_category`
+- `field_product_category` tilldelad på: max, opti, srow, surge_protection
+- Committad
 
-**Inget mer behöver laddas in** — task-filen och skill-filen räcker.
+**OBS**: taxonomy machine name är `product_categories` (inte `product_category`)
+
+**Fas 2 — Produkttyper** (nästa steg):  
+Skapa produkttyper i denna ordning via Commerce admin UI:
+1. `linear_led`
+2. `highbay`
+3. `floodlight`
+4. `high_mast`
+5. `street_area`
+6. `ex_hazardous`
+7. `accessories`
 
 ---
 

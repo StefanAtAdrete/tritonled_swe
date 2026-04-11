@@ -11,7 +11,7 @@ id: quote_request
 plugin: multistep_default
 configuration:
   display_checkout_progress: true
-  display_checkout_progress_breadcrumb_links: false
+  display_checkout_progress_breadcrumb_links: true
   display_sidebar_checkout_complete: true
   guest_order_assign: false
   guest_new_account: true
@@ -50,6 +50,7 @@ configuration:
       weight: 4
       wrapper_element: null
     completion_message:
+      display_label: null
       step: complete
       weight: 5
       wrapper_element: null
@@ -85,3 +86,8 @@ configuration:
       step: _disabled
       weight: 10
       wrapper_element: fieldset
+    'order_fields:order_details':
+      display_label: 'Order fields'
+      step: _disabled
+      weight: 10
+      wrapper_element: container

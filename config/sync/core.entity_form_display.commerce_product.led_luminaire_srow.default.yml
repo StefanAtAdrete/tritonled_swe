@@ -13,6 +13,7 @@ dependencies:
     - field.field.commerce_product.led_luminaire_srow.field_hero_media
     - field.field.commerce_product.led_luminaire_srow.field_producers
     - field.field.commerce_product.led_luminaire_srow.field_product_categories
+    - field.field.commerce_product.led_luminaire_srow.field_product_category
     - field.field.commerce_product.led_luminaire_srow.field_product_media
     - field.field.commerce_product.led_luminaire_srow.field_product_type
     - field.field.commerce_product.led_luminaire_srow.field_short_description
@@ -107,6 +108,16 @@ content:
       autocomplete_size: 60
       autocomplete_placeholder: ''
     third_party_settings: {  }
+  field_product_category:
+    type: entity_reference_autocomplete
+    weight: 93
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_product_media:
     type: commerce_entity_select
     weight: 0
@@ -179,6 +190,11 @@ content:
     settings:
       size: 60
       placeholder: ''
+    third_party_settings: {  }
+  translation:
+    weight: 10
+    region: content
+    settings: {  }
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
