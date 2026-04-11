@@ -1,0 +1,10 @@
+uuid: e489b7b9-60b5-46b9-a869-96b9425d7ef7
+langcode: en
+status: true
+dependencies: {  }
+id: floodlight_variation
+label: 'Strålkastare Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true

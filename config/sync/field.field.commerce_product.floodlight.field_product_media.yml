@@ -1,0 +1,21 @@
+uuid: 1774f9e0-fea9-4007-a460-9b745774a6ee
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.floodlight
+    - field.storage.commerce_product.field_product_media
+id: commerce_product.floodlight.field_product_media
+field_name: field_product_media
+entity_type: commerce_product
+bundle: floodlight
+label: field_product_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference

@@ -1,0 +1,12 @@
+uuid: d2cff765-d6fa-46a6-b59b-a7d33a45881b
+langcode: en
+status: true
+dependencies: {  }
+id: floodlight
+label: Strålkastare
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true
