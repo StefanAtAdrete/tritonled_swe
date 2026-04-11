@@ -1,6 +1,39 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-04-01
+**Senast uppdaterad**: 2026-04-11
+
+---
+
+## Senast gjort: Session 2026-04-11
+
+### Prod cache-problem löst ✅
+- `twig_debug: 'true'` borttagen från `system.performance` i prod DB
+- `development.services.yml` borttagen från prod (innehöll felaktig twig_debug-nyckel)
+- `system.performance` lagd i Config Split `local` complete_list — deployas aldrig till prod
+- `config/sync/system.performance.yml` lagd i `.gitignore`
+
+### Private-mapp fixad på prod ✅
+- Skapad på `/home/tritonled/htdocs/tritonled.se/private`
+- `settings.php` på prod uppdaterad till `$app_root . '/../private'`
+
+### Drupal core + moduler uppdaterade ✅
+- Drupal core 11.3.5 → 11.3.6
+- Commerce 3.3.3 → 3.3.4
+- Klaro 3.0.8 → 3.0.9
+- AI 1.2.10 → 1.3.2 (avinstallerad tillfälligt på prod pga rättighetsproblem)
+- 45 paket totalt uppdaterade
+
+### Rättighetsproblem på prod lösta ✅
+- Root: `chown -R tritonled:tritonled /home/tritonled/htdocs/tritonled.se/`
+- Root: `chmod -R g+w /home/tritonled/htdocs/tritonled.se/web/modules/contrib/`
+- `core`-mappen ägdes av `tritonswe_ssh` — nu fixat
+
+### tool_* moduler städade från DB ✅
+- `tool_content`, `tool_content_translation`, `tool_entity`, `tool_system` raderade från `system.schema`
+
+### Honeypot installerat ✅
+- Installerat lokalt och på prod
+- Konfigurerat: Protect all forms, 5s time limit, logging aktiverat
 
 ---
 

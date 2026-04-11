@@ -1,0 +1,208 @@
+uuid: e4a8b362-7d1f-4c3a-b5e2-d0f9e8c7b623
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.surge_protection
+    - field.field.commerce_product_variation.surge_protection.field_discharge_imax
+    - field.field.commerce_product_variation.surge_protection.field_discharge_in
+    - field.field.commerce_product_variation.surge_protection.field_fuse_rating
+    - field.field.commerce_product_variation.surge_protection.field_impulse_iimp
+    - field.field.commerce_product_variation.surge_protection.field_isccr
+    - field.field.commerce_product_variation.surge_protection.field_protection_level_up
+    - field.field.commerce_product_variation.surge_protection.field_voltage_uc
+  module:
+    - commerce_feeds
+    - commerce_product
+    - feeds_log
+third_party_settings:
+  feeds_log:
+    status: true
+    operations:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+      cleaned: cleaned
+    items:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+    source: true
+label: 'TritonLED Surge Protection Variations'
+id: tritonled_surge_variations
+description: 'Importerar Surge Protection-varianter från CSV'
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product_variation'
+processor_configuration:
+  values:
+    type: surge_protection
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  sku:
+    value: sku
+    label: sku
+    machine_name: sku
+    type: csv
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  price:
+    value: price
+    label: price
+    machine_name: price
+    type: csv
+  variation_status:
+    value: variation_status
+    label: variation_status
+    machine_name: variation_status
+    type: csv
+  field_discharge_imax:
+    value: field_discharge_imax
+    label: field_discharge_imax
+    machine_name: field_discharge_imax
+    type: csv
+  field_discharge_in:
+    value: field_discharge_in
+    label: field_discharge_in
+    machine_name: field_discharge_in
+    type: csv
+  field_fuse_rating:
+    value: field_fuse_rating
+    label: field_fuse_rating
+    machine_name: field_fuse_rating
+    type: csv
+  field_impulse_iimp:
+    value: field_impulse_iimp
+    label: field_impulse_iimp
+    machine_name: field_impulse_iimp
+    type: csv
+  field_isccr:
+    value: field_isccr
+    label: field_isccr
+    machine_name: field_isccr
+    type: csv
+  field_protection_level_up:
+    value: field_protection_level_up
+    label: field_protection_level_up
+    machine_name: field_protection_level_up
+    type: csv
+  field_voltage_uc:
+    value: field_voltage_uc
+    label: field_voltage_uc
+    machine_name: field_voltage_uc
+    type: csv
+mappings:
+  -
+    target: sku
+    map:
+      value: sku
+    settings: {  }
+    unique:
+      value: 1
+  -
+    target: title
+    map:
+      value: sku
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: status
+    map:
+      value: variation_status
+    settings: {  }
+    unique: {  }
+  -
+    target: product_id
+    map:
+      target_id: product_sku
+    settings:
+      reference_by: field_product_sku
+      autocreate: false
+      feeds_item: false
+      autocreate_bundle: false
+    unique: {  }
+  -
+    target: price
+    map:
+      number: price
+    settings:
+      currency_code: SEK
+    unique: {  }
+  -
+    target: field_discharge_imax
+    map:
+      value: field_discharge_imax
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_discharge_in
+    map:
+      value: field_discharge_in
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_fuse_rating
+    map:
+      value: field_fuse_rating
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_impulse_iimp
+    map:
+      value: field_impulse_iimp
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_isccr
+    map:
+      value: field_isccr
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_protection_level_up
+    map:
+      value: field_protection_level_up
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_voltage_uc
+    map:
+      value: field_voltage_uc
+    settings:
+      language: null
+    unique: {  }
