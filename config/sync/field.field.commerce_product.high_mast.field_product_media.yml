@@ -1,0 +1,21 @@
+uuid: 61f4b81b-a59f-4002-b75f-40d32049df67
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.high_mast
+    - field.storage.commerce_product.field_product_media
+id: commerce_product.high_mast.field_product_media
+field_name: field_product_media
+entity_type: commerce_product
+bundle: high_mast
+label: field_product_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference

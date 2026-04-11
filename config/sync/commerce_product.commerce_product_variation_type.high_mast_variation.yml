@@ -1,0 +1,10 @@
+uuid: 6cc4d765-1b19-4f7a-869c-e412b434e6c9
+langcode: en
+status: true
+dependencies: {  }
+id: high_mast_variation
+label: 'Mastarmatur Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true

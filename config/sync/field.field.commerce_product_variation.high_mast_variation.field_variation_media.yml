@@ -1,0 +1,21 @@
+uuid: 53faaff6-51bf-4156-a399-b831117dee59
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.high_mast_variation
+    - field.storage.commerce_product_variation.field_variation_media
+id: commerce_product_variation.high_mast_variation.field_variation_media
+field_name: field_variation_media
+entity_type: commerce_product_variation
+bundle: high_mast_variation
+label: field_variation_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference
