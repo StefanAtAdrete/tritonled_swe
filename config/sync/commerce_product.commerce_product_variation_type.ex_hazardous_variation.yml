@@ -1,0 +1,10 @@
+uuid: 7a9b2ecc-e1ae-4ae7-ac81-37f300c5d404
+langcode: en
+status: true
+dependencies: {  }
+id: ex_hazardous_variation
+label: 'EX-klassad armatur Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true
