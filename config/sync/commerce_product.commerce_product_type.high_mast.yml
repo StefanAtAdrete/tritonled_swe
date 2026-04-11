@@ -1,0 +1,12 @@
+uuid: b85ec6ff-8466-48c2-a514-b9cf4e24a1cf
+langcode: en
+status: true
+dependencies: {  }
+id: high_mast
+label: Mastarmatur
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true

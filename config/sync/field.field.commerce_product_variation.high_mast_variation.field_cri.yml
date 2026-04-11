@@ -1,0 +1,23 @@
+uuid: 65805705-24da-4666-9ccb-199eba02518d
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.high_mast_variation
+    - field.storage.commerce_product_variation.field_cri
+id: commerce_product_variation.high_mast_variation.field_cri
+field_name: field_cri
+entity_type: commerce_product_variation
+bundle: high_mast_variation
+label: field_cri
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
