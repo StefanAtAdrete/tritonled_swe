@@ -1,7 +1,7 @@
 # Task 029: Produkttyper & fältstruktur för utökad produktkatalog
 
 **Created**: 2026-04-11  
-**Status**: In Progress  
+**Status**: In Progress — Fas 3 återstår  
 **Last Updated**: 2026-04-11  
 **Related Tasks**: TASK-013 (Attribut-cleanup), TASK-017b (Produktseriesidor)
 
@@ -21,23 +21,10 @@ Referensdokument:
 
 ## 1. DEFINE
 
-### Mål
-Skapa en tydlig och hållbar produkttypsstruktur i Drupal Commerce som:
-- Separerar TritonLEDs egna konfigurerbara produkter från externa/importerade
-- Möjliggör strukturerad CSV-import per produkttyp
-- Återanvänder befintliga fält där möjligt
-- Är lätt att underhålla och bygga ut
-
-### Syfte
-- Sajten behöver kunna hantera fler produktkategorier än MAX/OPTI/SROW
-- Varje produkttyp har egna attribut och CSV-struktur
-- Taxonomy kopplar ihop besläktade typer för filtrering och navigation
-
 ### Acceptanskriterier
-- [ ] Taxonomy "Produktkategori" skapad med rätt termer
-- [ ] Alla produkttyper skapade i Drupal Commerce
-- [ ] Gemensamma fält återanvända korrekt
-- [ ] Typspecifika fält identifierade och skapade
+- [x] Taxonomy "Produktkategori" skapad med rätt termer
+- [x] Alla produkttyper skapade i Drupal Commerce
+- [x] Gemensamma fält återanvända korrekt
 - [ ] CSV-mall dokumenterad per produkttyp
 - [ ] Minst en testimport per produkttyp genomförd
 
@@ -49,100 +36,26 @@ Skapa en tydlig och hållbar produkttypsstruktur i Drupal Commerce som:
 
 ### Produkttypsstruktur
 
-#### Taxonomy: `product_category` — "Produktkategori"
-Används som tagg på alla produkttyper för gruppering, filtrering och navigation i Views.
+#### Taxonomy: `product_categories` (machine name MED s)
+| Term (EN) | Term (SV) |
+|-----------|-----------|
+| Linear LED Luminaire | Linjär LED-armatur |
+| Highbay | Hallarmatur |
+| Floodlight | Strålkastare |
+| High Mast | Mastarmatur |
+| Street & Area | Gatu- och områdesarmatur |
+| EX / Hazardous | EX-klassad armatur |
 
-| Term (SV) | Term (EN) | Taggade produkttyper |
-|-----------|-----------|---------------------|
-| Linjär LED-armatur | Linear LED | `max`, `opti`, `srow`, `linear_led` |
-| Hallarmatur | Highbay | `highbay` |
-| Strålkastare | Floodlight | `floodlight` |
-| Mastarmatur | High Mast | `high_mast` |
-| Gatu- och områdesarmatur | Street & Area | `street_area` |
-| EX-klassad armatur | EX / Hazardous | `ex_hazardous` |
-| Överspänningsskydd | Surge Protection | `surge_protection` |
-| Tillbehör | Accessories | `accessories` |
-
-#### Commerce Product Types
-
-| Machine name | Namn (SV) | Konfigurator | Notering |
-|---|---|---|---|
-| `max` | MAX | ✅ | Befintlig — MAX BASE, MAX-PRO, MAX-E, MAX-ED |
-| `opti` | OPTI | ✅ | Befintlig |
-| `srow` | SROW | ✅ | Befintlig — egen produkttyp |
-| `linear_led` | Linjär LED-armatur | ❌ | Ny — Triproof, Linkable Linear, Linear Highbay |
-| `highbay` | Hallarmatur | ❌ | Ny — HB-produkter |
-| `floodlight` | Strålkastare | ❌ | Ny — FL-produkter, sport/padel |
-| `high_mast` | Mastarmatur | ❌ | Ny — HM-produkter |
-| `street_area` | Gatu- och områdesarmatur | ❌ | Ny — ST-produkter, pole top |
-| `ex_hazardous` | EX-klassad armatur | ❌ | Ny — EX/ATEX-produkter |
-| `surge_protection` | Överspänningsskydd | ❌ | Befintlig (IDs 27–34) |
-| `accessories` | Tillbehör | ❌ | Ny — sensorer, nödljuspaket |
-
-**Viktigt:** MAX, OPTI och SROW ändras INTE — de är kvar som egna produkttyper.
-Taxonomy-taggar används för att gruppera och filtrera tvärs produkttyper.
-
----
-
-### Fältanalys
-
-#### Kolumner i DE-stock Excel (källdata)
-| Kolumn | Drupal-fält | Notering |
-|--------|-------------|---------|
-| Model | `field_product_sku` / titel | SKU/modellnummer |
-| Code | `field_product_code` | Leverantörskod |
-| Power | `field_watt` + suffix "W" | Redan finns på MAX/OPTI |
-| Lumen | `field_lumen` + suffix "lm" | Ny |
-| CCT | `field_cct` + suffix "K" | Redan finns |
-| CRI | `field_cri` + prefix ">" | Redan finns |
-| Beam | `field_beam_angle` + suffix "°" | Ny |
-| Driver | `field_driver` | Ny (MW, Sosen, etc.) |
-| Dim | `field_dimming` | Ny (0-10V, DALI, etc.) |
-| Cable | `field_cable` | Ny |
-| Warranty | `field_warranty` | Ny |
-| Standard Price | — | Lagras EJ på frontend |
-
-#### Befintliga fält att återanvända (från MAX/OPTI/SROW)
-Dessa fält finns redan och ska återanvändas:
-- `field_watt` — effekt i W
-- `field_cct` — färgtemperatur i K
-- `field_cri` — färgåtergivning
-- `field_product_sku` — artikelnummer
-- `field_product_media` — produktbilder
-- `field_configurator_media` — konfigurator-bilder (endast `configurable_linear`)
-
-#### Nya fält att skapa
-| Fältnamn | Typ | Suffix | Används av |
-|----------|-----|--------|-----------|
-| `field_lumen` | integer | lm | Alla utom surge/accessories |
-| `field_beam_angle` | integer | ° | highbay, floodlight, high_mast, street_area |
-| `field_driver` | list_string | — | Alla (MW, Sosen, Inventronics…) |
-| `field_dimming` | list_string | — | Alla (0-10V, DALI, Casambi, Push…) |
-| `field_cable` | string | — | linear_led, ex_hazardous |
-| `field_warranty` | integer | år | Alla |
-| `field_ip_class` | list_string | — | Alla (IP20, IP23, IP65, IP66, IP69K) |
-| `field_product_category` | entity_reference (taxonomy) | — | Alla — kopplar till `product_category` |
-| `field_mounting_type` | list_string | — | highbay, floodlight, street_area |
-
----
-
-### Vald lösning
-**Approach**: Config (Commerce product types + Taxonomy + Fields)
-
-Ordning:
-1. Skapa taxonomy `product_category` med termer
-2. Skapa `field_product_category` som entity_reference-fält
-3. Skapa nya gemensamma fält (lumen, beam_angle, driver, dimming, warranty, ip_class, mounting_type)
-4. Skapa produkttyper i rätt ordning (börja med `linear_led` som enklast)
-5. Tilldela fält per produkttyp
-6. Skapa CSV-mallar per produkttyp
-7. Testa import
-
-### Motivering
-- Återanvänder befintliga fält → mindre underhåll
-- Taxonomy-taggning → möjliggör filtrering i Views utan duplicerad logik
-- Separata produkttyper → tydliga CSV-mallar, feeds-konfigurationer och view modes per typ
-- Suffix-mönster (siffra + enhet) följer befintlig standard från MAX/OPTI
+#### Commerce Product Types — alla skapade ✅
+| Machine name | Namn (SV) | Variation type |
+|---|---|---|
+| `linear_led` | Linjär LED-armatur | `linear_led_variation` |
+| `highbay` | Hallarmatur | `highbay_variation` |
+| `floodlight` | Strålkastare | `floodlight_variation` |
+| `high_mast` | Mastarmatur | `high_mast_variation` |
+| `street_area` | Gatu- och områdesarmatur | `street_area_variation` |
+| `ex_hazardous` | EX-klassad armatur | `ex_hazardous_variation` |
+| `accessories` | Tillbehör | `accessories_variation` |
 
 ---
 
@@ -150,63 +63,52 @@ Ordning:
 
 ### Fas 1 — Taxonomy & gemensamma fält ✅ KLAR (2026-04-11)
 
-**OBS**: Taxonomy machine name blev `product_categories` (med s) — inte `product_category`.
-
-**Steg 1 ✅**: Taxonomy `product_categories` skapad
-- 6 termer på engelska (adminspråk): Linear LED Luminaire, Highbay, Floodlight, High Mast, Street & Area, EX / Hazardous
-- Svenska översättningar tillagda på alla termer
-
-**Steg 2 ✅**: Gemensamma fält skapade via `drush php:eval` (inuti `ddev ssh`, bash)
-- Mönster: enkelfnuttar + `?:` istället för `if (!...)` pga zsh/bash history expansion
-- `field_lumen` (integer)
-- `field_beam_angle` (integer)
-- `field_warranty` (integer)
-- `field_cable` (string)
-- `field_driver` (list_string)
-- `field_dimming` (list_string)
-- `field_ip_class` (list_string)
-- `field_mounting_type` (list_string)
-- `field_product_category` (entity_reference → taxonomy_term)
-
-**Steg 3 ✅**: `field_product_category` tilldelad på: max, opti, srow, surge_protection
-
-**Steg 4 ✅**: `ddev drush cex -y` + commit `[TASK-029] Fas 1`
+- Taxonomy `product_categories` skapad med 6 termer + svenska översättningar
+- Fält skapade: `field_lumen`, `field_beam_angle`, `field_warranty`, `field_cable`, `field_driver`, `field_dimming`, `field_ip_class`, `field_mounting_type`, `field_product_category`
+- `field_product_category` tilldelad på: max, opti, srow, surge_protection
+- Committad: `[TASK-029] Fas 1`
 
 ---
 
-### Fas 2 — Produkttyper
-*(Ej påbörjad — nästa session)*
+### Fas 2 — Produkttyper ✅ KLAR (2026-04-11)
 
-Skapas i denna ordning via Commerce admin UI:
-```
-Commerce → Configuration → Product types → Add product type
-Commerce → Configuration → Product variation types → Add product variation type
-```
-- Order item type: ALLTID `quote` (aldrig `default`)
+Alla 7 produkttyper skapade via `vendor/bin/drush php:eval` (inuti `ddev ssh`).
 
-1. `linear_led` — enklast, inga konfigurator-beroenden
-2. `highbay`
-3. `floodlight`
-4. `high_mast`
-5. `street_area`
-6. `ex_hazardous`
-7. `accessories`
+**Viktiga lärdomar:**
+- Fälten återanvändes från `default` variation bundle — rätt namn är `field_lumens` och `field_warranty_years` (inte `field_lumen`/`field_warranty`)
+- `drush php:eval` körs inuti `ddev ssh` — ALDRIG `php` direkt
+- Alla variation types har `orderItemType: quote` och `generateTitle: true`
 
-Efter varje typ: tilldela fält enligt fältöversikten i SKILL.md → `cex` → commit.
+**Fält per typ (variation):** `field_lumens`, `field_warranty_years`, `field_cri`, `field_variation_media`  
++ `field_mounting_type` på: highbay, floodlight, street_area
+
+**Fält per typ (produkt):** `field_product_category`, `field_product_media`, `field_ip_class`, `field_driver`, `field_dimming`  
++ `field_cable` på: linear_led, ex_hazardous
+
+Commits: `[TASK-029] Fas 2: [typ] product type + variation type skapad, fält tilldelade` × 7
 
 ---
 
 ### Fas 3 — CSV-mallar & feeds
-*(Ej påbörjad)*
+*(Nästa session)*
 
 En feeds-konfiguration + CSV-mall per produkttyp.
-CSV-kolumner baseras på fältanalysen ovan.
+Börja med `linear_led` — enklast och mest data finns i DE-stock Excel.
+
+**Ordning per produkttyp:**
+1. Skapa CSV-mall baserad på fältöversikten i SKILL.md
+2. Skapa feed type för produkter (`tritonled_[typ]_products`)
+3. Skapa feed type för variationer (`tritonled_[typ]_variations`)
+4. Testimport med 1–2 produkter
+5. Verifiera i admin → commit
+
+**Starta med:** `linear_led` — hämta data från `data/DE-stock_list_26_4_11.xls`
 
 ---
 
 ## 4. VERIFY
 
-*(Ej påbörjad)*
+*(Ej påbörjad — efter Fas 3)*
 
 ---
 
