@@ -1,0 +1,149 @@
+uuid: b3f7a291-5c8e-4d2b-a1f3-c9e8d7f6a512
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.surge_protection
+    - field.field.commerce_product.surge_protection.field_brand
+    - field.field.commerce_product.surge_protection.field_current_type
+    - field.field.commerce_product.surge_protection.field_product_sku
+    - field.field.commerce_product.surge_protection.field_spd_type
+  module:
+    - commerce_feeds
+    - commerce_product
+    - feeds_log
+third_party_settings:
+  feeds_log:
+    status: true
+    operations:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+      cleaned: cleaned
+    items:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+    source: true
+label: 'TritonLED Surge Protection Products'
+id: tritonled_surge_products
+description: 'Importerar Surge Protection-produkter från CSV'
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product'
+processor_configuration:
+  values:
+    type: surge_protection
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  product_title:
+    value: product_title
+    label: product_title
+    machine_name: product_title
+    type: csv
+  product_brand:
+    value: product_brand
+    label: product_brand
+    machine_name: product_brand
+    type: csv
+  product_current_type:
+    value: product_current_type
+    label: product_current_type
+    machine_name: product_current_type
+    type: csv
+  product_spd_type:
+    value: product_spd_type
+    label: product_spd_type
+    machine_name: product_spd_type
+    type: csv
+  product_status:
+    value: product_status
+    label: product_status
+    machine_name: product_status
+    type: csv
+  store_id:
+    value: store_id
+    label: store_id
+    machine_name: store_id
+    type: csv
+mappings:
+  -
+    target: title
+    map:
+      value: product_title
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_product_sku
+    map:
+      value: product_sku
+    settings:
+      language: en
+    unique:
+      value: true
+  -
+    target: status
+    map:
+      value: product_status
+    settings: {  }
+    unique: {  }
+  -
+    target: stores
+    map:
+      target_id: store_id
+    settings:
+      reference_by: name
+      autocreate: false
+    unique: {  }
+  -
+    target: field_brand
+    map:
+      value: product_brand
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_current_type
+    map:
+      value: product_current_type
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_spd_type
+    map:
+      value: product_spd_type
+    settings:
+      language: en
+    unique: {  }

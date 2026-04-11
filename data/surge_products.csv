@@ -1,0 +1,9 @@
+product_sku,product_title,product_brand,product_current_type,product_spd_type,product_status,store_id
+SURGYS-G140-F,SURGYS G140-F,SURGYS,ac,type_1,1,TritonLED Sweden AB
+SURGYS-G50-FE,SURGYS G50-FE,SURGYS,ac,type_1_2,1,TritonLED Sweden AB
+SURGYS-G40-FE,SURGYS G40-FE,SURGYS,ac,type_1_2,1,TritonLED Sweden AB
+SURGYS-G70,SURGYS G70,SURGYS,ac,type_2,1,TritonLED Sweden AB
+SURGYS-D40,SURGYS D40,SURGYS,ac,type_2,1,TritonLED Sweden AB
+SURGYS-E10,SURGYS E10,SURGYS,ac,type_2_3,1,TritonLED Sweden AB
+SURGYS-RS,SURGYS RS,SURGYS,dc,low_current,1,TritonLED Sweden AB
+SURGYS-G51-PV,SURGYS G51-PV,SURGYS,dc,type_2,1,TritonLED Sweden AB
