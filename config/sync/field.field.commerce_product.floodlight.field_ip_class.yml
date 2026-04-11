@@ -1,0 +1,21 @@
+uuid: f4193509-5f49-4a95-8e30-fe53593698a6
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.floodlight
+    - field.storage.commerce_product.field_ip_class
+  module:
+    - options
+id: commerce_product.floodlight.field_ip_class
+field_name: field_ip_class
+entity_type: commerce_product
+bundle: floodlight
+label: field_ip_class
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string
