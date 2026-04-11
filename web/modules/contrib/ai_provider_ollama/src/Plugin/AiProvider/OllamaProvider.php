@@ -335,4 +335,11 @@ class OllamaProvider extends OpenAiBasedProviderClientBase {
     return $transliterated;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function hasAuthentication(): bool {
+    return FALSE;
+  }
+
 }
