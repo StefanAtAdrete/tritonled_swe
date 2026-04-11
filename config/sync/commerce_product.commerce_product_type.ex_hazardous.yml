@@ -1,0 +1,12 @@
+uuid: 54865ad7-11c5-4144-9527-ae15f4ab2fe3
+langcode: en
+status: true
+dependencies: {  }
+id: ex_hazardous
+label: 'EX-klassad armatur'
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true
