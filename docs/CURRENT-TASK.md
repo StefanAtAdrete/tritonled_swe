@@ -4,6 +4,22 @@
 
 ---
 
+## ⏭️ Nästa session startar här: TASK-029 Fas 1
+
+**Läs**: `docs/tasks/task-029-produkttyper-faltstruktur.md`  
+**Läs**: `docs/skills/drupal-product-type/SKILL.md`  
+
+**Gör:**
+1. Skapa taxonomy `product_category` med 8 termer (admin UI)
+2. Skapa `field_product_category` (entity_reference → taxonomy)
+3. Skapa 8 gemensamma fält via `drush php:eval`
+4. Tilldela `field_product_category` på befintliga typer: max, opti, srow, surge_protection
+5. `ddev drush cex -y` + commit
+
+**Inget mer behöver laddas in** — task-filen och skill-filen räcker.
+
+---
+
 ## Senast gjort: Session 2026-04-11
 
 ### Prod cache-problem löst ✅
@@ -41,6 +57,18 @@
 - CSV-filer: `data/surge_products.csv` (8 produkter) + `data/surge_variations.csv` (25 varianter)
 - Importerade på prod via admin/content/feeds
 - **OBS**: dump-skript ligger kvar i `scripts/` — bör städas bort
+
+### Media-entiteter skapade på prod ✅
+- MID 123-130 (SURGYS-bilder) skapade på prod via `drush php:eval`
+- Kopplade till produkter 27-34 via `field_product_media`
+- Filer rsynkade med `--no-perms --no-times` — uppdaterat i SKILL.md
+
+### TASK-018 Cart page — påbörjad 🔄
+- Problem identifierat: `surge_protection` variation type använder `orderItemType: default`
+- Övriga produkter använder `quote` order type
+- Fix: Ändra till `quote` på `admin/commerce/config/product-variation-types/surge_protection/edit`
+- Dubbla knappar (Update cart + Quote Request) beror på två separata orders
+- Fortsätt nästa session
 
 ---
 
@@ -97,6 +125,7 @@
 | TASK-022 | ✅ Klar | Översättning SV/EN |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-018 | 🔄 In Progress | Cart page layout |
+| TASK-029 | 🔄 In Progress | Produkttyper & fältstruktur för utökad produktkatalog |
 | TASK-013 | 🔄 In Progress | Attribut-cleanup |
 
 ---

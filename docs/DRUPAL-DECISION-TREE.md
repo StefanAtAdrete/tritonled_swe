@@ -7,37 +7,6 @@ Drupal är ett modulärt, konfigurationsbaserat CMS. 90% av all funktionalitet f
 
 ---
 
-## ⚠️ STEG 0: RÄTT FILSYSTEM (KRITISKT!)
-
-**Claude har tillgång till 2 datorer - använd ALLTID rätt verktyg:**
-
-### DIN MAC (Drupal-projektet)
-**ALLTID använd:** `Filesystem:*` verktyg (Capital F)  
-**Sökväg:** `/Users/steffes/Projekt/tritonled/`
-
-| Filtyp | Verktyg | Path |
-|--------|---------|------|
-| Config YAML | `Filesystem:write_file` | `/Users/steffes/Projekt/tritonled/config/sync/` |
-| Theme files | `Filesystem:write_file` | `/Users/steffes/Projekt/tritonled/web/themes/custom/tritonled/` |
-| Templates | `Filesystem:write_file` | `/Users/steffes/Projekt/tritonled/web/themes/custom/tritonled/templates/` |
-| Custom modules | `Filesystem:write_file` | `/Users/steffes/Projekt/tritonled/web/modules/custom/` |
-| Dokumentation | `Filesystem:write_file` | `/Users/steffes/Projekt/tritonled/docs/` |
-
-### CLAUDE'S DATOR (Temporära filer)
-**Använd:** `filesystem:*` verktyg (lowercase f) eller `create_file`  
-**Sökväg:** `/home/claude/` eller `/mnt/user-data/`
-
-### ✅ CHECKLISTA INNAN FIL SKAPAS:
-- [ ] Ska filen till `/Users/steffes/Projekt/tritonled/`?
-- [ ] Om JA → Använd `Filesystem:write_file` (Capital F)
-- [ ] Om NEJ → Använd `create_file` (Claude's dator)
-- [ ] Verifiera med `ls -la [path]` direkt efter skapande
-- [ ] Om filen INTE finns → FEL verktyg använt, gör om!
-
-**Se även:** `/docs/CLAUDE-FILESYSTEM-RULES.md` för detaljer
-
----
-
 ## 🔍 RESEARCH FÖRE ALLT ANNAT (KRITISKT)
 
 **Claude ska ALLTID göra detta innan något föreslås eller görs:**
@@ -82,7 +51,7 @@ Dessa saker bryter mot Drupal best practices och förstör oftast mer än de hj�
 - ❌ **Använda `!important` i CSS** - Förstå specificity istället
 - ❌ **Modifiera contrib-modulers kod** - Använd patches eller hooks
 - ❌ **Gissa lösningar** - Fråga om osäker, verifiera med dokumentation
-- ❌ **Skapa filer på fel dator** - Följ STEG 0 ovan!
+- ❌ **Skapa filer på fel dator** - Använd alltid `Filesystem:*` (Capital F) för Drupal-projektet
 
 ---
 
@@ -413,7 +382,6 @@ Gå igenom denna VARJE gång:
 - [ ] Följer min lösning Drupal best practices?
 - [ ] Är lösningen enkel att underhålla?
 - [ ] Blockerar jag INTE någon core-funktionalitet?
-- [ ] Verifierat att filen skapades rätt? (`ls -la`)
 
 ---
 
@@ -444,11 +412,6 @@ Gå igenom denna VARJE gång:
    - Tusentals utvecklare har löst samma problem
    - Contrib-moduler är testade och säkra
    - Rapportera bugs, contributa patches
-
-6. **Rätt Filsystem**
-   - Drupal-filer → `Filesystem:*` (Capital F)
-   - Temp-filer → `create_file` (Claude's dator)
-   - Verifiera alltid med `ls -la`
 
 ---
 
