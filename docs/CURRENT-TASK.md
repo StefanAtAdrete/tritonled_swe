@@ -35,6 +35,13 @@
 - Installerat lokalt och på prod
 - Konfigurerat: Protect all forms, 5s time limit, logging aktiverat
 
+### Surge Protection feeds + CSV skapade ✅
+- `feeds.feed_type.tritonled_surge_products` och `tritonled_surge_variations` skapade
+- `feeds_item` + `field_product_sku` lagda till på surge_protection product/variation type
+- CSV-filer: `data/surge_products.csv` (8 produkter) + `data/surge_variations.csv` (25 varianter)
+- Importerade på prod via admin/content/feeds
+- **OBS**: dump-skript ligger kvar i `scripts/` — bör städas bort
+
 ---
 
 ## Senast gjort: Session 2026-04-01
