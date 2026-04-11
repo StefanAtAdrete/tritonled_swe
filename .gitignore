@@ -205,3 +205,4 @@ yarn-error.log*
 vendor/
 config/sync/ai_provider_openai.settings.yml
 config/sync/ai.settings.yml
+config/sync/system.performance.yml
