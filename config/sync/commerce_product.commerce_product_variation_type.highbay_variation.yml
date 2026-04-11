@@ -1,0 +1,10 @@
+uuid: 76907fec-ec30-463b-9d37-5b1a409c2ede
+langcode: en
+status: true
+dependencies: {  }
+id: highbay_variation
+label: 'Hallarmatur Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true

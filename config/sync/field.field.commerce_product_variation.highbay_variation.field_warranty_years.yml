@@ -1,0 +1,23 @@
+uuid: 7edb6165-b429-438e-8b52-acb418d49280
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.storage.commerce_product_variation.field_warranty_years
+id: commerce_product_variation.highbay_variation.field_warranty_years
+field_name: field_warranty_years
+entity_type: commerce_product_variation
+bundle: highbay_variation
+label: field_warranty_years
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

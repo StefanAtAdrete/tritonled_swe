@@ -1,0 +1,21 @@
+uuid: 17166a0d-eb58-4f1b-aac7-31399f535003
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.highbay
+    - field.storage.commerce_product.field_product_category
+id: commerce_product.highbay.field_product_category
+field_name: field_product_category
+entity_type: commerce_product
+bundle: highbay
+label: field_product_category
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings: {  }
+field_type: entity_reference

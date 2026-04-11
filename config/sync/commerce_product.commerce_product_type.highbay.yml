@@ -1,0 +1,12 @@
+uuid: a3ca370d-15b0-4a41-9582-310502c9f97c
+langcode: en
+status: true
+dependencies: {  }
+id: highbay
+label: Hallarmatur
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true
