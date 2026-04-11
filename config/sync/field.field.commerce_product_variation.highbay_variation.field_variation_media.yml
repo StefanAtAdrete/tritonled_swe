@@ -1,0 +1,21 @@
+uuid: 0ed0917b-f93f-4372-82dd-3196fa31c6c0
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.storage.commerce_product_variation.field_variation_media
+id: commerce_product_variation.highbay_variation.field_variation_media
+field_name: field_variation_media
+entity_type: commerce_product_variation
+bundle: highbay_variation
+label: field_variation_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference
