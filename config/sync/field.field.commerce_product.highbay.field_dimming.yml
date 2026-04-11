@@ -1,0 +1,21 @@
+uuid: d701f550-033b-44a9-91db-443bcc09516f
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.highbay
+    - field.storage.commerce_product.field_dimming
+  module:
+    - options
+id: commerce_product.highbay.field_dimming
+field_name: field_dimming
+entity_type: commerce_product
+bundle: highbay
+label: field_dimming
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

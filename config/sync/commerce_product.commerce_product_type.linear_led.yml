@@ -1,0 +1,12 @@
+uuid: 0d674c4f-67e6-45d3-bb23-d3cdea2840b4
+langcode: en
+status: true
+dependencies: {  }
+id: linear_led
+label: 'Linjär LED-armatur'
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true

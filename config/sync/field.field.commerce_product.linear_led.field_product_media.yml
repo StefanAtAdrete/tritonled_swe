@@ -1,0 +1,21 @@
+uuid: 8087a5dd-02e9-45d8-9fd7-5f38bcc33baf
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_product_media
+id: commerce_product.linear_led.field_product_media
+field_name: field_product_media
+entity_type: commerce_product
+bundle: linear_led
+label: field_product_media
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference

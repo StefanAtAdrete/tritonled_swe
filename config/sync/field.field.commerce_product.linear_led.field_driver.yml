@@ -1,0 +1,21 @@
+uuid: 7442cf42-0057-4df8-b246-9512e9f0c408
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_driver
+  module:
+    - options
+id: commerce_product.linear_led.field_driver
+field_name: field_driver
+entity_type: commerce_product
+bundle: linear_led
+label: field_driver
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

@@ -1,0 +1,21 @@
+uuid: a7b9dcdf-a3d2-4c73-aeaf-8864ef24dbf2
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_dimming
+  module:
+    - options
+id: commerce_product.linear_led.field_dimming
+field_name: field_dimming
+entity_type: commerce_product
+bundle: linear_led
+label: field_dimming
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string
