@@ -1,0 +1,282 @@
+uuid: 67271a8e-9c77-4f58-ba92-6a029c91704f
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.field.commerce_product_variation.highbay_variation.attribute_watt
+    - field.field.commerce_product_variation.highbay_variation.feeds_item
+    - field.field.commerce_product_variation.highbay_variation.field_beam_angle
+    - field.field.commerce_product_variation.highbay_variation.field_cable
+    - field.field.commerce_product_variation.highbay_variation.field_cct
+    - field.field.commerce_product_variation.highbay_variation.field_cri
+    - field.field.commerce_product_variation.highbay_variation.field_dimming
+    - field.field.commerce_product_variation.highbay_variation.field_driver
+    - field.field.commerce_product_variation.highbay_variation.field_lumens
+    - field.field.commerce_product_variation.highbay_variation.field_mounting_type
+    - field.field.commerce_product_variation.highbay_variation.field_variation_media
+    - field.field.commerce_product_variation.highbay_variation.field_warranty_years
+    - field.field.commerce_product_variation.highbay_variation.layout_builder__layout
+  module:
+    - bootstrap_layout_builder
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+            background_black: 0
+            tertiary_background: 0
+          context_mapping: {  }
+        components:
+          db29d8b1-3dc0-4f49-a68a-82b458ab0cba:
+            uuid: db29d8b1-3dc0-4f49-a68a-82b458ab0cba
+            region: blb_region_col_2
+            configuration:
+              id: 'extra_field_block:commerce_product_variation:highbay_variation:commerce_variation_cart_form'
+              label: 'Add to cart form'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                settings: {  }
+                third_party_settings: {  }
+            weight: 1
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+          bed8a5a9-5971-48fc-8bcf-15cf7bd80ce3:
+            uuid: bed8a5a9-5971-48fc-8bcf-15cf7bd80ce3
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product_variation:highbay_variation:title'
+              label: Title
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: string
+                label: visually_hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+          c90b9555-ac79-4bbd-89bd-c01cf609571d:
+            uuid: c90b9555-ac79-4bbd-89bd-c01cf609571d
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product_variation:highbay_variation:type'
+              label: 'Product variation type'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_label
+                label: visually_hidden
+                settings:
+                  link: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+        third_party_settings: {  }
+id: commerce_product_variation.highbay_variation.default
+targetEntityType: commerce_product_variation
+bundle: highbay_variation
+mode: default
+content: {  }
+hidden:
+  attribute_watt: true
+  commerce_variation_cart_form: true
+  feeds_item: true
+  field_beam_angle: true
+  field_cable: true
+  field_cct: true
+  field_cri: true
+  field_dimming: true
+  field_driver: true
+  field_lumens: true
+  field_mounting_type: true
+  field_variation_media: true
+  field_warranty_years: true
+  langcode: true
+  layout_builder__layout: true
+  list_price: true
+  price: true
+  product_id: true
+  sku: true
+  title: true
