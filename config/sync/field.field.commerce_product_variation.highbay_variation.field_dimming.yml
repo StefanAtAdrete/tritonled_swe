@@ -1,0 +1,19 @@
+uuid: a9636f9c-350e-459a-a431-72b82eaebf5c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.storage.commerce_product_variation.field_dimming
+id: commerce_product_variation.highbay_variation.field_dimming
+field_name: field_dimming
+entity_type: commerce_product_variation
+bundle: highbay_variation
+label: Dimming
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string
