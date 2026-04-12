@@ -4,6 +4,7 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.field.commerce_product_variation.highbay_variation.attribute_watt
     - field.field.commerce_product_variation.highbay_variation.field_beam_angle
     - field.field.commerce_product_variation.highbay_variation.field_cable
     - field.field.commerce_product_variation.highbay_variation.field_cct
@@ -11,6 +12,7 @@ dependencies:
     - field.field.commerce_product_variation.highbay_variation.field_dimming
     - field.field.commerce_product_variation.highbay_variation.field_driver
     - field.field.commerce_product_variation.highbay_variation.field_lumens
+    - field.field.commerce_product_variation.highbay_variation.field_warranty_years
   module:
     - commerce_feeds
     - commerce_product
@@ -89,10 +91,10 @@ custom_sources:
     label: variation_status
     machine_name: variation_status
     type: csv
-  field_watt:
-    value: field_watt
-    label: field_watt
-    machine_name: field_watt
+  attribute_watt:
+    value: attribute_watt
+    label: attribute_watt
+    machine_name: attribute_watt
     type: csv
   field_lumens:
     value: field_lumens
@@ -153,8 +155,7 @@ mappings:
     target: status
     map:
       value: variation_status
-    settings:
-      language: null
+    settings: {  }
     unique: {  }
   -
     target: product_id
@@ -172,6 +173,14 @@ mappings:
       number: price
     settings:
       currency_code: SEK
+    unique: {  }
+  -
+    target: attribute_watt
+    map:
+      target_id: attribute_watt
+    settings:
+      reference_by: name
+      autocreate: false
     unique: {  }
   -
     target: field_lumens

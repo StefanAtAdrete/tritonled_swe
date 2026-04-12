@@ -3,10 +3,11 @@ langcode: en
 status: true
 dependencies: {  }
 id: highbay
-label: Hallarmatur
+label: Highbay
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - highbay_variation
 multipleVariations: true
 injectVariationFields: true

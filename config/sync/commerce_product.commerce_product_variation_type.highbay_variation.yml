@@ -3,8 +3,8 @@ langcode: en
 status: true
 dependencies: {  }
 id: highbay_variation
-label: 'Hallarmatur Variation'
+label: 'Highbay variation'
 traits: {  }
 locked: false
-orderItemType: quote
+orderItemType: qoute
 generateTitle: true
