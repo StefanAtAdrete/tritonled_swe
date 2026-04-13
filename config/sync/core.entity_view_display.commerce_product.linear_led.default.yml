@@ -1,0 +1,330 @@
+uuid: dfa18488-e268-45a8-af92-09593e2a57e1
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.field.commerce_product.linear_led.body
+    - field.field.commerce_product.linear_led.field_brand
+    - field.field.commerce_product.linear_led.field_cable
+    - field.field.commerce_product.linear_led.field_datasheet
+    - field.field.commerce_product.linear_led.field_dimming
+    - field.field.commerce_product.linear_led.field_driver
+    - field.field.commerce_product.linear_led.field_hero_media
+    - field.field.commerce_product.linear_led.field_ip_class
+    - field.field.commerce_product.linear_led.field_producers
+    - field.field.commerce_product.linear_led.field_product_categories
+    - field.field.commerce_product.linear_led.field_product_category
+    - field.field.commerce_product.linear_led.field_product_media
+    - field.field.commerce_product.linear_led.field_product_media_files
+    - field.field.commerce_product.linear_led.field_show_in_hero
+    - field.field.commerce_product.linear_led.field_warranty
+    - field.field.commerce_product.linear_led.layout_builder__layout
+  module:
+    - fences
+    - file
+    - layout_builder
+    - layout_discovery
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components:
+          bbd7548c-68c3-4114-b47a-b4c5ab25519b:
+            uuid: bbd7548c-68c3-4114-b47a-b4c5ab25519b
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          376baba1-125b-4e34-9040-3fd63a2a2b68:
+            uuid: 376baba1-125b-4e34-9040-3fd63a2a2b68
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: above
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+          9a7e19f5-7abe-4f92-86f8-ac57edf4f514:
+            uuid: 9a7e19f5-7abe-4f92-86f8-ac57edf4f514
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:body'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 2
+            additional: {  }
+          30f8acc0-2e38-40bd-9000-b4e48e2a50f1:
+            uuid: 30f8acc0-2e38-40bd-9000-b4e48e2a50f1
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_datasheet'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: file_default
+                label: inline
+                settings:
+                  use_description_as_link_text: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 3
+            additional: {  }
+          14004f89-7161-4d94-be90-3231d7cd6a3e:
+            uuid: 14004f89-7161-4d94-be90-3231d7cd6a3e
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_hero_media'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 4
+            additional: {  }
+          8dba6ce6-e513-4db1-b71c-1c4930e04be9:
+            uuid: 8dba6ce6-e513-4db1-b71c-1c4930e04be9
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_producers'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 5
+            additional: {  }
+          2e86c30f-e6d2-49d8-b5bb-3effda12127c:
+            uuid: 2e86c30f-e6d2-49d8-b5bb-3effda12127c
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_show_in_hero'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: boolean
+                label: above
+                settings:
+                  format: default
+                  format_custom_false: ''
+                  format_custom_true: ''
+                third_party_settings: {  }
+            weight: 6
+            additional: {  }
+          f3501bf5-3397-4554-8cd5-95afb6f5e860:
+            uuid: f3501bf5-3397-4554-8cd5-95afb6f5e860
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_product_categories'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_label
+                label: above
+                settings:
+                  link: true
+                third_party_settings: {  }
+            weight: 7
+            additional: {  }
+          2ec5bf4d-bab4-48e7-811d-2a206708a763:
+            uuid: 2ec5bf4d-bab4-48e7-811d-2a206708a763
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_brand'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: visually_hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 8
+            additional: {  }
+          a9824678-2e84-4a51-af51-f812385a7b3c:
+            uuid: a9824678-2e84-4a51-af51-f812385a7b3c
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:linear_led:field_product_media_files'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: entity_reference_entity_view
+                label: above
+                settings:
+                  view_mode: default
+                  link: false
+                third_party_settings: {  }
+            weight: 9
+            additional: {  }
+        third_party_settings: {  }
+id: commerce_product.linear_led.default
+targetEntityType: commerce_product
+bundle: linear_led
+mode: default
+content:
+  field_brand:
+    type: string
+    label: visually_hidden
+    settings:
+      link_to_entity: false
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 5
+    region: content
+  field_datasheet:
+    type: file_default
+    label: inline
+    settings:
+      use_description_as_link_text: false
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 0
+    region: content
+  field_hero_media:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_producers:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_product_categories:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 4
+    region: content
+  field_product_media_files:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_show_in_hero:
+    type: boolean
+    label: above
+    settings:
+      format: default
+      format_custom_false: ''
+      format_custom_true: ''
+    third_party_settings: {  }
+    weight: 3
+    region: content
+hidden:
+  body: true
+  created: true
+  field_cable: true
+  field_dimming: true
+  field_driver: true
+  field_ip_class: true
+  field_product_category: true
+  field_product_media: true
+  field_warranty: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  title: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true

@@ -1,0 +1,94 @@
+uuid: 87240467-fba7-4d3f-85e2-7a704e726c0c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - core.entity_view_mode.commerce_product.hero
+    - field.field.commerce_product.linear_led.body
+    - field.field.commerce_product.linear_led.field_brand
+    - field.field.commerce_product.linear_led.field_cable
+    - field.field.commerce_product.linear_led.field_datasheet
+    - field.field.commerce_product.linear_led.field_dimming
+    - field.field.commerce_product.linear_led.field_driver
+    - field.field.commerce_product.linear_led.field_hero_media
+    - field.field.commerce_product.linear_led.field_ip_class
+    - field.field.commerce_product.linear_led.field_producers
+    - field.field.commerce_product.linear_led.field_product_categories
+    - field.field.commerce_product.linear_led.field_product_category
+    - field.field.commerce_product.linear_led.field_product_media
+    - field.field.commerce_product.linear_led.field_product_media_files
+    - field.field.commerce_product.linear_led.field_show_in_hero
+    - field.field.commerce_product.linear_led.field_warranty
+    - field.field.commerce_product.linear_led.layout_builder__layout
+  module:
+    - commerce_product
+    - file
+    - text
+id: commerce_product.linear_led.hero
+targetEntityType: commerce_product
+bundle: linear_led
+mode: hero
+content:
+  body:
+    type: text_default
+    label: visually_hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_brand:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 6
+    region: content
+  field_datasheet:
+    type: file_default
+    label: inline
+    settings:
+      use_description_as_link_text: true
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  title:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: -5
+    region: content
+  variations:
+    type: commerce_add_to_cart
+    label: above
+    settings:
+      combine: true
+    third_party_settings: {  }
+    weight: 10
+    region: content
+hidden:
+  created: true
+  field_cable: true
+  field_dimming: true
+  field_driver: true
+  field_hero_media: true
+  field_ip_class: true
+  field_producers: true
+  field_product_categories: true
+  field_product_category: true
+  field_product_media: true
+  field_product_media_files: true
+  field_show_in_hero: true
+  field_warranty: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true

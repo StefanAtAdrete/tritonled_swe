@@ -3,10 +3,11 @@ langcode: en
 status: true
 dependencies: {  }
 id: linear_led
-label: 'Linjär LED-armatur'
+label: 'Linear LED'
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - linear_led_variation
 multipleVariations: true
 injectVariationFields: true

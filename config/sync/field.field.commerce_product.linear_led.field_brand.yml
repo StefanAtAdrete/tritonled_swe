@@ -1,0 +1,19 @@
+uuid: 53e90410-69b3-4d52-b4fc-7c9f7d18c93d
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_brand
+id: commerce_product.linear_led.field_brand
+field_name: field_brand
+entity_type: commerce_product
+bundle: linear_led
+label: Brand/Manufacturer
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

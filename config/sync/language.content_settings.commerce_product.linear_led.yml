@@ -1,0 +1,16 @@
+uuid: 3be85e6c-aa80-4b10-98e1-6285ef26f83c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: commerce_product.linear_led
+target_entity_type_id: commerce_product
+target_bundle: linear_led
+default_langcode: site_default
+language_alterable: true
