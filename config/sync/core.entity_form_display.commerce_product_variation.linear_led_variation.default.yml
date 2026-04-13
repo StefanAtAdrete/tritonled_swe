@@ -1,0 +1,74 @@
+uuid: c3070188-846f-425c-9d3d-641b9feabb95
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.linear_led_variation
+    - field.field.commerce_product_variation.linear_led_variation.attribute_watt
+    - field.field.commerce_product_variation.linear_led_variation.field_cri
+    - field.field.commerce_product_variation.linear_led_variation.field_lumens
+    - field.field.commerce_product_variation.linear_led_variation.field_mounting_type
+    - field.field.commerce_product_variation.linear_led_variation.field_variation_media
+    - field.field.commerce_product_variation.linear_led_variation.field_warranty_years
+  module:
+    - commerce_price
+id: commerce_product_variation.linear_led_variation.default
+targetEntityType: commerce_product_variation
+bundle: linear_led_variation
+mode: default
+content:
+  attribute_watt:
+    type: options_select
+    weight: 1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  commerce_stock_always_in_stock:
+    type: boolean_checkbox
+    weight: 5
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  langcode:
+    type: language_select
+    weight: 2
+    region: content
+    settings:
+      include_locked: true
+    third_party_settings: {  }
+  list_price:
+    type: commerce_list_price
+    weight: -1
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  price:
+    type: commerce_price_default
+    weight: 0
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  sku:
+    type: string_textfield
+    weight: -4
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 90
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+hidden:
+  created: true
+  field_cri: true
+  field_lumens: true
+  field_mounting_type: true
+  field_variation_media: true
+  field_warranty_years: true
+  uid: true

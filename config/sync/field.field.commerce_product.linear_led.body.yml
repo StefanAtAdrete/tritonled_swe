@@ -1,0 +1,26 @@
+uuid: b6e8f44c-3021-4f91-a9a9-6457c7123712
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.body
+    - filter.format.full_html
+  module:
+    - text
+id: commerce_product.linear_led.body
+field_name: body
+entity_type: commerce_product
+bundle: linear_led
+label: Body
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  display_summary: false
+  required_summary: false
+  allowed_formats:
+    - full_html
+field_type: text_with_summary

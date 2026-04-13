@@ -1,0 +1,29 @@
+uuid: 8bea6883-0ab1-45bc-8a7b-3d71f445ef2f
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_product_categories
+    - taxonomy.vocabulary.product_categories
+id: commerce_product.linear_led.field_product_categories
+field_name: field_product_categories
+entity_type: commerce_product
+bundle: linear_led
+label: 'Product Categories'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      product_categories: product_categories
+    sort:
+      field: name
+      direction: asc
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

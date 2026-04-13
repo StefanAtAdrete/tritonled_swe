@@ -1,0 +1,29 @@
+uuid: 9ea8fa4e-5389-4c65-b8dd-9fe36d2ed6c4
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_producers
+    - taxonomy.vocabulary.producers
+id: commerce_product.linear_led.field_producers
+field_name: field_producers
+entity_type: commerce_product
+bundle: linear_led
+label: Producers
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      producers: producers
+    sort:
+      field: name
+      direction: asc
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference
