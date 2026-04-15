@@ -1,0 +1,14 @@
+uuid: 1590085c-20ff-40e7-bd29-51d209416119
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.elektriker
+  module:
+    - user
+id: user_add_role_action.elektriker
+label: 'Add the Elektriker role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: elektriker
