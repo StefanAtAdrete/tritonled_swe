@@ -11,7 +11,7 @@ id: commerce_product.highbay.field_mounting_type
 field_name: field_mounting_type
 entity_type: commerce_product
 bundle: highbay
-label: Mounting Type
+label: 'Mounting Type'
 description: ''
 required: false
 translatable: false
