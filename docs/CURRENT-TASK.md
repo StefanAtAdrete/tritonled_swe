@@ -8,6 +8,14 @@
 
 **Läs**: `docs/tasks/task-031-site-audit.md`
 
+### ⚠️ FÖRSTA PRIORITET: config/sync vs prod-DB
+`cex` kördes och raderade 300+ filer ur config/sync — återställdes med `git checkout`.
+Orsak: prod-DB har annan config-state än config/sync på Mac.
+Måste hanteras kontrollerat i nästa session innan vi gör fler ändringar.
+Alternativ:
+- Kör `ddev drush cex -y` och granska diff — committa hela skillnaden om det ser rätt ut
+- Eller identifiera vad som faktiskt saknas/skiljer och hantera selektivt
+
 ### Nästa steg i 031-E (rensning)
 1. Rätta etiketter i admin UI — 12 fält totalt:
    - Produktfält: `field_dimming` → Dimming, `field_driver` → Driver, `field_ip_class` → IP-klass, `field_mounting_type` → Monteringstyp, `field_cable` → Kabel, `field_product_media` → Produktbilder, `field_warranty` → Garanti (år)
@@ -34,7 +42,7 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-031 | 🔄 In Progress | Site Audit — nästa: etiketter + layout |
+| TASK-031 | 🔄 In Progress | Site Audit — nästa: config-synk + etiketter + layout |
 | TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
 | TASK-018 | 🔄 In Progress | Cart page layout |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
