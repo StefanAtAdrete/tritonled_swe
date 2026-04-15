@@ -4,14 +4,15 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-031 fortsätter — steg 2
+## ⏭️ Nästa session startar här: TASK-031 fortsätter — steg 3
 
 **Läs**: `docs/tasks/task-031-site-audit.md`
 
-### Nästa steg i 031-E (rensning)
-1. Sätt `field_product_media` formatter till obegränsat antal bilder i Layout Builder per produkttyp
-2. Bygg om layout för produkt 35 (DB53 Hilton linear LED)
-3. Komplettera Kategori C — `feeds_item` + Layout Builder
+### Nästa steg
+1. Bygg Layout Builder-layout för produkt 35 (DB53 Hilton linear LED) i UI
+2. Bygg default Layout Builder-layout för `highbay` i UI
+3. Kontrollera översättningar per produkt (SV/EN)
+4. Komplettera Kategori C — `feeds_item` + Layout Builder
 
 ### Gjort idag (2026-04-15)
 - ✅ DDEV migrerad MariaDB → MySQL 8.0
@@ -27,6 +28,12 @@
 - ✅ Config-synk löst (79 otrackade filer committade)
 - ✅ 62 fältetiketter uppdaterade via YAML (EN) + cim
 - ✅ `field_product_category` + `field_product_media_files` borttagna från DB och config/sync
+- ✅ Social media channels block återskapat (UUID-alignment)
+- ✅ `views.view.assorted_products` importerad + fixad (status true, field_product_media, block plugins)
+- ✅ Config dependencies rensade (14 display-filer)
+- ✅ Startsidan fungerar — DB53 och High Bay Fairyland visas med bild
+- ⚠️ Layout Builder per-produkt kan inte synkas via config — måste byggas manuellt per miljö
+- ⚠️ Översättningar (SV/EN) behöver kontrolleras per produkt
 
 ---
 
