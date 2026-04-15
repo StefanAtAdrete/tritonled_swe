@@ -9,7 +9,7 @@ id: commerce_product.linear_led.field_product_media
 field_name: field_product_media
 entity_type: commerce_product
 bundle: linear_led
-label: Product Images
+label: 'Product Images'
 description: ''
 required: false
 translatable: true

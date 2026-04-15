@@ -11,7 +11,7 @@ id: commerce_product.highbay.field_ip_class
 field_name: field_ip_class
 entity_type: commerce_product
 bundle: highbay
-label: IP Class
+label: 'IP Class'
 description: ''
 required: false
 translatable: true
