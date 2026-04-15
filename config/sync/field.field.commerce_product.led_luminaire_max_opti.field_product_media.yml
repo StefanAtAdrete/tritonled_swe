@@ -12,7 +12,7 @@ id: commerce_product.led_luminaire_max_opti.field_product_media
 field_name: field_product_media
 entity_type: commerce_product
 bundle: led_luminaire_max_opti
-label: 'Product media'
+label: 'Product Images'
 description: ''
 required: false
 translatable: false

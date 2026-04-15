@@ -9,7 +9,7 @@ id: commerce_product.ex_hazardous.field_cable
 field_name: field_cable
 entity_type: commerce_product
 bundle: ex_hazardous
-label: field_cable
+label: Cable
 description: ''
 required: false
 translatable: true

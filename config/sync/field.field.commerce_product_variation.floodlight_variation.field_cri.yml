@@ -9,7 +9,7 @@ id: commerce_product_variation.floodlight_variation.field_cri
 field_name: field_cri
 entity_type: commerce_product_variation
 bundle: floodlight_variation
-label: field_cri
+label: CRI
 description: ''
 required: false
 translatable: true

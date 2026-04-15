@@ -9,7 +9,7 @@ id: commerce_product_variation.high_mast_variation.field_lumens
 field_name: field_lumens
 entity_type: commerce_product_variation
 bundle: high_mast_variation
-label: field_lumens
+label: Lumens
 description: ''
 required: false
 translatable: true

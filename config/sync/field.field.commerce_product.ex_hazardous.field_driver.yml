@@ -11,7 +11,7 @@ id: commerce_product.ex_hazardous.field_driver
 field_name: field_driver
 entity_type: commerce_product
 bundle: ex_hazardous
-label: field_driver
+label: Driver
 description: ''
 required: false
 translatable: true

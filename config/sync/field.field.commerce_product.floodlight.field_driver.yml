@@ -11,7 +11,7 @@ id: commerce_product.floodlight.field_driver
 field_name: field_driver
 entity_type: commerce_product
 bundle: floodlight
-label: field_driver
+label: Driver
 description: ''
 required: false
 translatable: true

@@ -11,7 +11,7 @@ id: commerce_product.high_mast.field_dimming
 field_name: field_dimming
 entity_type: commerce_product
 bundle: high_mast
-label: field_dimming
+label: Dimming
 description: ''
 required: false
 translatable: true

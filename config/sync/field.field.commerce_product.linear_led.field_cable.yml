@@ -9,7 +9,7 @@ id: commerce_product.linear_led.field_cable
 field_name: field_cable
 entity_type: commerce_product
 bundle: linear_led
-label: field_cable
+label: Cable
 description: ''
 required: false
 translatable: true
