@@ -1,42 +1,38 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-04-12
+**Senast uppdaterad**: 2026-04-15
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-029 Fas 3 fortsätter
+## ⏭️ Nästa session startar här: TASK-031 Site Audit — Dubblettfält
 
-**Läs**: `docs/tasks/task-029-produkttyper-faltstruktur.md`
+**Läs**: `docs/tasks/task-031-site-audit.md`
 
-**Fas 1 klar** ✅
-**Fas 2 klar** ✅
-**Fas 3 Highbay klar** ✅ (2026-04-12)
+### Vad är gjort idag (2026-04-15)
+- DDEV migrerad från MariaDB 10.11 → MySQL 8.0
+- Lokal DB synkad från prod-backup
+- Bilder synkade från prod via rsync
+- A-records dokumenterade för tritonled.se
+- TASK-030 skapad (UX-feedback Thomas)
+- TASK-031 skapad och påbörjad (Site Audit)
+- 031-A (systemstatus) ✅
+- 031-B (fältmatris alla produkttyper) ✅
 
-### Highbay (klar) ✅
-- 6 produkter + 72 variationer importerade
-- `attribute_watt` används som variantväljare
-- `feeds_item` + `field_product_sku` tillagda på highbay bundle
-- CSV: `data/highbay_products.csv` + `data/highbay_variations.csv`
-- Feeds: `tritonled_highbay_products` + `tritonled_highbay_variations`
+### Nästa steg: 031-D Dubblettfält
+Beslut behövs om följande:
 
-### Fas 3 — Återstående produkttyper
-| Produkttyp | Status |
-|---|---|
-| `highbay` | ✅ Klar |
-| `floodlight` | ⏳ Nästa |
-| `high_mast` | ⏳ |
-| `street_area` | ⏳ |
-| `ex_hazardous` | ⏳ |
-| `linear_led` (Triproof) | ⏳ |
-| `led_panel` (ny typ?) | ⏳ |
-| `accessories` | ⏳ |
+| Fält 1 | Fält 2 | Fråga |
+|---|---|---|
+| `field_product_categories` | `field_product_category` | Vilken behålls? |
+| `field_product_type` | core `type` | Kan `field_product_type` tas bort? |
+| `field_product_media` | `field_product_media_files` | Olika syften? |
+| `field_warranty` (produkt) | `field_warranty_years` (variation) | Samma data? |
+| `field_producers` | `field_brand` | Olika syften? |
 
-**Lärdomar från highbay:**
-- `feeds_item` måste läggas till manuellt på varje ny bundle (produkt + variation)
-- `field_product_sku` måste läggas till manuellt på varje ny produkttyp
-- `attribute_watt` används som variantväljare — inte `field_watt`
-- Order item type måste sättas till `quote` på variation type
-- Alla nya variation bundles behöver `feeds_item` + relevanta `field_*`
+### Kända blockerande fynd
+- 5 produkttyper saknar Layout Builder: `floodlight`, `high_mast`, `street_area`, `ex_hazardous`, `accessories`
+- 5 produkttyper saknar `feeds_item`: samma
+- Bundle-namn avviker från TASK-029: `max`/`opti` → `led_luminaire_max_opti`
 
 ---
 
@@ -44,7 +40,9 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-029 | 🔄 In Progress | Fas 3: CSV-mallar & feeds per produkttyp |
-| TASK-018 | 🔄 In Progress | Cart page layout (surge_protection order item type fix) |
+| TASK-031 | 🔄 In Progress | Site Audit — nästa: 031-D dubbletter |
+| TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
+| TASK-018 | 🔄 In Progress | Cart page layout |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-013 | 🔄 In Progress | Attribut-cleanup |
+| TASK-030 | ⏳ Parkerad | UX-feedback Thomas |
