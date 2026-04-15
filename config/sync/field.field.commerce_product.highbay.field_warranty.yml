@@ -1,0 +1,23 @@
+uuid: fbc547d2-f8c3-4f15-a389-0e94779e56b9
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.highbay
+    - field.storage.commerce_product.field_warranty
+id: commerce_product.highbay.field_warranty
+field_name: field_warranty
+entity_type: commerce_product
+bundle: highbay
+label: field_warranty
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

@@ -1,0 +1,16 @@
+uuid: b28e5f90-2ed2-412b-a5d3-bca6a3e859f1
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: commerce_product_variation.highbay_variation
+target_entity_type_id: commerce_product_variation
+target_bundle: highbay_variation
+default_langcode: site_default
+language_alterable: true
