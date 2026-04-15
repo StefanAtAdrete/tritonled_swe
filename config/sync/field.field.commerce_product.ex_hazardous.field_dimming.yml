@@ -11,7 +11,7 @@ id: commerce_product.ex_hazardous.field_dimming
 field_name: field_dimming
 entity_type: commerce_product
 bundle: ex_hazardous
-label: field_dimming
+label: Dimming
 description: ''
 required: false
 translatable: true

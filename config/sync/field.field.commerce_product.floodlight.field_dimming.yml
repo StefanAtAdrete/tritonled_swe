@@ -11,7 +11,7 @@ id: commerce_product.floodlight.field_dimming
 field_name: field_dimming
 entity_type: commerce_product
 bundle: floodlight
-label: field_dimming
+label: Dimming
 description: ''
 required: false
 translatable: true

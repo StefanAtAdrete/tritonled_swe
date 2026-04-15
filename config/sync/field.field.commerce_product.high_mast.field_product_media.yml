@@ -9,7 +9,7 @@ id: commerce_product.high_mast.field_product_media
 field_name: field_product_media
 entity_type: commerce_product
 bundle: high_mast
-label: field_product_media
+label: Product Images
 description: ''
 required: false
 translatable: true

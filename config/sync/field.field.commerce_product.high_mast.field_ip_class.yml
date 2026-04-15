@@ -11,7 +11,7 @@ id: commerce_product.high_mast.field_ip_class
 field_name: field_ip_class
 entity_type: commerce_product
 bundle: high_mast
-label: field_ip_class
+label: IP Class
 description: ''
 required: false
 translatable: true

@@ -9,7 +9,7 @@ id: commerce_product_variation.linear_led_variation.field_mounting_type
 field_name: field_mounting_type
 entity_type: commerce_product_variation
 bundle: linear_led_variation
-label: field_mounting_type
+label: Mounting Type
 description: ''
 required: false
 translatable: true

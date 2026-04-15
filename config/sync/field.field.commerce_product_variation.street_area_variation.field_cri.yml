@@ -9,7 +9,7 @@ id: commerce_product_variation.street_area_variation.field_cri
 field_name: field_cri
 entity_type: commerce_product_variation
 bundle: street_area_variation
-label: field_cri
+label: CRI
 description: ''
 required: false
 translatable: true

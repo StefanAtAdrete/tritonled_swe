@@ -9,7 +9,7 @@ id: commerce_product.street_area.field_product_media
 field_name: field_product_media
 entity_type: commerce_product
 bundle: street_area
-label: field_product_media
+label: Product Images
 description: ''
 required: false
 translatable: true

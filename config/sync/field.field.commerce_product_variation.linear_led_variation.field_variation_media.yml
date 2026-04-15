@@ -9,7 +9,7 @@ id: commerce_product_variation.linear_led_variation.field_variation_media
 field_name: field_variation_media
 entity_type: commerce_product_variation
 bundle: linear_led_variation
-label: field_variation_media
+label: 'Variation Image'
 description: ''
 required: false
 translatable: true

@@ -9,7 +9,7 @@ id: commerce_product_variation.highbay_variation.field_warranty_years
 field_name: field_warranty_years
 entity_type: commerce_product_variation
 bundle: highbay_variation
-label: field_warranty_years
+label: 'Warranty (years)'
 description: ''
 required: false
 translatable: true
