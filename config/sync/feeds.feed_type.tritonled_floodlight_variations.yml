@@ -1,0 +1,175 @@
+uuid: d4f7a156-9b5c-4e1d-f2a4-b0c6d5e8f167
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.floodlight_variation
+    - field.field.commerce_product_variation.floodlight_variation.field_cri
+    - field.field.commerce_product_variation.floodlight_variation.field_lumens
+    - field.field.commerce_product_variation.floodlight_variation.field_mounting_type
+    - field.field.commerce_product_variation.floodlight_variation.field_variation_media
+    - field.field.commerce_product_variation.floodlight_variation.field_warranty_years
+  module:
+    - commerce_feeds
+    - commerce_product
+    - feeds_log
+third_party_settings:
+  feeds_log:
+    status: true
+    operations:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+      cleaned: cleaned
+    items:
+      created: created
+      updated: updated
+      deleted: deleted
+      skipped: skipped
+      failed: failed
+    source: true
+label: 'TritonLED Floodlight Variations'
+id: tritonled_floodlight_variations
+description: 'Importerar Floodlight-varianter från CSV'
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: upload
+fetcher_configuration:
+  allowed_extensions: 'txt csv tsv xml opml'
+  directory: 'private://feeds'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 100
+processor: 'entity:commerce_product_variation'
+processor_configuration:
+  values:
+    type: floodlight_variation
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: false
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  sku:
+    value: sku
+    label: sku
+    machine_name: sku
+    type: csv
+  product_sku:
+    value: product_sku
+    label: product_sku
+    machine_name: product_sku
+    type: csv
+  title:
+    value: title
+    label: title
+    machine_name: title
+    type: csv
+  price:
+    value: price
+    label: price
+    machine_name: price
+    type: csv
+  variation_status:
+    value: variation_status
+    label: variation_status
+    machine_name: variation_status
+    type: csv
+  field_lumens:
+    value: field_lumens
+    label: field_lumens
+    machine_name: field_lumens
+    type: csv
+  field_cri:
+    value: field_cri
+    label: field_cri
+    machine_name: field_cri
+    type: csv
+  field_mounting_type:
+    value: field_mounting_type
+    label: field_mounting_type
+    machine_name: field_mounting_type
+    type: csv
+  field_warranty_years:
+    value: field_warranty_years
+    label: field_warranty_years
+    machine_name: field_warranty_years
+    type: csv
+mappings:
+  -
+    target: sku
+    map:
+      value: sku
+    settings: {  }
+    unique:
+      value: 1
+  -
+    target: title
+    map:
+      value: title
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: status
+    map:
+      value: variation_status
+    settings: {  }
+    unique: {  }
+  -
+    target: product_id
+    map:
+      target_id: product_sku
+    settings:
+      reference_by: field_product_sku
+      autocreate: false
+      feeds_item: false
+      autocreate_bundle: false
+    unique: {  }
+  -
+    target: price
+    map:
+      number: price
+    settings:
+      currency_code: SEK
+    unique: {  }
+  -
+    target: field_lumens
+    map:
+      value: field_lumens
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_cri
+    map:
+      value: field_cri
+    settings:
+      language: null
+    unique: {  }
+  -
+    target: field_mounting_type
+    map:
+      value: field_mounting_type
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_warranty_years
+    map:
+      value: field_warranty_years
+    settings:
+      language: null
+    unique: {  }
