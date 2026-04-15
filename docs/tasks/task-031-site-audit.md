@@ -247,7 +247,6 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 - ✅ Layout Builder reset på produkt 35 (refererade borttaget fält)
 
 ### Återstår
-- [ ] Rätta etiketter — 7 produktfält + 5 variationsfält (i admin UI)
 - [ ] Sätt `field_product_media` formatter till obegränsat antal bilder i Layout Builder per produkttyp
 - [ ] Bygg om layout för produkt 35 (DB53 Hilton linear LED)
 - [ ] Komplettera Kategori C med `feeds_item` + Layout Builder
@@ -340,7 +339,10 @@ field_cct, field_variation_media, field_warranty_years
 
 ## Anteckningar & beslut
 
-- **2026-04-15**: MAX/OPTI/SROW särbehandlas (Kategori A) pga konfigurator + 55k+ varianter
+- ✅ Config-synk löst — 79 otrackade filer från prod-synk committade (2026-04-15)
+- ✅ Fältetiketter uppdaterade via YAML — 62 field.field-filer (EN) + cim (2026-04-15)
+- ✅ `field_product_category` + `field_product_media_files` borttagna från DB och config/sync (2026-04-15)
+- **2026-04-15**: Fältetiketter satta till engelska via YAML direkt (inte admin UI) — snabbare och säkrare. Svenska etiketter hanteras via interface translation i DB.
 - **2026-04-15**: `field_producers` = partner/tillverkare, `field_brand` = varumärke — olika syften, båda behålls
 - **2026-04-15**: `field_product_type` = subtyp för Kategori A (Base/Emergency/PRO/Sensor) — behålls
 - **2026-04-15**: Sajten ska exponera öppen JSON för AI-agenter, partners och externa system — fältnamn är API-kontrakt
