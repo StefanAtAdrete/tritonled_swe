@@ -71,6 +71,7 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 
 ### Kända brister
 - `config:status` fungerar inte med Drush 13 — kan inte enkelt verifiera config-synk
+- `field_product_media` formatter visat bara 1 bild per default — måste sättas till obegränsat i Layout Builder per produkttyp
 *(Fylls på löpande)*
 
 ---
@@ -132,9 +133,7 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 | `field_mounting_type` | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `field_producers` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | `field_product_categories` | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| `field_product_category` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `field_product_media` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `field_product_media_files` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | `field_product_sku` | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `field_product_type` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `field_series` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -193,35 +192,8 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 
 ---
 
-### Viktiga fynd — variationer
-
-**⚠️ Kategori A saknar variations-fält**
-`led_luminaire_max_opti` och `led_luminaire_srow` hanterar specs via JSON-schema
-och attribut — inte via `field_*` på variationer. Detta är korrekt för konfiguratorn.
-
-**⚠️ Etikettbrister på variationsfält**
-| Fält | Bör bli |
-|---|---|
-| `field_cri` | "CRI" |
-| `field_lumens` | "Lumen" |
-| `field_mounting_type` | "Monteringstyp" |
-| `field_variation_media` | "Variationsbild" |
-| `field_warranty_years` | "Garanti (år)" |
-
-**⚠️ Inkompletta variationstyper (saknar feeds_item)**
-`floodlight_variation`, `high_mast_variation`, `street_area_variation`,
-`ex_hazardous_variation`, `accessories_variation`
-
-**⚠️ `accessories_variation` är helt tom**
-Inga attribut, inga fält — bara core-fält. Behöver definieras.
-
-**⚠️ `field_cri` och `field_lumens` finns på alla Kategori C-variationer**
-Men `highbay_variation` har dessa fält via `attribute_watt` + separata fält — inkonsekvent med övriga.
-
----
-
 ## 031-C: Oanvända / inkompletta fält
-**Status**: ✅ Uppdaterad med variationsdata
+**Status**: ✅ Uppdaterad
 
 ### Produkttyper utan Layout Builder
 - `floodlight`, `high_mast`, `street_area`, `ex_hazardous`, `accessories` ❌
@@ -253,32 +225,33 @@ Men `highbay_variation` har dessa fält via `attribute_watt` + separata fält �
 ---
 
 ## 031-D: Dubblettfält
-**Status**: ✅ Alla beslut fattade
+**Status**: ✅ Alla beslut fattade och åtgärdade
 
-| Fält | Beslut | Data | Motivering |
-|---|---|---|---|
-| `field_product_category` | 🗑️ **Ta bort** | 0 produkter | Exakt dubblett av `field_product_categories`, ingen data |
-| `field_product_media_files` | 🗑️ **Ta bort** | 2 produkter (ID 35,36) | Dubblett av `field_product_media`, migrera data först |
-| `field_product_type` | ✅ **Behåll** | 12 produkter | Subtyper Kategori A: Base, Emergency, Emergency Daylight, PRO, Sensor |
-| `field_producers` | ✅ **Behåll** | 12 produkter | Partner/tillverkare |
-| `field_brand` | ✅ **Behåll** | 10 produkter | Varumärke på produkten |
-
-### Fältroller (beslutade 2026-04-15)
-- `field_brand` = varumärket på produkten
-- `field_producers` = partner/tillverkare som producerar
-- `field_product_type` = subtyp inom Kategori A
+| Fält | Beslut | Status |
+|---|---|---|
+| `field_product_category` | 🗑️ Ta bort | ✅ Borttaget från alla 10 bundles |
+| `field_product_media_files` | 🗑️ Ta bort | ✅ Data migrerad till `field_product_media`, fält borttaget |
+| `field_product_type` | ✅ Behåll | Subtyper Kategori A |
+| `field_producers` | ✅ Behåll | Partner/tillverkare |
+| `field_brand` | ✅ Behåll | Varumärke på produkten |
 
 ---
 
-## 031-E: Rensning — plan
-**Status**: ⏳ Redo att påbörjas
+## 031-E: Rensning
+**Status**: 🔄 Delvis klar
 
-### Prioriterad rensningslista
-1. Ta bort `field_product_category` (0 data)
-2. Migrera `field_product_media_files` (ID 35,36) → `field_product_media`, ta bort
-3. Rätta etiketter — 7 produktfält + 5 variationsfält
-4. Komplettera Kategori C med `feeds_item` + Layout Builder
-5. Definiera `accessories_variation` (helt tom)
+### Gjort
+- ✅ `field_product_category` borttaget från alla bundles
+- ✅ `field_product_media_files` data migrerad (produkt 35: 2 bilder, produkt 36: 1 bild)
+- ✅ Dubbletter i `field_product_media` rensade
+- ✅ Layout Builder reset på produkt 35 (refererade borttaget fält)
+
+### Återstår
+- [ ] Rätta etiketter — 7 produktfält + 5 variationsfält (i admin UI)
+- [ ] Sätt `field_product_media` formatter till obegränsat antal bilder i Layout Builder per produkttyp
+- [ ] Bygg om layout för produkt 35 (DB53 Hilton linear LED)
+- [ ] Komplettera Kategori C med `feeds_item` + Layout Builder
+- [ ] Definiera `accessories_variation` (helt tom)
 
 ---
 
@@ -290,12 +263,12 @@ Men `highbay_variation` har dessa fält via `attribute_watt` + separata fält �
 | `led_luminaire_max_opti` | ✅ | A | Konfigurator, hero, media |
 | `led_luminaire_srow` | ✅ | A | Konfigurator, hero, media |
 | `surge_protection` | ✅ | B | Egna fält |
-| `highbay` | ✅ | C | |
+| `highbay` | ✅ | C | field_product_media formatter — sätt till obegränsat |
 | `floodlight` | ❌ | C | Saknar layout |
 | `high_mast` | ❌ | C | Saknar layout |
 | `street_area` | ❌ | C | Saknar layout |
 | `ex_hazardous` | ❌ | C | Saknar layout |
-| `linear_led` | ✅ | C | |
+| `linear_led` | ✅ | C | Layout reset på produkt 35 — bygg om |
 | `accessories` | ❌ | C | Saknar layout |
 
 ---
@@ -321,32 +294,30 @@ Men `highbay_variation` har dessa fält via `attribute_watt` + separata fält �
 ### 🔴 Blockerande
 1. **5 produkttyper saknar Layout Builder** — kan inte visas på frontend
 2. **6 produkttyper + 5 variationstyper saknar `feeds_item`** — kan inte importeras
-3. **Bundle-namn avviker från TASK-029** — `max`/`opti` → `led_luminaire_max_opti`
-4. **`accessories_variation` helt tom** — inga fält definierade
+3. **`accessories_variation` helt tom** — inga fält definierade
+4. **Produkt 35 saknar layout** — måste byggas om i UI
 
 ### 🟡 Bör åtgärdas
-5. **`field_product_category`** — ta bort (dubblett, 0 data)
-6. **`field_product_media_files`** — migrera + ta bort
-7. **12 fält med machine name som label** — produkt + variation
+5. **12 fält med machine name som label** — produkt + variation
+6. **`field_product_media` formatter** — sätt till obegränsat per produkttyp i Layout Builder
 
-### 🟢 OK
-- Systemstatus ren
-- Kategori A välstrukturerade (attribut + JSON-schema)
-- Kategori B (surge_protection) komplett med egna fält
-- `field_brand`, `field_producers`, `field_product_type` — tydliga syften
+### 🟢 Åtgärdat idag
+- `field_product_category` borttaget
+- `field_product_media_files` migrerad och borttagen
+- Dubbletter i media rensade
 
 ---
 
 ## JSON API — framtida exponering
 
-### Kategori A — Konfigurator-produkter (variation: attribut via JSON)
+### Kategori A — Konfigurator-produkter
 Produkt: title, body, field_short_description, field_features, field_series,
 field_product_type, field_brand, field_datasheet, field_product_media,
 field_hero_media, field_configurator_schema, field_product_categories
 
 ### Kategori B — Surge Protection
 Produkt: title, field_brand, field_spd_type, field_current_type, field_product_media, field_product_sku
-Variation: attribute_pairs, attribute_poles, attribute_voltage_un + alla field_discharge_*, field_protection_level_up, field_voltage_uc
+Variation: attribute_pairs, attribute_poles, attribute_voltage_un + field_discharge_*, field_protection_level_up, field_voltage_uc
 
 ### Kategori C — Externa produkter
 Produkt: title, body, field_brand, field_producers, field_datasheet,
@@ -355,16 +326,15 @@ field_mounting_type, field_product_categories, field_product_sku
 Variation: attribute_watt, field_lumens, field_cri, field_beam_angle,
 field_cct, field_variation_media, field_warranty_years
 
-*(Komplettera när fältstruktur är normaliserad)*
-
 ---
 
 ## Nästa steg
 
-1. **031-E** — rensning (dubbletter + etiketter)
-2. **031-F** — verifiera layouts i UI
-3. **Komplettera Kategori C** — feeds_item + Layout Builder
-4. **JSON API** — konfigurera exponering per produkttyp
+1. Rätta etiketter i admin UI (12 fält)
+2. Sätt `field_product_media` formatter till obegränsat i Layout Builder
+3. Bygg om layout för produkt 35 (DB53 Hilton)
+4. Komplettera Kategori C — feeds_item + Layout Builder
+5. JSON API — konfigurera exponering per produkttyp
 
 ---
 
@@ -374,3 +344,4 @@ field_cct, field_variation_media, field_warranty_years
 - **2026-04-15**: `field_producers` = partner/tillverkare, `field_brand` = varumärke — olika syften, båda behålls
 - **2026-04-15**: `field_product_type` = subtyp för Kategori A (Base/Emergency/PRO/Sensor) — behålls
 - **2026-04-15**: Sajten ska exponera öppen JSON för AI-agenter, partners och externa system — fältnamn är API-kontrakt
+- **2026-04-15**: `field_product_media` formatter måste sättas till obegränsat antal bilder per produkttyp i Layout Builder

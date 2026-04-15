@@ -4,35 +4,29 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-031 Site Audit — Dubblettfält
+## ⏭️ Nästa session startar här: TASK-031 fortsätter
 
 **Läs**: `docs/tasks/task-031-site-audit.md`
 
-### Vad är gjort idag (2026-04-15)
-- DDEV migrerad från MariaDB 10.11 → MySQL 8.0
-- Lokal DB synkad från prod-backup
-- Bilder synkade från prod via rsync
-- A-records dokumenterade för tritonled.se
-- TASK-030 skapad (UX-feedback Thomas)
-- TASK-031 skapad och påbörjad (Site Audit)
-- 031-A (systemstatus) ✅
-- 031-B (fältmatris alla produkttyper) ✅
+### Nästa steg i 031-E (rensning)
+1. Rätta etiketter i admin UI — 12 fält totalt:
+   - Produktfält: `field_dimming` → Dimming, `field_driver` → Driver, `field_ip_class` → IP-klass, `field_mounting_type` → Monteringstyp, `field_cable` → Kabel, `field_product_media` → Produktbilder, `field_warranty` → Garanti (år)
+   - Variationsfält: `field_cri` → CRI, `field_lumens` → Lumen, `field_mounting_type` → Monteringstyp, `field_variation_media` → Variationsbild, `field_warranty_years` → Garanti (år)
+2. Sätt `field_product_media` formatter till obegränsat i Layout Builder per produkttyp
+3. Bygg om layout för produkt 35 (DB53 Hilton linear LED)
+4. Komplettera Kategori C — `feeds_item` + Layout Builder
 
-### Nästa steg: 031-D Dubblettfält
-Beslut behövs om följande:
-
-| Fält 1 | Fält 2 | Fråga |
-|---|---|---|
-| `field_product_categories` | `field_product_category` | Vilken behålls? |
-| `field_product_type` | core `type` | Kan `field_product_type` tas bort? |
-| `field_product_media` | `field_product_media_files` | Olika syften? |
-| `field_warranty` (produkt) | `field_warranty_years` (variation) | Samma data? |
-| `field_producers` | `field_brand` | Olika syften? |
-
-### Kända blockerande fynd
-- 5 produkttyper saknar Layout Builder: `floodlight`, `high_mast`, `street_area`, `ex_hazardous`, `accessories`
-- 5 produkttyper saknar `feeds_item`: samma
-- Bundle-namn avviker från TASK-029: `max`/`opti` → `led_luminaire_max_opti`
+### Gjort idag (2026-04-15)
+- ✅ DDEV migrerad MariaDB → MySQL 8.0
+- ✅ Lokal DB + bilder synkade från prod
+- ✅ TASK-030 skapad (UX-feedback Thomas)
+- ✅ TASK-031 skapad och påbörjad
+- ✅ 031-A systemstatus klar
+- ✅ 031-B fältmatris produkt + variation klar
+- ✅ 031-D alla dubblettbeslut fattade
+- ✅ `field_product_category` borttaget (alla bundles)
+- ✅ `field_product_media_files` migrerad och borttagen
+- ✅ Dubbletter i media rensade (produkt 35, 36)
 
 ---
 
@@ -40,7 +34,7 @@ Beslut behövs om följande:
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-031 | 🔄 In Progress | Site Audit — nästa: 031-D dubbletter |
+| TASK-031 | 🔄 In Progress | Site Audit — nästa: etiketter + layout |
 | TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
 | TASK-018 | 🔄 In Progress | Cart page layout |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
