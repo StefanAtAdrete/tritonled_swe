@@ -1,6 +1,6 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-04-15
+**Senast uppdaterad**: 2026-04-15 (uppdaterad)
 
 ---
 
@@ -9,8 +9,8 @@
 **Läs**: `docs/tasks/task-031-site-audit.md`
 
 ### Nästa steg
-1. Bygg Layout Builder-layout för produkt 35 (DB53 Hilton linear LED) i UI
-2. Bygg default Layout Builder-layout för `highbay` i UI
+1. ~~Bygg Layout Builder-layout för produkt 35 (DB53 Hilton linear LED) i UI~~ ✅
+2. ~~Bygg default Layout Builder-layout för `highbay` i UI~~ ✅
 3. Kontrollera översättningar per produkt (SV/EN)
 4. Komplettera Kategori C — `feeds_item` + Layout Builder
 
