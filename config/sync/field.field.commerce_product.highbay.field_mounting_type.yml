@@ -1,0 +1,21 @@
+uuid: 241f3d38-5783-4695-8add-6891b9cbb2d7
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.highbay
+    - field.storage.commerce_product.field_mounting_type
+  module:
+    - options
+id: commerce_product.highbay.field_mounting_type
+field_name: field_mounting_type
+entity_type: commerce_product
+bundle: highbay
+label: field_mounting_type
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string
