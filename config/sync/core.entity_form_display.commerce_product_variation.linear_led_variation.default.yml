@@ -5,6 +5,7 @@ dependencies:
   config:
     - commerce_product.commerce_product_variation_type.linear_led_variation
     - field.field.commerce_product_variation.linear_led_variation.attribute_watt
+    - field.field.commerce_product_variation.linear_led_variation.feeds_item
     - field.field.commerce_product_variation.linear_led_variation.field_cri
     - field.field.commerce_product_variation.linear_led_variation.field_lumens
     - field.field.commerce_product_variation.linear_led_variation.field_mounting_type
@@ -71,6 +72,7 @@ content:
     third_party_settings: {  }
 hidden:
   created: true
+  feeds_item: true
   field_cri: true
   field_lumens: true
   field_mounting_type: true

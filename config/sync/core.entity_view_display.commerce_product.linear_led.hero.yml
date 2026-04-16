@@ -6,6 +6,7 @@ dependencies:
     - commerce_product.commerce_product_type.linear_led
     - core.entity_view_mode.commerce_product.hero
     - field.field.commerce_product.linear_led.body
+    - field.field.commerce_product.linear_led.feeds_item
     - field.field.commerce_product.linear_led.field_brand
     - field.field.commerce_product.linear_led.field_cable
     - field.field.commerce_product.linear_led.field_datasheet
@@ -14,6 +15,7 @@ dependencies:
     - field.field.commerce_product.linear_led.field_hero_media
     - field.field.commerce_product.linear_led.field_ip_class
     - field.field.commerce_product.linear_led.field_producers
+    - field.field.commerce_product.linear_led.field_product_categories
     - field.field.commerce_product.linear_led.field_product_media
     - field.field.commerce_product.linear_led.field_show_in_hero
     - field.field.commerce_product.linear_led.field_warranty
@@ -68,6 +70,7 @@ content:
     region: content
 hidden:
   created: true
+  feeds_item: true
   field_cable: true
   field_dimming: true
   field_driver: true

@@ -1,0 +1,23 @@
+uuid: 6a647427-0c4c-49f0-8c58-266cb2e5775f
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.feeds_item
+  module:
+    - feeds
+id: commerce_product.linear_led.feeds_item
+field_name: feeds_item
+entity_type: commerce_product
+bundle: linear_led
+label: 'Feeds item'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:feeds_feed'
+  handler_settings: {  }
+field_type: feeds_item

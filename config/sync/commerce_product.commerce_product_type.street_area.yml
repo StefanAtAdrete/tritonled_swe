@@ -7,6 +7,7 @@ label: 'Gatu- och områdesarmatur'
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - street_area_variation
 multipleVariations: true
 injectVariationFields: true

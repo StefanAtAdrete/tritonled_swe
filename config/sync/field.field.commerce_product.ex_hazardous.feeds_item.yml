@@ -1,0 +1,23 @@
+uuid: 324eeca7-1b57-4762-a303-89f33548aa23
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.ex_hazardous
+    - field.storage.commerce_product.feeds_item
+  module:
+    - feeds
+id: commerce_product.ex_hazardous.feeds_item
+field_name: feeds_item
+entity_type: commerce_product
+bundle: ex_hazardous
+label: 'Feeds item'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:feeds_feed'
+  handler_settings: {  }
+field_type: feeds_item

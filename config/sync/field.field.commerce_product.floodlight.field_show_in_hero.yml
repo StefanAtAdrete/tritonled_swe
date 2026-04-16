@@ -1,0 +1,23 @@
+uuid: a3c6d045-8e4f-4b06-c1d3-e9f5a7b0c056
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.floodlight
+    - field.storage.commerce_product.field_show_in_hero
+id: commerce_product.floodlight.field_show_in_hero
+field_name: field_show_in_hero
+entity_type: commerce_product
+bundle: floodlight
+label: 'Show in hero'
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

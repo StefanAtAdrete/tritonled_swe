@@ -1,0 +1,81 @@
+uuid: 8dcc834f-04fb-47b0-957e-74135b8344cb
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.field.commerce_product.street_area.feeds_item
+    - field.field.commerce_product.street_area.field_dimming
+    - field.field.commerce_product.street_area.field_driver
+    - field.field.commerce_product.street_area.field_ip_class
+    - field.field.commerce_product.street_area.field_product_media
+    - field.field.commerce_product.street_area.layout_builder__layout
+  module:
+    - layout_builder
+    - layout_discovery
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components:
+          8e068ae2-962d-4494-9b2f-26904be00614:
+            uuid: 8e068ae2-962d-4494-9b2f-26904be00614
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:street_area:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          743bfe7e-c7ea-45ce-966e-413effa24f5e:
+            uuid: 743bfe7e-c7ea-45ce-966e-413effa24f5e
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:street_area:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: above
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+        third_party_settings: {  }
+id: commerce_product.street_area.default
+targetEntityType: commerce_product
+bundle: street_area
+mode: default
+content: {  }
+hidden:
+  created: true
+  feeds_item: true
+  field_dimming: true
+  field_driver: true
+  field_ip_class: true
+  field_product_media: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  title: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true

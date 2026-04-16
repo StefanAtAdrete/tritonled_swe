@@ -1,16 +1,16 @@
-uuid: 5011dd48-af7a-46b9-91e8-44f322297314
+uuid: fc4ee208-150c-4934-a460-4242c4d2cd4a
 langcode: en
 status: true
 dependencies:
   config:
-    - commerce_product.commerce_product_type.surge_protection
+    - commerce_product.commerce_product_type.accessories
   module:
     - content_translation
 third_party_settings:
   content_translation:
     enabled: true
-id: commerce_product.surge_protection
+id: commerce_product.accessories
 target_entity_type_id: commerce_product
-target_bundle: surge_protection
+target_bundle: accessories
 default_langcode: site_default
 language_alterable: true

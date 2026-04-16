@@ -1,0 +1,21 @@
+uuid: b7116ac8-9c5f-4b0e-be2b-30a2420280c5
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.accessories
+    - field.storage.commerce_product.layout_builder__layout
+  module:
+    - layout_builder
+id: commerce_product.accessories.layout_builder__layout
+field_name: layout_builder__layout
+entity_type: commerce_product
+bundle: accessories
+label: Layout
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: layout_section

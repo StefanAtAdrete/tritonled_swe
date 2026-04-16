@@ -1,0 +1,81 @@
+uuid: 2b6b09e1-e8cf-48b7-8a65-9f7364aeb964
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.ex_hazardous
+    - field.field.commerce_product.ex_hazardous.feeds_item
+    - field.field.commerce_product.ex_hazardous.field_cable
+    - field.field.commerce_product.ex_hazardous.field_dimming
+    - field.field.commerce_product.ex_hazardous.field_driver
+    - field.field.commerce_product.ex_hazardous.field_ip_class
+    - field.field.commerce_product.ex_hazardous.field_product_media
+  module:
+    - commerce_product
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components:
+          fc3c5855-3710-4dfb-8ae0-9dc819f6a62a:
+            uuid: fc3c5855-3710-4dfb-8ae0-9dc819f6a62a
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:ex_hazardous:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          b4c4fe7f-c5f4-498a-be92-b44f61dbaa09:
+            uuid: b4c4fe7f-c5f4-498a-be92-b44f61dbaa09
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:ex_hazardous:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: above
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+        third_party_settings: {  }
+id: commerce_product.ex_hazardous.default
+targetEntityType: commerce_product
+bundle: ex_hazardous
+mode: default
+content: {  }
+hidden:
+  created: true
+  feeds_item: true
+  field_cable: true
+  field_dimming: true
+  field_driver: true
+  field_ip_class: true
+  field_product_media: true
+  langcode: true
+  stores: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  title: true
+  variations: true

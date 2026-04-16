@@ -7,6 +7,7 @@ label: Mastarmatur
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - high_mast_variation
 multipleVariations: true
 injectVariationFields: true
