@@ -1,0 +1,21 @@
+uuid: b5a14ca8-95d4-4b6d-bec4-c4092d7c3acf
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.high_mast
+    - field.storage.commerce_product.layout_builder__layout
+  module:
+    - layout_builder
+id: commerce_product.high_mast.layout_builder__layout
+field_name: layout_builder__layout
+entity_type: commerce_product
+bundle: high_mast
+label: Layout
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: layout_section

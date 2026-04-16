@@ -7,6 +7,7 @@ label: Tillbehör
 traits: {  }
 locked: false
 description: ''
-variationTypes: {  }
+variationTypes:
+  - accessories_variation
 multipleVariations: true
 injectVariationFields: true

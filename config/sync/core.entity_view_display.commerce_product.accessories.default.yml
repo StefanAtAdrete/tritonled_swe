@@ -1,0 +1,73 @@
+uuid: 4325d508-a597-4a60-8911-b3ad62d22cd6
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.accessories
+    - field.field.commerce_product.accessories.feeds_item
+    - field.field.commerce_product.accessories.field_product_media
+  module:
+    - commerce_product
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: layout_onecol
+        layout_settings:
+          label: ''
+        components:
+          49544e99-763f-42b8-a3c5-f41923b00daa:
+            uuid: 49544e99-763f-42b8-a3c5-f41923b00daa
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:accessories:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional: {  }
+          52a01b78-9def-4d4a-ad6d-5bd5e4d7fd7d:
+            uuid: 52a01b78-9def-4d4a-ad6d-5bd5e4d7fd7d
+            region: content
+            configuration:
+              id: 'field_block:commerce_product:accessories:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: above
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 1
+            additional: {  }
+        third_party_settings: {  }
+id: commerce_product.accessories.default
+targetEntityType: commerce_product
+bundle: accessories
+mode: default
+content: {  }
+hidden:
+  created: true
+  feeds_item: true
+  field_product_media: true
+  langcode: true
+  stores: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  title: true
+  variations: true

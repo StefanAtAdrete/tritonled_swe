@@ -4,8 +4,13 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.surge_protection
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
 id: commerce_product.surge_protection
 target_entity_type_id: commerce_product
 target_bundle: surge_protection
 default_langcode: site_default
-language_alterable: false
+language_alterable: true

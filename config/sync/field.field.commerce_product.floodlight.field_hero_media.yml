@@ -1,0 +1,33 @@
+uuid: d0f3a712-5b1c-4e73-f8a0-b6c2d4e7f723
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.floodlight
+    - field.storage.commerce_product.field_hero_media
+    - media.type.image
+    - media.type.remote_video
+    - media.type.video
+id: commerce_product.floodlight.field_hero_media
+field_name: field_hero_media
+entity_type: commerce_product
+bundle: floodlight
+label: 'Hero media'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+      remote_video: remote_video
+      video: video
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: remote_video
+field_type: entity_reference
