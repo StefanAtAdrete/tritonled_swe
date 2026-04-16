@@ -1,39 +1,23 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-04-15 (uppdaterad)
+**Senast uppdaterad**: 2026-04-16
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-031 fortsätter — steg 3
+## ⏭️ Nästa session startar här: TASK-031 fortsätter
 
 **Läs**: `docs/tasks/task-031-site-audit.md`
 
 ### Nästa steg
-1. ~~Bygg Layout Builder-layout för produkt 35 (DB53 Hilton linear LED) i UI~~ ✅
-2. ~~Bygg default Layout Builder-layout för `highbay` i UI~~ ✅
+1. Kör `cim` + verifiera Layout Builder för `high_mast` + `street_area` (YAML skapade)
+2. Bygg Layout Builder manuellt för `floodlight` (uppgradera), `ex_hazardous`, `accessories`
 3. Kontrollera översättningar per produkt (SV/EN)
-4. Komplettera Kategori C — `feeds_item` + Layout Builder
 
-### Gjort idag (2026-04-15)
-- ✅ DDEV migrerad MariaDB → MySQL 8.0
-- ✅ Lokal DB + bilder synkade från prod
-- ✅ TASK-030 skapad (UX-feedback Thomas)
-- ✅ TASK-031 skapad och påbörjad
-- ✅ 031-A systemstatus klar
-- ✅ 031-B fältmatris produkt + variation klar
-- ✅ 031-D alla dubblettbeslut fattade
-- ✅ `field_product_category` borttaget (alla bundles)
-- ✅ `field_product_media_files` migrerad och borttagen
-- ✅ Dubbletter i media rensade (produkt 35, 36)
-- ✅ Config-synk löst (79 otrackade filer committade)
-- ✅ 62 fältetiketter uppdaterade via YAML (EN) + cim
-- ✅ `field_product_category` + `field_product_media_files` borttagna från DB och config/sync
-- ✅ Social media channels block återskapat (UUID-alignment)
-- ✅ `views.view.assorted_products` importerad + fixad (status true, field_product_media, block plugins)
-- ✅ Config dependencies rensade (14 display-filer)
-- ✅ Startsidan fungerar — DB53 och High Bay Fairyland visas med bild
-- ⚠️ Layout Builder per-produkt kan inte synkas via config — måste byggas manuellt per miljö
-- ⚠️ Översättningar (SV/EN) behöver kontrolleras per produkt
+### Gjort idag (2026-04-16)
+- ✅ Etiketter verifierade — redan klara sedan förra session
+- ✅ `feeds_item` verifierat på alla 12 bundles (produkt + variation)
+- ✅ Layout Builder YAML skapad för `high_mast` + `street_area`
+- ✅ Produkt 35 (DB53 Hilton linear LED) — klar
 
 ---
 
@@ -41,7 +25,7 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-031 | 🔄 In Progress | Site Audit — nästa: config-synk + etiketter + layout |
+| TASK-031 | 🔄 In Progress | Site Audit — Layout Builder Kategori C + översättningar |
 | TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
 | TASK-018 | 🔄 In Progress | Cart page layout |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
