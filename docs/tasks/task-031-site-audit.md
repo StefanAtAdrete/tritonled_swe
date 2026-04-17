@@ -2,7 +2,7 @@
 
 **Created**: 2026-04-15
 **Status**: In Progress
-**Last Updated**: 2026-04-15
+**Last Updated**: 2026-04-17
 **Related Tasks**: TASK-013 (Attribut-cleanup), TASK-029 (Produkttyper), TASK-030 (UX Thomas)
 
 ---
@@ -245,17 +245,17 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 - ✅ `field_product_media_files` data migrerad (produkt 35: 2 bilder, produkt 36: 1 bild)
 - ✅ Dubbletter i `field_product_media` rensade
 - ✅ Layout Builder reset på produkt 35 (refererade borttaget fält)
+- ✅ Produkt 35 (DB53 Hilton linear_led) — layout fungerar (2026-04-17)
 
 ### Återstår
 - [ ] Sätt `field_product_media` formatter till obegränsat antal bilder i Layout Builder per produkttyp
-- [ ] Bygg om layout för produkt 35 (DB53 Hilton linear LED)
 - [ ] Komplettera Kategori C med `feeds_item` + Layout Builder
 - [ ] Definiera `accessories_variation` (helt tom)
 
 ---
 
 ## 031-F: Layout per produkttyp
-**Status**: 🔄 Preliminär — verifieras i UI
+**Status**: 🔄 Delvis klar
 
 | Produkttyp | Layout Builder | Kategori | Notering |
 |---|---|---|---|
@@ -264,11 +264,32 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 | `surge_protection` | ✅ | B | Egna fält |
 | `highbay` | ✅ | C | field_product_media formatter — sätt till obegränsat |
 | `floodlight` | ❌ | C | Saknar layout |
-| `high_mast` | ❌ | C | Saknar layout |
-| `street_area` | ❌ | C | Saknar layout |
+| `high_mast` | ❌ | C | Saknar layout — YAML skapad, ej verifierad |
+| `street_area` | ❌ | C | Saknar layout — YAML skapad, ej verifierad |
 | `ex_hazardous` | ❌ | C | Saknar layout |
-| `linear_led` | ✅ | C | Layout reset på produkt 35 — bygg om |
+| `linear_led` | ✅ | C | Klar (2026-04-17) |
 | `accessories` | ❌ | C | Saknar layout |
+
+---
+
+## 031-G: Översättningar (SV/EN)
+**Status**: 🔄 Känd brist — återkommer till detta
+
+### Beteende
+Inkonsekvent — ibland fungerar fältöversättningar direkt, ibland måste
+translation aktiveras manuellt per fält på bundle-nivå.
+
+### Workaround
+Aktivera translation per fält under:
+`/admin/config/regional/content-language`
+→ Välj entity type → bundle → aktivera önskade fält
+
+### Påverkade fält
+- `body` — saknas på vissa produkttyper, vilket hindrade nodöversättningar
+- Övriga fält okontrollerade
+
+### Notering
+Prioritet: låg just nu. Återkommer när Kategori C är komplett.
 
 ---
 
@@ -291,19 +312,20 @@ korrekt namngivna, ha läsbara labels och följa konsekvent namngivning.
 ## Sammanfattning — kritiska fynd
 
 ### 🔴 Blockerande
-1. **5 produkttyper saknar Layout Builder** — kan inte visas på frontend
+1. **4 produkttyper saknar Layout Builder** — `floodlight`, `ex_hazardous`, `accessories` + `high_mast`/`street_area` (YAML ej verifierad)
 2. **6 produkttyper + 5 variationstyper saknar `feeds_item`** — kan inte importeras
 3. **`accessories_variation` helt tom** — inga fält definierade
-4. **Produkt 35 saknar layout** — måste byggas om i UI
 
 ### 🟡 Bör åtgärdas
-5. **12 fält med machine name som label** — produkt + variation
-6. **`field_product_media` formatter** — sätt till obegränsat per produkttyp i Layout Builder
+4. **12 fält med machine name som label** — produkt + variation
+5. **`field_product_media` formatter** — sätt till obegränsat per produkttyp i Layout Builder
+6. **Översättningar inkonsekvent** — aktivera manuellt per bundle vid behov
 
-### 🟢 Åtgärdat idag
+### 🟢 Åtgärdat
 - `field_product_category` borttaget
 - `field_product_media_files` migrerad och borttagen
 - Dubbletter i media rensade
+- Produkt 35 (DB53 Hilton) klar
 
 ---
 
@@ -329,11 +351,14 @@ field_cct, field_variation_media, field_warranty_years
 
 ## Nästa steg
 
-1. Rätta etiketter i admin UI (12 fält)
-2. Sätt `field_product_media` formatter till obegränsat i Layout Builder
-3. Bygg om layout för produkt 35 (DB53 Hilton)
-4. Komplettera Kategori C — feeds_item + Layout Builder
-5. JSON API — konfigurera exponering per produkttyp
+1. Verifiera `high_mast` + `street_area` YAML via `cim` + UI
+2. Bygg Layout Builder manuellt för `floodlight`, `ex_hazardous`, `accessories`
+3. Komplettera Kategori C — `feeds_item` på produkt + variation
+4. Sätt `field_product_media` formatter till obegränsat i Layout Builder
+5. Definiera `accessories_variation` fält
+6. Rätta etiketter (12 fält) om ej gjort
+7. JSON API — konfigurera exponering per produkttyp
+8. Översättningar — återkommer när Kategori C är komplett
 
 ---
 
@@ -342,8 +367,10 @@ field_cct, field_variation_media, field_warranty_years
 - ✅ Config-synk löst — 79 otrackade filer från prod-synk committade (2026-04-15)
 - ✅ Fältetiketter uppdaterade via YAML — 62 field.field-filer (EN) + cim (2026-04-15)
 - ✅ `field_product_category` + `field_product_media_files` borttagna från DB och config/sync (2026-04-15)
+- ✅ Produkt 35 (DB53 Hilton linear_led) layout klar (2026-04-17)
 - **2026-04-15**: Fältetiketter satta till engelska via YAML direkt (inte admin UI) — snabbare och säkrare. Svenska etiketter hanteras via interface translation i DB.
 - **2026-04-15**: `field_producers` = partner/tillverkare, `field_brand` = varumärke — olika syften, båda behålls
 - **2026-04-15**: `field_product_type` = subtyp för Kategori A (Base/Emergency/PRO/Sensor) — behålls
 - **2026-04-15**: Sajten ska exponera öppen JSON för AI-agenter, partners och externa system — fältnamn är API-kontrakt
 - **2026-04-15**: `field_product_media` formatter måste sättas till obegränsat antal bilder per produkttyp i Layout Builder
+- **2026-04-17**: Översättningar inkonsekvent — workaround: aktivera manuellt per fält i `/admin/config/regional/content-language`. Låg prioritet tills vidare.
