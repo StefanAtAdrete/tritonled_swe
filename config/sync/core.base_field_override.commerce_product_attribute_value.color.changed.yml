@@ -1,0 +1,18 @@
+uuid: 4c6d4671-bb34-4ccb-a781-531a237d1c3e
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.color
+id: commerce_product_attribute_value.color.changed
+field_name: changed
+entity_type: commerce_product_attribute_value
+bundle: color
+label: Ändrad
+description: 'The time when the attribute value was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

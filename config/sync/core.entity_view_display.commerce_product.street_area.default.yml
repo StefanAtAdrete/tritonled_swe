@@ -11,50 +11,160 @@ dependencies:
     - field.field.commerce_product.street_area.field_product_media
     - field.field.commerce_product.street_area.layout_builder__layout
   module:
+    - bootstrap_layout_builder
+    - fences
     - layout_builder
-    - layout_discovery
 third_party_settings:
   layout_builder:
     enabled: true
     allow_custom: true
     sections:
       -
-        layout_id: layout_onecol
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
         layout_settings:
           label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles: {  }
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          context_mapping: {  }
         components:
-          8e068ae2-962d-4494-9b2f-26904be00614:
-            uuid: 8e068ae2-962d-4494-9b2f-26904be00614
-            region: content
+          sa01-0001-0001-0001-000000000001:
+            uuid: sa01-0001-0001-0001-000000000001
+            region: blb_region_col_1
             configuration:
-              id: 'field_block:commerce_product:street_area:title'
+              id: 'field_block:commerce_product:street_area:field_product_media'
+              label: 'Product Images'
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: splide_media
+                label: above
+                settings:
+                  optionset: product_main
+                  vanilla: false
+                  view_mode: configurator_image
+                  responsive_image_style: product_responsive
+                  image_style: content_square_lg
+                  ratio: '1:1'
+                  thumbnail_style: thumbnail
+                  style: column
+                  overridables:
+                    arrows: '0'
+                    pagination: '0'
+                    autoplay: '0'
+                    autoWidth: '0'
+                    autoHeight: '0'
+                    drag: '0'
+                    wheel: '0'
+                    randomize: '0'
+                  optionset_nav: product_nav
+                  override: false
+                  preserve_keys: false
+                  visible_items: null
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+          sa01-0001-0001-0001-000000000002:
+            uuid: sa01-0001-0001-0001-000000000002
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:street_area:title'
+              label: Title
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: string
                 label: hidden
                 settings:
                   link_to_entity: false
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 0
-            additional: {  }
-          743bfe7e-c7ea-45ce-966e-413effa24f5e:
-            uuid: 743bfe7e-c7ea-45ce-966e-413effa24f5e
-            region: content
+            additional:
+              layout_builder_styles_style:
+                h1_title: h1_title
+                margin_bottom_3: margin_bottom_3
+          sa01-0001-0001-0001-000000000003:
+            uuid: sa01-0001-0001-0001-000000000003
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:street_area:variations'
+              label: Variations
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: commerce_add_to_cart
-                label: above
+                label: visually_hidden
                 settings:
                   combine: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
         third_party_settings: {  }
 id: commerce_product.street_area.default
 targetEntityType: commerce_product

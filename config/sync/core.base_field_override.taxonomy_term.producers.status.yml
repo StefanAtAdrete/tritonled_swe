@@ -1,0 +1,22 @@
+uuid: 0789f189-a1eb-46fd-bd15-da588c1d7ac3
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+id: taxonomy_term.producers.status
+field_name: status
+entity_type: taxonomy_term
+bundle: producers
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

@@ -1,4 +1,0 @@
-mcp_tools use ultimate_cron:
-  title: 'Use MCP Ultimate Cron tools'
-  description: 'Manage Ultimate Cron jobs (enable/disable/run) via MCP.'
-  restrict access: true

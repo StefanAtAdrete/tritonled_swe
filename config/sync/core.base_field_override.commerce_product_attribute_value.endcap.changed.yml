@@ -1,0 +1,18 @@
+uuid: d57ee9f0-44ff-4ca7-8ac6-d215d5cc180b
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.endcap
+id: commerce_product_attribute_value.endcap.changed
+field_name: changed
+entity_type: commerce_product_attribute_value
+bundle: endcap
+label: Ändrad
+description: 'The time when the attribute value was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

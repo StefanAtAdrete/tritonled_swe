@@ -1,0 +1,20 @@
+uuid: b75a2f1a-a78f-4791-8ed6-5a31132a51a4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.cities
+  module:
+    - path
+id: taxonomy_term.cities.path
+field_name: path
+entity_type: taxonomy_term
+bundle: cities
+label: URL-alias
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: path

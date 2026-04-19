@@ -1,0 +1,20 @@
+uuid: fe5c24fc-98b3-4713-a4c3-7113eec95b55
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.floodlight_variation
+id: commerce_product_variation.floodlight_variation.uid
+field_name: uid
+entity_type: commerce_product_variation
+bundle: floodlight_variation
+label: Författare
+description: 'The variation author.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: 'Drupal\commerce_product\Entity\ProductVariation::getDefaultEntityOwner'
+settings:
+  handler: default
+  handler_settings: {  }
+field_type: entity_reference

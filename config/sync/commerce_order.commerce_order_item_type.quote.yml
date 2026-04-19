@@ -1,0 +1,15 @@
+uuid: 7a3f2d91-5b4e-4c8a-9f1d-2e6b0a8c3d57
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_tax
+third_party_settings:
+  commerce_tax:
+    taxable_type: physical_goods
+id: quote
+label: Quote
+traits: {  }
+locked: false
+purchasableEntityType: commerce_product_variation
+orderType: quote

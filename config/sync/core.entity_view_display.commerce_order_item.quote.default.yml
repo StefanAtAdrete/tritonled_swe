@@ -1,0 +1,40 @@
+uuid: f6b8c0d2-5e7a-4c1f-d14b-9a2e6c8f0b4c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_item_type.quote
+    - field.field.commerce_order_item.quote.field_configurator_data
+    - field.field.commerce_order_item.quote.field_configurator_sku
+id: commerce_order_item.quote.default
+targetEntityType: commerce_order_item
+bundle: quote
+mode: default
+content:
+  created:
+    type: timestamp
+    label: hidden
+    settings:
+      date_format: medium
+      custom_date_format: ''
+      timezone: ''
+      tooltip:
+        date_format: long
+        custom_date_format: ''
+      time_diff:
+        enabled: false
+        future_format: '@interval hence'
+        past_format: '@interval ago'
+        granularity: 2
+        refresh: 60
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  adjustments: true
+  field_configurator_data: true
+  field_configurator_sku: true
+  purchased_entity: true
+  quantity: true
+  total_price: true
+  unit_price: true

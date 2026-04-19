@@ -1,0 +1,18 @@
+uuid: c169f1b0-60df-4f8f-8f9d-2531bcc84755
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.high_mast_variation
+id: commerce_product_variation.high_mast_variation.created
+field_name: created
+entity_type: commerce_product_variation
+bundle: high_mast_variation
+label: Skapad
+description: 'The time when the variation was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

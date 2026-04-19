@@ -1,0 +1,18 @@
+uuid: d38990a0-f966-4ca8-a672-e075344ffbb8
+langcode: sv
+status: true
+dependencies:
+  config:
+    - comment.type.comment
+id: comment.comment.created
+field_name: created
+entity_type: comment
+bundle: comment
+label: Skapad
+description: 'Tidpunkten som kommentaren skapades.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

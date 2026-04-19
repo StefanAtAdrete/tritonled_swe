@@ -1,0 +1,23 @@
+uuid: 72185649-10fd-471f-bdaa-c8fc763e476e
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.accessories
+    - commerce_product.commerce_product_variation_type.accessories_variation
+id: commerce_product.accessories.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: accessories
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      accessories_variation: accessories_variation
+field_type: entity_reference

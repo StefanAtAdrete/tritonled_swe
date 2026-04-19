@@ -1,0 +1,23 @@
+uuid: f7e7150a-27cf-4378-9736-ddb6fffdd9c5
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_srow
+    - commerce_product.commerce_product_variation_type.led_luminaire_srow
+id: commerce_product.led_luminaire_srow.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: led_luminaire_srow
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      led_luminaire_srow: led_luminaire_srow
+field_type: entity_reference

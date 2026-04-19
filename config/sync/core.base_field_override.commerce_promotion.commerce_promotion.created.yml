@@ -1,0 +1,18 @@
+uuid: d141bbbf-2e33-4b0a-80b6-0fff2a8aeaa9
+langcode: sv
+status: true
+dependencies:
+  module:
+    - commerce_promotion
+id: commerce_promotion.commerce_promotion.created
+field_name: created
+entity_type: commerce_promotion
+bundle: commerce_promotion
+label: Skapad
+description: 'The time when the promotion was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

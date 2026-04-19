@@ -1,4 +1,4 @@
-uuid: d6f9a378-1b7c-4e40-b5d7-e3f0a2b5c389
+uuid: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
 langcode: en
 status: true
 dependencies:
@@ -21,55 +21,209 @@ dependencies:
     - field.field.commerce_product.floodlight.field_warranty
     - field.field.commerce_product.floodlight.layout_builder__layout
   module:
+    - bootstrap_layout_builder
     - fences
     - file
     - layout_builder
-    - layout_discovery
 third_party_settings:
   layout_builder:
     enabled: true
     allow_custom: true
     sections:
       -
-        layout_id: layout_onecol
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
         layout_settings:
           label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+            background_black: 0
+            tertiary_background: 0
+          context_mapping: {  }
         components:
-          a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5:
-            uuid: a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5
-            region: content
+          f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c:
+            uuid: f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c
+            region: blb_region_col_1
             configuration:
-              id: 'field_block:commerce_product:floodlight:title'
+              id: 'field_block:commerce_product:floodlight:field_product_media'
+              label: 'Product Images'
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: splide_media
+                label: above
+                settings:
+                  optionset: product_main
+                  vanilla: false
+                  view_mode: configurator_image
+                  responsive_image_style: product_responsive
+                  image_style: content_square_lg
+                  ratio: '1:1'
+                  thumbnail_style: thumbnail
+                  style: column
+                  overridables:
+                    arrows: '0'
+                    pagination: '0'
+                    autoplay: '0'
+                    autoWidth: '0'
+                    autoHeight: '0'
+                    drag: '0'
+                    wheel: '0'
+                    randomize: '0'
+                  optionset_nav: product_nav
+                  override: false
+                  preserve_keys: false
+                  visible_items: null
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+          a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d:
+            uuid: a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:floodlight:title'
+              label: Title
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: string
                 label: hidden
                 settings:
                   link_to_entity: false
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 0
-            additional: {  }
-          b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6:
-            uuid: b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6
-            region: content
+            additional:
+              layout_builder_styles_style:
+                h1_title: h1_title
+                margin_bottom_3: margin_bottom_3
+          b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e:
+            uuid: b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:floodlight:variations'
+              label: Variations
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: commerce_add_to_cart
-                label: above
+                label: visually_hidden
                 settings:
                   combine: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
-          c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7:
-            uuid: c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7
-            region: content
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+          c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f:
+            uuid: c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:floodlight:body'
               label_display: '0'
@@ -91,90 +245,59 @@ third_party_settings:
                     fences_label_classes: ''
             weight: 2
             additional: {  }
+          d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a:
+            uuid: d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:floodlight:field_datasheet'
+              label: 'Datasheet PDF'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: file_table
+                label: visually_hidden
+                settings:
+                  use_description_as_link_text: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 3
+            additional:
+              layout_builder_styles_style:
+                background_light_badge: background_light_badge
+                margin_bottom_3: margin_bottom_3
         third_party_settings: {  }
 id: commerce_product.floodlight.default
 targetEntityType: commerce_product
 bundle: floodlight
 mode: default
-content:
-  field_brand:
-    type: string
-    label: visually_hidden
-    settings:
-      link_to_entity: false
-    third_party_settings:
-      fences:
-        fences_field_tag: div
-        fences_field_classes: ''
-        fences_field_items_wrapper_tag: none
-        fences_field_items_wrapper_classes: ''
-        fences_field_item_tag: div
-        fences_field_item_classes: ''
-        fences_label_tag: div
-        fences_label_classes: ''
-    weight: 5
-    region: content
-  field_datasheet:
-    type: file_default
-    label: inline
-    settings:
-      use_description_as_link_text: false
-    third_party_settings:
-      fences:
-        fences_field_tag: div
-        fences_field_classes: ''
-        fences_field_items_wrapper_tag: none
-        fences_field_items_wrapper_classes: ''
-        fences_field_item_tag: div
-        fences_field_item_classes: ''
-        fences_label_tag: div
-        fences_label_classes: ''
-    weight: 0
-    region: content
-  field_hero_media:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 1
-    region: content
-  field_producers:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 2
-    region: content
-  field_product_categories:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 4
-    region: content
-  field_show_in_hero:
-    type: boolean
-    label: above
-    settings:
-      format: default
-      format_custom_false: ''
-      format_custom_true: ''
-    third_party_settings: {  }
-    weight: 3
-    region: content
+content: {  }
 hidden:
   body: true
   created: true
   feeds_item: true
+  field_brand: true
   field_cable: true
+  field_datasheet: true
   field_dimming: true
   field_driver: true
+  field_hero_media: true
   field_ip_class: true
+  field_producers: true
+  field_product_categories: true
   field_product_media: true
   field_product_sku: true
+  field_show_in_hero: true
   field_warranty: true
   langcode: true
   layout_builder__layout: true

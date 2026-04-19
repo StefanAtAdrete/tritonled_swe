@@ -1,0 +1,20 @@
+uuid: 44374595-4a0e-4a09-896e-79d66e07b9fe
+langcode: sv
+status: true
+dependencies:
+  config:
+    - comment.type.comment
+id: comment.comment.name
+field_name: name
+entity_type: comment
+bundle: comment
+label: Namn
+description: 'Namnet på kommentarens författare.'
+required: false
+translatable: false
+default_value:
+  -
+    value: ''
+default_value_callback: ''
+settings: {  }
+field_type: string

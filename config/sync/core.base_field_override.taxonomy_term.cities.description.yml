@@ -1,0 +1,21 @@
+uuid: 0833e738-9d59-4f63-b8d7-3540b6925265
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.cities
+  module:
+    - text
+id: taxonomy_term.cities.description
+field_name: description
+entity_type: taxonomy_term
+bundle: cities
+label: Beskrivning
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

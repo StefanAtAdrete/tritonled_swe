@@ -1,4 +1,0 @@
-mcp_tools use scheduler:
-  title: 'Use MCP scheduler tools'
-  description: 'Schedule publish/unpublish operations via MCP.'
-  restrict access: true

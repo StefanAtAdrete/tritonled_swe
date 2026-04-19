@@ -1,0 +1,18 @@
+uuid: e40fcb9a-673f-461b-9576-b5d45e0f8340
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.accessories
+id: commerce_product_attribute_value.accessories.name
+field_name: name
+entity_type: commerce_product_attribute_value
+bundle: accessories
+label: Namn
+description: 'The attribute value name.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

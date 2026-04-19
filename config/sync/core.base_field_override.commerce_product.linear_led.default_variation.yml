@@ -1,0 +1,23 @@
+uuid: 93b86eec-87a7-4b8e-b689-6f01d0034972
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - commerce_product.commerce_product_variation_type.linear_led_variation
+id: commerce_product.linear_led.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: linear_led
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      linear_led_variation: linear_led_variation
+field_type: entity_reference

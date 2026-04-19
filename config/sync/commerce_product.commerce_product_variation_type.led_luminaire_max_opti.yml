@@ -6,5 +6,5 @@ id: led_luminaire_max_opti
 label: 'LED Luminaire MAX/OPTI'
 traits: {  }
 locked: false
-orderItemType: qoute
+orderItemType: quote
 generateTitle: true

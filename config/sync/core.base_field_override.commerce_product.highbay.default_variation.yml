@@ -1,0 +1,23 @@
+uuid: 0f8a6493-cc17-4dcf-87a0-d5d20d99a516
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.highbay
+    - commerce_product.commerce_product_variation_type.highbay_variation
+id: commerce_product.highbay.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: highbay
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      highbay_variation: highbay_variation
+field_type: entity_reference

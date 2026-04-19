@@ -1,0 +1,18 @@
+uuid: 3767dacf-6fed-4e36-b9c1-08d8222abd42
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.driver
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: false
+    bundle_settings:
+      untranslatable_fields_hide: '0'
+id: commerce_product_attribute_value.driver
+target_entity_type_id: commerce_product_attribute_value
+target_bundle: driver
+default_langcode: site_default
+language_alterable: false

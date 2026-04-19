@@ -1,0 +1,18 @@
+uuid: a398620f-03b4-466b-ac82-30f7e5d35997
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.voltage
+id: commerce_product_attribute_value.voltage.created
+field_name: created
+entity_type: commerce_product_attribute_value
+bundle: voltage
+label: Skapad
+description: 'The time when the attribute value was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

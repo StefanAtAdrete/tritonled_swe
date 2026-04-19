@@ -1,0 +1,23 @@
+uuid: 91f0ff00-0cba-4439-b41e-c7af019cb0f5
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.surge_protection
+    - commerce_product.commerce_product_variation_type.surge_protection
+id: commerce_product.surge_protection.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: surge_protection
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      surge_protection: surge_protection
+field_type: entity_reference

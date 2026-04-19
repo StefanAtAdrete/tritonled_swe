@@ -1,0 +1,18 @@
+uuid: 5579f087-6ea9-436a-83a0-9189fbfe2b3a
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.poles
+id: commerce_product_attribute_value.poles.name
+field_name: name
+entity_type: commerce_product_attribute_value
+bundle: poles
+label: Namn
+description: 'The attribute value name.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

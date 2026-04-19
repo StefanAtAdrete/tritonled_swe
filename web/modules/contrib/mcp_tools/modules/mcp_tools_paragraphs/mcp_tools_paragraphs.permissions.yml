@@ -1,4 +1,0 @@
-mcp_tools use paragraphs:
-  title: 'Use MCP paragraphs tools'
-  description: 'Create paragraph types and manage paragraph fields via MCP.'
-  restrict access: true

@@ -1,0 +1,20 @@
+uuid: b1d0447e-0cac-42ef-bcbd-d8e7bd8becb4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.partners
+  module:
+    - metatag
+id: taxonomy_term.partners.metatag
+field_name: metatag
+entity_type: taxonomy_term
+bundle: partners
+label: 'Metatags (Hidden field for JSON support)'
+description: 'The computed meta tags for the entity.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: metatag_computed

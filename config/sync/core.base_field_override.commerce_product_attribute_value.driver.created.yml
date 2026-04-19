@@ -1,0 +1,18 @@
+uuid: 0eca9a8e-c348-4d09-bbcd-34cbc9e23d31
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.driver
+id: commerce_product_attribute_value.driver.created
+field_name: created
+entity_type: commerce_product_attribute_value
+bundle: driver
+label: Skapad
+description: 'The time when the attribute value was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

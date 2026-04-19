@@ -1,0 +1,18 @@
+uuid: f53b1bb3-1a65-410e-a8a5-f1f571f2e012
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.ip_rating
+id: commerce_product_attribute_value.ip_rating.name
+field_name: name
+entity_type: commerce_product_attribute_value
+bundle: ip_rating
+label: Namn
+description: 'The attribute value name.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

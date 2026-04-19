@@ -1,0 +1,18 @@
+uuid: 031119ba-87bd-4152-82c2-c430ddefeeac
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.product_type
+id: taxonomy_term.product_type.name
+field_name: name
+entity_type: taxonomy_term
+bundle: product_type
+label: Namn
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

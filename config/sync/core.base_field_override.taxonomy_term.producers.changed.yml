@@ -1,0 +1,18 @@
+uuid: 3106c141-f783-4de8-9cc4-d98ffd2a7b97
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+id: taxonomy_term.producers.changed
+field_name: changed
+entity_type: taxonomy_term
+bundle: producers
+label: Ändrad
+description: 'Tiden då termen senast redigerades.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

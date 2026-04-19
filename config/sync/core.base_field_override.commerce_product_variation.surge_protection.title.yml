@@ -1,0 +1,18 @@
+uuid: 7ec417fb-4bcf-4b27-aefa-e0fcfbc376e8
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.surge_protection
+id: commerce_product_variation.surge_protection.title
+field_name: title
+entity_type: commerce_product_variation
+bundle: surge_protection
+label: Titel
+description: 'The variation title.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

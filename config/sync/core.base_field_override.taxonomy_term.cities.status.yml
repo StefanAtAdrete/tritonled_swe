@@ -1,0 +1,22 @@
+uuid: dcbdafa1-23ef-4609-bd0f-0dfd4a081251
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.cities
+id: taxonomy_term.cities.status
+field_name: status
+entity_type: taxonomy_term
+bundle: cities
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

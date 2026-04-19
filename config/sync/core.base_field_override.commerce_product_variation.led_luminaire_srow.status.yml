@@ -1,0 +1,22 @@
+uuid: ef6356c7-23d6-4deb-aad5-ffc6f330848a
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.led_luminaire_srow
+id: commerce_product_variation.led_luminaire_srow.status
+field_name: status
+entity_type: commerce_product_variation
+bundle: led_luminaire_srow
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

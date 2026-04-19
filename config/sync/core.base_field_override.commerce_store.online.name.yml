@@ -1,0 +1,18 @@
+uuid: f3b49fb7-09d0-4a16-8b30-362d1d6bb55d
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_store.commerce_store_type.online
+id: commerce_store.online.name
+field_name: name
+entity_type: commerce_store
+bundle: online
+label: Namn
+description: 'The store name.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

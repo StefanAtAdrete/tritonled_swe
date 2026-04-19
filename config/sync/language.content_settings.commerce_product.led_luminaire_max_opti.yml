@@ -9,6 +9,8 @@ dependencies:
 third_party_settings:
   content_translation:
     enabled: true
+    bundle_settings:
+      untranslatable_fields_hide: '1'
 id: commerce_product.led_luminaire_max_opti
 target_entity_type_id: commerce_product
 target_bundle: led_luminaire_max_opti
