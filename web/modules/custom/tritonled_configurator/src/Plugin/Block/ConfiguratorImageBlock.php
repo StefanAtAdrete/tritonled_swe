@@ -75,11 +75,26 @@ class ConfiguratorImageBlock extends BlockBase implements ContainerFactoryPlugin
   public function build(): array {
     $product = $this->routeMatch->getParameter('commerce_product');
 
-    if (!$product || !$product->hasField('field_configurator_media') || $product->get('field_configurator_media')->isEmpty()) {
+    if (!$product) {
       return [];
     }
 
-    $media = $product->get('field_configurator_media')->first()->entity;
+    // Use untranslated product — field_configurator_media is language-independent
+    // and may not be populated in all translations.
+    $product = $product->getUntranslated();
+
+    if (!$product->hasField('field_configurator_media') || $product->get('field_configurator_media')->isEmpty()) {
+      return [];
+    }
+
+    // Loop to find first valid (loadable) media entity — some references may be broken.
+    $media = NULL;
+    foreach ($product->get('field_configurator_media') as $item) {
+      if ($item->entity) {
+        $media = $item->entity;
+        break;
+      }
+    }
     if (!$media) {
       return [];
     }
