@@ -1,0 +1,18 @@
+uuid: 802ada17-1720-4eb1-aab0-38d1bdfbb7ae
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+id: taxonomy_term.producers.name
+field_name: name
+entity_type: taxonomy_term
+bundle: producers
+label: Namn
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

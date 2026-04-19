@@ -1,0 +1,20 @@
+uuid: d2aae390-65f6-4631-b895-366b80b52d94
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+  module:
+    - metatag
+id: taxonomy_term.producers.metatag
+field_name: metatag
+entity_type: taxonomy_term
+bundle: producers
+label: 'Metatags (Hidden field for JSON support)'
+description: 'The computed meta tags for the entity.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: metatag_computed

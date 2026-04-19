@@ -1,0 +1,18 @@
+uuid: 312d5339-1a3b-4670-9239-37bdeef5e35f
+langcode: sv
+status: true
+dependencies:
+  config:
+    - node.type.webform
+id: node.webform.changed
+field_name: changed
+entity_type: node
+bundle: webform
+label: Ändrad
+description: 'Tidpunkten för när noden senast redigerades.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

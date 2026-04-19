@@ -1,0 +1,18 @@
+uuid: 7bad4d94-46f0-45d4-b011-377f266866b1
+langcode: sv
+status: true
+dependencies:
+  config:
+    - shortcut.set.default
+id: shortcut.default.title
+field_name: title
+entity_type: shortcut
+bundle: default
+label: Namn
+description: 'Namnet på genvägen.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

@@ -1,0 +1,18 @@
+uuid: 5044b288-9b67-4809-b2b6-a90bf8cc6907
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.connection
+id: commerce_product_attribute_value.connection.changed
+field_name: changed
+entity_type: commerce_product_attribute_value
+bundle: connection
+label: Ändrad
+description: 'The time when the attribute value was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

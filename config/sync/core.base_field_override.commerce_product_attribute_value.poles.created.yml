@@ -1,0 +1,18 @@
+uuid: b459d229-db61-4ab2-aeed-948f4c704a21
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.poles
+id: commerce_product_attribute_value.poles.created
+field_name: created
+entity_type: commerce_product_attribute_value
+bundle: poles
+label: Skapad
+description: 'The time when the attribute value was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

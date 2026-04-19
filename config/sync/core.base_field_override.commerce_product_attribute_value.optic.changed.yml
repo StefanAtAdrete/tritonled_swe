@@ -1,0 +1,18 @@
+uuid: ce844538-d802-402d-9ca6-fd18e2371268
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.optic
+id: commerce_product_attribute_value.optic.changed
+field_name: changed
+entity_type: commerce_product_attribute_value
+bundle: optic
+label: Ändrad
+description: 'The time when the attribute value was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

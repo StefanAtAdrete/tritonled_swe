@@ -15,7 +15,7 @@ bundle: linear_led
 label: 'Hero media'
 description: ''
 required: false
-translatable: false
+translatable: true
 default_value: {  }
 default_value_callback: ''
 settings:

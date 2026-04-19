@@ -1,0 +1,18 @@
+uuid: 81ddcea2-682b-4bf0-8dd8-bde00e8e8000
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.ex_hazardous_variation
+id: commerce_product_variation.ex_hazardous_variation.changed
+field_name: changed
+entity_type: commerce_product_variation
+bundle: ex_hazardous_variation
+label: Ändrad
+description: 'The time when the variation was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

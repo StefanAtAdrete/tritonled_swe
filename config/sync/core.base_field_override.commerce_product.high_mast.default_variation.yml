@@ -1,0 +1,23 @@
+uuid: e2e5ee8f-f898-4a87-b894-2bb00f096975
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.high_mast
+    - commerce_product.commerce_product_variation_type.high_mast_variation
+id: commerce_product.high_mast.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: high_mast
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      high_mast_variation: high_mast_variation
+field_type: entity_reference

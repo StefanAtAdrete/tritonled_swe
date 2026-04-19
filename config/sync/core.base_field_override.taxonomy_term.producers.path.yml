@@ -1,0 +1,20 @@
+uuid: 7e496ba0-27eb-4fcb-b7d7-98f5b2e1eaf4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+  module:
+    - path
+id: taxonomy_term.producers.path
+field_name: path
+entity_type: taxonomy_term
+bundle: producers
+label: URL-alias
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: path

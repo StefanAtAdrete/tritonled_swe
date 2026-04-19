@@ -1,0 +1,22 @@
+uuid: b42f0db3-a5e3-4e47-8322-d7c2519488fa
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.countries
+id: taxonomy_term.countries.status
+field_name: status
+entity_type: taxonomy_term
+bundle: countries
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

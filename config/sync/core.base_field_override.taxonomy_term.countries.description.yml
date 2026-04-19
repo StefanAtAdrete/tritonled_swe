@@ -1,0 +1,21 @@
+uuid: d565702b-59b5-4032-aba2-1999d5228ea1
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.countries
+  module:
+    - text
+id: taxonomy_term.countries.description
+field_name: description
+entity_type: taxonomy_term
+bundle: countries
+label: Beskrivning
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

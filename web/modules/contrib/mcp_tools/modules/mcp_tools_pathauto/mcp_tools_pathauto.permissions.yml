@@ -1,4 +1,0 @@
-mcp_tools use pathauto:
-  title: 'Use MCP Pathauto tools'
-  description: 'Create, update, delete, and generate URL alias patterns via MCP.'
-  restrict access: true

@@ -1,0 +1,22 @@
+uuid: 773ea801-decd-4563-88cb-b5e4baea45c8
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_store.commerce_store_type.online
+id: commerce_store.online.status
+field_name: status
+entity_type: commerce_store
+bundle: online
+label: Aktiverad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

@@ -6,7 +6,14 @@ dependencies:
     - commerce_product.commerce_product_type.linear_led
     - field.storage.commerce_product.field_datasheet
   module:
+    - content_translation
     - file
+third_party_settings:
+  content_translation:
+    translation_sync:
+      target_id: target_id
+      display: display
+      description: description
 id: commerce_product.linear_led.field_datasheet
 field_name: field_datasheet
 entity_type: commerce_product
@@ -14,7 +21,7 @@ bundle: linear_led
 label: 'Datasheet PDF'
 description: ''
 required: false
-translatable: false
+translatable: true
 default_value: {  }
 default_value_callback: ''
 settings:

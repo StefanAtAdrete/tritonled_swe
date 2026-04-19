@@ -6,5 +6,5 @@ id: highbay_variation
 label: 'Highbay variation'
 traits: {  }
 locked: false
-orderItemType: qoute
+orderItemType: quote
 generateTitle: true

@@ -1,0 +1,21 @@
+uuid: 75954083-f3c3-4d59-a668-5eb155a70f59
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.producers
+  module:
+    - text
+id: taxonomy_term.producers.description
+field_name: description
+entity_type: taxonomy_term
+bundle: producers
+label: Beskrivning
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

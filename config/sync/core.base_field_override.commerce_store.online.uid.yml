@@ -1,0 +1,20 @@
+uuid: d0ed73f6-8aa2-4a69-b046-8c6e3bc78eb4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_store.commerce_store_type.online
+id: commerce_store.online.uid
+field_name: uid
+entity_type: commerce_store
+bundle: online
+label: Ägare
+description: 'The store owner.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: 'Drupal\commerce_store\Entity\Store::getDefaultEntityOwner'
+settings:
+  handler: default
+  handler_settings: {  }
+field_type: entity_reference

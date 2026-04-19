@@ -6,8 +6,6 @@ dependencies:
     - commerce_product.commerce_product_type.default
     - field.storage.commerce_product.field_producers
     - taxonomy.vocabulary.producers
-  module:
-    - taxonomy
 id: commerce_product.default.field_producers
 field_name: field_producers
 entity_type: commerce_product
@@ -15,7 +13,7 @@ bundle: default
 label: Producers
 description: ''
 required: false
-translatable: false
+translatable: true
 default_value: {  }
 default_value_callback: ''
 settings:

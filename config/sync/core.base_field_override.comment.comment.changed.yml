@@ -1,0 +1,18 @@
+uuid: 4b6d47d5-09f5-4c33-8571-eda2ea5dc659
+langcode: sv
+status: true
+dependencies:
+  config:
+    - comment.type.comment
+id: comment.comment.changed
+field_name: changed
+entity_type: comment
+bundle: comment
+label: Ändrad
+description: 'Tidpunkten då kommentaren senast redigerades.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

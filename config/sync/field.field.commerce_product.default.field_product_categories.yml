@@ -6,8 +6,6 @@ dependencies:
     - commerce_product.commerce_product_type.default
     - field.storage.commerce_product.field_product_categories
     - taxonomy.vocabulary.product_categories
-  module:
-    - taxonomy
 id: commerce_product.default.field_product_categories
 field_name: field_product_categories
 entity_type: commerce_product
@@ -15,7 +13,7 @@ bundle: default
 label: 'Product Categories'
 description: ''
 required: false
-translatable: false
+translatable: true
 default_value: {  }
 default_value_callback: ''
 settings:

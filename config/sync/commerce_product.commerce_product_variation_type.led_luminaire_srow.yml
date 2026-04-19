@@ -6,5 +6,5 @@ id: led_luminaire_srow
 label: 'LED Luminaire SROW'
 traits: {  }
 locked: false
-orderItemType: qoute
+orderItemType: quote
 generateTitle: true

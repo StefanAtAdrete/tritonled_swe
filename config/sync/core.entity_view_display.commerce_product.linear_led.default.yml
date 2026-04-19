@@ -20,55 +20,222 @@ dependencies:
     - field.field.commerce_product.linear_led.field_warranty
     - field.field.commerce_product.linear_led.layout_builder__layout
   module:
+    - bootstrap_layout_builder
     - fences
     - file
     - layout_builder
-    - layout_discovery
 third_party_settings:
   layout_builder:
     enabled: true
     allow_custom: true
     sections:
       -
-        layout_id: layout_onecol
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
         layout_settings:
           label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: _none
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+            background_black: 0
+            tertiary_background: 0
+          context_mapping: {  }
         components:
           bbd7548c-68c3-4114-b47a-b4c5ab25519b:
             uuid: bbd7548c-68c3-4114-b47a-b4c5ab25519b
-            region: content
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:linear_led:title'
+              label: Title
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: string
                 label: hidden
                 settings:
                   link_to_entity: false
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 0
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                h1_title: h1_title
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                background_light_badge: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                object_fit_cover: 0
+                padding_3: 0
           376baba1-125b-4e34-9040-3fd63a2a2b68:
             uuid: 376baba1-125b-4e34-9040-3fd63a2a2b68
-            region: content
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:linear_led:variations'
+              label: Variations
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
                 type: commerce_add_to_cart
-                label: above
+                label: visually_hidden
                 settings:
                   combine: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 1
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                background_light_badge: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
           9a7e19f5-7abe-4f92-86f8-ac57edf4f514:
             uuid: 9a7e19f5-7abe-4f92-86f8-ac57edf4f514
-            region: content
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:linear_led:body'
               label_display: '0'
@@ -92,15 +259,18 @@ third_party_settings:
             additional: {  }
           30f8acc0-2e38-40bd-9000-b4e48e2a50f1:
             uuid: 30f8acc0-2e38-40bd-9000-b4e48e2a50f1
-            region: content
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:linear_led:field_datasheet'
+              label: 'Datasheet PDF'
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
-                type: file_default
-                label: inline
+                type: file_table
+                label: visually_hidden
                 settings:
                   use_description_as_link_text: false
                 third_party_settings:
@@ -114,86 +284,83 @@ third_party_settings:
                     fences_label_tag: div
                     fences_label_classes: ''
             weight: 3
-            additional: {  }
-          14004f89-7161-4d94-be90-3231d7cd6a3e:
-            uuid: 14004f89-7161-4d94-be90-3231d7cd6a3e
-            region: content
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                background_light_badge: background_light_badge
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
+          36c03e0e-d03e-4983-838b-f0d9eaa03560:
+            uuid: 36c03e0e-d03e-4983-838b-f0d9eaa03560
+            region: blb_region_col_1
             configuration:
-              id: 'field_block:commerce_product:linear_led:field_hero_media'
+              id: 'field_block:commerce_product:linear_led:field_product_media'
+              label: 'Product Images'
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
-                type: entity_reference_label
+                type: splide_media
                 label: above
                 settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 4
-            additional: {  }
-          8dba6ce6-e513-4db1-b71c-1c4930e04be9:
-            uuid: 8dba6ce6-e513-4db1-b71c-1c4930e04be9
-            region: content
-            configuration:
-              id: 'field_block:commerce_product:linear_led:field_producers'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: entity_reference_label
-                label: above
-                settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 5
-            additional: {  }
-          2e86c30f-e6d2-49d8-b5bb-3effda12127c:
-            uuid: 2e86c30f-e6d2-49d8-b5bb-3effda12127c
-            region: content
-            configuration:
-              id: 'field_block:commerce_product:linear_led:field_show_in_hero'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: boolean
-                label: above
-                settings:
-                  format: default
-                  format_custom_false: ''
-                  format_custom_true: ''
-                third_party_settings: {  }
-            weight: 6
-            additional: {  }
-          f3501bf5-3397-4554-8cd5-95afb6f5e860:
-            uuid: f3501bf5-3397-4554-8cd5-95afb6f5e860
-            region: content
-            configuration:
-              id: 'field_block:commerce_product:linear_led:field_product_categories'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: entity_reference_label
-                label: above
-                settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 7
-            additional: {  }
-          2ec5bf4d-bab4-48e7-811d-2a206708a763:
-            uuid: 2ec5bf4d-bab4-48e7-811d-2a206708a763
-            region: content
-            configuration:
-              id: 'field_block:commerce_product:linear_led:field_brand'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: string
-                label: visually_hidden
-                settings:
-                  link_to_entity: false
+                  caption:
+                    alt: '0'
+                    title: '0'
+                  optionset: product_main
+                  class: ''
+                  image: ''
+                  link: ''
+                  title: ''
+                  vanilla: false
+                  layout: ''
+                  view_mode: configurator_image
+                  cache: 0
+                  admin_uri: '/en/layout_builder/add/block/defaults/commerce_product.linear_led.default/0/blb_region_col_1/field_block%3Acommerce_product%3Alinear_led%3Afield_product_media?_wrapper_format=drupal_dialog.off_canvas&ajax_form=1&_wrapper_format=drupal_ajax'
+                  background: false
+                  box_caption: ''
+                  box_caption_custom: ''
+                  box_media_style: ''
+                  loading: ''
+                  preload: false
+                  responsive_image_style: product_responsive
+                  box_style: ''
+                  image_style: content_square_lg
+                  media_switch: ''
+                  ratio: '1:1'
+                  thumbnail_style: thumbnail
+                  grid: ''
+                  grid_medium: ''
+                  grid_small: ''
+                  style: column
+                  skin: ''
+                  overridables:
+                    arrows: '0'
+                    pagination: '0'
+                    autoplay: '0'
+                    autoWidth: '0'
+                    autoHeight: '0'
+                    drag: '0'
+                    wheel: '0'
+                    randomize: '0'
+                  pagination_text: ''
+                  optionset_nav: product_nav
+                  skin_nav: ''
+                  thumbnail_effect: ''
+                  navpos: ''
+                  override: false
+                  pagination_pos: ''
+                  preserve_keys: false
+                  visible_items: null
                 third_party_settings:
                   fences:
                     fences_field_tag: div
@@ -204,8 +371,21 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 8
-            additional: {  }
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                background_light_badge: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                object_fit_cover: 0
+                padding_3: 0
         third_party_settings: {  }
 id: commerce_product.linear_led.default
 targetEntityType: commerce_product

@@ -1,0 +1,21 @@
+uuid: 4fc04b00-6162-47d5-9a91-6c30f346848b
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.partners
+  module:
+    - text
+id: taxonomy_term.partners.description
+field_name: description
+entity_type: taxonomy_term
+bundle: partners
+label: Beskrivning
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

@@ -1,0 +1,22 @@
+uuid: 43d4b465-5fd8-4175-bde1-46e6351f076e
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.floodlight_variation
+id: commerce_product_variation.floodlight_variation.status
+field_name: status
+entity_type: commerce_product_variation
+bundle: floodlight_variation
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

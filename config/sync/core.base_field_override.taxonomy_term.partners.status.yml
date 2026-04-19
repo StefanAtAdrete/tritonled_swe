@@ -1,0 +1,22 @@
+uuid: 751de78b-26db-4b73-b4fb-51151c523281
+langcode: sv
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.partners
+id: taxonomy_term.partners.status
+field_name: status
+entity_type: taxonomy_term
+bundle: partners
+label: Publicerad
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

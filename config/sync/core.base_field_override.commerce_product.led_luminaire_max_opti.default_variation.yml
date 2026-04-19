@@ -1,0 +1,23 @@
+uuid: c75702ff-1460-4e13-b878-6ccfa5eaa8c4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.led_luminaire_max_opti
+    - commerce_product.commerce_product_variation_type.led_luminaire_max_opti
+id: commerce_product.led_luminaire_max_opti.default_variation
+field_name: default_variation
+entity_type: commerce_product
+bundle: led_luminaire_max_opti
+label: 'Default variation'
+description: 'The default variation.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: default
+  handler_settings:
+    target_bundles:
+      led_luminaire_max_opti: led_luminaire_max_opti
+field_type: entity_reference

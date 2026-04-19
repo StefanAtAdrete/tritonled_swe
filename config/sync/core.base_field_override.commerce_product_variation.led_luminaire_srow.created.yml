@@ -1,0 +1,18 @@
+uuid: d83a50a1-5863-4007-a75c-7d7cc34fe3b5
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.led_luminaire_srow
+id: commerce_product_variation.led_luminaire_srow.created
+field_name: created
+entity_type: commerce_product_variation
+bundle: led_luminaire_srow
+label: Skapad
+description: 'The time when the variation was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

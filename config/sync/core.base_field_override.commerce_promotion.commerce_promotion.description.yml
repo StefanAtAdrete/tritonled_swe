@@ -1,0 +1,20 @@
+uuid: f2e8c8f2-e4e1-44e3-924e-8b76c426b593
+langcode: sv
+status: true
+dependencies:
+  module:
+    - commerce_promotion
+id: commerce_promotion.commerce_promotion.description
+field_name: description
+entity_type: commerce_promotion
+bundle: commerce_promotion
+label: Beskrivning
+description: 'Additional information about the promotion to show to the customer'
+required: false
+translatable: false
+default_value:
+  -
+    value: ''
+default_value_callback: ''
+settings: {  }
+field_type: string_long

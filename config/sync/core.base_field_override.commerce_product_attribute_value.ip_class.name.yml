@@ -1,0 +1,18 @@
+uuid: 14007392-8aa7-4954-8394-e2b7a483c736
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.ip_class
+id: commerce_product_attribute_value.ip_class.name
+field_name: name
+entity_type: commerce_product_attribute_value
+bundle: ip_class
+label: Namn
+description: 'The attribute value name.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

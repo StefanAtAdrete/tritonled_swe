@@ -1,0 +1,18 @@
+uuid: bc6490e1-9cf6-4904-840c-e2ef7c562020
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.cct
+id: commerce_product_attribute_value.cct.changed
+field_name: changed
+entity_type: commerce_product_attribute_value
+bundle: cct
+label: Ändrad
+description: 'The time when the attribute value was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

@@ -6,5 +6,5 @@ id: linear_led_variation
 label: 'Linjär LED-armatur Variation'
 traits: {  }
 locked: false
-orderItemType: qoute
+orderItemType: quote
 generateTitle: true

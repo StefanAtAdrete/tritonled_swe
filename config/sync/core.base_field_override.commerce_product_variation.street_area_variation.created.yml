@@ -1,0 +1,18 @@
+uuid: b8de3f9d-d941-4fae-9a7a-20d8b34cc4f4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.street_area_variation
+id: commerce_product_variation.street_area_variation.created
+field_name: created
+entity_type: commerce_product_variation
+bundle: street_area_variation
+label: Skapad
+description: 'The time when the variation was created.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: created

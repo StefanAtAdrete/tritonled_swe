@@ -1,0 +1,18 @@
+uuid: 5adc70b0-14d3-4cca-84dc-74cca314fa7d
+langcode: sv
+status: true
+dependencies:
+  config:
+    - comment.type.comment
+id: comment.comment.homepage
+field_name: homepage
+entity_type: comment
+bundle: comment
+label: Hemsida
+description: 'Författarens hemsidesadress för kommentaren.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: uri

@@ -46,9 +46,11 @@ function tritonled_configurator_preprocess_commerce_product(&$variables) {
   }
 
   // Build responsive image pictures from field_configurator_media.
+  // field_configurator_media is not translatable — always use original language.
+  $original_product = $product->getUntranslated();
   $image_pictures = [];
-  if ($product->hasField('field_configurator_media') && !$product->get('field_configurator_media')->isEmpty()) {
-    $image_pictures = _tritonled_configurator_build_image_pictures($product, $schema);
+  if ($original_product->hasField('field_configurator_media') && !$original_product->get('field_configurator_media')->isEmpty()) {
+    $image_pictures = _tritonled_configurator_build_image_pictures($original_product, $schema);
   }
 
   $variables['#attached']['library'][] = 'tritonled_configurator/configurator';
