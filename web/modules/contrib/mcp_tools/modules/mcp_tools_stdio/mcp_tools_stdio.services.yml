@@ -1,0 +1,4 @@
+services:
+  logger.channel.mcp_tools_stdio:
+    parent: logger.channel_base
+    arguments: ['mcp_tools_stdio']

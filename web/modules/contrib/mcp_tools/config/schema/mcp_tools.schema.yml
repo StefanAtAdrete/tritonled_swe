@@ -1,0 +1,137 @@
+mcp_tools.settings:
+  type: config_object
+  label: 'MCP Tools settings'
+  mapping:
+    mode:
+      type: string
+      label: 'Configuration mode preset'
+    access:
+      type: mapping
+      label: 'Access control settings'
+      mapping:
+        read_only_mode:
+          type: boolean
+          label: 'Global read-only mode'
+        config_only_mode:
+          type: boolean
+          label: 'Config-only mode'
+        config_only_allowed_write_kinds:
+          type: sequence
+          label: 'Allowed write kinds in config-only mode'
+          sequence:
+            type: string
+            label: 'Write kind'
+        allowed_scopes:
+          type: sequence
+          label: 'Allowed scopes'
+          sequence:
+            type: string
+            label: 'Scope'
+        default_scopes:
+          type: sequence
+          label: 'Default scopes'
+          sequence:
+            type: string
+            label: 'Scope'
+        trust_scopes_via_header:
+          type: boolean
+          label: 'Trust scopes via HTTP header'
+        trust_scopes_via_query:
+          type: boolean
+          label: 'Trust scopes via query parameter'
+        trust_scopes_via_env:
+          type: boolean
+          label: 'Trust scopes via environment variable'
+        audit_logging:
+          type: boolean
+          label: 'Enable audit logging'
+    rate_limits:
+      type: mapping
+      label: 'Rate limits for read operations'
+      mapping:
+        broken_link_scan:
+          type: mapping
+          label: 'Broken link scan limits'
+          mapping:
+            max_per_hour:
+              type: integer
+              label: 'Maximum scans per hour'
+            max_urls_per_scan:
+              type: integer
+              label: 'Maximum URLs per scan'
+        content_search:
+          type: mapping
+          label: 'Content search limits'
+          mapping:
+            max_per_minute:
+              type: integer
+              label: 'Maximum searches per minute'
+    rate_limiting:
+      type: mapping
+      label: 'Rate limiting for write operations'
+      mapping:
+        enabled:
+          type: boolean
+          label: 'Enable rate limiting'
+        trust_client_id_header:
+          type: boolean
+          label: 'Trust client ID header for rate limiting'
+        max_writes_per_minute:
+          type: integer
+          label: 'Maximum write operations per minute'
+        max_writes_per_hour:
+          type: integer
+          label: 'Maximum write operations per hour'
+        max_deletes_per_hour:
+          type: integer
+          label: 'Maximum delete operations per hour'
+        max_structure_changes_per_hour:
+          type: integer
+          label: 'Maximum structure changes per hour'
+    allowed_hosts:
+      type: sequence
+      label: 'Allowed hosts for SSRF protection'
+      sequence:
+        type: string
+        label: 'Host pattern'
+    output:
+      type: mapping
+      label: 'Output settings'
+      mapping:
+        max_items:
+          type: integer
+          label: 'Maximum items in list operations'
+        include_sensitive:
+          type: boolean
+          label: 'Include sensitive information'
+    webhooks:
+      type: mapping
+      label: 'Webhook notification settings'
+      mapping:
+        enabled:
+          type: boolean
+          label: 'Enable webhook notifications'
+        url:
+          type: string
+          label: 'Webhook URL'
+        secret:
+          type: string
+          label: 'Webhook secret for HMAC signing'
+        allowed_hosts:
+          type: sequence
+          label: 'Allowed webhook destination hosts'
+          sequence:
+            type: string
+            label: 'Host pattern'
+        timeout:
+          type: integer
+          label: 'Request timeout in seconds'
+        batch_notifications:
+          type: boolean
+          label: 'Batch notifications'
+        notify_on:
+          type: sequence
+          label: 'Operations to notify on'
+          sequence:
+            type: string
+            label: 'Operation type'
