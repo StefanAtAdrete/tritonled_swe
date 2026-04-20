@@ -1,0 +1,12 @@
+uuid: 7f3552d0-448f-4012-afe9-16cf2939b53c
+langcode: en
+status: true
+dependencies: {  }
+id: button_light
+label: 'Button light'
+classes: 'btn btn-light'
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

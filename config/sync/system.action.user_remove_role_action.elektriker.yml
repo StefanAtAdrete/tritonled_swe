@@ -1,0 +1,14 @@
+uuid: b928ce13-33ac-4fd5-8f09-e571203d49e5
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.elektriker
+  module:
+    - user
+id: user_remove_role_action.elektriker
+label: 'Remove the Elektriker role from the selected user(s)'
+type: user
+plugin: user_remove_role_action
+configuration:
+  rid: elektriker

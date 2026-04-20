@@ -4,16 +4,15 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-032
+## ⏭️ Nästa session startar här: TASK-031
 
-**Uppgift**: Hero-bildspel på startsidan — engelsk översättning saknas, titel visas på svenska för båda språken.
-
-**Därefter**: TASK-031 fortsätter — läs `docs/tasks/task-031-site-audit.md`
+**Uppgift**: Kategori C skelett — `high_mast` + `street_area`
 
 ### Nästa steg
-1. Kör `cim` + verifiera Layout Builder för `high_mast` + `street_area` (YAML skapade)
-2. Bygg Layout Builder manuellt för `floodlight` (uppgradera), `ex_hazardous`, `accessories`
-3. Kontrollera översättningar per produkt (SV/EN)
+1. Kontrollera att alla fält finns på `high_mast` variation och produkt
+2. Kontrollera att alla fält finns på `street_area` variation och produkt
+3. Skapa variation först, sedan produkt (variation måste finnas innan produkt)
+4. Verifiera Layout Builder
 
 ### Gjort idag (2026-04-20)
 - ✅ Floodlight-produkt svensk översättning tillagd — Views block synligt på svenska
@@ -49,4 +48,4 @@
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-013 | 🔄 In Progress | Attribut-cleanup |
 | TASK-030 | ⏳ Parkerad | UX-feedback Thomas |
-| TASK-032 | 🆕 Ny | Hero-bildspel startsida: engelsk översättning saknas, titel på svenska för båda språken |
+| TASK-032 | ✅ Klar | Hero-bildspel startsida: engelsk översättning saknas, titel på svenska för båda språken |
