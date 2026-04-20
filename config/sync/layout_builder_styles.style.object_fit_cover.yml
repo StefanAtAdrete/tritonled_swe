@@ -1,0 +1,12 @@
+uuid: 9b9c28d9-87fa-47af-848a-bf55e2b57a3d
+langcode: en
+status: true
+dependencies: {  }
+id: object_fit_cover
+label: 'Object fit cover'
+classes: object-fit-cover
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

@@ -22,8 +22,6 @@ dependencies:
     - field.field.commerce_product.floodlight.layout_builder__layout
   module:
     - bootstrap_layout_builder
-    - fences
-    - file
     - layout_builder
 third_party_settings:
   layout_builder:
@@ -37,48 +35,7 @@ third_party_settings:
           container_wrapper_classes: ''
           container_wrapper_attributes: null
           container_wrapper:
-            bootstrap_styles:
-              background:
-                background_type: null
-              background_color:
-                class: null
-              text_color:
-                class: null
-              padding:
-                class: _none
-              padding_left:
-                class: _none
-              padding_top:
-                class: _none
-              padding_right:
-                class: _none
-              padding_bottom:
-                class: _none
-              margin:
-                class: _none
-              margin_left:
-                class: _none
-              margin_top:
-                class: _none
-              margin_right:
-                class: _none
-              margin_bottom:
-                class: _none
-              border:
-                border_style:
-                  class: null
-                border_width:
-                  class: _none
-                border_color:
-                  class: null
-                rounded_corners:
-                  class: _none
-              scroll_effects:
-                class: null
-              text_alignment:
-                class: null
-              box_shadow:
-                class: null
+            bootstrap_styles: {  }
           container_wrapper_bg_color_class: ''
           container_wrapper_bg_media: null
           container: container
