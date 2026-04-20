@@ -1,6 +1,6 @@
 # Aktuell Task
 
-**Senast uppdaterad**: 2026-04-16
+**Senast uppdaterad**: 2026-04-20
 
 ---
 
@@ -12,6 +12,13 @@
 1. Kör `cim` + verifiera Layout Builder för `high_mast` + `street_area` (YAML skapade)
 2. Bygg Layout Builder manuellt för `floodlight` (uppgradera), `ex_hazardous`, `accessories`
 3. Kontrollera översättningar per produkt (SV/EN)
+
+### Gjort idag (2026-04-20)
+- ✅ Drupal core uppdaterad 11.3.6 → 11.3.7 (CVE-2026-6365/6366/6367)
+- ✅ PhotoSwipe installerad via Composer (asset-packagist + oomphinc/composer-installers-extender)
+- ✅ Colorbox avinstallerad
+- ✅ `media.image.splide` view mode skapad med `max_1300x1300`
+- ✅ `product_responsive` uppdaterad med `max_2600x2600` för bättre mobilkvalitet
 
 ### Gjort idag (2026-04-19)
 - ✅ Konfigurator-bild (MAX/OPTI/SROW) — `getUntranslated()` + loop för brutna mediareferenser
