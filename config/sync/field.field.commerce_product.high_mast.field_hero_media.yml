@@ -1,0 +1,33 @@
+uuid: e5f6a7b8-5c6d-4e7f-f8a9-b0c1d2e3f4a5
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.high_mast
+    - field.storage.commerce_product.field_hero_media
+    - media.type.image
+    - media.type.remote_video
+    - media.type.video
+id: commerce_product.high_mast.field_hero_media
+field_name: field_hero_media
+entity_type: commerce_product
+bundle: high_mast
+label: 'Hero media'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+      remote_video: remote_video
+      video: video
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: remote_video
+field_type: entity_reference
