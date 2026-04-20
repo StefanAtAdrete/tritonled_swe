@@ -1,0 +1,23 @@
+uuid: d0e1f2a3-0b1c-4d2e-e3f4-a5b6c7d8e9f0
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.high_mast
+    - field.storage.commerce_product.field_warranty
+id: commerce_product.high_mast.field_warranty
+field_name: field_warranty
+entity_type: commerce_product
+bundle: high_mast
+label: 'Warranty (years)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
