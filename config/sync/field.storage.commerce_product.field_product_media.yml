@@ -1,0 +1,20 @@
+uuid: 7d9dbdae-1036-4586-b5df-3ec9741b6870
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - media
+id: commerce_product.field_product_media
+field_name: field_product_media
+entity_type: commerce_product
+type: entity_reference
+settings:
+  target_type: media
+module: core
+locked: false
+cardinality: -1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

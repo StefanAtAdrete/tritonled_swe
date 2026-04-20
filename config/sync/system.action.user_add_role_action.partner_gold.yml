@@ -1,0 +1,14 @@
+uuid: a0341231-9df8-4ee3-aa0b-cd0fc7e2e9ed
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.partner_gold
+  module:
+    - user
+id: user_add_role_action.partner_gold
+label: 'Add the Partner Gold role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: partner_gold

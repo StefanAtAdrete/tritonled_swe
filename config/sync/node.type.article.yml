@@ -1,0 +1,20 @@
+uuid: 46772225-0636-4a79-a6ce-64fc3b54cb92
+langcode: sv
+status: true
+dependencies:
+  module:
+    - menu_ui
+third_party_settings:
+  menu_ui:
+    available_menus:
+      - main
+    parent: 'main:'
+_core:
+  default_config_hash: Fe3N1uqaAyyKJbVkqT-btXy3t98puW8GCRD822xjl10
+name: Artikel
+type: article
+description: 'Använd <em>artiklar</em> för tidskänsligt innehåll som nyheter, pressreleaser eller blogginlägg.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: false

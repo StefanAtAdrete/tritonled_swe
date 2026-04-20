@@ -1,0 +1,14 @@
+uuid: 41804b17-fdc8-46e3-85ff-e7ea8549943d
+langcode: en
+status: true
+dependencies:
+  config:
+    - user.role.partner_silver
+  module:
+    - user
+id: user_add_role_action.partner_silver
+label: 'Add the Partner Silver role to the selected user(s)'
+type: user
+plugin: user_add_role_action
+configuration:
+  rid: partner_silver
