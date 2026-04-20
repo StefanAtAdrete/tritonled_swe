@@ -1,12 +1,12 @@
 uuid: 13a03538-41ca-4257-82c2-931e25685a47
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: 5FaC8_PP76ON-gppVAhTdnHRYooCqaMf-cDj-tSBhos
 id: klaro
-label: 'Consent manager'
-description: 'Klaro! Cookie & Consent manager saves your consent status in the browser.'
+label: Samtyckeshanterare
+description: 'Klaro! sparar ditt samtyckestatus i webbläsaren.'
 default: true
 purposes:
   - cms

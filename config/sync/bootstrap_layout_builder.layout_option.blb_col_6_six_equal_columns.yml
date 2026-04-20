@@ -1,5 +1,5 @@
 uuid: 78a62525-a036-452d-b774-8d4535a463ba
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
@@ -8,9 +8,9 @@ id: blb_col_6_six_equal_columns
 layout_id: blb_col_6
 label: 'Six equal columns'
 structure: '2 2 2 2 2 2'
-default_breakpoints: null
 breakpoints:
   desktop: desktop
   tablet: tablet
   mobile: mobile
+default_breakpoints: null
 weight: 0

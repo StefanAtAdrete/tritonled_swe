@@ -1,11 +1,11 @@
 uuid: 0daf8524-e975-45ae-b3e0-9b056f9b7f20
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: Tguo7wjsKJvq0MEXtCtn93OtQtUBtmGwBaF6dErAEws
 id: default
-label: Default
+label: Förvald
 description: 'The default fences field values.'
 field_tag: div
 field_classes: ''

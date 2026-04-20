@@ -1,5 +1,5 @@
 uuid: 79104e3b-b24d-4a49-8a3c-fe2d2a146994
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -20,7 +20,7 @@ provider: null
 plugin: search_form_block
 settings:
   id: search_form_block
-  label: 'Search help'
+  label: Sökhjälp
   label_display: visible
   provider: search
   page_id: help_search

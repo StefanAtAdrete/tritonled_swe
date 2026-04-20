@@ -1,11 +1,11 @@
 uuid: b07b4d7f-3712-46a8-89d5-79e5af9dac96
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: JXYDC3SLZUXSwnTjR9rBo6uZF3vDSZd8S7EA5ZOH7kM
 name: thumbnail
-label: 'Thumbnail (100×100)'
+label: 'Miniatyr (100×100)'
 effects:
   1cfec298-8620-4749-b100-ccb6c4500779:
     uuid: 1cfec298-8620-4749-b100-ccb6c4500779
@@ -21,3 +21,4 @@ effects:
     weight: 2
     data:
       extension: webp
+pipeline: __default__

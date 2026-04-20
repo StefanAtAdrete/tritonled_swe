@@ -1,12 +1,12 @@
 uuid: 3a8b3780-626e-4862-a684-13d591baf4a1
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: i0snV8Wj--OkRW12UdachUiYiz3FbeMwHu_pZYfzKLc
-name: 'Basic page'
+name: 'Enkel sida'
 type: page
-description: "Use <em>basic pages</em> for your static content, such as an 'About us' page."
+description: 'Använd <em>enkla sidor</em> för ditt statiska innehåll, såsom en sida "Om oss".'
 help: null
 new_revision: true
 preview_mode: 1

@@ -1,12 +1,12 @@
 uuid: f682d6f3-4b7e-470f-a53d-30eb9abdbcb7
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: HBeBrdoMQ8HHvIcge46zv21fgnD6c8V6FjQ_h1eiQkY
 id: cms
-label: Functional
-description: 'Store data (e.g. cookie for user session) in your browser (required to use this website).'
+label: Funktionell
+description: 'Lagrar data (t.ex. sessions-cookie) i din webbläsare (krävs för att använda webbplatsen).'
 default: true
 purposes:
   - cms

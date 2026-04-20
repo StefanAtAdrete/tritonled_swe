@@ -1,0 +1,60 @@
+label: 'Product prices'
+display:
+  default:
+    display_title: Default
+    display_options:
+      title: Prices
+      fields:
+        sku:
+          label: SKU
+          separator: ', '
+        purchasable_entity:
+          label: Title
+          separator: ', '
+        name:
+          label: List
+          separator: ', '
+        quantity:
+          label: Quantity
+          separator: ', '
+        list_price__number:
+          label: 'List price'
+          separator: ', '
+        price__number:
+          label: Price
+          separator: ', '
+        status:
+          label: Status
+          separator: ', '
+        operations:
+          label: 'Operations links'
+      pager:
+        options:
+          tags:
+            next: ››
+            previous: ‹‹
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page_label: 'Items per page'
+            items_per_page_options_all_label: '- All -'
+            offset_label: Offset
+      exposed_form:
+        options:
+          submit_button: Apply
+          reset_button_label: Reset
+          exposed_sorts_label: 'Sort by'
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+      empty:
+        area_text_custom:
+          content: 'No prices yet.'
+      arguments:
+        product_id:
+          exception:
+            title: All
+  page:
+    display_title: 'Product prices'
+    display_options:
+      menu:
+        title: Prices

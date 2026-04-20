@@ -1,10 +1,10 @@
 uuid: aabe0fb1-0ca3-4fb0-aa10-1e997530b130
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: BCM-vV1zzRaLHN18dqAR_CuGOj8AFJvTx7BKl_8Gcxc
 id: tools
-label: Tools
-description: 'User tool links, often added by modules'
+label: Verktyg
+description: 'Länkar för användare som ofta läggs till av moduler'
 locked: true

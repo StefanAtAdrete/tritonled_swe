@@ -1,5 +1,5 @@
 uuid: fd7aaf53-e2c2-4ae4-a923-c49566fea0dc
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -13,7 +13,7 @@ id: commerce_product.default.body
 field_name: body
 entity_type: commerce_product
 bundle: default
-label: Body
+label: Brödtext
 description: ''
 required: false
 translatable: true

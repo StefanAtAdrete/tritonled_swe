@@ -1,5 +1,5 @@
 uuid: 6429b562-598e-485d-9908-632392f2dcb5
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -18,7 +18,7 @@ provider: null
 plugin: 'system_menu_block:main'
 settings:
   id: 'system_menu_block:main'
-  label: 'Main navigation'
+  label: Huvudmeny
   label_display: '0'
   provider: system
   level: 1

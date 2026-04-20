@@ -1,5 +1,5 @@
 uuid: 047bee66-a894-4afc-a214-fc3d0c142d0f
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -18,7 +18,7 @@ base_field: id
 display:
   default:
     id: default
-    display_title: Default
+    display_title: Förvald
     display_plugin: default
     position: 0
     display_options:
@@ -34,7 +34,7 @@ display:
           entity_type: null
           entity_field: name
           plugin_id: field
-          label: Name
+          label: Namn
           exclude: false
           alter:
             alter_text: false
@@ -98,7 +98,7 @@ display:
           entity_type: commerce_pricelist
           entity_field: start_date
           plugin_id: field
-          label: 'Start date'
+          label: Startdatum
           exclude: false
           alter:
             alter_text: false
@@ -163,7 +163,7 @@ display:
           entity_type: commerce_pricelist
           entity_field: end_date
           plugin_id: field
-          label: 'End date'
+          label: Slutdatum
           exclude: false
           alter:
             alter_text: false
@@ -227,7 +227,7 @@ display:
           admin_label: ''
           entity_type: commerce_pricelist
           plugin_id: entity_operations
-          label: 'Operations links'
+          label: 'Länkar till funktioner'
           exclude: false
           alter:
             alter_text: false
@@ -273,34 +273,34 @@ display:
         type: full
         options:
           offset: 0
+          pagination_heading_level: h4
           items_per_page: 50
           total_pages: null
           id: 0
           tags:
             next: ››
             previous: ‹‹
-            first: '« First'
-            last: 'Last »'
+            first: '« Första'
+            last: 'Sista »'
           expose:
             items_per_page: false
-            items_per_page_label: 'Items per page'
+            items_per_page_label: 'Inlägg per sida'
             items_per_page_options: '5, 10, 25, 50'
             items_per_page_options_all: false
-            items_per_page_options_all_label: '- All -'
+            items_per_page_options_all_label: '- Alla -'
             offset: false
-            offset_label: Offset
+            offset_label: Kompensera
           quantity: 9
-          pagination_heading_level: h4
       exposed_form:
         type: basic
         options:
-          submit_button: Apply
+          submit_button: Applicera
           reset_button: true
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
           expose_sort_order: true
-          sort_asc_label: Asc
-          sort_desc_label: Desc
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
       access:
         type: perm
         options:
@@ -386,7 +386,7 @@ display:
           exposed: true
           expose:
             operator_id: name_op
-            label: Name
+            label: Namn
             description: ''
             use_operator: false
             operator: name_op
@@ -521,7 +521,7 @@ display:
       tags: {  }
   admin:
     id: admin
-    display_title: Page
+    display_title: Sida
     display_plugin: page
     position: 1
     display_options:
@@ -529,7 +529,7 @@ display:
       path: admin/commerce/price-lists/list
       menu:
         type: 'default tab'
-        title: List
+        title: Lista
         description: ''
         weight: 0
         expanded: false
@@ -538,7 +538,7 @@ display:
         context: '0'
       tab_options:
         type: normal
-        title: List
+        title: Lista
         description: ''
         weight: 0
     cache_metadata:

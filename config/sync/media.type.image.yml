@@ -1,11 +1,11 @@
 uuid: eba83517-1c8d-427f-844c-0215824a518d
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: VWUWqwszm5ZaqT3frIPWjyyVmvmWnWMFRphkVXCl8t0
 id: image
-label: Image
+label: Bild
 description: 'A locally hosted image file.'
 source: image
 queue_thumbnail_downloads: false

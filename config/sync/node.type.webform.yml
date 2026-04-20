@@ -1,5 +1,5 @@
 uuid: ae212d95-3a5d-4509-9b92-22935acc72d5
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -7,7 +7,7 @@ dependencies:
       - webform_node
 _core:
   default_config_hash: kx0vLl7uYoivaJrFGjNZQpe4dC6fMZ-V-9mN_JWc2CI
-name: Webform
+name: Webbformulär
 type: webform
 description: 'A basic page with a webform attached.'
 help: null

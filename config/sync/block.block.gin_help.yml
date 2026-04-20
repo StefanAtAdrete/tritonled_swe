@@ -1,5 +1,5 @@
 uuid: faf84149-1508-4088-82be-61080d4ecb70
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -16,7 +16,7 @@ provider: null
 plugin: help_block
 settings:
   id: help_block
-  label: Help
+  label: Hjälp
   label_display: '0'
   provider: help
 visibility: {  }

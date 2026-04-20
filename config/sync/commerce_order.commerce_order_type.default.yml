@@ -1,17 +1,18 @@
 uuid: a9521da2-6a59-4327-919a-e6dbddad630a
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: kYapI397yx2zFJGyDEs85Hyqgfc9jhmzxqPZMl2Fqhk
-label: Default
 id: default
+label: Förvald
+traits: {  }
+locked: false
 workflow: order_default
+showOrderEditLinks: null
 numberPattern: order_default
 refresh_mode: customer
 refresh_frequency: 300
 sendReceipt: true
 receiptBcc: ''
 receiptSubject: ''
-traits: {  }
-locked: false

@@ -1,5 +1,5 @@
 uuid: c55840f6-f449-440a-8e34-6ea133f540ea
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,53 +7,53 @@ dependencies:
 _core:
   default_config_hash: T7gMMyFbTYLalxpIOnzJebvek2OW0b1RgLVE9I2y228
 id: editorial
-label: Editorial
+label: Redaktionell
 type: content_moderation
 type_settings:
   states:
     archived:
-      label: Archived
+      label: Arkiverad
       weight: 5
       published: false
       default_revision: true
     draft:
-      label: Draft
+      label: Utkast
       weight: -5
       published: false
       default_revision: false
     published:
-      label: Published
+      label: Publicerad
       weight: 0
       published: true
       default_revision: true
   transitions:
     archive:
-      label: Archive
+      label: Arkiverad
       from:
         - published
       to: archived
       weight: 2
     archived_draft:
-      label: 'Restore to Draft'
+      label: 'Återställ till utkast'
       from:
         - archived
       to: draft
       weight: 3
     archived_published:
-      label: Restore
+      label: Återställ
       from:
         - archived
       to: published
       weight: 4
     create_new_draft:
-      label: 'Create New Draft'
+      label: 'Skapa nytt utkast'
       from:
         - draft
         - published
       to: draft
       weight: 0
     publish:
-      label: Publish
+      label: Publicera
       from:
         - draft
         - published

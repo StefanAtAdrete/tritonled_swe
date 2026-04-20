@@ -1,5 +1,5 @@
 uuid: 8efa5a8e-a80d-456e-b940-641588878021
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -17,7 +17,7 @@ base_field: id
 display:
   default:
     id: default
-    display_title: Default
+    display_title: Förvald
     display_plugin: default
     position: 0
     display_options:
@@ -33,7 +33,7 @@ display:
           entity_type: null
           entity_field: info
           plugin_id: field
-          label: 'Block description'
+          label: Blockbeskrivning
           exclude: false
           alter:
             alter_text: false
@@ -98,7 +98,7 @@ display:
           entity_type: block_content
           entity_field: type
           plugin_id: field
-          label: 'Block type'
+          label: 'Typ av block'
           exclude: false
           alter:
             alter_text: false
@@ -163,7 +163,7 @@ display:
           entity_type: block_content
           entity_field: changed
           plugin_id: field
-          label: Updated
+          label: Uppdaterad
           exclude: false
           alter:
             alter_text: false
@@ -227,7 +227,7 @@ display:
           admin_label: ''
           entity_type: block_content
           plugin_id: entity_operations
-          label: Operations
+          label: Funktioner
           exclude: false
           alter:
             alter_text: false
@@ -278,26 +278,26 @@ display:
           total_pages: null
           id: 0
           tags:
-            next: 'Next ›'
-            previous: '‹ Previous'
+            next: 'Nästa ›'
+            previous: '‹ Föregående'
           expose:
             items_per_page: false
-            items_per_page_label: 'Items per page'
+            items_per_page_label: 'Inlägg per sida'
             items_per_page_options: '5, 10, 25, 50'
             items_per_page_options_all: false
-            items_per_page_options_all_label: '- All -'
+            items_per_page_options_all_label: '- Alla -'
             offset: false
-            offset_label: Offset
+            offset_label: Kompensera
       exposed_form:
         type: basic
         options:
-          submit_button: Apply
+          submit_button: Applicera
           reset_button: true
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
           expose_sort_order: true
-          sort_asc_label: Asc
-          sort_desc_label: Desc
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
       access:
         type: perm
         options:
@@ -336,7 +336,7 @@ display:
           exposed: true
           expose:
             operator_id: info_op
-            label: 'Block description'
+            label: Blockbeskrivning
             description: ''
             use_operator: false
             operator: info_op
@@ -376,7 +376,7 @@ display:
           exposed: true
           expose:
             operator_id: type_op
-            label: 'Block type'
+            label: 'Typ av block'
             description: ''
             use_operator: false
             operator: type_op
@@ -514,7 +514,7 @@ display:
       tags: {  }
   page_1:
     id: page_1
-    display_title: Page
+    display_title: Sida
     display_plugin: page
     position: 1
     display_options:
@@ -522,7 +522,7 @@ display:
       path: admin/content/block
       menu:
         type: tab
-        title: Blocks
+        title: Block
         description: 'Create and edit content blocks.'
         weight: 0
         menu_name: admin

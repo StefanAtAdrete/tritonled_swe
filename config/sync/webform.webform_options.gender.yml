@@ -1,5 +1,5 @@
 uuid: d42b2a36-dd7e-48de-8838-5981eb5c4f84
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,7 +8,7 @@ dependencies:
 _core:
   default_config_hash: yxhG0JmQs2HT-Ro6ZeDQboDc9ZWR4GglflTtyoqxK4A
 id: gender
-label: Gender
+label: Kön
 category: Demographic
 likert: false
 options: |

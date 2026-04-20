@@ -1,5 +1,5 @@
 uuid: 4f6af3a4-c6de-459c-accb-1123d83b4bd5
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -10,7 +10,7 @@ third_party_settings:
 _core:
   default_config_hash: _z3gRqT6raSp9842zsMlka4awElMiTaIMS4tZpjP3_E
 id: default
-label: 'LED products'
+label: Förvald
 traits: {  }
 locked: false
 description: ''

@@ -1,5 +1,5 @@
 uuid: 10f3d80f-6bc6-463b-9afd-7131fffe13a8
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 third_party_settings:
@@ -9,7 +9,7 @@ third_party_settings:
 _core:
   default_config_hash: 3vA4FKQ1Qu8B1R8UdGPnmMfJrYO6Y6uMqeNgDgXxods
 id: default
-label: Default
+label: Förvald
 traits: {  }
 locked: false
 orderItemType: default

@@ -1,11 +1,11 @@
 uuid: a7487980-76fd-4bcb-9279-b3a160e2767d
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: vbPSqe3wbFSkaEY0zGy3NVpofBxcTZYrT6N2YPQX7nI
 name: wide
-label: 'Wide (1090)'
+label: 'Bred (1090)'
 effects:
   09959c15-59ce-4f6d-90df-e2d7cf32bce5:
     uuid: 09959c15-59ce-4f6d-90df-e2d7cf32bce5
@@ -21,3 +21,4 @@ effects:
     weight: 2
     data:
       extension: webp
+pipeline: __default__

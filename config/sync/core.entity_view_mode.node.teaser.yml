@@ -1,5 +1,5 @@
 uuid: 7ba1634b-c3aa-4b37-ac76-9f613cd7563a
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: KgGJDZFpMaz_8bTv6fN1bXS3Qi5LWmRJI9R53kEGsNQ
 id: node.teaser
-label: Teaser
+label: Ingress
 description: ''
 targetEntityType: node
 cache: true

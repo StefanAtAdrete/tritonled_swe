@@ -1,10 +1,10 @@
 uuid: 430e40d6-b6a8-43d0-b27d-acb911de795e
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: 96ZiDaMm48OUV0myM8JrBfkZXmvUfFzDsZ30EGzn_OU
 id: tablet
-label: Tablet
+label: Surfplatta
 base_class: col-md
 weight: -9

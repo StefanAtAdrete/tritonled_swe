@@ -1,12 +1,12 @@
 uuid: 09e72407-d6b0-441b-8338-766bb5e13ae6
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: ETjeewYXUBo_zLRzIlijtavOYTyqTUkqyMsUM2x3FYo
 id: youtube
 label: YouTube
-description: 'YouTube is an online video sharing platform owned by Google.'
+description: 'YouTube är en videoplattform ägd av Google.'
 default: false
 purposes:
   - external_content

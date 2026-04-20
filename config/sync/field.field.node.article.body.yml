@@ -1,5 +1,5 @@
 uuid: ce249c67-fb5a-4b20-829e-857367803811
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -13,7 +13,7 @@ id: node.article.body
 field_name: body
 entity_type: node
 bundle: article
-label: Body
+label: Brödtext
 description: ''
 required: false
 translatable: true

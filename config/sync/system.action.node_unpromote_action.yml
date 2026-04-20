@@ -1,5 +1,5 @@
 uuid: 5af7b927-ed44-4a4b-95e2-97ffada73975
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: JBptjnfuOMtsdKygklXxoOgeOCTMtQxlkymjnnj-cC0
 id: node_unpromote_action
-label: 'Remove content from front page'
+label: 'Ta bort inlägg från startsidan'
 type: node
 plugin: node_unpromote_action
 configuration: {  }

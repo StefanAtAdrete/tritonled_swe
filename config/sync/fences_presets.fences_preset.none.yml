@@ -1,11 +1,11 @@
 uuid: 38044b0b-44f9-4263-a27e-520697f5191f
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: 3o8bUUIAc-cqB7nU3bzL4uaKJeiWzZaOqD4HSTYXKjo
 id: none
-label: None
+label: Ingen
 description: 'Only label text and field value, no field markup at all.'
 field_tag: none
 field_classes: ''

@@ -1,5 +1,5 @@
 uuid: 9ab3805f-cd44-4897-b644-9e583dc6b1cf
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: iukUENpf8CFvjZbGGacKX_Ges0-lU9z6zvsd32P6kbo
 id: taxonomy_term.full
-label: 'Taxonomy term page'
+label: 'Sida för taxonomitermer'
 description: ''
 targetEntityType: taxonomy_term
 cache: true

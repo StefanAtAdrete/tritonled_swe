@@ -1,5 +1,5 @@
 uuid: aa1b61b7-7aff-4a2a-9394-1d6bb491c92d
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,8 +8,8 @@ dependencies:
 _core:
   default_config_hash: RKkc6tf1VudvYiOtwPCf3Tp_EoA6fov6BFC34D7gMoQ
 id: size
-label: Size
-category: General
+label: Storlek
+category: Allmän
 likert: false
 options: |
   Extra Small: Extra Small

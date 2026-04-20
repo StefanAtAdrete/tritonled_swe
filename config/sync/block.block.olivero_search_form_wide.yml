@@ -1,5 +1,5 @@
 uuid: f7683edb-7f65-4beb-9efb-d4e126a957fa
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -16,7 +16,7 @@ provider: null
 plugin: search_form_block
 settings:
   id: search_form_block
-  label: 'Search form (wide)'
+  label: 'Sökformulär (bred)'
   label_display: '0'
   provider: search
   page_id: null

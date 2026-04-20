@@ -1,5 +1,5 @@
 uuid: 504bb26a-57fd-4618-8e4e-81d76e8268f8
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -18,7 +18,7 @@ base_field: store_id
 display:
   default:
     id: default
-    display_title: Master
+    display_title: Huvud
     display_plugin: default
     position: 0
     display_options:
@@ -87,7 +87,7 @@ display:
           entity_type: commerce_store
           entity_field: is_default
           plugin_id: field
-          label: Default
+          label: Förvald
           exclude: true
           alter:
             alter_text: false
@@ -154,7 +154,7 @@ display:
           entity_type: null
           entity_field: name
           plugin_id: field
-          label: Name
+          label: Namn
           exclude: false
           alter:
             alter_text: true
@@ -219,7 +219,7 @@ display:
           entity_type: commerce_store
           entity_field: changed
           plugin_id: field
-          label: Updated
+          label: Uppdaterad
           exclude: false
           alter:
             alter_text: false
@@ -286,7 +286,7 @@ display:
           entity_type: commerce_store
           entity_field: type
           plugin_id: commerce_entity_bundle
-          label: Type
+          label: Typ
           exclude: false
           alter:
             alter_text: false
@@ -351,7 +351,7 @@ display:
           admin_label: ''
           entity_type: commerce_store
           plugin_id: entity_operations
-          label: Operations
+          label: Funktioner
           exclude: false
           alter:
             alter_text: false
@@ -407,23 +407,23 @@ display:
             last: 'last »'
           expose:
             items_per_page: false
-            items_per_page_label: 'Items per page'
+            items_per_page_label: 'Inlägg per sida'
             items_per_page_options: '5, 10, 25, 50'
             items_per_page_options_all: false
-            items_per_page_options_all_label: '- All -'
+            items_per_page_options_all_label: '- Alla -'
             offset: false
-            offset_label: Offset
+            offset_label: Kompensera
           quantity: 9
       exposed_form:
         type: basic
         options:
-          submit_button: Apply
+          submit_button: Applicera
           reset_button: false
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
           expose_sort_order: true
-          sort_asc_label: Asc
-          sort_desc_label: Desc
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
       access:
         type: perm
         options:
@@ -477,7 +477,7 @@ display:
           exposed: true
           expose:
             operator_id: type_op
-            label: Type
+            label: Typ
             description: ''
             use_operator: false
             operator: type_op
@@ -571,7 +571,7 @@ display:
       cacheable: false
   page_1:
     id: page_1
-    display_title: Page
+    display_title: Sida
     display_plugin: page
     position: 1
     display_options:

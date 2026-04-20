@@ -1,8 +1,8 @@
 uuid: 72dce0c1-193d-4006-9ede-6e8efda47dc4
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: U5VlGjd_SfV0Qm_EfnaynOfc549cNscFAx48JfYoMRI
 id: default
-label: Default
+label: Förvald

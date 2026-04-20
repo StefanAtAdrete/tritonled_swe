@@ -1,5 +1,5 @@
 uuid: a3629a62-9995-488c-bd9d-8685ce90ea64
-langcode: en
+langcode: sv
 status: false
 dependencies:
   enforced:
@@ -10,7 +10,7 @@ _core:
 id: default
 name: default
 weight: -10
-label: Default
+label: Förvald
 group: ''
 skin: default
 breakpoint: 0
@@ -20,6 +20,7 @@ options:
   settings:
     destroy: false
     type: slide
+    mediaQuery: max
     rewind: false
     rewindByDrag: false
     speed: 400
@@ -44,8 +45,8 @@ options:
     arrows: 'true'
     arrowPath: ''
     pagination: 'true'
-    paginationKeyboard: true
     paginationDirection: ltr
+    paginationKeyboard: true
     omitEnd: false
     autoplay: false
     interval: 5000
@@ -63,7 +64,6 @@ options:
     flickMaxPages: 1
     direction: ltr
     cover: false
-    mediaQuery: max
     slideFocus: false
     focusableNodes: 'a, button, textarea, input, select, iframe'
     isNavigation: false
@@ -79,11 +79,11 @@ options:
     downTarget: ''
     downOffset: 0
     easingOverride: ''
-    fullscreen: false
     randomize: false
+    fullscreen: false
     wheel: false
     releaseWheel: false
-    wheelSleep: 0
     wheelMinThreshold: 0
+    wheelSleep: 0
     zoom: ''
     animation: ''

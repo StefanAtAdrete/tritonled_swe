@@ -1,5 +1,5 @@
 uuid: 5890be46-a4a1-4c90-a64c-381881018e93
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -17,7 +17,7 @@ base_field: log_id
 display:
   default:
     id: default
-    display_title: Master
+    display_title: Huvud
     display_plugin: default
     position: 0
     display_options:
@@ -33,7 +33,7 @@ display:
           entity_type: commerce_log
           entity_field: created
           plugin_id: field
-          label: Date
+          label: Datum
           exclude: false
           alter:
             alter_text: false
@@ -109,7 +109,7 @@ display:
           entity_type: null
           entity_field: null
           plugin_id: rendered_entity
-          label: Message
+          label: Meddelande
           exclude: false
           alter:
             alter_text: false
@@ -161,7 +161,7 @@ display:
           entity_type: commerce_log
           entity_field: uid
           plugin_id: field
-          label: User
+          label: Användare
           exclude: false
           alter:
             alter_text: true
@@ -222,13 +222,13 @@ display:
       exposed_form:
         type: basic
         options:
-          submit_button: Apply
+          submit_button: Applicera
           reset_button: false
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
           expose_sort_order: true
-          sort_asc_label: Asc
-          sort_desc_label: Desc
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
       access:
         type: none
         options: {  }
@@ -277,7 +277,7 @@ display:
           exception:
             value: all
             title_enable: false
-            title: All
+            title: Alla
           title_enable: false
           title: ''
           default_argument_type: fixed
@@ -313,7 +313,7 @@ display:
           exception:
             value: all
             title_enable: false
-            title: All
+            title: Alla
           title_enable: false
           title: ''
           default_argument_type: fixed

@@ -1,5 +1,5 @@
 uuid: 158d0825-768e-4dd0-8509-b26238e4a031
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,7 +8,7 @@ dependencies:
 _core:
   default_config_hash: zyTJjisGAiNCmSVzU73UWGY2joBWA3QXvlcjDDIuWcs
 id: order_default
-label: Default
+label: Förvald
 targetEntityType: commerce_order
 plugin: infinite
 configuration:

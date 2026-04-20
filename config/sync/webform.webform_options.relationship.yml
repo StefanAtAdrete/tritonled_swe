@@ -1,5 +1,5 @@
 uuid: da01b695-48cb-4deb-84fa-cc7cb54a1abf
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,7 +8,7 @@ dependencies:
 _core:
   default_config_hash: 4J2RPG4JmsD4Fm1NlIQY0JHkrJ08UUl0qTF0_EjUxvw
 id: relationship
-label: Relationship
+label: Relation
 category: Demographic
 likert: false
 options: |

@@ -1,5 +1,5 @@
 uuid: 07b7dcb3-433f-4501-b73a-997811801979
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,7 +8,7 @@ dependencies:
 _core:
   default_config_hash: 8rVcRXLnTAEoWs7zl8du-7RIUnayqUcGYnvb3JT21-o
 id: time_zones
-label: 'Time zones'
-category: 'Date and time'
+label: Tidszoner
+category: 'Datum och tid'
 likert: false
 options: ''
