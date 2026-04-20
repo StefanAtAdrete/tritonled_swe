@@ -1,0 +1,12 @@
+uuid: 0c715373-a460-4e7b-aaa8-13aa89bd68ba
+langcode: en
+status: true
+dependencies: {  }
+id: tertiary_background
+label: 'Tertiary background'
+classes: bg-body-tertiary
+type: section
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

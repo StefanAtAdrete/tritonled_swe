@@ -1,0 +1,12 @@
+uuid: dd214a43-3577-4b6a-a45e-e3a97979d839
+langcode: en
+status: true
+dependencies: {  }
+id: commerce_product
+label: Product
+tags:
+  schema_product_description: '[commerce_product:field_short_description]'
+  schema_product_name: '[commerce_product:title]'
+  schema_product_sku: '[commerce_product:current_variation:sku]'
+  schema_product_type: Product
+  schema_product_url: '[commerce_product:url:absolute]'

@@ -1,0 +1,16 @@
+uuid: f92b4cba-82f1-4369-9d69-5e5030ba10bd
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: product_title_english
+label: 'Product title - english'
+type: 'canonical_entities:commerce_product'
+pattern: 'product/[commerce_product:title]'
+selection_criteria: {  }
+selection_logic: and
+weight: -5
+relationships:
+  'commerce_product:langcode:language':
+    label: Language

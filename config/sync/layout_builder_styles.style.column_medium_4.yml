@@ -1,0 +1,12 @@
+uuid: 38b5013a-3bbc-47c6-84d4-a9910cbe95ac
+langcode: en
+status: true
+dependencies: {  }
+id: column_medium_4
+label: 'Column Medium 4'
+classes: col-md-4
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0
