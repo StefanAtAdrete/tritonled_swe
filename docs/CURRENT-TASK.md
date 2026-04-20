@@ -4,48 +4,66 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-031
+## ⏭️ Nästa session startar här: TASK-033 (NY)
+
+**Uppgift**: Rätta källspråk på produkter 15-26 (MAX/OPTI/SROW) + path aliases
+
+### Bakgrund
+Produkterna 15-26 har `en` som källspråk men sajten är primärt svensk. Detta orsakar:
+- Felaktiga URL:er för svenska versionen (`/sv/product/...` istället för `/product/...`)
+- Felaktig rendering-kontext i Views-block
+- path_alias genereras inte automatiskt via pathauto för commerce_product
+
+### Plan (kräver backup före!)
+1. Ta Backup & Migrate snapshot
+2. Ta bort svenska översättningar på produkterna 15-26
+3. Ändra källspråk från `en` → `sv` på produkterna 15-26
+4. Lägg tillbaka engelska som översättning
+5. Regenerera path aliases via pathauto
+6. Verifiera att MAX/OPTI/SROW-blocken på startsidan fungerar på båda språken
+
+### Viktigt
+- **Backup MÅSTE tas innan** — detta är destructive på translations
+- Produkterna 15-26: Triton MAX, MAX-PRO, MAX-S, MAX-E, MAX-ED, OPTI, OPTI-S, OPTI-E, OPTI-ED, SROW, SROW-E, SROW-ED
+- Pathauto verkar inte generera aliases automatiskt för commerce_product — undersök varför
+
+### Nuläge (workaround)
+- `/sv`-prefix återställt för svenska — sajten fungerar men med prefix
+- Path aliases skapas via `createEntityAlias` men försvinner vid `cr`
+
+---
+
+## TASK-031 — Fortsättning
 
 **Uppgift**: Kategori C skelett — `accessories` Layout Builder + skeleton-produkt
 
 ### Nästa steg
-1. Skapa/uppdatera Layout Builder YAML för `accessories`
+1. Skapa Layout Builder YAML för `accessories`
 2. Skapa skeleton-variation + skeleton-produkt för `accessories`
 3. Verifiera accessories-sidan i browsern
-4. Eventuellt: skeleton-produkter för `street_area` och `ex_hazardous`
+4. Skeleton-produkter för `street_area` och `ex_hazardous`
 5. Commit + checkpoint
+
+---
+
+### Gjort idag (2026-04-20) — session 3
+- ✅ Path aliases skapade för alla commerce_product via createEntityAlias
+- ⚠️ MAX/OPTI/SROW källspråksproblem identifierat — workaround: /sv-prefix återställt
+- ⚠️ Pathauto genererar inte aliases automatiskt för commerce_product — utreds i TASK-033
 
 ### Gjort idag (2026-04-20) — session 2
 - ✅ `street_area` — 10 produktfält + attribute_watt på variation skapade
-- ✅ `street_area` — Layout Builder YAML redan fanns sedan 2026-04-16, verifierad
+- ✅ `street_area` — Layout Builder YAML verifierad
 - ✅ `ex_hazardous` — 9 produktfält + attribute_watt på variation skapade
-- ✅ `ex_hazardous` — Layout Builder YAML uppdaterad (nya fält i dependencies + hidden)
-- ✅ `accessories` — 9 produktfält + field_variation_media + field_warranty_years på variation skapade
-- ✅ Skill skapad: `add-category-c-product` — mall för framtida produkttyper (Paneler mfl)
+- ✅ `ex_hazardous` — Layout Builder YAML uppdaterad
+- ✅ `accessories` — 9 produktfält + field_variation_media + field_warranty_years skapade
+- ✅ Skill skapad: `add-category-c-product`
 
 ### Gjort idag (2026-04-20) — session 1
-- ✅ Floodlight-produkt svensk översättning tillagd — Views block synligt på svenska
-- ✅ Drupal core uppdaterad 11.3.6 → 11.3.7 (CVE-2026-6365/6366/6367)
-- ✅ PhotoSwipe installerad via Composer (asset-packagist + oomphinc/composer-installers-extender)
-- ✅ Colorbox avinstallerad
-- ✅ `media.image.splide` view mode skapad med `max_1300x1300`
-- ✅ `product_responsive` uppdaterad med `max_2600x2600` för bättre mobilkvalitet
-- ✅ High mast: 12 fältconfig skapade (10 produkt + 2 variation)
-- ✅ High mast: Layout Builder display config skapad (identisk med floodlight)
-
-### Gjort idag (2026-04-19)
-- ✅ Konfigurator-bild (MAX/OPTI/SROW) — `getUntranslated()` + loop för brutna mediareferenser
-- ✅ Bildbyte vid ändstycke fungerar på alla tre produkttyper
-- ✅ Case-sidor: Splide Media bildkvalitet fixad — `max_1300x1300` + `medium` thumbnail
-- ✅ `Product Responsive` uppdaterad med `max_650x650` + `max_1300x1300` + korrekt `sizes`
-- ✅ Colorbox lightbox aktiverad på case-sidor — bilder öppnas i fullstorlek utan beskärning
-- ✅ Drupal core har 3 säkerhetsvarningar (CVE-2026-6365/6366/6367) — behöver uppdateras
-
-### Gjort idag (2026-04-16)
-- ✅ Etiketter verifierade — redan klara sedan förra session
-- ✅ `feeds_item` verifierat på alla 12 bundles (produkt + variation)
-- ✅ Layout Builder YAML skapad för `high_mast` + `street_area`
-- ✅ Produkt 35 (DB53 Hilton linear LED) — klar
+- ✅ Floodlight-produkt svensk översättning tillagd
+- ✅ Drupal core uppdaterad 11.3.6 → 11.3.7
+- ✅ PhotoSwipe installerad, Colorbox avinstallerad
+- ✅ High mast: fält + Layout Builder display config skapad
 
 ---
 
@@ -53,10 +71,11 @@
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
+| TASK-033 | 🆕 Ny | Rätta källspråk produkter 15-26 + path aliases |
 | TASK-031 | 🔄 In Progress | Site Audit — Layout Builder Kategori C + översättningar |
 | TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
 | TASK-018 | 🔄 In Progress | Cart page layout |
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-013 | 🔄 In Progress | Attribut-cleanup |
 | TASK-030 | ⏳ Parkerad | UX-feedback Thomas |
-| TASK-032 | ✅ Klar | Hero-bildspel startsida: engelsk översättning saknas, titel på svenska för båda språken |
+| TASK-032 | ✅ Klar | Hero-bildspel startsida |
