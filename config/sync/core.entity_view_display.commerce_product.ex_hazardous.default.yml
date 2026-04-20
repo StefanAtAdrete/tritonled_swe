@@ -4,16 +4,24 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.ex_hazardous
+    - field.field.commerce_product.ex_hazardous.body
     - field.field.commerce_product.ex_hazardous.feeds_item
+    - field.field.commerce_product.ex_hazardous.field_brand
     - field.field.commerce_product.ex_hazardous.field_cable
+    - field.field.commerce_product.ex_hazardous.field_datasheet
     - field.field.commerce_product.ex_hazardous.field_dimming
     - field.field.commerce_product.ex_hazardous.field_driver
+    - field.field.commerce_product.ex_hazardous.field_hero_media
     - field.field.commerce_product.ex_hazardous.field_ip_class
+    - field.field.commerce_product.ex_hazardous.field_producers
+    - field.field.commerce_product.ex_hazardous.field_product_categories
     - field.field.commerce_product.ex_hazardous.field_product_media
+    - field.field.commerce_product.ex_hazardous.field_product_sku
+    - field.field.commerce_product.ex_hazardous.field_show_in_hero
+    - field.field.commerce_product.ex_hazardous.field_warranty
     - field.field.commerce_product.ex_hazardous.layout_builder__layout
   module:
     - bootstrap_layout_builder
-    - fences
     - layout_builder
 third_party_settings:
   layout_builder:
@@ -53,6 +61,10 @@ third_party_settings:
               - col-md-6
               - col-12
           remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+            background_black: 0
+            tertiary_background: 0
           context_mapping: {  }
         components:
           ex01-0001-0001-0001-000000000001:
@@ -166,6 +178,61 @@ third_party_settings:
             additional:
               layout_builder_styles_style:
                 margin_bottom_3: margin_bottom_3
+          ex01-0001-0001-0001-000000000004:
+            uuid: ex01-0001-0001-0001-000000000004
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:ex_hazardous:body'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 2
+            additional: {  }
+          ex01-0001-0001-0001-000000000005:
+            uuid: ex01-0001-0001-0001-000000000005
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:ex_hazardous:field_datasheet'
+              label: 'Datasheet PDF'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: file_table
+                label: visually_hidden
+                settings:
+                  use_description_as_link_text: false
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 3
+            additional:
+              layout_builder_styles_style:
+                background_light_badge: background_light_badge
+                margin_bottom_3: margin_bottom_3
         third_party_settings: {  }
 id: commerce_product.ex_hazardous.default
 targetEntityType: commerce_product
@@ -173,13 +240,22 @@ bundle: ex_hazardous
 mode: default
 content: {  }
 hidden:
+  body: true
   created: true
   feeds_item: true
+  field_brand: true
   field_cable: true
+  field_datasheet: true
   field_dimming: true
   field_driver: true
+  field_hero_media: true
   field_ip_class: true
+  field_producers: true
+  field_product_categories: true
   field_product_media: true
+  field_product_sku: true
+  field_show_in_hero: true
+  field_warranty: true
   langcode: true
   layout_builder__layout: true
   stores: true

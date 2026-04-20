@@ -1,0 +1,19 @@
+uuid: 731721b5-5ddd-4604-8099-1ca2524a5006
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.accessories
+    - field.storage.commerce_product.field_brand
+id: commerce_product.accessories.field_brand
+field_name: field_brand
+entity_type: commerce_product
+bundle: accessories
+label: Brand/Manufacturer
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

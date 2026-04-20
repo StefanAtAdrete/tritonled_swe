@@ -1,0 +1,19 @@
+uuid: 88dae72b-cf19-4cc3-b1cb-5f84ac75f93b
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_brand
+id: commerce_product.street_area.field_brand
+field_name: field_brand
+entity_type: commerce_product
+bundle: street_area
+label: Brand/Manufacturer
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

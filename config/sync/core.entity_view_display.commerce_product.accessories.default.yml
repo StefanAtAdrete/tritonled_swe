@@ -4,12 +4,20 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.accessories
+    - field.field.commerce_product.accessories.body
     - field.field.commerce_product.accessories.feeds_item
+    - field.field.commerce_product.accessories.field_brand
+    - field.field.commerce_product.accessories.field_datasheet
+    - field.field.commerce_product.accessories.field_hero_media
+    - field.field.commerce_product.accessories.field_producers
+    - field.field.commerce_product.accessories.field_product_categories
     - field.field.commerce_product.accessories.field_product_media
+    - field.field.commerce_product.accessories.field_product_sku
+    - field.field.commerce_product.accessories.field_show_in_hero
+    - field.field.commerce_product.accessories.field_warranty
     - field.field.commerce_product.accessories.layout_builder__layout
   module:
     - bootstrap_layout_builder
-    - fences
     - layout_builder
 third_party_settings:
   layout_builder:
@@ -169,9 +177,18 @@ bundle: accessories
 mode: default
 content: {  }
 hidden:
+  body: true
   created: true
   feeds_item: true
+  field_brand: true
+  field_datasheet: true
+  field_hero_media: true
+  field_producers: true
+  field_product_categories: true
   field_product_media: true
+  field_product_sku: true
+  field_show_in_hero: true
+  field_warranty: true
   langcode: true
   layout_builder__layout: true
   stores: true

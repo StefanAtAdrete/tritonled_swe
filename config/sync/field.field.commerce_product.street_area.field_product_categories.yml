@@ -1,0 +1,21 @@
+uuid: aff8a6c2-145e-4e48-a900-646d119bff87
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_product_categories
+id: commerce_product.street_area.field_product_categories
+field_name: field_product_categories
+entity_type: commerce_product
+bundle: street_area
+label: 'Product Categories'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings: {  }
+field_type: entity_reference

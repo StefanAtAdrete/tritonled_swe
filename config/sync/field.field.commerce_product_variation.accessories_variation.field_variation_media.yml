@@ -1,0 +1,21 @@
+uuid: 9f27a59b-a24e-4c3b-9634-de049d18e92c
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.accessories_variation
+    - field.storage.commerce_product_variation.field_variation_media
+id: commerce_product_variation.accessories_variation.field_variation_media
+field_name: field_variation_media
+entity_type: commerce_product_variation
+bundle: accessories_variation
+label: 'Variation Image'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference
