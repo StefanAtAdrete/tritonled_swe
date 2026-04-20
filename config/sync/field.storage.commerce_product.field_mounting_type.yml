@@ -1,0 +1,33 @@
+uuid: b2a56734-9de1-406d-abb8-3180984dc7a9
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - options
+id: commerce_product.field_mounting_type
+field_name: field_mounting_type
+entity_type: commerce_product
+type: list_string
+settings:
+  allowed_values:
+    -
+      value: Surface
+      label: Surface
+    -
+      value: Pendant
+      label: Pendant
+    -
+      value: Bracket
+      label: Bracket
+    -
+      value: Pole
+      label: Pole
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false
