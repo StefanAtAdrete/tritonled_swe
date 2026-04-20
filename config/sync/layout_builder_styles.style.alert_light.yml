@@ -1,0 +1,12 @@
+uuid: f1a14bfe-5a3b-4a86-a07b-a8a5ca6e40c8
+langcode: en
+status: true
+dependencies: {  }
+id: alert_light
+label: 'Alert light'
+classes: 'alert alert-light'
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

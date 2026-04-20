@@ -1,0 +1,10 @@
+uuid: a2259c6c-9155-4762-94b3-350e8bef3935
+langcode: en
+status: true
+dependencies: {  }
+id: product_tabs
+label: 'Product tabs'
+multiselect: multiple
+form_type: checkboxes
+required: false
+weight: 0
