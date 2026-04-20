@@ -90,15 +90,12 @@
 }
 
 .view-hero-case .carousel-caption a {
-  font-size: 1.5rem;
-  font-weight: 700;
   text-decoration: none;
 }
 
-@media (min-width: 768px) {
-  .view-hero-case .carousel-caption a {
-    font-size: 2.5rem;
-  }
+.view-hero-case .carousel-caption h3 {
+  font-size: calc(1.375rem + 1.5vw) !important; /* fs-1 */
+  font-weight: lighter !important; /* fw-lighter */
 }
 
 /* Navigeringsknappar */
