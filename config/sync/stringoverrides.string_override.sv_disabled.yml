@@ -1,0 +1,13 @@
+contexts:
+  -
+    context: ''
+    translations:
+      -
+        source: Certifications
+        translation: Certifikat
+      -
+        source: Electrical
+        translation: Elektriskt
+      -
+        source: Mechanical
+        translation: 'Fysiska mått'
