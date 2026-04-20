@@ -1,5 +1,5 @@
 uuid: 18bceecf-563f-4b7b-b326-f4ed948b7b46
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -16,7 +16,7 @@ provider: null
 plugin: system_breadcrumb_block
 settings:
   id: system_breadcrumb_block
-  label: Breadcrumbs
+  label: Länkstigar
   label_display: '0'
   provider: system
 visibility: {  }

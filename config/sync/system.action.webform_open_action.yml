@@ -1,5 +1,5 @@
 uuid: a295d24c-d677-40a5-b58e-62a2c9efdb3f
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: AK83C-dOZEPruvi6GbkuhihWLnO4VtrbesqSC6izf4o
 id: webform_open_action
-label: 'Open webform'
+label: 'Öppna webbformulär'
 type: webform
 plugin: webform_open_action
 configuration: {  }

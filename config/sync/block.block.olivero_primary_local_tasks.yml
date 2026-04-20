@@ -1,5 +1,5 @@
 uuid: 9f64a18a-b826-4249-b893-c1dc55caabc2
-langcode: en
+langcode: sv
 status: true
 dependencies:
   theme:
@@ -14,7 +14,7 @@ provider: null
 plugin: local_tasks_block
 settings:
   id: local_tasks_block
-  label: 'Primary tabs'
+  label: 'Primära flikar'
   label_display: '0'
   provider: core
   primary: true

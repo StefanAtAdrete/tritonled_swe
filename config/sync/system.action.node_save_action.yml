@@ -1,5 +1,5 @@
 uuid: 8fa24bda-57b7-4776-86b9-bc7b5c29a04d
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: LhdsoZPL_pFas2fjaAWue4zvrQ_tEVofLYtcNec-JGM
 id: node_save_action
-label: 'Save content'
+label: 'Spara innehåll'
 type: node
 plugin: 'entity:save_action:node'
 configuration: {  }

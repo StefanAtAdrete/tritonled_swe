@@ -1,5 +1,5 @@
 uuid: 41b5f9a1-0e84-4fff-9522-87dc51bd7100
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: DoVt_VGgVLcDD4XmVbSFzr0K17SJy9imFiYusKkJBgY
 id: taxonomy_term_publish_action
-label: 'Publish taxonomy term'
+label: 'Publicera taxonomiterm'
 type: taxonomy_term
 plugin: 'entity:publish_action:taxonomy_term'
 configuration: {  }

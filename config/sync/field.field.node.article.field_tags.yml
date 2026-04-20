@@ -1,5 +1,5 @@
 uuid: d2253ad7-ee7b-46f4-81aa-f67801c74c3a
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -12,8 +12,8 @@ id: node.article.field_tags
 field_name: field_tags
 entity_type: node
 bundle: article
-label: Tags
-description: 'Enter a comma-separated list. For example: Amsterdam, Mexico City, "Cleveland, Ohio"'
+label: Etiketter
+description: 'Ange en kommaseparerad lista. Till exempel: Stockholm, Lilla Edet, "Linköping, Östergötland"'
 required: false
 translatable: true
 default_value: {  }

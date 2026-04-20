@@ -15,6 +15,7 @@ module:
   bootstrap_styles: 0
   breakpoint: 0
   ckeditor5: 0
+  colorbox: 0
   comment: 0
   commerce: 0
   commerce_cart: 0
@@ -105,6 +106,7 @@ module:
   page_cache: 0
   path: 0
   path_alias: 0
+  photoswipe: 0
   profile: 0
   responsive_image: 0
   schema_metatag: 0

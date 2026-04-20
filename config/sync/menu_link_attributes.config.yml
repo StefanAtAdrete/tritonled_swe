@@ -1,6 +1,6 @@
 _core:
   default_config_hash: 1_70uxbS5CUxUU4ETLYzLThyBVABCNiYf_T0Py_oIRY
-langcode: en
+langcode: sv
 attributes:
   container_class:
     label: 'Container class(es)'

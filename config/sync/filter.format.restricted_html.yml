@@ -1,10 +1,10 @@
 uuid: e8878716-f602-4b95-8246-a6ab4990b40d
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: QiKqQS_YGAT3Qr4vaAgZICJknm-MGCzt_xBAMqg-tRM
-name: 'Restricted HTML'
+name: 'Begränsad HTML'
 format: restricted_html
 weight: 1
 filters:

@@ -1,5 +1,5 @@
 uuid: e2623988-da7f-49bc-932d-a3b8e1d428cf
-langcode: en
+langcode: sv
 status: true
 dependencies:
   theme:
@@ -14,7 +14,7 @@ provider: null
 plugin: local_tasks_block
 settings:
   id: local_tasks_block
-  label: 'Secondary tabs'
+  label: 'Sekundära flikar'
   label_display: '0'
   provider: core
   primary: false

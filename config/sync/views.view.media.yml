@@ -1,5 +1,5 @@
 uuid: 46775fb6-1bfe-4c6b-9739-6563b28cf06a
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -13,14 +13,14 @@ _core:
 id: media
 label: Media
 module: views
-description: 'Find and manage media.'
+description: 'Hitta och hantera media.'
 tag: ''
 base_table: media_field_data
 base_field: mid
 display:
   default:
     id: default
-    display_title: Default
+    display_title: Förvald
     display_plugin: default
     position: 0
     display_options:
@@ -76,7 +76,7 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          action_title: Action
+          action_title: Åtgärd
           include_exclude: exclude
           selected_actions: {  }
         thumbnail__target_id:
@@ -89,7 +89,7 @@ display:
           entity_type: media
           entity_field: thumbnail
           plugin_id: field
-          label: Thumbnail
+          label: Miniatyr
           exclude: false
           alter:
             alter_text: false
@@ -157,7 +157,7 @@ display:
           entity_type: media
           entity_field: media
           plugin_id: field
-          label: 'Media name'
+          label: Medianamn
           exclude: false
           alter:
             alter_text: false
@@ -204,7 +204,7 @@ display:
           entity_type: media
           entity_field: bundle
           plugin_id: field
-          label: Type
+          label: Typ
           exclude: false
           alter:
             alter_text: false
@@ -269,7 +269,7 @@ display:
           entity_type: media
           entity_field: uid
           plugin_id: field
-          label: Author
+          label: Författare
           exclude: false
           alter:
             alter_text: false
@@ -379,8 +379,8 @@ display:
           type: boolean
           settings:
             format: custom
-            format_custom_false: Unpublished
-            format_custom_true: Published
+            format_custom_false: 'Ej publicerad'
+            format_custom_true: Publicerad
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -401,7 +401,7 @@ display:
           entity_type: media
           entity_field: changed
           plugin_id: field
-          label: Updated
+          label: Uppdaterad
           exclude: false
           alter:
             alter_text: false
@@ -476,7 +476,7 @@ display:
           admin_label: ''
           entity_type: media
           plugin_id: entity_operations
-          label: Operations
+          label: Funktioner
           exclude: false
           alter:
             alter_text: false
@@ -527,29 +527,29 @@ display:
           total_pages: null
           id: 0
           tags:
-            next: 'Next ›'
-            previous: '‹ Previous'
-            first: '« First'
-            last: 'Last »'
+            next: 'Nästa ›'
+            previous: '‹ Föregående'
+            first: '« Första'
+            last: 'Sista »'
           expose:
             items_per_page: false
-            items_per_page_label: 'Items per page'
+            items_per_page_label: 'Inlägg per sida'
             items_per_page_options: '5, 10, 25, 50'
             items_per_page_options_all: false
-            items_per_page_options_all_label: '- All -'
+            items_per_page_options_all_label: '- Alla -'
             offset: false
-            offset_label: Offset
+            offset_label: Kompensera
           quantity: 9
       exposed_form:
         type: basic
         options:
-          submit_button: Filter
+          submit_button: Filtrera
           reset_button: false
-          reset_button_label: Reset
-          exposed_sorts_label: 'Sort by'
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
           expose_sort_order: true
-          sort_asc_label: Asc
-          sort_desc_label: Desc
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
       access:
         type: perm
         options:
@@ -567,7 +567,7 @@ display:
           admin_label: ''
           plugin_id: text_custom
           empty: true
-          content: 'No media available.'
+          content: 'Ingen media tillgänglig.'
           tokenize: false
       sorts:
         created:
@@ -604,7 +604,7 @@ display:
           exposed: true
           expose:
             operator_id: name_op
-            label: 'Media name'
+            label: Medianamn
             description: ''
             use_operator: false
             operator: name_op
@@ -644,7 +644,7 @@ display:
           exposed: true
           expose:
             operator_id: bundle_op
-            label: Type
+            label: Typ
             description: ''
             use_operator: false
             operator: bundle_op
@@ -685,7 +685,7 @@ display:
           exposed: true
           expose:
             operator_id: ''
-            label: 'True'
+            label: Sant
             description: null
             use_operator: false
             operator: status_op
@@ -699,7 +699,7 @@ display:
               authenticated: authenticated
           is_grouped: true
           group_info:
-            label: 'Published status'
+            label: 'Status för publicering'
             description: ''
             identifier: status
             optional: true
@@ -710,11 +710,11 @@ display:
             default_group_multiple: {  }
             group_items:
               1:
-                title: Published
+                title: Publicerad
                 operator: '='
                 value: '1'
               2:
-                title: Unpublished
+                title: 'Ej publicerad'
                 operator: '='
                 value: '0'
         status_extra:
@@ -772,7 +772,7 @@ display:
           exposed: true
           expose:
             operator_id: langcode_op
-            label: Language
+            label: Språk
             description: ''
             use_operator: false
             operator: langcode_op

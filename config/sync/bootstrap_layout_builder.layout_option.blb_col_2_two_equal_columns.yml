@@ -1,5 +1,5 @@
 uuid: 070a4834-4481-4e07-818e-d2763c6633f3
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
@@ -8,9 +8,9 @@ id: blb_col_2_two_equal_columns
 layout_id: blb_col_2
 label: 'Two equal columns'
 structure: '6 6'
-default_breakpoints: null
 breakpoints:
   desktop: desktop
   tablet: tablet
   mobile: mobile
+default_breakpoints: null
 weight: -10

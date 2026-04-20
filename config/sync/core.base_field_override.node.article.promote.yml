@@ -1,5 +1,5 @@
 uuid: f5ddd4a4-baf1-4674-9f19-69d070ed45ad
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:
@@ -10,7 +10,7 @@ id: node.article.promote
 field_name: promote
 entity_type: node
 bundle: article
-label: 'Promoted to front page'
+label: 'Visas på startsidan'
 description: ''
 required: false
 translatable: false
@@ -19,6 +19,6 @@ default_value:
     value: 1
 default_value_callback: ''
 settings:
-  on_label: 'On'
-  off_label: 'Off'
+  on_label: På
+  off_label: Av
 field_type: boolean

@@ -1,5 +1,5 @@
 uuid: 0838fd00-2453-4c70-839a-df96db047625
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -18,7 +18,7 @@ base_field: cid
 display:
   default:
     id: default
-    display_title: Default
+    display_title: Förvald
     display_plugin: default
     position: 0
     display_options:
@@ -158,7 +158,7 @@ display:
           plugin_id: text_custom
           label: ''
           empty: true
-          content: 'No comments available.'
+          content: 'Inga kommentarer tillgängliga.'
           tokenize: false
       sorts:
         created:

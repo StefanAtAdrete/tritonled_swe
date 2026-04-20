@@ -1,5 +1,5 @@
 uuid: 7f0db3a4-82b8-4eb4-8208-368355ba32da
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: k3aUaZXGDuhkek2TZIee0PApOPTvYZLadziekdyHA5A
 id: user_search
-label: Users
+label: Användare
 path: user
 weight: 0
 plugin: user_search

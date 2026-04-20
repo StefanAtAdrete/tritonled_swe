@@ -1,10 +1,10 @@
 uuid: 575c26a7-076e-40a3-a0b7-a40171069f5d
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: pQP5iQy4SdhAMVcjDUncCfkJmTofnHVtXrsMzx4k6Yk
 id: basic
-label: 'Basic block'
+label: 'Grundläggande block'
 revision: false
-description: 'A basic block contains a title and a body.'
+description: 'Ett enkelt block innehåller en titel och en brödtext.'

@@ -1,5 +1,5 @@
 uuid: ccc38db6-9613-4296-9f1c-773f94a2bc8a
-langcode: en
+langcode: sv
 status: true
 dependencies:
   enforced:
@@ -8,7 +8,7 @@ dependencies:
 _core:
   default_config_hash: PEUoedWrfYEX7oZ8CcOukfBTVxar1cPSROX8534esuU
 id: titles
-label: Titles
+label: Titlar
 category: Demographic
 likert: false
 options: |

@@ -1,11 +1,11 @@
 uuid: 9f993474-a406-4491-b7a6-bbb54bae54f8
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
   default_config_hash: aUG-EM9kKTKhcsdttoYmG5tug7pU2mNOQzcpp91jfFQ
 name: medium
-label: 'Medium (220×220)'
+label: 'Mellan (220×220)'
 effects:
   bddf0d06-42f9-4c75-a700-a33cafa25ea0:
     uuid: bddf0d06-42f9-4c75-a700-a33cafa25ea0
@@ -21,3 +21,4 @@ effects:
     weight: 2
     data:
       extension: webp
+pipeline: __default__

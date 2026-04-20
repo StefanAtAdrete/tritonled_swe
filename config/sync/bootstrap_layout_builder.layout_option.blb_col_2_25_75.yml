@@ -1,5 +1,5 @@
 uuid: 8a790e3a-7ca8-40c0-9204-33157edbe1ff
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
@@ -8,9 +8,9 @@ id: blb_col_2_25_75
 layout_id: blb_col_2
 label: '25% 75%'
 structure: '3 9'
-default_breakpoints: null
 breakpoints:
   desktop: desktop
   tablet: tablet
   mobile: mobile
+default_breakpoints: null
 weight: -9

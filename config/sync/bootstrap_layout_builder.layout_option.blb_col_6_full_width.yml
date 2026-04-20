@@ -1,5 +1,5 @@
 uuid: 7fcfaea6-24f7-4c30-bb53-3a178e204d4c
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
@@ -8,8 +8,8 @@ id: blb_col_6_full_width
 layout_id: blb_col_6
 label: 'Full width'
 structure: '12'
-default_breakpoints: null
 breakpoints:
   tablet: tablet
   mobile: mobile
+default_breakpoints: null
 weight: 0

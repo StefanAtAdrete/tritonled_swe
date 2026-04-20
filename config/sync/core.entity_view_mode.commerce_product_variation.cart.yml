@@ -1,5 +1,5 @@
 uuid: ed0d41fd-8810-42ac-8fb0-d3e94304720e
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -11,7 +11,7 @@ dependencies:
 _core:
   default_config_hash: xtrHHgI_SwA-1npf3GB0ntU65fMvm4mxImBtkbmZWSk
 id: commerce_product_variation.cart
-label: Cart
+label: Varukorg
 description: null
 targetEntityType: commerce_product_variation
 cache: true

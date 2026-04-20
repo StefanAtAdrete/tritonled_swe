@@ -1,5 +1,5 @@
 uuid: b0e52d0a-6bc8-4e49-a4b8-e6b5ce7c8a1c
-langcode: en
+langcode: sv
 status: true
 dependencies: {  }
 _core:
@@ -8,9 +8,9 @@ id: blb_col_3_three_equal_columns
 layout_id: blb_col_3
 label: 'Three equal columns'
 structure: '4 4 4'
-default_breakpoints: null
 breakpoints:
   desktop: desktop
   tablet: tablet
   mobile: mobile
+default_breakpoints: null
 weight: -10

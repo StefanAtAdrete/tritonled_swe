@@ -1,5 +1,5 @@
 uuid: 4e92d3d1-6bb2-4307-ab39-c0e8c950d0f8
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: vpBH8OmL4sdesCdeZLsW8KOutB5gkbreWJbfjhfFKaQ
 id: comment_delete_action
-label: 'Delete comment'
+label: 'Radera kommentar'
 type: comment
 plugin: 'entity:delete_action:comment'
 configuration: {  }

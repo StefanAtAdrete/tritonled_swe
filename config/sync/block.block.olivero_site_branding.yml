@@ -1,5 +1,5 @@
 uuid: 83ad0484-8dbe-47b1-bb64-ac78fb1d2228
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -16,7 +16,7 @@ provider: null
 plugin: system_branding_block
 settings:
   id: system_branding_block
-  label: 'Site branding'
+  label: 'Webbplatsens varumärke'
   label_display: '0'
   provider: system
   use_site_logo: true

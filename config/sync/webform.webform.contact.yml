@@ -1,5 +1,5 @@
 uuid: 9476663b-610b-4507-81b1-82c44124228c
-langcode: en
+langcode: sv
 status: open
 dependencies:
   enforced:
@@ -14,34 +14,23 @@ uid: null
 template: false
 archive: false
 id: contact
-title: Contact
-description: '<p>Basic email contact webform.</p>'
+title: Kontakt
+description: '<p>Kontakta oss formulär.</p>'
 categories: {  }
-elements: |-
+elements: |
   name:
-    '#title': 'Your Name'
-    '#type': textfield
-    '#required': true
-    '#default_value': '[current-user:display-name]'
+    '#title': 'Ditt namn'
   email:
-    '#title': 'Your Email'
-    '#type': email
-    '#required': true
-    '#default_value': '[current-user:mail]'
+    '#title': 'Din e-postadress'
   subject:
-    '#title': Subject
-    '#type': textfield
-    '#required': true
-    '#test': 'Testing contact webform from [site:name]'
+    '#title': Ämne
+    '#test': 'Testar kontakta oss form från [site:name]'
   message:
-    '#title': Message
-    '#type': textarea
-    '#required': true
-    '#test': 'Please ignore this email.'
+    '#title': Meddelande
+    '#test': 'Var god och ignorera detta mejl.'
   actions:
-    '#type': webform_actions
-    '#title': 'Submit button(s)'
-    '#submit__label': 'Send message'
+    '#title': 'Skicka knapp(ar)'
+    '#submit__label': 'Skicka meddelande'
 css: 'container mb-5'
 javascript: ''
 settings:
@@ -153,7 +142,7 @@ settings:
   confirmation_type: url_message
   confirmation_url: '<front>'
   confirmation_title: ''
-  confirmation_message: 'Your message has been sent.'
+  confirmation_message: '<p>Ditt meddelande har skickats.</p>'
   confirmation_attributes: {  }
   confirmation_back: true
   confirmation_back_label: ''
@@ -233,7 +222,7 @@ handlers:
   email_confirmation:
     id: email
     handler_id: email_confirmation
-    label: 'Email confirmation'
+    label: E-postbekräftelse
     notes: ''
     status: true
     conditions: {  }
@@ -271,7 +260,7 @@ handlers:
   email_notification:
     id: email
     handler_id: email_notification
-    label: 'Email notification'
+    label: E-postmeddelande
     notes: ''
     status: true
     conditions: {  }

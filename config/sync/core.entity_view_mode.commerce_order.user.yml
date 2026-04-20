@@ -1,5 +1,5 @@
 uuid: fce0caf4-a472-41af-8c21-23fee1fefcd3
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: zGcQPC5MWgNSsQxarSWsXNIVpjb_vDAdcDLPupYmxQ8
 id: commerce_order.user
-label: User
+label: Användare
 description: null
 targetEntityType: commerce_order
 cache: true

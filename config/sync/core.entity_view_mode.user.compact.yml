@@ -1,5 +1,5 @@
 uuid: b9942be4-81d5-4d68-992f-9a6a1bb6ed7a
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -7,7 +7,7 @@ dependencies:
 _core:
   default_config_hash: TtD7OuGskOsQfoGyxXkrdtllBpR37J19d5BMQDZWJgA
 id: user.compact
-label: Compact
+label: Kompakt
 description: ''
 targetEntityType: user
 cache: true

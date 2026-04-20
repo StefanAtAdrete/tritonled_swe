@@ -1,5 +1,5 @@
 uuid: ecc612be-7c4f-457c-bcbc-536851046640
-langcode: en
+langcode: sv
 status: true
 dependencies:
   config:

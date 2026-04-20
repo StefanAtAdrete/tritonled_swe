@@ -1,5 +1,5 @@
 uuid: 4c242fa3-d9e3-4700-9dd8-b0abe99d4643
-langcode: en
+langcode: sv
 status: true
 dependencies:
   module:
@@ -10,7 +10,7 @@ dependencies:
 _core:
   default_config_hash: rNBHCP7hJFMjP_iDe9-0AsSfkGC98V6Lh_oeOwmLos8
 id: profile.admin
-label: Admin
+label: Administrera
 description: null
 targetEntityType: profile
 cache: true
