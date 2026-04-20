@@ -1,0 +1,13 @@
+uuid: 5d63015d-bc8b-4ff7-b14e-6c26e7dcacf3
+langcode: sv
+status: true
+dependencies:
+  module:
+    - media
+_core:
+  default_config_hash: CsK6TseQ2DatEbZgbd30swOlZ28_HHwAESU2LvEnWq0
+id: media_unpublish_action
+label: 'Avpublicera media'
+type: media
+plugin: 'entity:unpublish_action:media'
+configuration: {  }
