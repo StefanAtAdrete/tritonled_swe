@@ -1,0 +1,63 @@
+uuid: c55840f6-f449-440a-8e34-6ea133f540ea
+langcode: sv
+status: true
+dependencies:
+  module:
+    - content_moderation
+_core:
+  default_config_hash: T7gMMyFbTYLalxpIOnzJebvek2OW0b1RgLVE9I2y228
+id: editorial
+label: Redaktionell
+type: content_moderation
+type_settings:
+  states:
+    archived:
+      label: Arkiverad
+      weight: 5
+      published: false
+      default_revision: true
+    draft:
+      label: Utkast
+      weight: -5
+      published: false
+      default_revision: false
+    published:
+      label: Publicerad
+      weight: 0
+      published: true
+      default_revision: true
+  transitions:
+    archive:
+      label: Arkiverad
+      from:
+        - published
+      to: archived
+      weight: 2
+    archived_draft:
+      label: 'Återställ till utkast'
+      from:
+        - archived
+      to: draft
+      weight: 3
+    archived_published:
+      label: Återställ
+      from:
+        - archived
+      to: published
+      weight: 4
+    create_new_draft:
+      label: 'Skapa nytt utkast'
+      from:
+        - draft
+        - published
+      to: draft
+      weight: 0
+    publish:
+      label: Publicera
+      from:
+        - draft
+        - published
+      to: published
+      weight: 1
+  entity_types: {  }
+  default_moderation_state: draft

@@ -4,9 +4,11 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-031 fortsätter
+## ⏭️ Nästa session startar här: TASK-032
 
-**Läs**: `docs/tasks/task-031-site-audit.md`
+**Uppgift**: Hero-bildspel på startsidan — engelsk översättning saknas, titel visas på svenska för båda språken.
+
+**Därefter**: TASK-031 fortsätter — läs `docs/tasks/task-031-site-audit.md`
 
 ### Nästa steg
 1. Kör `cim` + verifiera Layout Builder för `high_mast` + `street_area` (YAML skapade)
@@ -14,6 +16,7 @@
 3. Kontrollera översättningar per produkt (SV/EN)
 
 ### Gjort idag (2026-04-20)
+- ✅ Floodlight-produkt svensk översättning tillagd — Views block synligt på svenska
 - ✅ Drupal core uppdaterad 11.3.6 → 11.3.7 (CVE-2026-6365/6366/6367)
 - ✅ PhotoSwipe installerad via Composer (asset-packagist + oomphinc/composer-installers-extender)
 - ✅ Colorbox avinstallerad
@@ -46,3 +49,4 @@
 | TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
 | TASK-013 | 🔄 In Progress | Attribut-cleanup |
 | TASK-030 | ⏳ Parkerad | UX-feedback Thomas |
+| TASK-032 | 🆕 Ny | Hero-bildspel startsida: engelsk översättning saknas, titel på svenska för båda språken |

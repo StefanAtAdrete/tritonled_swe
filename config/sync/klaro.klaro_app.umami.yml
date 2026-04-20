@@ -1,0 +1,27 @@
+uuid: 80e65493-775e-4ca8-b6c8-c249ec9a8f4b
+langcode: sv
+status: false
+dependencies: {  }
+_core:
+  default_config_hash: vN8TfPdEQ-WQeGejDogrVhptSSDdSy2U4jHZ80cmM7s
+id: umami
+label: Umami
+description: 'Umami är ett integritetsvärnande analysverktyg.'
+default: false
+purposes:
+  - analytics
+cookies: {  }
+required: false
+opt_out: false
+only_once: false
+contextual_consent_only: false
+contextual_consent_text: ''
+info_url: 'https://umami.is'
+privacy_policy_url: 'https://umami.is/privacy'
+javascripts:
+  - umami.js
+callback_code: ''
+wrapper_identifier: {  }
+attachments:
+  - umami_analytics_tracking_script
+weight: 4
