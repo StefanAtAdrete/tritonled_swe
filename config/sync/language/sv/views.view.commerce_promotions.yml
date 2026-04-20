@@ -1,0 +1,55 @@
+display:
+  default:
+    display_title: Förvald
+    display_options:
+      exposed_form:
+        options:
+          submit_button: Applicera
+          reset_button_label: Återställ
+          exposed_sorts_label: 'Sortera efter'
+          sort_asc_label: Stigande
+          sort_desc_label: Fallande
+      pager:
+        options:
+          tags:
+            previous: ‹‹
+            next: ››
+            first: '« Första'
+            last: 'Sista »'
+          expose:
+            items_per_page_label: 'Inlägg per sida'
+            items_per_page_options_all_label: '- Alla -'
+            offset_label: Kompensera
+      fields:
+        name:
+          label: Namn
+          separator: ', '
+        offer__target_plugin_id:
+          separator: ', '
+        usage_limit:
+          label: Användning
+          separator: ', '
+        usage_limit_customer:
+          separator: ', '
+        start_date:
+          label: Startdatum
+          separator: ', '
+        end_date:
+          label: Slutdatum
+          separator: ', '
+        operations:
+          label: Funktioner
+      filters:
+        name:
+          expose:
+            label: Namn
+        status:
+          expose:
+            label: Status
+  admin:
+    display_title: Sida
+    display_options:
+      menu:
+        title: Lista
+      tab_options:
+        title: Lista

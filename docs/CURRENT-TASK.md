@@ -6,13 +6,14 @@
 
 ## ⏭️ Nästa session startar här: TASK-031
 
-**Uppgift**: Kategori C skelett — `high_mast` + `street_area`
+**Uppgift**: Kategori C skelett — `street_area`
 
 ### Nästa steg
-1. Kontrollera att alla fält finns på `high_mast` variation och produkt
-2. Kontrollera att alla fält finns på `street_area` variation och produkt
-3. Skapa variation först, sedan produkt (variation måste finnas innan produkt)
-4. Verifiera Layout Builder
+1. Kontrollera att alla fält finns på `street_area` variation och produkt
+2. Lägg till saknade fält (samma uppsättning som floodlight/high_mast)
+3. Skapa Layout Builder display config
+4. Skapa variation först, sedan produkt (variation måste finnas innan produkt)
+5. Verifiera Layout Builder
 
 ### Gjort idag (2026-04-20)
 - ✅ Floodlight-produkt svensk översättning tillagd — Views block synligt på svenska
@@ -21,6 +22,8 @@
 - ✅ Colorbox avinstallerad
 - ✅ `media.image.splide` view mode skapad med `max_1300x1300`
 - ✅ `product_responsive` uppdaterad med `max_2600x2600` för bättre mobilkvalitet
+- ✅ High mast: 12 fältconfig skapade (10 produkt + 2 variation)
+- ✅ High mast: Layout Builder display config skapad (identisk med floodlight)
 
 ### Gjort idag (2026-04-19)
 - ✅ Konfigurator-bild (MAX/OPTI/SROW) — `getUntranslated()` + loop för brutna mediareferenser
