@@ -8,17 +8,24 @@
         "docs": "https://www.drupal.org/docs/user_guide/en/index.html",
         "chat": "https://www.drupal.org/node/314178"
     },
-    "repositories": {
-        "simple_oauth_21": {
+    "repositories": [
+        {
+            "name": "asset-packagist",
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        },
+        {
+            "name": "simple_oauth_21",
             "type": "vcs",
             "url": "https://github.com/e0ipso/simple_oauth_21"
         },
-        "0": {
+        {
             "type": "composer",
             "url": "https://packages.drupal.org/8"
         }
-    },
+    ],
     "require": {
+        "bower-asset/photoswipe": "^5",
         "composer/installers": "^2.3",
         "cweagans/composer-patches": "^2.0",
         "drupal/ai": "^1.2.0",
@@ -69,7 +76,8 @@
         "drupal/views_slideshow": "^5.0",
         "drupal/views_slideshow_cycle": "^5.0",
         "drush/drush": "^13.7",
-        "e0ipso/simple_oauth_21": "^1.13"
+        "e0ipso/simple_oauth_21": "^1.13",
+        "oomphinc/composer-installers-extender": "^2.0"
     },
     "conflict": {
         "drupal/drupal": "*"
@@ -84,6 +92,7 @@
             "drupal/core-composer-scaffold": true,
             "drupal/core-project-message": true,
             "drupal/core-recipe-unpack": true,
+            "oomphinc/composer-installers-extender": true,
             "php-http/discovery": true,
             "php-tuf/composer-integration": true,
             "phpstan/extension-installer": true
@@ -91,6 +100,7 @@
         "sort-packages": true
     },
     "extra": {
+        "installer-types": ["bower-asset", "npm-asset"],
         "drupal-scaffold": {
             "locations": {
                 "web-root": "web/"
@@ -101,7 +111,9 @@
                 "type:drupal-core"
             ],
             "web/libraries/{$name}": [
-                "type:drupal-library"
+                "type:drupal-library",
+                "type:bower-asset",
+                "type:npm-asset"
             ],
             "web/modules/contrib/{$name}": [
                 "type:drupal-module"
