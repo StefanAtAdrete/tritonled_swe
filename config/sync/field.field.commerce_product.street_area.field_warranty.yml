@@ -1,0 +1,23 @@
+uuid: 7172240c-11d3-445d-b6a3-f64c5332b0f7
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_warranty
+id: commerce_product.street_area.field_warranty
+field_name: field_warranty
+entity_type: commerce_product
+bundle: street_area
+label: 'Warranty (years)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

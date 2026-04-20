@@ -1,0 +1,21 @@
+uuid: 6902d9a7-43d8-4a5e-941b-462e1e252ed4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.ex_hazardous
+    - field.storage.commerce_product.field_show_in_hero
+id: commerce_product.ex_hazardous.field_show_in_hero
+field_name: field_show_in_hero
+entity_type: commerce_product
+bundle: ex_hazardous
+label: 'Show in hero'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

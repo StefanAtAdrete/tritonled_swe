@@ -1,0 +1,21 @@
+uuid: ecd62ad4-00d0-4269-a976-dac982003fab
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_producers
+id: commerce_product.street_area.field_producers
+field_name: field_producers
+entity_type: commerce_product
+bundle: street_area
+label: Producers
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings: {  }
+field_type: entity_reference

@@ -1,0 +1,27 @@
+uuid: 6e5491bb-c438-400f-9975-a51601daf9b7
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.accessories
+    - field.storage.commerce_product.field_datasheet
+  module:
+    - file
+id: commerce_product.accessories.field_datasheet
+field_name: field_datasheet
+entity_type: commerce_product
+bundle: accessories
+label: 'Datasheet PDF'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: '[date:custom:Y]-[date:custom:m]'
+  file_extensions: txt
+  max_filesize: ''
+  description_field: false
+field_type: file

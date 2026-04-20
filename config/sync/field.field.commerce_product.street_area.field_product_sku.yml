@@ -1,0 +1,19 @@
+uuid: ddbe5aaf-29ef-4e05-a8e2-53cca72d0d2c
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_product_sku
+id: commerce_product.street_area.field_product_sku
+field_name: field_product_sku
+entity_type: commerce_product
+bundle: street_area
+label: 'Product SKU'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string
