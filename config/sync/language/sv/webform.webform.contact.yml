@@ -1,0 +1,23 @@
+title: Kontakt
+description: '<p>Kontakta oss formulär.</p>'
+elements: |
+  name:
+    '#title': 'Ditt namn'
+  email:
+    '#title': 'Din e-postadress'
+  subject:
+    '#title': Ämne
+    '#test': 'Testar kontakta oss form från [site:name]'
+  message:
+    '#title': Meddelande
+    '#test': 'Var god och ignorera detta mejl.'
+  actions:
+    '#title': 'Skicka knapp(ar)'
+    '#submit__label': 'Skicka meddelande'
+settings:
+  confirmation_message: '<p>Ditt meddelande har skickats.</p>'
+handlers:
+  email_confirmation:
+    label: E-postbekräftelse
+  email_notification:
+    label: E-postmeddelande

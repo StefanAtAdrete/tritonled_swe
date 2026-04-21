@@ -4,7 +4,7 @@
 
 ---
 
-## ⏭️ Nästa session startar här: TASK-033 (NY)
+## ⏭️ Nästa session startar här: TASK-034 (NY)
 
 **Uppgift**: Rätta källspråk på produkter 15-26 (MAX/OPTI/SROW) + path aliases
 
@@ -46,6 +46,14 @@ Produkterna 15-26 har `en` som källspråk men sajten är primärt svensk. Detta
 
 ---
 
+### Gjort idag (2026-04-21) — session 1
+- ✅ Källspråk bytt en→sv på produkter 15-26 via direkt DB-manipulation
+- ✅ EN-translations skapade på alla 12 produkter
+- ✅ Path alias-dubbletter rensade (1 per produkt per språk)
+- ✅ rendering_language satt på block_max/opti/srow i featured_products
+- ✅ /sv URL-prefix aktiverat
+- 🆕 TASK-034 identifierad: översätt Views Custom Text till engelska
+
 ### Gjort idag (2026-04-20) — session 3
 - ✅ Path aliases skapade för alla commerce_product via createEntityAlias
 - ⚠️ MAX/OPTI/SROW källspråksproblem identifierat — workaround: /sv-prefix återställt
@@ -71,7 +79,8 @@ Produkterna 15-26 har `en` som källspråk men sajten är primärt svensk. Detta
 
 | Task | Status | Beskrivning |
 |------|--------|-------------|
-| TASK-033 | 🆕 Ny | Rätta källspråk produkter 15-26 + path aliases |
+| TASK-034 | 🆕 Ny | Översätt Views Custom Text (block_max/opti/srow) till engelska via Translate view |
+| TASK-033 | ✅ Klar | Rätta källspråk produkter 15-26 + path aliases |
 | TASK-031 | 🔄 In Progress | Site Audit — Layout Builder Kategori C + översättningar |
 | TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
 | TASK-018 | 🔄 In Progress | Cart page layout |
