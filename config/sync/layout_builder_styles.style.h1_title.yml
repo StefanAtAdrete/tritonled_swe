@@ -1,0 +1,12 @@
+uuid: 2974ff43-7ebf-4e15-a341-31a822d3babf
+langcode: en
+status: true
+dependencies: {  }
+id: h1_title
+label: 'H1 title'
+classes: "h1\r\nmb-4"
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0
