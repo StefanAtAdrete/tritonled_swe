@@ -1,0 +1,21 @@
+uuid: 1ffff656-5957-4a79-8661-1128d2c105cd
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_enec
+id: commerce_product_variation.default.field_enec
+field_name: field_enec
+entity_type: commerce_product_variation
+bundle: default
+label: 'ENEC Certified'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

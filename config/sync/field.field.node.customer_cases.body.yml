@@ -1,0 +1,24 @@
+uuid: 88c2fce1-6230-4494-b2ae-7d6a7d8cb0b5
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.body
+    - node.type.customer_cases
+  module:
+    - text
+id: node.customer_cases.body
+field_name: body
+entity_type: node
+bundle: customer_cases
+label: Body
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  display_summary: false
+  required_summary: false
+  allowed_formats: {  }
+field_type: text_with_summary

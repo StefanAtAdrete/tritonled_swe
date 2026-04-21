@@ -1,0 +1,22 @@
+uuid: 3efd747b-82c0-4f2f-881c-a25e5db3ef1c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.default
+    - field.storage.commerce_product_variation.field_installation_notes
+  module:
+    - text
+id: commerce_product_variation.default.field_installation_notes
+field_name: field_installation_notes
+entity_type: commerce_product_variation
+bundle: default
+label: 'Installation Notes'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

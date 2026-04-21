@@ -1,0 +1,12 @@
+uuid: 8c5fbf56-5c3d-4b29-a372-f784a43673a3
+langcode: en
+status: true
+dependencies: {  }
+id: background_light_badge
+label: 'Background light rounded'
+classes: 'bg-light rounded'
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

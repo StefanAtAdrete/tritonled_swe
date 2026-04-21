@@ -1,0 +1,19 @@
+uuid: bbe847d7-1c20-4f43-80ed-00317a03bf62
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.surge_protection
+    - field.storage.commerce_product.field_product_sku
+id: commerce_product.surge_protection.field_product_sku
+field_name: field_product_sku
+entity_type: commerce_product
+bundle: surge_protection
+label: 'Product SKU'
+description: 'Field for unique product value'
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string
