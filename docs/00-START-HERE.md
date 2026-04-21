@@ -52,6 +52,30 @@ git push origin main
 
 ---
 
+## 🚨 KRITISKT: CEX-VARNING
+
+**`drush cex` raderar config-filer som inte finns i lokal DB.**
+
+När lokal DB importerats från prod (via snapshot) men inte sedan `cim`:ats, finns config i YAML-filerna som saknas i DB. `cex` skriver då över YAML med DB-innehållet och raderar filerna.
+
+### Säker exportrutin:
+```bash
+# 1. Kontrollera alltid delta INNAN export:
+ddev drush config:status
+# Om det finns "Only in sync dir" — kör ALDRIG cex direkt
+# Importera först: ddev drush cim --partial -y
+# 2. Exportera sedan:
+ddev drush cex -y
+```
+
+### Återställning om det ändå gick fel:
+```bash
+git diff HEAD~1 --diff-filter=D --name-only | xargs git checkout HEAD~1 --
+git commit -m "[TASK-NNN] Restore accidentally deleted config files from cex"
+```
+
+---
+
 ## 🚨 KRITISKT: FILSYSTEM-REGLER (BRYTS ALDRIG!)
 
 ### Claude har tillgång till 2 datorer:
