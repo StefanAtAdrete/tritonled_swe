@@ -14,11 +14,20 @@ Claude gör vid varje sessionsstart:
 2. Läser `CURRENT-TASK.md`
 3. Presenterar: var vi är, öppna tasks, förslag på vad vi tar tag i
 
-Stefan kontrollerar:
+Stefan kontrollerar — **i exakt denna ordning, alltid**:
 ```bash
 ddev start
 ddev drush status
+ddev drush config:status
 ```
+
+**Claude tolkar `config:status` och meddelar:**
+- ✅ `No differences` — säkert att börja
+- ⚠️ `Only in sync dir` — YAML har config som saknas i DB → kör `cim --partial` innan något annat
+- ⚠️ `Only in active` — DB har config som saknas i YAML → kör `cex` innan något annat
+- 🚨 `Different` — konflikt → granskas manuellt innan vi fortsätter
+
+**Vi påbörjar INGET arbete innan config:status är grön eller åtgärdad.**
 
 ### DEL 2 — CHECKPOINT (mitt i session)
 **Claude påminner aktivt** när något av följande inträffar:
@@ -285,7 +294,7 @@ ddev snapshot restore [name]
 
 ---
 
-**Version**: 2.7
+**Version**: 2.8
 **Skapad**: 2025-01-10
 **Uppdaterad**: 2026-04-11 — Rensad (beslut → 03-solutions, deploy → server-management/SKILL.md)
 **Författare**: Stefan + Claude
