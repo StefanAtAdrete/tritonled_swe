@@ -46,6 +46,15 @@ Produkterna 15-26 har `en` som källspråk men sajten är primärt svensk. Detta
 
 ---
 
+### Gjort idag (2026-04-21) — session 2
+- ✅ Konfigurator JS-översättningar felsökta — locale-fil `sv_*.js` existerar och är korrekt
+- ✅ Rotorsak hittad: `User` language detection tog prioritet över URL → engelska för inloggad admin
+- ✅ Åtgärd: `User` language detection avaktiverad i `/admin/config/regional/language/detection`
+- ✅ `Account administration pages` ger admin engelska — utan att påverka frontend
+- ✅ Duplicate `rendering_language` i `views.view.featured_products.yml` fixad
+- ⚠️ `cex` raderade 258 config-filer (lokal DB saknade dem) — återställda via `git checkout HEAD~1`
+- 📝 README skapad för `tritonled_configurator`-modulen
+
 ### Gjort idag (2026-04-21) — session 1
 - ✅ Källspråk bytt en→sv på produkter 15-26 via direkt DB-manipulation
 - ✅ EN-translations skapade på alla 12 produkter
