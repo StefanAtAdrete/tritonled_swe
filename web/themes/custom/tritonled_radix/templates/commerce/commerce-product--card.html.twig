@@ -13,13 +13,17 @@
   {%- set badge_class = 'bg-warning text-dark' -%}
 {%- elseif 'Utomhus' in env_term -%}
   {%- set badge_class = 'bg-success' -%}
-{%- elseif 'Industri' in env_term -%}
+{%- elseif 'Lager' in env_term -%}
   {%- set badge_class = 'bg-primary' -%}
 {%- elseif 'Gata' in env_term -%}
   {%- set badge_class = 'bg-dark' -%}
 {%- elseif 'Kontor' in env_term -%}
   {%- set badge_class = 'bg-info text-dark' -%}
+{%- elseif 'Installation' in env_term -%}
+  {%- set badge_class = 'bg-secondary' -%}
 {%- endif -%}
+{%- set watt = product.field_watt_range|render|striptags|trim -%}
+{%- set lumen = product.field_lumen_range|render|striptags|trim -%}
 
 <article class="triton-product-card card h-100 border-0 shadow-sm">
 
@@ -39,6 +43,19 @@
     {% if product.field_short_description|render|striptags|trim %}
       <div class="triton-card-features text-muted small flex-grow-1">
         {{ product.field_short_description }}
+      </div>
+    {% endif %}
+    {% if watt or lumen %}
+      <div class="triton-card-foot border-top mt-2 pt-2 d-flex justify-content-between align-items-baseline">
+        <span class="small fw-medium text-dark">
+          {%- if watt and lumen -%}
+            {{ watt }} · {{ lumen }}
+          {%- elseif watt -%}
+            {{ watt }}
+          {%- else -%}
+            {{ lumen }}
+          {%- endif -%}
+        </span>
       </div>
     {% endif %}
   </div>
