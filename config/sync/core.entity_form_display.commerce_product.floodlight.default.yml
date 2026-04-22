@@ -217,4 +217,8 @@ content:
     third_party_settings: {  }
 hidden:
   feeds_item: true
+  field_installation_environment: true
+  field_lumen_range: true
+  field_short_description: true
+  field_watt_range: true
   layout_builder__layout: true

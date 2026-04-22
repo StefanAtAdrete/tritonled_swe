@@ -7,12 +7,14 @@
 
 ## Steg 0 — SPEC ✓ KLAR
 
+**Mockup:** `/docs/tasks/assets/task-032-mockup.html` ← referensfil för VERIFY
+
 **UX-mål:** Lugnt, lättläst produktkort för elektriker.
 **Kortets struktur:**
 - Produktbild med miljöbadge i övre högra hörnet
 - Titel (länkad till produktsidan)
 - Feature-punkter via `field_short_description`
-- (Watt · Lumen · CCT parkerat för senare)
+- Teknisk fot: Watt · Lumen (CCT parkerat för senare)
 
 ---
 
@@ -58,21 +60,18 @@
 
 ## Steg 5 — VERIFY ⏳ PÅGÅR
 
-**Aktuellt läge:**
-- Bild, titel, badge och short_description renderar ✓
-- Inga dubbletter ✓
-- Inga add-to-cart-formulär ✓
+**Verifiera mot mockup:** `/docs/tasks/assets/task-032-mockup.html`
 
-**Kvar att verifiera mot mockup:**
 - [ ] Badge-färger stämmer (gul=Ex-miljö, grön=Utomhus etc.)
 - [ ] Bildaspekt rätt (4:3)
+- [ ] Teknisk fot (Watt · Lumen) visas
 - [ ] Responsivt (mobil)
 - [ ] Produkter utan `field_short_description` ser OK ut
-- [ ] Stefan godkänner visuellt mot ursprunglig mockup
+- [ ] Stefan godkänner visuellt mot mockup
 
 **Kvar att fylla i:**
-- `field_installation_environment` saknas på de flesta produkter — behöver fyllas i
-- `field_short_description` saknas på de flesta produkter — behöver fyllas i
+- `field_installation_environment` saknas på de flesta produkter
+- `field_short_description` saknas på de flesta produkter
 
 ---
 

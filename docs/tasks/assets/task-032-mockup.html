@@ -1,0 +1,84 @@
+<style>
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 220px)); gap: 1.25rem; padding: 1rem 0; }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; display: flex; flex-direction: column; }
+  .img-wrap { position: relative; aspect-ratio: 4/3; background: var(--color-background-secondary); display: flex; align-items: center; justify-content: center; }
+  .img-wrap svg { opacity: 0.3; }
+  .badge { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.02em; }
+  .b-outdoor  { background: #E1F5EE; color: #0F6E56; }
+  .b-hazardous{ background: #FAEEDA; color: #854F0B; }
+  .b-industrial{ background: #E6F1FB; color: #185FA5; }
+  .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
+  .title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 10px; }
+  .features { list-style: none; padding: 0; margin: 0; flex: 1; }
+  .features li { font-size: 12px; color: var(--color-text-secondary); padding: 3px 0; display: flex; align-items: center; gap: 7px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-border-primary); flex-shrink: 0; }
+  .foot { border-top: 0.5px solid var(--color-border-tertiary); margin-top: 12px; padding-top: 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  .foot-main { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .foot-sub { font-size: 11px; color: var(--color-text-secondary); }
+</style>
+
+<h2 class="sr-only">Kombinerat produktkort för LED-armaturer med miljöbadge, features och teknisk fot.</h2>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="img-wrap">
+      <svg width="90" height="66" viewBox="0 0 90 66"><rect x="10" y="22" width="70" height="11" rx="3" fill="currentColor"/><rect x="20" y="33" width="50" height="7" rx="2" fill="currentColor"/><rect x="15" y="11" width="60" height="13" rx="3" fill="currentColor"/></svg>
+      <span class="badge b-outdoor">Utomhus</span>
+    </div>
+    <div class="body">
+      <p class="title">MAX 140 Linear</p>
+      <ul class="features">
+        <li><span class="dot"></span>Tål högtrycksspolning</li>
+        <li><span class="dot"></span>Anti-vandal IK10</li>
+        <li><span class="dot"></span>Spänning 100–277V AC</li>
+        <li><span class="dot"></span>Dimbar 0–10V</li>
+      </ul>
+      <div class="foot">
+        <span class="foot-main">140W · 18 200 lm</span>
+        <span class="foot-sub">4000K</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="img-wrap">
+      <svg width="90" height="66" viewBox="0 0 90 66"><circle cx="45" cy="33" r="22" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="45" cy="33" r="11" fill="currentColor"/></svg>
+      <span class="badge b-hazardous">Ex-miljö</span>
+    </div>
+    <div class="body">
+      <p class="title">OPTI 80 HighBay</p>
+      <ul class="features">
+        <li><span class="dot"></span>ATEX Zone 1 &amp; 21</li>
+        <li><span class="dot"></span>IP66 dammtät</li>
+        <li><span class="dot"></span>Certifierad gas &amp; damm</li>
+        <li><span class="dot"></span>Spänning 100–277V AC</li>
+      </ul>
+      <div class="foot">
+        <span class="foot-main">80W · 10 400 lm</span>
+        <span class="foot-sub">5000K</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="img-wrap">
+      <svg width="90" height="66" viewBox="0 0 90 66"><rect x="25" y="15" width="40" height="36" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><rect x="33" y="23" width="24" height="20" rx="2" fill="currentColor"/></svg>
+      <span class="badge b-industrial">Industri</span>
+    </div>
+    <div class="body">
+      <p class="title">SROW 60 Street</p>
+      <ul class="features">
+        <li><span class="dot"></span>Asymmetrisk ljusspridning</li>
+        <li><span class="dot"></span>IP66 vädertålig</li>
+        <li><span class="dot"></span>Stolpmontage Ø60–76mm</li>
+        <li><span class="dot"></span>Dimbar DALI-2</li>
+      </ul>
+      <div class="foot">
+        <span class="foot-main">60W · 8 400 lm</span>
+        <span class="foot-sub">3000K</span>
+      </div>
+    </div>
+  </div>
+
+</div>
