@@ -6,8 +6,10 @@ dependencies:
     - commerce_product.commerce_product_type.led_luminaire_max_opti
     - core.entity_view_mode.commerce_product.card
     - field.field.commerce_product.led_luminaire_max_opti.field_installation_environment
+    - field.field.commerce_product.led_luminaire_max_opti.field_lumen_range
     - field.field.commerce_product.led_luminaire_max_opti.field_product_media
     - field.field.commerce_product.led_luminaire_max_opti.field_short_description
+    - field.field.commerce_product.led_luminaire_max_opti.field_watt_range
     - responsive_image.styles.card
   module:
     - responsive_image
@@ -24,6 +26,14 @@ content:
     third_party_settings: {  }
     weight: 2
     region: content
+  field_lumen_range:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 5
+    region: content
   field_product_media:
     type: entity_reference_entity_view
     label: hidden
@@ -39,6 +49,14 @@ content:
     settings: {  }
     third_party_settings: {  }
     weight: 3
+    region: content
+  field_watt_range:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 4
     region: content
   title:
     type: string
