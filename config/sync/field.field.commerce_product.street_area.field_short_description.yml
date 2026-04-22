@@ -1,0 +1,19 @@
+uuid: 84c60be0-48bf-4184-8338-4cb7c67ff5bd
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - field.storage.commerce_product.field_short_description
+id: commerce_product.street_area.field_short_description
+field_name: field_short_description
+entity_type: commerce_product
+bundle: street_area
+label: 'Short Description'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long
