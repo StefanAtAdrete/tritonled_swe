@@ -5,7 +5,7 @@ session:
 url:
   source: path_prefix
   prefixes:
-    sv: sv
+    sv: ''
     en: en
   domains:
     sv: ''
