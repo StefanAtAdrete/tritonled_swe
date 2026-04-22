@@ -1,0 +1,9 @@
+uuid: 20ab65fe-cf63-4bd4-8f2a-a27849cec96c
+langcode: en
+status: true
+dependencies: {  }
+name: 'Installation Environment'
+vid: installation_environment
+description: null
+weight: 0
+new_revision: false

@@ -1,99 +1,36 @@
-# Aktuell Task
+# CURRENT-TASK: TASK-032 — Product Card
 
-**Senast uppdaterad**: 2026-04-20
+## FDT-steg: 5 — VERIFY
 
----
+## Aktuellt läge
+Kortet renderar korrekt — bild, titel, badge, short_description, inga dubbletter, ingen add-to-cart.
+Behöver nu verifieras mot ursprunglig mockup och data fyllas in på fler produkter.
 
-## ⏭️ Nästa session startar här: TASK-034 (NY)
+## Nästa steg
+1. Fyll in `field_installation_environment` och `field_short_description` på fler produkter i admin
+2. Stefan verifierar visuellt mot mockup från steg 0
+3. Godkänd → `ddev drush cex -y` + commit
+4. Beslut om steg 6 (API)
 
-**Uppgift**: Rätta källspråk på produkter 15-26 (MAX/OPTI/SROW) + path aliases
+## Viktiga lärdomar (FDT-tillägg)
+- Commerce: `{{ product.field_xxx }}` INTE `{{ content.field_xxx }}`
+- `string_long` → formatter `basic_string`
+- Views Rendered Entity → lägg till språkfilter annars dubbletter
+- `variation__layout_builder` + `variation_price` måste in i `hidden`
 
-### Bakgrund
-Produkterna 15-26 har `en` som källspråk men sajten är primärt svensk. Detta orsakar:
-- Felaktiga URL:er för svenska versionen (`/sv/product/...` istället för `/product/...`)
-- Felaktig rendering-kontext i Views-block
-- path_alias genereras inte automatiskt via pathauto för commerce_product
+## Filer att committa
+- `config/sync/core.entity_view_display.commerce_product.*.card.yml` (alla 10)
+- `config/sync/core.entity_view_mode.commerce_product.card.yml`
+- `config/sync/field.field.commerce_product.*.field_installation_environment.yml` (10 st)
+- `config/sync/field.field.commerce_product.*.field_short_description.yml` (8 st)
+- `config/sync/field.storage.commerce_product.field_installation_environment.yml`
+- `config/sync/field.field.commerce_product_variation.ex_hazardous_variation.attribute_watt.yml`
+- `config/sync/field.field.commerce_product_variation.street_area_variation.attribute_watt.yml`
+- `config/sync/taxonomy.vocabulary.installation_environment.yml`
+- `config/sync/views.view.tritonled_product_cards.yml`
+- `web/themes/custom/tritonled_radix/templates/commerce/commerce-product--card.html.twig`
+- `docs/skills/fdt/SKILL.md`
+- `docs/tasks/task-032-product-card.md`
 
-### Plan (kräver backup före!)
-1. Ta Backup & Migrate snapshot
-2. Ta bort svenska översättningar på produkterna 15-26
-3. Ändra källspråk från `en` → `sv` på produkterna 15-26
-4. Lägg tillbaka engelska som översättning
-5. Regenerera path aliases via pathauto
-6. Verifiera att MAX/OPTI/SROW-blocken på startsidan fungerar på båda språken
-
-### Viktigt
-- **Backup MÅSTE tas innan** — detta är destructive på translations
-- Produkterna 15-26: Triton MAX, MAX-PRO, MAX-S, MAX-E, MAX-ED, OPTI, OPTI-S, OPTI-E, OPTI-ED, SROW, SROW-E, SROW-ED
-- Pathauto verkar inte generera aliases automatiskt för commerce_product — undersök varför
-
-### Nuläge (workaround)
-- `/sv`-prefix återställt för svenska — sajten fungerar men med prefix
-- Path aliases skapas via `createEntityAlias` men försvinner vid `cr`
-
----
-
-## TASK-031 — Fortsättning
-
-**Uppgift**: Kategori C skelett — `accessories` Layout Builder + skeleton-produkt
-
-### Nästa steg
-1. Skapa Layout Builder YAML för `accessories`
-2. Skapa skeleton-variation + skeleton-produkt för `accessories`
-3. Verifiera accessories-sidan i browsern
-4. Skeleton-produkter för `street_area` och `ex_hazardous`
-5. Commit + checkpoint
-
----
-
-### Gjort idag (2026-04-21) — session 2
-- ✅ Konfigurator JS-översättningar felsökta — locale-fil `sv_*.js` existerar och är korrekt
-- ✅ Rotorsak hittad: `User` language detection tog prioritet över URL → engelska för inloggad admin
-- ✅ Åtgärd: `User` language detection avaktiverad i `/admin/config/regional/language/detection`
-- ✅ `Account administration pages` ger admin engelska — utan att påverka frontend
-- ✅ Duplicate `rendering_language` i `views.view.featured_products.yml` fixad
-- ⚠️ `cex` raderade 258 config-filer (lokal DB saknade dem) — återställda via `git checkout HEAD~1`
-- 📝 README skapad för `tritonled_configurator`-modulen
-
-### Gjort idag (2026-04-21) — session 1
-- ✅ Källspråk bytt en→sv på produkter 15-26 via direkt DB-manipulation
-- ✅ EN-translations skapade på alla 12 produkter
-- ✅ Path alias-dubbletter rensade (1 per produkt per språk)
-- ✅ rendering_language satt på block_max/opti/srow i featured_products
-- ✅ /sv URL-prefix aktiverat
-- 🆕 TASK-034 identifierad: översätt Views Custom Text till engelska
-
-### Gjort idag (2026-04-20) — session 3
-- ✅ Path aliases skapade för alla commerce_product via createEntityAlias
-- ⚠️ MAX/OPTI/SROW källspråksproblem identifierat — workaround: /sv-prefix återställt
-- ⚠️ Pathauto genererar inte aliases automatiskt för commerce_product — utreds i TASK-033
-
-### Gjort idag (2026-04-20) — session 2
-- ✅ `street_area` — 10 produktfält + attribute_watt på variation skapade
-- ✅ `street_area` — Layout Builder YAML verifierad
-- ✅ `ex_hazardous` — 9 produktfält + attribute_watt på variation skapade
-- ✅ `ex_hazardous` — Layout Builder YAML uppdaterad
-- ✅ `accessories` — 9 produktfält + field_variation_media + field_warranty_years skapade
-- ✅ Skill skapad: `add-category-c-product`
-
-### Gjort idag (2026-04-20) — session 1
-- ✅ Floodlight-produkt svensk översättning tillagd
-- ✅ Drupal core uppdaterad 11.3.6 → 11.3.7
-- ✅ PhotoSwipe installerad, Colorbox avinstallerad
-- ✅ High mast: fält + Layout Builder display config skapad
-
----
-
-## Öppna tasks
-
-| Task | Status | Beskrivning |
-|------|--------|-------------|
-| TASK-034 | 🆕 Ny | Översätt Views Custom Text (block_max/opti/srow) till engelska via Translate view |
-| TASK-033 | ✅ Klar | Rätta källspråk produkter 15-26 + path aliases |
-| TASK-031 | 🔄 In Progress | Site Audit — Layout Builder Kategori C + översättningar |
-| TASK-029 | ⏸️ Pausad | Fas 3: CSV-mallar & feeds (väntar på audit) |
-| TASK-018 | 🔄 In Progress | Cart page layout |
-| TASK-017b | 🔄 In Progress | Produktseriesidor + Views |
-| TASK-013 | 🔄 In Progress | Attribut-cleanup |
-| TASK-030 | ⏳ Parkerad | UX-feedback Thomas |
-| TASK-032 | ✅ Klar | Hero-bildspel startsida |
+## Aktiv task-fil
+`/docs/tasks/task-032-product-card.md`

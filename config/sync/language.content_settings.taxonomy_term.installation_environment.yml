@@ -1,0 +1,16 @@
+uuid: 16a41e0d-9955-493f-bbf7-62219bffc93f
+langcode: en
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.installation_environment
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: taxonomy_term.installation_environment
+target_entity_type_id: taxonomy_term
+target_bundle: installation_environment
+default_langcode: site_default
+language_alterable: true

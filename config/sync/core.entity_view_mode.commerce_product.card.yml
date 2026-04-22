@@ -1,0 +1,11 @@
+uuid: 19be33f6-3f21-4af6-8736-7b3c4c8d3a67
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product.card
+label: Card
+description: 'Bootstrap product card for listings'
+targetEntityType: commerce_product
+cache: true

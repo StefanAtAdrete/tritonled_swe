@@ -1,0 +1,78 @@
+uuid: 517cedc2-ec0e-41f2-a5cf-3397b6a1ff92
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.street_area
+    - core.entity_view_mode.commerce_product.card
+    - field.field.commerce_product.street_area.field_installation_environment
+    - field.field.commerce_product.street_area.field_product_media
+    - field.field.commerce_product.street_area.field_short_description
+    - responsive_image.styles.card
+  module:
+    - responsive_image
+id: commerce_product.street_area.card
+targetEntityType: commerce_product
+bundle: street_area
+mode: card
+content:
+  field_installation_environment:
+    type: entity_reference_label
+    label: hidden
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  field_product_media:
+    type: entity_reference_entity_view
+    label: hidden
+    settings:
+      view_mode: card
+      link: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_short_description:
+    type: basic_string
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  title:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: true
+    third_party_settings: {  }
+    weight: 1
+    region: content
+hidden:
+  body: true
+  created: true
+  feeds_item: true
+  field_brand: true
+  field_cable: true
+  field_datasheet: true
+  field_dimming: true
+  field_driver: true
+  field_hero_media: true
+  field_ip_class: true
+  field_producers: true
+  field_product_categories: true
+  field_product_sku: true
+  field_show_in_hero: true
+  field_warranty: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  uid: true
+  variation__layout_builder: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variation_price: true
+  variations: true

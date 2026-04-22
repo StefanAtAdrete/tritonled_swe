@@ -1,0 +1,29 @@
+uuid: f132bfed-742a-471c-93d7-4a9e514280b5
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_installation_environment
+    - taxonomy.vocabulary.installation_environment
+id: commerce_product.linear_led.field_installation_environment
+field_name: field_installation_environment
+entity_type: commerce_product
+bundle: linear_led
+label: 'Installation Environment'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      installation_environment: installation_environment
+    sort:
+      field: name
+      direction: asc
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference
