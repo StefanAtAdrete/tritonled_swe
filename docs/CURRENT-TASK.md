@@ -1,4 +1,4 @@
-# CURRENT TASK: TASK-032 — Product Card ✅ KLAR
+# CURRENT TASK: TASK-033 — Views Block Translations MAX/OPTI/SROW ✅ KLAR
 
 ## Status: KLAR — Pushad till GitHub
 
@@ -6,17 +6,9 @@
 
 ## Vad som är klart
 
-Produktkortet fullt implementerat, verifierat och pushad:
-- ✅ Badge med rätt färg (SV + EN)
-- ✅ 3 tekniska feature-punkter per produkt
-- ✅ Teknisk fot (Watt · Lumen)
-- ✅ bg-light card-body
-- ✅ Klickbart kort (CSS ::after stretched-link)
-- ✅ Hover-effekt (translateY + shadow)
-- ✅ Radavstånd mb-4 på col-element
-- ✅ Alla 26 produkter har fullständig data (SV + EN)
-- ✅ Taxonomitermer översatta till engelska
-- ✅ FDT-skill uppdaterad med JSON:API + mockup-regler
+- ✅ Language filter criterion satt på `featured_products` view (filtrerbart per språk)
+- ✅ block_2 (Other MAX models), block_3 (Other OPTI models), block_4 (Other SROW models) översatta
+- ✅ `views.view.featured_products.yml` + `language/sv/views.view.featured_products.yml` exporterade och committade
 
 ---
 
@@ -31,13 +23,7 @@ Produktkortet fullt implementerat, verifierat och pushad:
 
 ---
 
-## Tech debt från TASK-032
-- Badge-färglogik i Twig → bör till preprocess hook i `.theme`
-- `field_short_description` kan förfinas per produkt i admin
-- `{{ url }}` tom i Rendered Entity Views-kontext — dokumenterat i task-032
-
----
-
 ## Nyckellärdomar
 
-Se `/docs/tasks/task-032-product-card.md` för fullständig lista.
+- Language filter i Views med `***LANGUAGE_language_interface***` möjliggör korrekt filtrering per språk
+- Svenska översättningar av Views sparas i `config/sync/language/sv/`
