@@ -29,3 +29,28 @@
   width: 100%;
   height: 100%;
 }
+
+/* Triton product card hover */
+.triton-product-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.triton-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Title link — no underline, inherit color */
+.triton-product-card .card-title a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Stretched-link via title — makes entire card clickable */
+.triton-product-card .triton-card-link a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
