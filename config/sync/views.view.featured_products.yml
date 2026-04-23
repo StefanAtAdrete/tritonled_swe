@@ -641,7 +641,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"syskon-block d-flex flex-wrap gap-2 align-items-center py-2\">\r\n  <span class=\"text-muted small me-1\">MAX-serien:</span>\r\n  <a href=\"/en/product/triton-max\" class=\"btn btn-outline-secondary btn-sm\">MAX</a>\r\n  <a href=\"/en/product/triton-max-pro\" class=\"btn btn-outline-secondary btn-sm\">MAX-PRO</a>\r\n  <a href=\"/en/product/triton-max-s-gen-3-sensor\" class=\"btn btn-outline-secondary btn-sm\">MAX-S Sensor</a>\r\n  <a href=\"/product/triton-max-e-gen-3-emergency\" class=\"btn btn-outline-secondary btn-sm\">MAX-E Emergency</a>\r\n  <a href=\"/product/triton-max-ed-daylight-gen-3\" class=\"btn btn-outline-secondary btn-sm\">MAX-ED Emergency+Daylight</a>\r\n</div>"
+            text: "<div class=\"syskon-block d-flex flex-wrap gap-2 align-items-center py-2\">\r\n  <span class=\"text-muted small me-1\">MAX-serien:</span>\r\n  <a href=\"/en/product/triton-max\" class=\"btn btn-outline-secondary btn-sm\">MAX</a>\r\n  <a href=\"/en/product/triton-max-pro\" class=\"btn btn-outline-secondary btn-sm\">MAX-PRO</a>\r\n  <a href=\"/en/product/triton-max-s-gen-3-sensor\" class=\"btn btn-outline-secondary btn-sm\">MAX-S Sensor</a>\r\n  <a href=\"/en/product/triton-max-e-gen-3-emergency\" class=\"btn btn-outline-secondary btn-sm\">MAX-E Emergency</a>\r\n  <a href=\"/en/product/triton-max-ed-daylight-gen-3\" class=\"btn btn-outline-secondary btn-sm\">MAX-ED Emergency+Daylight</a>\r\n</div>"
             make_link: false
             path: ''
             absolute: false
