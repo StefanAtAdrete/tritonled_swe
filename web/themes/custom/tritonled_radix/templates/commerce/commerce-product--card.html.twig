@@ -5,19 +5,21 @@
  *
  * Bootstrap product card — used in Views with "Rendered entity" + card view mode.
  * NOTE: Commerce uses {{ product.field_xxx }} not {{ content.field_xxx }}
+ * NOTE: |replace({'&amp;': '&'}) fixes HTML entity encoding from |render|striptags
+ * TODO: Tech debt — badge color logic should move to preprocess hook for cleanliness
  */
 #}
-{%- set env_term = product.field_installation_environment|render|striptags|trim -%}
+{%- set env_term = product.field_installation_environment|render|striptags|trim|replace({'&amp;': '&'}) -%}
 {%- set badge_class = 'bg-secondary' -%}
-{%- if 'Ex-miljö' in env_term -%}
+{%- if 'Ex-miljö' in env_term or 'Hazardous' in env_term -%}
   {%- set badge_class = 'bg-warning text-dark' -%}
-{%- elseif 'Utomhus' in env_term -%}
+{%- elseif 'Utomhus' in env_term or 'Outdoor' in env_term -%}
   {%- set badge_class = 'bg-success' -%}
-{%- elseif 'Lager' in env_term -%}
+{%- elseif 'Lager' in env_term or 'Warehouse' in env_term -%}
   {%- set badge_class = 'bg-primary' -%}
-{%- elseif 'Gata' in env_term -%}
+{%- elseif 'Gata' in env_term or 'Street' in env_term -%}
   {%- set badge_class = 'bg-dark' -%}
-{%- elseif 'Kontor' in env_term -%}
+{%- elseif 'Kontor' in env_term or 'Office' in env_term -%}
   {%- set badge_class = 'bg-info text-dark' -%}
 {%- elseif 'Installation' in env_term -%}
   {%- set badge_class = 'bg-secondary' -%}

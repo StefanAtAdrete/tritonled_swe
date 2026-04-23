@@ -1,36 +1,44 @@
-# CURRENT-TASK: TASK-032 — Product Card
+# CURRENT TASK: TASK-032 — Product Card ✅ KLAR
 
-## FDT-steg: 5 — VERIFY
+## Status: Steg 5 VERIFY — GODKÄNT. Klar för commit och nästa task.
 
-## Aktuellt läge
-Kortet renderar korrekt — bild, titel, badge, short_description, inga dubbletter, ingen add-to-cart.
-Behöver nu verifieras mot ursprunglig mockup och data fyllas in på fler produkter.
+---
+
+## Vad som är klart
+
+Produktkortet är fullt implementerat och verifierat på BÅDA språken (SV + EN):
+- ✅ Badge med miljöterm + rätt Bootstrap-färg per kategori
+- ✅ 3 tekniska feature-punkter per produkt
+- ✅ Teknisk fot (Watt · Lumen)
+- ✅ Alla 26 produkter (15–40) har fullständig data
+- ✅ Taxonomitermer översatta till engelska
+
+## Senaste commit
+`e0929c77a` — [TASK-032] Add technical footer and Lager & industri badge to product card template
+
+## Uncommittad kod
+- `commerce-product--card.html.twig` (badge-färg för EN + `|replace` fix)
+- `docs/tasks/task-032-product-card.md` (uppdaterad)
 
 ## Nästa steg
-1. Fyll in `field_installation_environment` och `field_short_description` på fler produkter i admin
-2. Stefan verifierar visuellt mot mockup från steg 0
-3. Godkänd → `ddev drush cex -y` + commit
-4. Beslut om steg 6 (API)
+1. Commit: `[TASK-032] Fix badge colors for EN language + HTML entity fix`
+2. Beslut: Steg 6 (JSON:API endpoint) nu eller parkera?
+3. Nästa task att ta tag i — kandidater:
+   - TASK-018: Cart page layout
+   - TASK-017b: Produktseriesidor (Views)
+   - TASK-013: Attributrensning
+   - Rebuild ConfiguratorImageBlock för `led_luminaire_max_opti`
 
-## Viktiga lärdomar (FDT-tillägg)
-- Commerce: `{{ product.field_xxx }}` INTE `{{ content.field_xxx }}`
-- `string_long` → formatter `basic_string`
-- Views Rendered Entity → lägg till språkfilter annars dubbletter
-- `variation__layout_builder` + `variation_price` måste in i `hidden`
+## Tech debt att ta tag i senare
+- Badge-färglogik i Twig-template bör flyttas till preprocess hook
+- `field_short_description` innehåll kan förfinas per produkt (Stefan gör i admin)
 
-## Filer att committa
-- `config/sync/core.entity_view_display.commerce_product.*.card.yml` (alla 10)
-- `config/sync/core.entity_view_mode.commerce_product.card.yml`
-- `config/sync/field.field.commerce_product.*.field_installation_environment.yml` (10 st)
-- `config/sync/field.field.commerce_product.*.field_short_description.yml` (8 st)
-- `config/sync/field.storage.commerce_product.field_installation_environment.yml`
-- `config/sync/field.field.commerce_product_variation.ex_hazardous_variation.attribute_watt.yml`
-- `config/sync/field.field.commerce_product_variation.street_area_variation.attribute_watt.yml`
-- `config/sync/taxonomy.vocabulary.installation_environment.yml`
-- `config/sync/views.view.tritonled_product_cards.yml`
-- `web/themes/custom/tritonled_radix/templates/commerce/commerce-product--card.html.twig`
-- `docs/skills/fdt/SKILL.md`
-- `docs/tasks/task-032-product-card.md`
+## Nyckellärdomar från TASK-032
+Se `/docs/tasks/task-032-product-card.md` för fullständig lista.
 
-## Aktiv task-fil
-`/docs/tasks/task-032-product-card.md`
+Kortversion:
+- JSON:API PATCH via browser = snabbaste bulk-content-metoden
+- SV-produkter PATCHas via `/jsonapi/`, EN-baserade via `/en/jsonapi/`
+- `|render|striptags|replace({'&amp;': '&'})` för termnamn med specialtecken
+- `getUntranslated()` fungerar EJ i Twig — bara i PHP
+- Badge-villkor måste täcka BÅDA språkens term-namn
