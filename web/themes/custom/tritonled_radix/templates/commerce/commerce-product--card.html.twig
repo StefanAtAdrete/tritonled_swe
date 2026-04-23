@@ -6,7 +6,8 @@
  * Bootstrap product card — used in Views with "Rendered entity" + card view mode.
  * NOTE: Commerce uses {{ product.field_xxx }} not {{ content.field_xxx }}
  * NOTE: |replace({'&amp;': '&'}) fixes HTML entity encoding from |render|striptags
- * TODO: Tech debt — badge color logic should move to preprocess hook for cleanliness
+ * NOTE: .triton-card-link CSS class applies stretched-link behavior via ::after
+ * TODO: Tech debt — badge color logic should move to preprocess hook in .theme file
  */
 #}
 {%- set env_term = product.field_installation_environment|render|striptags|trim|replace({'&amp;': '&'}) -%}
@@ -27,7 +28,7 @@
 {%- set watt = product.field_watt_range|render|striptags|trim -%}
 {%- set lumen = product.field_lumen_range|render|striptags|trim -%}
 
-<article class="triton-product-card card h-100 border-0 shadow-sm">
+<article class="triton-product-card card h-100 border-0 shadow-sm overflow-hidden">
 
   <div class="triton-card-img position-relative">
     {{ product.field_product_media }}
@@ -38,9 +39,9 @@
     {% endif %}
   </div>
 
-  <div class="card-body d-flex flex-column px-3 py-2">
+  <div class="card-body bg-light d-flex flex-column px-3 py-2">
     <h3 class="card-title h6 mb-2 fw-semibold">
-      {{ product.title }}
+      <span class="triton-card-link">{{ product.title }}</span>
     </h3>
     {% if product.field_short_description|render|striptags|trim %}
       <div class="triton-card-features text-muted small flex-grow-1">

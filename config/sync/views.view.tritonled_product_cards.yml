@@ -172,9 +172,9 @@ display:
           default_row_class: true
           uses_fields: false
           grid_class: ''
-          col_xs: col-6
-          col_sm: col-sm-6
-          col_md: col-md-3
+          col_xs: 'col-6 mb-4'
+          col_sm: 'col-sm-6 mb-4'
+          col_md: 'col-md-3 mb-4'
           col_lg: none
           col_xl: none
       row:
