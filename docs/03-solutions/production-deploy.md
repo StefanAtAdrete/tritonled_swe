@@ -1,7 +1,7 @@
 # Production Deploy - TritonLED
 
 **Datum:** 2026-03-10  
-**Uppdaterad:** 2026-03-15
+**Uppdaterad:** 2026-04-23
 **Status:** ✅ Klar — sajten live på preview.affarsfabriken.se
 
 ---
@@ -21,6 +21,34 @@
 
 ---
 
+## ⚠️ KRITISKT: CSS aggregering måste återställas vid deploy
+
+**Problem:** Drupal aggregerar CSS/JS-filer i `sites/default/files/css/`. När ny CSS deployas via `git pull` regenereras INTE de aggregerade filerna automatiskt av `drush cr` — de gamla cachade bundlarna används fortfarande.
+
+**Symptom:** Ny CSS (t.ex. hover-effekter, typografistil) syns inte på produktion trots att filen finns i repot och `drush cr` körts.
+
+**Lösning:**
+```bash
+vendor/bin/drush config:set system.performance css.preprocess 0 -y
+vendor/bin/drush cr
+# Ladda om sidan och verifiera CSS
+vendor/bin/drush config:set system.performance css.preprocess 1 -y
+vendor/bin/drush cr
+```
+
+Alternativt:
+```bash
+rm -rf web/sites/default/files/css/*
+rm -rf web/sites/default/files/js/*
+vendor/bin/drush cr
+```
+
+⚠️ `rm -rf` på `files/css/` och `files/js/` är säkert — Drupal regenererar dem automatiskt.
+
+**Regel:** Lägg alltid till CSS-aggregeringsrensning i deploy-rutinen när temat ändrats.
+
+---
+
 ## ⚠️ KRITISKT: Custom block content följer INTE med i deploy
 
 **Problem:** `block_content`-entiteter är *innehåll* (inte config) och synkas aldrig via `cim`.
@@ -30,41 +58,22 @@ Block-*placeringar* (region, synlighet) följer med — men inte *innehållet* i
 
 ### Lösning A — Använd Views med Custom text (rekommenderas)
 Views är ren config och exporteras/importeras via `cex`/`cim`.
-Custom text-fältet kan också översättas via Drupals översättningssystem.
-
-```
-Admin → Structure → Views → Add view
-→ Display: Block
-→ Fields: Global: Custom text → skriv HTML direkt
-→ Spara → ddev drush cex -y
-```
 
 ### Lösning B — Återskapa block_content manuellt på prod (nödlösning)
 ```bash
 vendor/bin/drush php:eval "
-\$block = \Drupal\block_content\Entity\BlockContent::create([
-  'uuid' => '[UUID från block.block.*.yml]',
-  'type' => 'basic',
-  'info' => 'Blocknamn',
-  'body' => ['value' => '<p>HTML här</p>', 'format' => 'full_html'],
-]);
+\$block = \Drupal\block_content\Entity\BlockContent::create([...]);
 \$block->save();
-echo 'Created: ' . \$block->uuid();
 "
 vendor/bin/drush cr
 ```
-
-UUID hittas i `config/sync/block.block.[block-id].yml` under `plugin:`.
 
 ---
 
 ## ⚠️ JS-cache efter deploy
 
-Efter deploy med ny JS-kod — servercachen rensas med `drush cr` men **browsercachen** rensas inte automatiskt.
-
-**Symptom:** Ny JavaScript-behavior fungerar inte trots att `drush cr` körts.
-
-**Lösning:** Hård reload i browsern: `Ctrl+Shift+R` (Win/Linux) eller `Cmd+Shift+R` (Mac).
+**Symptom:** Ny JavaScript-behavior fungerar inte trots `drush cr`.
+**Lösning:** Hård reload: `Cmd+Shift+R` (Mac) / `Ctrl+Shift+R` (Win/Linux).
 
 ---
 
@@ -82,63 +91,34 @@ Efter deploy med ny JS-kod — servercachen rensas med `drush cr` men **browserc
 - **Site user:** `tritonled`
 - **Logs:** `/home/tritonled/logs/nginx/`
 
-### Git-repo
-- **URL:** https://github.com/StefanAtAdrete/tritonled_swe
-- **Branch:** main
-
 ---
 
-## settings.php (produktion)
+## Deploy-workflow (uppdatering) ← ANVÄND DENNA
 
-Minimal `settings.php` på VPS — DDEV-specifika inställningar är INTE med:
+```bash
+# 1. LOKALT — exportera config och pusha
+ddev drush cex -y
+git add -A
+git commit -m "[TASK-NNN] Beskrivning"
+git push origin main
 
-```php
-<?php
+# 2. PRODUKTION — hämta, importera, rensa
+ssh tritonled
+cd /home/tritonled/htdocs/tritonled.se
+git pull
+vendor/bin/drush cim --partial -y
+vendor/bin/drush cr
 
-$databases['default']['default'] = [
-  'driver' => 'mysql',
-  'database' => 'tritonswe',
-  'username' => 'adtriswe',
-  'password' => '[se lösenord i CloudPanel → Databases]',
-  'host' => 'localhost',
-  'port' => '3306',
-  'prefix' => '',
-  'namespace' => 'Drupal\Core\Database\Driver\mysql',
-];
+# 3. PRODUKTION — rensa CSS/JS-aggregering om temat ändrats
+rm -rf web/sites/default/files/css/*
+rm -rf web/sites/default/files/js/*
+vendor/bin/drush cr
 
-$settings['config_sync_directory'] = $app_root . '/../config/sync';
-$settings['file_private_path'] = $app_root . '/../private';
-
-$settings['trusted_host_patterns'] = [
-  '^\d+\.\d+\.\d+\.\d+$',
-  '^tritonled\.se$',
-  '^www\.tritonled\.se$',
-  '^preview\.affarsfabriken\.se$',
-];
-
-$settings['hash_salt'] = '[hash salt på servern]';
-
-$settings['file_scan_ignore_directories'] = [
-  'node_modules',
-  'bower_components',
-];
+# 4. LOKALT — synka mediefiler om nya bilder laddats upp
+rsync -avz --update --progress \
+  /Users/steffes/Projekt/tritonled/web/sites/default/files/ \
+  tritonled:/home/tritonled/htdocs/tritonled.se/web/sites/default/files/
 ```
-
-⚠️ `settings.php` är INTE i git (`.gitignore`) — måste skapas manuellt vid ny deploy.
-
----
-
-## SSL / Domäner
-
-| Domän | SSL | Status |
-|---|---|---|
-| `preview.affarsfabriken.se` | Let's Encrypt (giltig t.o.m. Jun 8, 2026) | ✅ Aktiv |
-| `tritonled.se` | Self-signed | ⏳ Väntar på DNS-flytt |
-| `www.tritonled.se` | Self-signed | ⏳ Väntar på DNS-flytt |
-
-### DNS
-- `preview.affarsfabriken.se` → A-record → `168.231.108.87` (hanteras i Hostinger hPanel)
-- `tritonled.se` registrerad hos Loopia, DNS hanteras hos Hostinger
 
 ---
 
@@ -162,100 +142,50 @@ composer install --no-dev --optimize-autoloader
 ```
 
 ### 3. VPS — settings.php
-Skapa manuellt (se mall ovan).
+Skapa manuellt (se mall i original-dokumentationen).
 
 ### 4. DB — exportera lokalt och importera på VPS
 ```bash
-# Lokalt (Mac):
 ddev drush sql:dump --result-file=./tritonled-export.sql
-
 # Ladda upp via CloudPanel File Manager → /home/tritonled/tmp/
-# Sedan på VPS:
 mysql -u adtriswe -p tritonswe < /home/tritonled/tmp/tritonled-export.sql
 ```
 
 ### 5. Mediefiler — synka via rsync
 ```bash
-# Från Mac (kräver SSH-lösenord):
-rsync -avz --progress -o PreferredAuthentications=password \
+rsync -avz --update --progress \
   /Users/steffes/Projekt/tritonled/web/sites/default/files/ \
-  root@168.231.108.87:/home/tritonled/htdocs/tritonled.se/web/sites/default/files/
-
-# Rättigheter på VPS:
-chown -R tritonled:tritonled /home/tritonled/htdocs/tritonled.se/web/sites/default/files
-chmod -R 755 /home/tritonled/htdocs/tritonled.se/web/sites/default/files
-```
-
-### 6. VPS — cache och kontroll
-```bash
-vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web cr
-vendor/bin/drush --root=/home/tritonled/htdocs/tritonled.se/web status
-```
-
----
-
-## Deploy-workflow (uppdatering)
-
-```bash
-# Lokalt — pusha ändringar
-ddev drush cex -y
-git add -A
-git commit -m "[TASK-NNN] Beskrivning"
-git push origin main
-
-# VPS — hämta och importera
-cd /home/tritonled/htdocs/tritonled.se
-git pull origin main
-vendor/bin/drush cim -y
-vendor/bin/drush cr
+  tritonled:/home/tritonled/htdocs/tritonled.se/web/sites/default/files/
 ```
 
 ---
 
 ## Kända problem & lärdomar
 
+### CSS aggregering på prod
+- `drush cr` rensar INTE aggregerade CSS/JS-bundlar
+- Måste köra `rm -rf files/css/* files/js/*` + `drush cr` efter temaändringar
+- Alternativt: stäng av `css.preprocess` tillfälligt, ladda sidan, slå på igen
+
+### rsync — "failed to set times"
+- Status 23 + `failed to set times on` är **ofarligt** — rättighetsbegränsning på kataloger
+- Filerna kopieras korrekt ändå
+- Använd alltid `--update` flaggan för att inte skriva över nyare serverfiler
+
+### rsync — SSH-nyckel
+- Använd SSH-aliaset `tritonled` istället för `tritonled@168.231.108.87`
+- `tritonled:` i rsync-sökvägen = SSH-aliaset från `~/.ssh/config`
+
 ### Custom block content på prod
-- ❌ Följer INTE med i `cim` — är innehåll, inte config
-- ✅ Använd Views med Custom text för statiska block
-- ✅ Menyer för navigerbara länkar (översättningsbara)
-- Se avsnitt "KRITISKT: Custom block content" ovan
+- Följer INTE med i `cim` — är innehåll, inte config
+- Använd Views med Custom text för statiska block
 
 ### JS-cache på prod
 - `drush cr` rensar server-cache men inte browser-cache
-- Hård reload krävs: `Ctrl+Shift+R` / `Cmd+Shift+R`
-
-### SSH-autentisering
-- SSH-nyckel (`~/.ssh/id_ed25519`) har passphrase som Stefan inte minns
-- Lösning: Använd `-o PreferredAuthentications=password` för rsync/scp
-- Root-lösenord återställs via Hostinger hPanel → VPS → Settings → Root password
+- Hård reload: `Cmd+Shift+R` / `Ctrl+Shift+R`
 
 ### DB-dump via DDEV
-- ❌ `--result-file=/tmp/...` fungerar inte — `/tmp` är inuti Docker-containern
-- ✅ Använd `--result-file=./tritonled-export.sql` (sparas i projektmappen)
-
-### CloudPanel SSH
-- CloudPanel-lösenord ≠ VPS root-lösenord
-- Root-lösenord: Hostinger hPanel → VPS → Settings
-- CloudPanel-inloggning: https://cp.affarsfabriken.se
+- Använd `--result-file=./tritonled-export.sql` (inte `/tmp/`)
 
 ### trusted_host_patterns
-- Måste uppdateras i `settings.php` när ny domän/subdomän läggs till
-- Efter ändring: kör `drush cr`
-
-### Bildcacher
-- `sites/default/files/styles/` regenereras automatiskt av Drupal vid första besök
-- Behöver inte synkas manuellt
-
-### jsonrpc deprecation-varning
-- `Drupal\jsonrpc` ger PHP 8.4 deprecation-varning
-- Är en dev-modul — bör avinstalleras på produktion
-
----
-
-## Nästa steg
-
-- [ ] Avinstallera dev-moduler på produktion (jsonrpc, mcp_tools, field_ui etc.)
-- [ ] Sätta upp SSH-nyckel utan passphrase för smidigare deploy
-- [ ] Flytta `tritonled.se` DNS till VPS när sajten är godkänd
-- [ ] Let's Encrypt för `tritonled.se` och `www.tritonled\.se` efter DNS-flytt
-- [ ] Sätta upp cron för Feeds-import på produktion
+- Måste uppdateras i `settings.php` när ny domän läggs till
