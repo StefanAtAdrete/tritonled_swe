@@ -1,0 +1,48 @@
+uuid: 190727e1-05a0-4ddd-b5ab-505f9bf0ee1c
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.taxonomy_term.customer_cases
+    - field.field.taxonomy_term.partners.field_partner_logo
+    - taxonomy.vocabulary.partners
+  module:
+    - fences
+    - layout_builder
+    - text
+third_party_settings:
+  layout_builder:
+    enabled: false
+    allow_custom: false
+id: taxonomy_term.partners.customer_cases
+targetEntityType: taxonomy_term
+bundle: partners
+mode: customer_cases
+content:
+  description:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_partner_logo:
+    type: entity_reference_entity_view
+    label: visually_hidden
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 1
+    region: content
+hidden:
+  langcode: true

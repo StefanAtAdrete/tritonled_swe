@@ -1,0 +1,12 @@
+uuid: deefa1ca-26fe-483b-a2b0-c47771c3b35d
+langcode: en
+status: true
+dependencies: {  }
+id: padding_5_block
+label: 'Padding 5 block'
+classes: p-5
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

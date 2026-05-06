@@ -216,7 +216,7 @@ display:
           exclude: false
           alter:
             alter_text: true
-            text: "<div class=\"card h-100 border-0 shadow bg-secondary bg-gradient bg-opacity-25 mb-3\">\r\n<div class=\"d-flex flex-row flex-md-column rounded\">\r\n<div class=\"card-img-wrap rounded-top\">{{ field_media }}</div>\r\n<div class=\"card-body\"><p class=\"card-title\">{{ title }}</p></div>\r\n</div></div>"
+            text: "<div class=\"card h-100 border-0 shadow bg-light mb-3\">\r\n<div class=\"d-flex flex-row flex-md-column rounded\">\r\n<div class=\"card-img-wrap rounded-top\">{{ field_media }}</div>\r\n<div class=\"card-body\"><p class=\"card-title\">{{ title }}</p></div>\r\n</div></div>"
             make_link: false
             path: ''
             absolute: false
@@ -257,7 +257,7 @@ display:
         type: some
         options:
           offset: 0
-          items_per_page: 3
+          items_per_page: 6
       exposed_form:
         type: basic
         options:

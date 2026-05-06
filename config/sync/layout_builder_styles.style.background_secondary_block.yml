@@ -1,0 +1,12 @@
+uuid: 926a87f4-91d5-4e29-aa8c-2fe7d258b388
+langcode: en
+status: true
+dependencies: {  }
+id: background_secondary_block
+label: 'Background secondary block'
+classes: bg-secondary
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

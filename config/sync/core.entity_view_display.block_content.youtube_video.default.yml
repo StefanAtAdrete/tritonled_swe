@@ -1,0 +1,23 @@
+uuid: 18974829-45be-41e2-950e-6df291c851c4
+langcode: en
+status: true
+dependencies:
+  config:
+    - block_content.type.youtube_video
+    - field.field.block_content.youtube_video.field_video
+id: block_content.youtube_video.default
+targetEntityType: block_content
+bundle: youtube_video
+mode: default
+content:
+  field_video:
+    type: entity_reference_entity_view
+    label: above
+    settings:
+      view_mode: default
+      link: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  langcode: true

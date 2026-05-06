@@ -17,18 +17,26 @@ id: contact
 title: Kontakt
 description: '<p>Kontakta oss formulär.</p>'
 categories: {  }
-elements: |
+elements: |-
   name:
+    '#type': textfield
     '#title': 'Ditt namn'
+    '#required': true
   email:
+    '#type': email
     '#title': 'Din e-postadress'
+    '#required': true
   subject:
+    '#type': textfield
     '#title': Ämne
     '#test': 'Testar kontakta oss form från [site:name]'
   message:
+    '#type': textarea
     '#title': Meddelande
+    '#required': true
     '#test': 'Var god och ignorera detta mejl.'
   actions:
+    '#type': webform_actions
     '#title': 'Skicka knapp(ar)'
     '#submit__label': 'Skicka meddelande'
 css: 'container mb-5'

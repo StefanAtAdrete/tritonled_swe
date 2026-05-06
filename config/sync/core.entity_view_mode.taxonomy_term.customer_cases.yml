@@ -1,0 +1,11 @@
+uuid: 9a7efba1-2fa6-4a0d-81f4-ede519d0a69b
+langcode: en
+status: true
+dependencies:
+  module:
+    - taxonomy
+id: taxonomy_term.customer_cases
+label: 'Customer cases'
+description: null
+targetEntityType: taxonomy_term
+cache: true
