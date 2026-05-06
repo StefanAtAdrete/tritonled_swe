@@ -246,7 +246,7 @@ body {
    ============================================================ */
 
 footer.page__footer {
-  background-color: var(--bs-secondary);
+  background-color: #3a3a3a;
   color: var(--bs-white);
   width: 100%;
   padding: 3rem 0;
