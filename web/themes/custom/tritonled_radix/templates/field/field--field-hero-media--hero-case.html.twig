@@ -1,0 +1,25 @@
+{#
+/**
+ * @file
+ * Field template for field_hero_media in hero_case view.
+ * Renders video directly for video bundle, falls back to default for images.
+ * Same pattern as field--field-product-media--hero-media.html.twig.
+ */
+#}
+
+{% for item in items %}
+  {% if item.content['#media'] %}
+    {% set media = item.content['#media'] %}
+    {% if media.bundle() == 'video' %}
+      {% for file in media.field_media_video_file %}
+        <video autoplay muted loop playsinline class="w-100 h-100" style="object-fit:cover">
+          <source src="{{ file.entity.uri.value|file_url }}" type="{{ file.entity.filemime.value }}">
+        </video>
+      {% endfor %}
+    {% else %}
+      {{ item.content }}
+    {% endif %}
+  {% else %}
+    {{ item.content }}
+  {% endif %}
+{% endfor %}
