@@ -14,10 +14,6 @@
   margin-top: 0.5rem;
 }
 
-.splide--nav .splide__track {
-  overflow: visible !important;
-}
-
 .splide--nav .splide__slide {
   border-radius: 4px;
   overflow: hidden;
@@ -27,8 +23,7 @@
 }
 
 .splide--nav .splide__slide.is-active {
-  outline: 2px solid var(--bs-primary, #0d6efd);
-  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px var(--bs-primary, #0d6efd);
   opacity: 1;
 }
 
@@ -91,5 +86,44 @@
 /* Dölj slide caption (filnamn/titel visas annars av Splide) */
 .slide__caption {
   display: none;
+}
+
+/* Flybox: centrera som modal istället för hörn-positionering */
+.b-flybox {
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  transform: translate(-50%, -50%) !important;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75) !important;
+}
+
+.b-flybox .blazybox__html,
+.b-flybox .blazybox__media {
+  position: static !important;
+  transform: none !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+}
+
+.b-flybox img {
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.is-flybox--open .b-flybox {
+  transform: translate(-50%, -50%) !important;
+}
+
+.is-flybox--closing .b-flybox {
+  transform: translate(-50%, 200%) !important;
 }
 
