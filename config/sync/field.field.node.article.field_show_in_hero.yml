@@ -1,0 +1,21 @@
+uuid: 00c635cc-a769-4ec2-8a1a-6124e1e6a3ca
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_show_in_hero
+    - node.type.article
+id: node.article.field_show_in_hero
+field_name: field_show_in_hero
+entity_type: node
+bundle: article
+label: 'Show in hero'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  on_label: 'Yes'
+  off_label: 'No'
+field_type: boolean

@@ -1,0 +1,29 @@
+uuid: ac71f450-c5d2-49b5-a4a0-f09bd08ee496
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.taxonomy_term.field_partner_logo
+    - media.type.image
+    - taxonomy.vocabulary.partners
+id: taxonomy_term.partners.field_partner_logo
+field_name: field_partner_logo
+entity_type: taxonomy_term
+bundle: partners
+label: 'Partner logo'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

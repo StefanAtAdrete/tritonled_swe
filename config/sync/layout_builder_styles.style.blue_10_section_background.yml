@@ -1,0 +1,12 @@
+uuid: 40f08ccf-cbfc-44d6-9089-7c600eae96c4
+langcode: en
+status: true
+dependencies: {  }
+id: blue_10_section_background
+label: 'Blue 10 section background'
+classes: 'bg-info bg-opacity-10'
+type: section
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

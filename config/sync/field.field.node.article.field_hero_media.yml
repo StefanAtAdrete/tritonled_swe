@@ -1,0 +1,33 @@
+uuid: 54e8b908-bc7c-4226-9a80-d9679ee618ee
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_hero_media
+    - media.type.image
+    - media.type.remote_video
+    - media.type.video
+    - node.type.article
+id: node.article.field_hero_media
+field_name: field_hero_media
+entity_type: node
+bundle: article
+label: 'Hero media'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+      remote_video: remote_video
+      video: video
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: image
+field_type: entity_reference

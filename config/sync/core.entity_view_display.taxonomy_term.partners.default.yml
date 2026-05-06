@@ -1,0 +1,46 @@
+uuid: e1c2fd91-f9d7-4382-9577-992291c962dd
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.taxonomy_term.partners.field_partner_logo
+    - image.style.thumbnail
+    - taxonomy.vocabulary.partners
+  module:
+    - fences
+    - media
+    - text
+id: taxonomy_term.partners.default
+targetEntityType: taxonomy_term
+bundle: partners
+mode: default
+content:
+  description:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_partner_logo:
+    type: media_thumbnail
+    label: visually_hidden
+    settings:
+      image_link: ''
+      image_style: thumbnail
+      image_loading:
+        attribute: lazy
+    third_party_settings:
+      fences:
+        fences_field_tag: div
+        fences_field_classes: ''
+        fences_field_items_wrapper_tag: none
+        fences_field_items_wrapper_classes: ''
+        fences_field_item_tag: div
+        fences_field_item_classes: ''
+        fences_label_tag: div
+        fences_label_classes: ''
+    weight: 1
+    region: content
+hidden:
+  langcode: true

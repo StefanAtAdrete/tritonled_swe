@@ -1,0 +1,12 @@
+uuid: 52fada84-3c51-439d-814b-dce65ce82bab
+langcode: en
+status: true
+dependencies: {  }
+id: background_secondary_section
+label: 'Background secondary section'
+classes: bg-secondary
+type: section
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0
