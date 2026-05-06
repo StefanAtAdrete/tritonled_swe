@@ -1,6 +1,6 @@
 uuid: 8f78fdf9-4aca-417b-9a25-aaed2e506cc5
 langcode: en
-status: true
+status: false
 dependencies: {  }
 id: local
 label: Local
@@ -10,7 +10,8 @@ stackable: false
 no_patching: false
 storage: folder
 folder: ../config/split/local
-module: {  }
+module:
+  devel: 0
 theme: {  }
 complete_list:
   - system.performance

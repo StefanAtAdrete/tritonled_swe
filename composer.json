@@ -70,11 +70,13 @@
         "drupal/splide": "^2.0",
         "drupal/string_field_formatter": "^2.0",
         "drupal/stringoverrides": "^2.0",
+        "drupal/svg_image": "^3.2",
         "drupal/symfony_mailer": "^1.6",
         "drupal/tool": "^1.0@alpha",
         "drupal/views_bulk_operations": "^4.4",
         "drupal/views_slideshow": "^5.0",
         "drupal/views_slideshow_cycle": "^5.0",
+        "drupal/webform": "^6.3@beta",
         "drush/drush": "^13.7",
         "e0ipso/simple_oauth_21": "^1.13",
         "oomphinc/composer-installers-extender": "^2.0"
