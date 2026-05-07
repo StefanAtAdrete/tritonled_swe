@@ -1,0 +1,18 @@
+uuid: d7077338-a86c-46a2-8fd4-43d2f021b66f
+langcode: en
+status: true
+dependencies:
+  config:
+    - block_content.type.youtube_video
+id: block_content.youtube_video.changed
+field_name: changed
+entity_type: block_content
+bundle: youtube_video
+label: Changed
+description: 'The time that the content block was last edited.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: changed

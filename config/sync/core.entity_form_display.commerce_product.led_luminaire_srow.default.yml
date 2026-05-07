@@ -56,14 +56,11 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_configurator_media:
-    type: commerce_entity_select
+    type: media_library_widget
     weight: 5
     region: content
     settings:
-      hide_single_entity: true
-      autocomplete_threshold: 7
-      autocomplete_size: 60
-      autocomplete_placeholder: ''
+      media_types: {  }
     third_party_settings: {  }
   field_datasheet:
     type: file_generic
@@ -81,14 +78,11 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_hero_media:
-    type: commerce_entity_select
+    type: media_library_widget
     weight: 8
     region: content
     settings:
-      hide_single_entity: true
-      autocomplete_threshold: 7
-      autocomplete_size: 60
-      autocomplete_placeholder: ''
+      media_types: {  }
     third_party_settings: {  }
   field_installation_environment:
     type: entity_reference_autocomplete
@@ -109,34 +103,31 @@ content:
       placeholder: ''
     third_party_settings: {  }
   field_producers:
-    type: commerce_entity_select
+    type: entity_reference_autocomplete
     weight: 9
     region: content
     settings:
-      hide_single_entity: true
-      autocomplete_threshold: 7
-      autocomplete_size: 60
-      autocomplete_placeholder: ''
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
     third_party_settings: {  }
   field_product_categories:
-    type: commerce_entity_select
+    type: entity_reference_autocomplete
     weight: 10
     region: content
     settings:
-      hide_single_entity: true
-      autocomplete_threshold: 7
-      autocomplete_size: 60
-      autocomplete_placeholder: ''
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
     third_party_settings: {  }
   field_product_media:
-    type: commerce_entity_select
+    type: media_library_widget
     weight: 11
     region: content
     settings:
-      hide_single_entity: true
-      autocomplete_threshold: 7
-      autocomplete_size: 60
-      autocomplete_placeholder: ''
+      media_types: {  }
     third_party_settings: {  }
   field_product_type:
     type: commerce_entity_select
@@ -236,4 +227,6 @@ content:
     third_party_settings: {  }
 hidden:
   field_configurator_schema: true
+  field_product_type: true
   layout_builder__layout: true
+  variations: true
