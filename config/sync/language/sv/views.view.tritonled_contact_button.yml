@@ -5,4 +5,4 @@ display:
       fields:
         nothing:
           alter:
-            text: '<a class="btn btn-primary" href="/sv/form/contact">Kontakta oss</a>'
+            text: '<a class="btn btn-primary" href="/form/contact">Kontakta oss</a>'

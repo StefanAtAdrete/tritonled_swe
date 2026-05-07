@@ -15,4 +15,5 @@ module:
 theme: {  }
 complete_list:
   - system.performance
+  - devel.settings
 partial_list: {  }
