@@ -1,0 +1,148 @@
+/**
+ * @file
+ * mega-menu.css
+ *
+ * Desktop mega menu — Bootstrap 5 full-bredd dropdown.
+ * Mobil (offcanvas) hanteras av offcanvas-menu.css.
+ *
+ * Princip:
+ * - position:static på nav-item så dropdown positioneras mot navbar
+ * - full-bredd panel med Bootstrap container+row inuti
+ * - Ren typografi, tydlig hierarki: KATEGORI → underkategori
+ * - WCAG: focus-visible ring, keyboard-navigation via Bootstrap 5
+ */
+
+/* =================================================================
+   MEGA MENU — Grundstruktur
+   ================================================================= */
+
+/* nav-item måste vara static för att dropdown ska positioneras
+   mot navbar istället för mot list-elementet */
+.mega-menu-item {
+  position: static !important;
+}
+
+/* Full-bredd dropdown-panel */
+.mega-menu {
+  width: 100%;
+  left: 0 !important;
+  right: 0 !important;
+  top: 100% !important;
+  padding: 2.5rem 0;
+  border: none;
+  border-top: 3px solid var(--bs-warning, #ffc107);
+  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  animation: megaMenuFadeIn 0.15s ease;
+}
+
+@keyframes megaMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =================================================================
+   KOLUMNER — CSS grid med auto-fill ("bricks"-flöde)
+   ================================================================= */
+
+/* Ersätt Bootstrap row med CSS grid direkt på containern */
+.mega-menu .container .row {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1.5rem 2rem;
+}
+
+.mega-menu__col {
+  /* grid hanterar bredden */
+}
+
+/* =================================================================
+   KATEGORIRUBRIK — länk som ser ut som sektion-rubrik
+   ================================================================= */
+
+.mega-menu__category {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--bs-dark);
+  text-decoration: none;
+  padding-bottom: 0.625rem;
+  margin-bottom: 0.625rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  transition: color 0.15s ease;
+}
+
+.mega-menu__category:hover,
+.mega-menu__category:focus {
+  color: var(--bs-warning);
+  text-decoration: none;
+}
+
+.mega-menu__category.active {
+  color: var(--bs-warning);
+}
+
+/* =================================================================
+   UNDERKATEGORIER
+   ================================================================= */
+
+.mega-menu__subcategories {
+  margin: 0;
+  padding: 0;
+}
+
+.mega-menu__subcategories li {
+  margin: 0;
+}
+
+.mega-menu__subcategory {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--bs-secondary);
+  text-decoration: none;
+  padding: 0.3rem 0;
+  transition: color 0.15s ease, padding-left 0.15s ease;
+}
+
+.mega-menu__subcategory:hover,
+.mega-menu__subcategory:focus {
+  color: var(--bs-dark);
+  padding-left: 0.3rem;
+  text-decoration: none;
+}
+
+.mega-menu__subcategory.active {
+  color: var(--bs-dark);
+  font-weight: 600;
+}
+
+/* =================================================================
+   WCAG — Focus-visible ring för tangentbordsnavigation
+   ================================================================= */
+
+.mega-menu__category:focus-visible,
+.mega-menu__subcategory:focus-visible {
+  outline: 2px solid var(--bs-warning);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* =================================================================
+   RESPONSIV — Dölj desktop mega menu på mobil
+   Offcanvas-menyn (offcanvas-menu.css) hanterar mobil
+   ================================================================= */
+
+@media (max-width: 991.98px) {
+  .mega-menu {
+    display: none !important;
+  }
+}

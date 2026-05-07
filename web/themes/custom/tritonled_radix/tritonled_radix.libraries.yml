@@ -70,6 +70,13 @@ component-product-gallery:
     component:
       css/components/product-gallery.css: {}
 
+# Mega menu — desktop navbar dropdown
+mega-menu:
+  version: VERSION
+  css:
+    component:
+      css/components/mega-menu.css: {}
+
 # Bootstrap tabs replacement for lb_tabs
 lb-tabs-bootstrap:
   version: VERSION

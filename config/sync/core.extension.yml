@@ -121,6 +121,7 @@ module:
   system: 0
   tamper: 0
   taxonomy: 0
+  taxonomy_menu_ui: 0
   telephone: 0
   text: 0
   token: 0

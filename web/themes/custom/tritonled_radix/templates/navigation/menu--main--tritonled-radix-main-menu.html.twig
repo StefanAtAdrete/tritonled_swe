@@ -1,0 +1,85 @@
+{#
+/**
+ * @file
+ * menu--main--tritonled-radix-main-menu.html.twig
+ *
+ * Desktop navbar — Bootstrap 5 mega menu för poster med undermeny,
+ * standard nav-link för poster utan undermeny.
+ *
+ * Mobil hanteras separat av:
+ * menu--main--tritonled-radix-mainnavigation.html.twig (offcanvas)
+ *
+ * WCAG:
+ * - aria-expanded / aria-haspopup på dropdown-toggle
+ * - aria-labelledby kopplar panel till toggle
+ * - Bootstrap 5 hanterar keyboard: Escape stänger, Tab navigerar
+ * - focus-visible ring på alla interaktiva element (via CSS)
+ */
+#}
+{{ attach_library('tritonled_radix/mega-menu') }}
+
+<ul class="navbar-nav">
+  {% for item in items %}
+    {% if item.below %}
+      {# — Menypost med undermeny: mega menu — #}
+      {% set toggle_id = 'mega-menu-toggle-' ~ loop.index %}
+      <li class="nav-item mega-menu-item">
+        <a class="nav-link dropdown-toggle{% if item.in_active_trail %} active{% endif %}"
+           href="{{ item.url }}"
+           id="{{ toggle_id }}"
+           role="button"
+           data-bs-toggle="dropdown"
+           data-bs-auto-close="outside"
+           aria-expanded="false"
+           aria-haspopup="true">
+          {{ item.title }}
+        </a>
+
+        <div class="dropdown-menu mega-menu" aria-labelledby="{{ toggle_id }}">
+          <div class="container">
+            <div class="row g-4">
+              {% for child in item.below %}
+                <div class="col-auto mega-menu__col">
+
+                  {# Kategorirubrik — länk till kategori-landningssidan #}
+                  {{ link(child.title, child.url, {
+                    'class': [
+                      'mega-menu__category',
+                      child.in_active_trail ? 'active' : ''
+                    ]
+                  }) }}
+
+                  {# Underkategorier (t.ex. MAX/OPTI/SROW under Linjär LED) #}
+                  {% if child.below %}
+                    <ul class="mega-menu__subcategories list-unstyled">
+                      {% for grandchild in child.below %}
+                        <li>
+                          {{ link(grandchild.title, grandchild.url, {
+                            'class': [
+                              'mega-menu__subcategory',
+                              grandchild.in_active_trail ? 'active' : ''
+                            ]
+                          }) }}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </li>
+
+    {% else %}
+      {# — Enkel menypost utan undermeny — #}
+      <li class="nav-item{% if item.in_active_trail %} active{% endif %}">
+        {{ link(item.title, item.url, {
+          'class': ['nav-link', item.in_active_trail ? 'active' : '']
+        }) }}
+      </li>
+
+    {% endif %}
+  {% endfor %}
+</ul>
