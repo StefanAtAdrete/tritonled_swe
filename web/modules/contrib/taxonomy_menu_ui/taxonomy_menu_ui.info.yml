@@ -1,0 +1,13 @@
+name: Taxonomy Menu UI
+type: module
+description: 'Add ability to create menu links for taxonomy terms.'
+core_version_requirement: ^9 || ^10 || ^11
+package: Taxonomy
+dependencies:
+  - drupal:taxonomy
+  - drupal:menu_ui
+
+# Information added by Drupal.org packaging script on 2025-06-22
+version: '3.0.6'
+project: 'taxonomy_menu_ui'
+datestamp: 1750588148

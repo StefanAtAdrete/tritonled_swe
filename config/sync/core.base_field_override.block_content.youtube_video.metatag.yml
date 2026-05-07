@@ -1,0 +1,20 @@
+uuid: 4a5001e8-aa2e-4711-9ad6-6afae80ea65a
+langcode: en
+status: true
+dependencies:
+  config:
+    - block_content.type.youtube_video
+  module:
+    - metatag
+id: block_content.youtube_video.metatag
+field_name: metatag
+entity_type: block_content
+bundle: youtube_video
+label: 'Metatags (Hidden field for JSON support)'
+description: 'The computed meta tags for the entity.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: metatag_computed

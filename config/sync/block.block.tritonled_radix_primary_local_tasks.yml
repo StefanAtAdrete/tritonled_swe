@@ -14,7 +14,7 @@ _core:
 id: tritonled_radix_primary_local_tasks
 theme: tritonled_radix
 region: content
-weight: -5
+weight: -12
 provider: null
 plugin: local_tasks_block
 settings:

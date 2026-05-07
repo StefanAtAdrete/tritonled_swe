@@ -1,0 +1,23 @@
+uuid: acb4c2a2-4444-484e-b89a-fdd5bcfa3e30
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.highbay_variation
+    - field.storage.commerce_product_variation.field_lumens
+id: commerce_product_variation.highbay_variation.field_lumens
+field_name: field_lumens
+entity_type: commerce_product_variation
+bundle: highbay_variation
+label: Lumens
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

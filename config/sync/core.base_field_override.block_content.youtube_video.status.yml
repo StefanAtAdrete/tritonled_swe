@@ -1,0 +1,22 @@
+uuid: 6b7c25d8-6a71-4e04-a205-d37996e9848f
+langcode: en
+status: true
+dependencies:
+  config:
+    - block_content.type.youtube_video
+id: block_content.youtube_video.status
+field_name: status
+entity_type: block_content
+bundle: youtube_video
+label: Published
+description: ''
+required: false
+translatable: false
+default_value:
+  -
+    value: 1
+default_value_callback: ''
+settings:
+  on_label: 'On'
+  off_label: 'Off'
+field_type: boolean

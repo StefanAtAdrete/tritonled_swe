@@ -2,8 +2,11 @@ uuid: 40117652-871f-471d-b9b2-22e3af3e4803
 langcode: sv
 status: true
 dependencies:
+  content:
+    - 'block_content:basic:4856f609-06c9-4850-9056-e717d1468472'
   module:
     - block_class
+    - block_content
   theme:
     - tritonled_radix
 third_party_settings:

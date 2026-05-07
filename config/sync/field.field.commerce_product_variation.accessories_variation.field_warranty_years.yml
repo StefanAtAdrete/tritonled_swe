@@ -1,0 +1,23 @@
+uuid: a7b19fd7-20f7-4b5d-be80-e2900913cc75
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.accessories_variation
+    - field.storage.commerce_product_variation.field_warranty_years
+id: commerce_product_variation.accessories_variation.field_warranty_years
+field_name: field_warranty_years
+entity_type: commerce_product_variation
+bundle: accessories_variation
+label: 'Warranty (years)'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

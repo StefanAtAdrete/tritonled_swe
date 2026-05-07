@@ -1,0 +1,29 @@
+uuid: 23de7a3c-e1e1-4d8e-9c7e-63f8e93ee3b3
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_partners
+    - node.type.customer_cases
+    - taxonomy.vocabulary.partners
+id: node.customer_cases.field_partners
+field_name: field_partners
+entity_type: node
+bundle: customer_cases
+label: Partners
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      partners: partners
+    sort:
+      field: name
+      direction: asc
+    auto_create: true
+    auto_create_bundle: ''
+field_type: entity_reference

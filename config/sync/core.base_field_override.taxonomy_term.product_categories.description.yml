@@ -1,0 +1,21 @@
+uuid: 117940f0-069c-4eef-beab-b3196ed1d9d2
+langcode: en
+status: true
+dependencies:
+  config:
+    - taxonomy.vocabulary.product_categories
+  module:
+    - text
+id: taxonomy_term.product_categories.description
+field_name: description
+entity_type: taxonomy_term
+bundle: product_categories
+label: Description
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long
