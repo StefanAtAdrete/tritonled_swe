@@ -1,39 +1,42 @@
 # CURRENT TASK
 
-## Session 2026-05-06 — Avslutad
+## TASK-038 — Mega menu + produktkategori-landningssidor (PÅGÅENDE)
 
-### Gjort denna session:
-- **Thumbnail-karusellen (node/12)**: Felsökt och löst — image style saknades på tumnagelformattern på prod
-- **Bildsynk prod**: `rsync` av `2026-05/`-bilder från lokal till prod + `image:flush --all`
-- **Footer-färg**: Ändrad från `var(--bs-secondary)` till `#3a3a3a` i `style.css`
-- **CSS deploy**: Pushad till prod via `git pull` + `drush cr`
+### Gjort:
+- `product_categories`-taxonomin har termer med SV/EN-översättningar:
+  - 34: Strålkastare / Floodlight
+  - 35: Industriarmatur / Highbay
+  - 44: Linjär LED / Linear LED (förälder för MAX/OPTI/SROW)
+  - 13: MAX, 14: OPTI, 15: SROW (barn under Linjär LED)
+  - 37: Gatu- & Områdesbelysning / Street & Area Lighting
+  - 38: Höghållsbelysning / High Mast Lighting
+  - 47: Explosionsskyddad / Ex Hazardous
+  - 40: Tillbehör / Accessories
+  - 41: Överspänningsskydd / Surge Protection
+- Alla produkter kopplade till rätt term via `field_product_categories`
+- `tritonled_product_cards` view: Page display med contextual filter på `field_product_categories` tillagt
+- SROW form display fixad — matchar nu MAX/OPTI (media_library_widget, entity_reference_autocomplete, dolda fält, korrekt vikter)
+- SROW widgets för field_configurator_media, field_hero_media, field_product_media → media_library_widget
+- SROW widgets för field_producers, field_product_categories → entity_reference_autocomplete
+- field_product_type och variations dolda i SROW (matchar MAX/OPTI)
+- field_product_categories translatable: true behålls på alla bundles — Drupal kräver minst ett translatbart fält per variation-bundle. Termen är översatt vilket räcker i praktiken.
 
-### Innan commit (om inte gjort):
-```bash
-ddev drush config:status
-ddev drush cex -y
-git add web/themes/custom/tritonled_radix/css/style.css
-git add web/themes/custom/tritonled_radix/css/components/product-gallery.css
-git commit -m "Style: footer #3a3a3a, thumbnail gallery CSS"
-git push origin main
-```
-
-### OBS — config:status hade skillnader:
-- `field.field.node.article.field_image` — Different
-- `field.storage.node.field_image` — Different
-- `views.view.customer_cases` — Different
-- Flera `layout_builder_styles.*` — Only in DB
-
-Exportera med `ddev drush cex -y` och granska diff innan commit.
+### Återstår:
+- [ ] Pathauto-mönster för taxonomy term-sidor (`product_categories`)
+- [ ] Taxonomy term-sidan: styling/layout (beskrivning + produktlista)
+- [ ] Mega menu under "Produkter" med kategori-länkar
+- [ ] Testa SV/EN-språkväxling för kategori-URL:er
 
 ---
 
-## Nästa session — Backlog (prioritetsordning)
+## Gjort tidigare denna session:
+- **config_split / cim prod**: Fixat orphan `devel.settings`, config_split local `status: false`, `settings.local.php`, `development.services.yml`
+- **TASK-036** (Kontaktformulär): Klar
+- **TASK-037** (Feature-block SVG-ikoner): Klar
 
-Se task-filer:
-- **TASK-036** — Kontaktformulär fungerar inte (`/sv/form/contact`)
-- **TASK-037** — Feature-block med SVG-ikoner (lyfts från node/12)
-- **TASK-038** — Mega menu + produktkategori-landningssidor
-- **TASK-039** — Pathauto — URL-struktur SV/EN
-- **TASK-040** — Robot/AI-agentoptimering (sitemap, structured data)
+---
+
+## Backlog:
+- **TASK-039** — Pathauto URL-struktur SV/EN
+- **TASK-040** — Robot/AI-agentoptimering
 - **TASK-041** — SEO och innehåll
