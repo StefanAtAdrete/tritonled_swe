@@ -1,0 +1,43 @@
+uuid: 0eecd6e6-3b68-40d8-b913-f3a23113fb46
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - language
+id: produkter_svenska
+label: 'Produkter Svenska'
+type: 'canonical_entities:commerce_product'
+pattern: 'produkt/[commerce_product:title]'
+selection_criteria:
+  c7f0d771-e14d-40d4-9e23-28ecd7f13f83:
+    id: 'entity_bundle:commerce_product'
+    negate: false
+    uuid: c7f0d771-e14d-40d4-9e23-28ecd7f13f83
+    context_mapping:
+      commerce_product: commerce_product
+    bundles:
+      accessories: accessories
+      default: default
+      ex_hazardous: ex_hazardous
+      floodlight: floodlight
+      high_mast: high_mast
+      highbay: highbay
+      led_luminaire_max_opti: led_luminaire_max_opti
+      led_luminaire_srow: led_luminaire_srow
+      linear_led: linear_led
+      street_area: street_area
+      surge_protection: surge_protection
+  8a2d3c21-d645-4204-911e-b120ad318ccd:
+    id: language
+    negate: false
+    uuid: 8a2d3c21-d645-4204-911e-b120ad318ccd
+    context_mapping:
+      language: 'commerce_product:langcode:language'
+    langcodes:
+      sv: sv
+selection_logic: and
+weight: -10
+relationships:
+  'commerce_product:langcode:language':
+    label: Language

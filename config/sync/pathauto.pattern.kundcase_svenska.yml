@@ -1,0 +1,33 @@
+uuid: 6aeaafe5-128f-4e83-9f1b-6d44838891ef
+langcode: en
+status: true
+dependencies:
+  module:
+    - language
+    - node
+id: kundcase_svenska
+label: 'Kundcase Svenska'
+type: 'canonical_entities:node'
+pattern: 'kundcase/[node:title]'
+selection_criteria:
+  3cba1c62-5f9e-4fee-a44f-482884f44613:
+    id: 'entity_bundle:node'
+    negate: false
+    uuid: 3cba1c62-5f9e-4fee-a44f-482884f44613
+    context_mapping:
+      node: node
+    bundles:
+      customer_cases: customer_cases
+  eeda09d5-f5d7-4ffe-af3f-6f2dfbbfb7db:
+    id: language
+    negate: false
+    uuid: eeda09d5-f5d7-4ffe-af3f-6f2dfbbfb7db
+    context_mapping:
+      language: 'node:langcode:language'
+    langcodes:
+      sv: sv
+selection_logic: and
+weight: -10
+relationships:
+  'node:langcode:language':
+    label: Language

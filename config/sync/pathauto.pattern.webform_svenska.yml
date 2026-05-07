@@ -1,0 +1,33 @@
+uuid: 22d2c53f-22d8-4a4e-be21-b67f80c40cc5
+langcode: en
+status: true
+dependencies:
+  module:
+    - language
+    - node
+id: webform_svenska
+label: 'Webform Svenska'
+type: 'canonical_entities:node'
+pattern: '[node:title]'
+selection_criteria:
+  96ef5e38-8cf1-4def-9a04-91c645dd8e09:
+    id: 'entity_bundle:node'
+    negate: false
+    uuid: 96ef5e38-8cf1-4def-9a04-91c645dd8e09
+    context_mapping:
+      node: node
+    bundles:
+      webform: webform
+  d5940a93-27af-40ce-9252-6f0e22216078:
+    id: language
+    negate: false
+    uuid: d5940a93-27af-40ce-9252-6f0e22216078
+    context_mapping:
+      language: 'node:langcode:language'
+    langcodes:
+      sv: sv
+selection_logic: and
+weight: -10
+relationships:
+  'node:langcode:language':
+    label: Language

@@ -1,0 +1,33 @@
+uuid: 614b26ac-e68e-4ec7-b5af-d424fb26f665
+langcode: en
+status: true
+dependencies:
+  module:
+    - language
+    - node
+id: sida_svenska
+label: 'Sida Svenska'
+type: 'canonical_entities:node'
+pattern: '[node:title]'
+selection_criteria:
+  acd348bf-942f-45d7-8f24-77ce41dfabba:
+    id: 'entity_bundle:node'
+    negate: false
+    uuid: acd348bf-942f-45d7-8f24-77ce41dfabba
+    context_mapping:
+      node: node
+    bundles:
+      page: page
+  28a44f0b-3ee9-433f-bf73-e9b69e248577:
+    id: language
+    negate: false
+    uuid: 28a44f0b-3ee9-433f-bf73-e9b69e248577
+    context_mapping:
+      language: 'node:langcode:language'
+    langcodes:
+      sv: sv
+selection_logic: and
+weight: -10
+relationships:
+  'node:langcode:language':
+    label: Language

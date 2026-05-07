@@ -1,0 +1,33 @@
+uuid: e197752a-07c7-408a-8536-29eba1252cb9
+langcode: en
+status: true
+dependencies:
+  module:
+    - language
+    - node
+id: customer_cases_english
+label: 'Customer cases English'
+type: 'canonical_entities:node'
+pattern: 'customercases/[node:title]'
+selection_criteria:
+  0820a735-6f96-44c3-a10d-69d1e2dade78:
+    id: 'entity_bundle:node'
+    negate: false
+    uuid: 0820a735-6f96-44c3-a10d-69d1e2dade78
+    context_mapping:
+      node: node
+    bundles:
+      customer_cases: customer_cases
+  9ee01e29-b68f-4155-8abf-9beef1a7a43d:
+    id: language
+    negate: false
+    uuid: 9ee01e29-b68f-4155-8abf-9beef1a7a43d
+    context_mapping:
+      language: 'node:langcode:language'
+    langcodes:
+      en: en
+selection_logic: and
+weight: -10
+relationships:
+  'node:langcode:language':
+    label: Language
