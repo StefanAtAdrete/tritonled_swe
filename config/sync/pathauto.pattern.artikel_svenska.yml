@@ -1,0 +1,33 @@
+uuid: 064ad3ef-44d1-49d0-8aed-fdf81d1bc3b1
+langcode: en
+status: true
+dependencies:
+  module:
+    - language
+    - node
+id: artikel_svenska
+label: 'Artikel Svenska'
+type: 'canonical_entities:node'
+pattern: 'artikel/[node:title]'
+selection_criteria:
+  c549f8c7-ff41-470b-aa31-b465ea986ac4:
+    id: 'entity_bundle:node'
+    negate: false
+    uuid: c549f8c7-ff41-470b-aa31-b465ea986ac4
+    context_mapping:
+      node: node
+    bundles:
+      article: article
+  8276d800-d603-4078-864d-ab803f7c950a:
+    id: language
+    negate: false
+    uuid: 8276d800-d603-4078-864d-ab803f7c950a
+    context_mapping:
+      language: 'node:langcode:language'
+    langcodes:
+      sv: sv
+selection_logic: and
+weight: -10
+relationships:
+  'node:langcode:language':
+    label: Language

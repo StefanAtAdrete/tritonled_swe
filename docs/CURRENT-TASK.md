@@ -33,6 +33,8 @@
 - **config_split / cim prod**: Fixat orphan `devel.settings`, config_split local `status: false`, `settings.local.php`, `development.services.yml`
 - **TASK-036** (Kontaktformulär): Klar
 - **TASK-037** (Feature-block SVG-ikoner): Klar
+- **Deploy**: git pull + cim --partial + cr på prod
+- **Filsynk**: rsync av web/sites/default/files/ till prod
 
 ---
 
