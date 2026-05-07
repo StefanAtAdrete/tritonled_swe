@@ -11,11 +11,15 @@ dependencies:
     - field.field.commerce_product.led_luminaire_srow.field_datasheet
     - field.field.commerce_product.led_luminaire_srow.field_features
     - field.field.commerce_product.led_luminaire_srow.field_hero_media
+    - field.field.commerce_product.led_luminaire_srow.field_installation_environment
+    - field.field.commerce_product.led_luminaire_srow.field_lumen_range
     - field.field.commerce_product.led_luminaire_srow.field_producers
+    - field.field.commerce_product.led_luminaire_srow.field_product_categories
     - field.field.commerce_product.led_luminaire_srow.field_product_media
     - field.field.commerce_product.led_luminaire_srow.field_product_type
     - field.field.commerce_product.led_luminaire_srow.field_short_description
     - field.field.commerce_product.led_luminaire_srow.field_show_in_hero
+    - field.field.commerce_product.led_luminaire_srow.field_watt_range
     - field.field.commerce_product.led_luminaire_srow.layout_builder__layout
   module:
     - commerce
@@ -29,7 +33,7 @@ mode: default
 content:
   body:
     type: text_textarea_with_summary
-    weight: 0
+    weight: 3
     region: content
     settings:
       rows: 9
@@ -39,13 +43,13 @@ content:
     third_party_settings: {  }
   created:
     type: datetime_timestamp
-    weight: 10
+    weight: 17
     region: content
     settings: {  }
     third_party_settings: {  }
   field_brand:
     type: string_textfield
-    weight: 0
+    weight: 4
     region: content
     settings:
       size: 60
@@ -53,7 +57,7 @@ content:
     third_party_settings: {  }
   field_configurator_media:
     type: commerce_entity_select
-    weight: 0
+    weight: 5
     region: content
     settings:
       hide_single_entity: true
@@ -63,14 +67,14 @@ content:
     third_party_settings: {  }
   field_datasheet:
     type: file_generic
-    weight: 0
+    weight: 6
     region: content
     settings:
       progress_indicator: throbber
     third_party_settings: {  }
   field_features:
     type: text_textarea
-    weight: 0
+    weight: 7
     region: content
     settings:
       rows: 5
@@ -78,7 +82,7 @@ content:
     third_party_settings: {  }
   field_hero_media:
     type: commerce_entity_select
-    weight: 0
+    weight: 8
     region: content
     settings:
       hide_single_entity: true
@@ -86,9 +90,27 @@ content:
       autocomplete_size: 60
       autocomplete_placeholder: ''
     third_party_settings: {  }
+  field_installation_environment:
+    type: entity_reference_autocomplete
+    weight: 21
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_lumen_range:
+    type: string_textfield
+    weight: 22
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   field_producers:
     type: commerce_entity_select
-    weight: 0
+    weight: 9
     region: content
     settings:
       hide_single_entity: true
@@ -98,7 +120,7 @@ content:
     third_party_settings: {  }
   field_product_categories:
     type: commerce_entity_select
-    weight: 0
+    weight: 10
     region: content
     settings:
       hide_single_entity: true
@@ -108,7 +130,7 @@ content:
     third_party_settings: {  }
   field_product_media:
     type: commerce_entity_select
-    weight: 0
+    weight: 11
     region: content
     settings:
       hide_single_entity: true
@@ -118,7 +140,7 @@ content:
     third_party_settings: {  }
   field_product_type:
     type: commerce_entity_select
-    weight: 0
+    weight: 12
     region: content
     settings:
       hide_single_entity: true
@@ -128,7 +150,7 @@ content:
     third_party_settings: {  }
   field_short_description:
     type: string_textarea
-    weight: 0
+    weight: 13
     region: content
     settings:
       rows: 5
@@ -136,34 +158,42 @@ content:
     third_party_settings: {  }
   field_show_in_hero:
     type: boolean_checkbox
-    weight: 0
+    weight: 14
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
+  field_watt_range:
+    type: string_textfield
+    weight: 23
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
   langcode:
     type: language_select
-    weight: 2
+    weight: 15
     region: content
     settings:
       include_locked: true
     third_party_settings: {  }
   path:
     type: path
-    weight: 30
+    weight: 19
     region: content
     settings: {  }
     third_party_settings: {  }
   status:
     type: boolean_checkbox
-    weight: 90
+    weight: 20
     region: content
     settings:
       display_label: true
     third_party_settings: {  }
   stores:
     type: commerce_entity_select
-    weight: -10
+    weight: 0
     region: content
     settings:
       hide_single_entity: true
@@ -173,20 +203,20 @@ content:
     third_party_settings: {  }
   title:
     type: string_textfield
-    weight: -5
+    weight: 1
     region: content
     settings:
       size: 60
       placeholder: ''
     third_party_settings: {  }
   translation:
-    weight: 10
+    weight: 18
     region: content
     settings: {  }
     third_party_settings: {  }
   uid:
     type: entity_reference_autocomplete
-    weight: 5
+    weight: 16
     region: content
     settings:
       match_operator: CONTAINS
@@ -196,7 +226,7 @@ content:
     third_party_settings: {  }
   variations:
     type: commerce_entity_select
-    weight: 0
+    weight: 2
     region: content
     settings:
       hide_single_entity: true
