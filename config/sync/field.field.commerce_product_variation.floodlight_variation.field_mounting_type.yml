@@ -1,0 +1,19 @@
+uuid: 5df34407-9b1f-4b20-bc0d-eb6a596819b6
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.floodlight_variation
+    - field.storage.commerce_product_variation.field_mounting_type
+id: commerce_product_variation.floodlight_variation.field_mounting_type
+field_name: field_mounting_type
+entity_type: commerce_product_variation
+bundle: floodlight_variation
+label: 'Mounting Type'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

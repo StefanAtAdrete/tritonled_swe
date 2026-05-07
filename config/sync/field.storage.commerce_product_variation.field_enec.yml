@@ -1,0 +1,18 @@
+uuid: 4bb2e2bd-4059-470f-a862-9f231c0418d8
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+id: commerce_product_variation.field_enec
+field_name: field_enec
+entity_type: commerce_product_variation
+type: boolean
+settings: {  }
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

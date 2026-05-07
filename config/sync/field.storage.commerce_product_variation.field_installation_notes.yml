@@ -1,0 +1,19 @@
+uuid: 6374eb20-c659-4d1d-93d8-26de583f49bc
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - text
+id: commerce_product_variation.field_installation_notes
+field_name: field_installation_notes
+entity_type: commerce_product_variation
+type: text_long
+settings: {  }
+module: text
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

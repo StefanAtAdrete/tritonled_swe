@@ -1,5 +1,20 @@
 # CURRENT TASK
 
+## TASK-039 — Startsida: Tre ikoner-block (TODO)
+
+### Gjort:
+- Task-dokument skapat: `/docs/tasks/task-039-startsida-ikoner-block.md`
+- HTML-färdig text för affarsfabriken.se/node/12 klar (SV + EN)
+- Ankarlänkar definierade: `#modulart`, `#kostnad`, `#installation`
+- Stefan klistrar in texterna i CKEditor på affarsfabriken.se/node/12
+
+### Återstår:
+- [ ] Bygga tre ikoner-block på tritonled.se startsidan
+- [ ] Ankarlänkarna peka på affarsfabriken.se/node/12#modulart osv
+- [ ] SV + EN-versioner av blocktexterna
+
+---
+
 ## TASK-038 — Mega menu + produktkategori-landningssidor (PÅGÅENDE)
 
 ### Gjort:
@@ -21,11 +36,14 @@
 ---
 
 ## Gjort tidigare denna session:
-- **config_split / cim prod**: Fixat orphan `devel.settings`, config_split local `status: false`, `settings.local.php`, `development.services.yml`
-- **TASK-036** (Kontaktformulär): Klar
-- **TASK-037** (Feature-block SVG-ikoner): Klar
-- **Deploy**: git pull + cim --partial + cr på prod
-- **Filsynk**: rsync av web/sites/default/files/ till prod
+- **SROW form display**: Widgets matchar MAX/OPTI, field_product_type + variations dolda
+- **Pathauto**: SV/EN-mönster för produkter, kategorier, noder. Alla alias genererade
+- **taxonomy_menu_ui**: Installerad lokalt + prod (composer require på servern)
+- **Mega menu**: Desktop template + CSS (full-bredd, CSS grid, WCAG)
+- **tritonled_product_cards**: Block display med filter-override (Triton/surgy-filter borttagna)
+- **Block**: Placerat på taxonomy term-sidor med contextual filter
+- **Deploy**: composer require taxonomy_menu_ui på prod, cim --partial, cr
+- **Varning på prod**: views_block block_2 plugin not found — åtgärdat, fungerar
 
 ---
 

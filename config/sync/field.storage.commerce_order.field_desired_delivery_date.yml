@@ -1,0 +1,20 @@
+uuid: 5f5d6cd8-43d2-4132-8362-173b2cfb001e
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - datetime
+id: commerce_order.field_desired_delivery_date
+field_name: field_desired_delivery_date
+entity_type: commerce_order
+type: datetime
+settings:
+  datetime_type: datetime
+module: datetime
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

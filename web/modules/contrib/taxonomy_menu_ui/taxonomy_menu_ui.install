@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Taxonomy Menu UI installation file.
+ */
+
+use Drupal\taxonomy\Entity\Vocabulary;
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxonomy_menu_ui_uninstall() {
+  $logger = \Drupal::logger('taxonomy_menu_ui');
+
+  /** @var \Drupal\Core\Entity\EntityInterface $bundle */
+  foreach (Vocabulary::loadMultiple() as $bundle) {
+    $config_name = 'core.entity_form_display.taxonomy_term.' . $bundle->id() . '.default';
+
+    try {
+      \Drupal::service('config.factory')
+        ->getEditable($config_name)
+        ->clear('content.menu')
+        ->save();
+    }
+    catch (\Exception $e) {
+      $logger->warning(sprintf('Unable to uninstall config: %s.', $config_name));
+    }
+  }
+}
+
+/**
+ * TODO: Don't create hooks with names: taxonomy_menu_ui_update_9001 and taxonomy_menu_ui_update_9002.
+ *
+ * These hooks were created previously and deleted because of issues reports.
+ */

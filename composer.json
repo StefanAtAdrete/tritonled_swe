@@ -72,6 +72,7 @@
         "drupal/stringoverrides": "^2.0",
         "drupal/svg_image": "^3.2",
         "drupal/symfony_mailer": "^1.6",
+        "drupal/taxonomy_menu_ui": "^3.0",
         "drupal/tool": "^1.0@alpha",
         "drupal/views_bulk_operations": "^4.4",
         "drupal/views_slideshow": "^5.0",
