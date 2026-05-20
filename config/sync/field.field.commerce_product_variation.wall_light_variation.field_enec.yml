@@ -1,0 +1,21 @@
+uuid: df0a39c4-8dbb-4cd4-944c-b7f3d95cc392
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.wall_light_variation
+    - field.storage.commerce_product_variation.field_enec
+id: commerce_product_variation.wall_light_variation.field_enec
+field_name: field_enec
+entity_type: commerce_product_variation
+bundle: wall_light_variation
+label: ENEC
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  on_label: På
+  off_label: Av
+field_type: boolean

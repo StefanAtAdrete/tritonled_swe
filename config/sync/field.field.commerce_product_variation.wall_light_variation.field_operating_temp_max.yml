@@ -1,0 +1,23 @@
+uuid: e6c22683-1b5c-4cc3-90da-0c07e9b1d8bf
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.wall_light_variation
+    - field.storage.commerce_product_variation.field_operating_temp_max
+id: commerce_product_variation.wall_light_variation.field_operating_temp_max
+field_name: field_operating_temp_max
+entity_type: commerce_product_variation
+bundle: wall_light_variation
+label: 'Operating Temp Max'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

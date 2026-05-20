@@ -1,0 +1,23 @@
+uuid: f628b8f7-6bc8-4ba5-85f0-98ad86530856
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.wall_light_variation
+    - field.storage.commerce_product_variation.field_cct
+id: commerce_product_variation.wall_light_variation.field_cct
+field_name: field_cct
+entity_type: commerce_product_variation
+bundle: wall_light_variation
+label: CCT
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
