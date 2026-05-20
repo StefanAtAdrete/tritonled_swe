@@ -1,0 +1,20 @@
+uuid: d7d2542a-cc16-4325-9f02-9d342f8f35e8
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - feeds
+id: commerce_product.feeds_item
+field_name: feeds_item
+entity_type: commerce_product
+type: feeds_item
+settings:
+  target_type: feeds_feed
+module: feeds
+locked: false
+cardinality: -1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

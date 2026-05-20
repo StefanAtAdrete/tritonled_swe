@@ -1,0 +1,23 @@
+uuid: 4ae38d92-0fab-4c9e-8ecc-28c44efea1ce
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.street_area_variation
+    - field.storage.commerce_product_variation.field_cri
+id: commerce_product_variation.street_area_variation.field_cri
+field_name: field_cri
+entity_type: commerce_product_variation
+bundle: street_area_variation
+label: CRI
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

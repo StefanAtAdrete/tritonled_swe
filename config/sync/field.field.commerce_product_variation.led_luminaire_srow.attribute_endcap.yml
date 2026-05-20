@@ -1,0 +1,24 @@
+uuid: f36b3aa7-7198-4374-93bd-ef89fc093984
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_attribute.endcap
+    - commerce_product.commerce_product_variation_type.led_luminaire_srow
+    - field.storage.commerce_product_variation.attribute_endcap
+id: commerce_product_variation.led_luminaire_srow.attribute_endcap
+field_name: attribute_endcap
+entity_type: commerce_product_variation
+bundle: led_luminaire_srow
+label: Ändstycke
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_product_attribute_value'
+  handler_settings:
+    target_bundles:
+      endcap: endcap
+field_type: entity_reference
