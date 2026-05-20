@@ -1,0 +1,23 @@
+uuid: 72ef76ff-8803-4287-8b3d-4a19acef23c6
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.surge_protection
+    - field.storage.commerce_product_variation.field_discharge_imax
+id: commerce_product_variation.surge_protection.field_discharge_imax
+field_name: field_discharge_imax
+entity_type: commerce_product_variation
+bundle: surge_protection
+label: 'Max urladdningstrom Imax'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: kA
+field_type: decimal

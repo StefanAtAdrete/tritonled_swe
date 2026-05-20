@@ -1,0 +1,23 @@
+uuid: 926895db-c093-4873-834f-68f4dcbeaa4c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.floodlight_variation
+    - field.storage.commerce_product_variation.field_lumens
+id: commerce_product_variation.floodlight_variation.field_lumens
+field_name: field_lumens
+entity_type: commerce_product_variation
+bundle: floodlight_variation
+label: Lumens
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

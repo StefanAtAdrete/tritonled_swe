@@ -1,0 +1,12 @@
+uuid: 56beb511-e5a9-4f3d-9326-37c8d0b236f3
+langcode: en
+status: true
+dependencies: {  }
+id: h2_smal_block
+label: 'h2 smal block light'
+classes: "h2\r\nfw-lighter\r\nfs-3\r\ntext-light"
+type: component
+group: default
+block_restrictions: {  }
+layout_restrictions: {  }
+weight: 0

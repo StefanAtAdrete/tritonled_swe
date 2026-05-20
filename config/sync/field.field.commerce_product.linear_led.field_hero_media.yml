@@ -1,0 +1,33 @@
+uuid: e3c98617-d9c6-4d10-8f61-18677e06c4f2
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.linear_led
+    - field.storage.commerce_product.field_hero_media
+    - media.type.image
+    - media.type.remote_video
+    - media.type.video
+id: commerce_product.linear_led.field_hero_media
+field_name: field_hero_media
+entity_type: commerce_product
+bundle: linear_led
+label: 'Hero media'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings:
+    target_bundles:
+      image: image
+      remote_video: remote_video
+      video: video
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    auto_create_bundle: remote_video
+field_type: entity_reference

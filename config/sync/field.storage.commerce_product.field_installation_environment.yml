@@ -1,0 +1,20 @@
+uuid: 987327ba-9b2e-4f4d-a540-33eabb9e1963
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+    - taxonomy
+id: commerce_product.field_installation_environment
+field_name: field_installation_environment
+entity_type: commerce_product
+type: entity_reference
+settings:
+  target_type: taxonomy_term
+module: core
+locked: false
+cardinality: -1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false
