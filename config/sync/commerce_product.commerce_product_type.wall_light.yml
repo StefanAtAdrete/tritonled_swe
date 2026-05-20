@@ -1,0 +1,12 @@
+uuid: 2f00a12b-ff43-474a-9860-9313e15c97b7
+langcode: sv
+status: true
+dependencies: {  }
+id: wall_light
+label: Väggarmatur
+traits: {  }
+locked: false
+description: ''
+variationTypes: {  }
+multipleVariations: true
+injectVariationFields: true
