@@ -1,0 +1,21 @@
+uuid: 6312b808-d5d8-435b-b00e-d879af7b388e
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - field.storage.commerce_product.field_hero_media
+id: commerce_product.wall_light.field_hero_media
+field_name: field_hero_media
+entity_type: commerce_product
+bundle: wall_light
+label: 'Hero Media'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:media'
+  handler_settings: {  }
+field_type: entity_reference

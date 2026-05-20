@@ -1,6 +1,6 @@
 # TASK-039 — Startsida: Tre ikoner-block med länk till produktsida
 
-**Status: TODO**
+**Status: COMPLETED**
 **Prioritet: HÖG — Akut**
 
 ---

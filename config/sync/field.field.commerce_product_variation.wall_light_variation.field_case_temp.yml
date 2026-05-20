@@ -1,0 +1,23 @@
+uuid: 771e2b5a-20f5-48e1-9546-ccc8153df7a1
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.wall_light_variation
+    - field.storage.commerce_product_variation.field_case_temp
+id: commerce_product_variation.wall_light_variation.field_case_temp
+field_name: field_case_temp
+entity_type: commerce_product_variation
+bundle: wall_light_variation
+label: 'Case Temp'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
