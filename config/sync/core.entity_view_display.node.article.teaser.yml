@@ -6,55 +6,263 @@ dependencies:
     - core.entity_view_mode.node.teaser
     - field.field.node.article.body
     - field.field.node.article.comment
+    - field.field.node.article.field_hero_media
     - field.field.node.article.field_image
+    - field.field.node.article.field_show_in_hero
     - field.field.node.article.field_tags
     - field.field.node.article.layout_builder__layout
-    - image.style.medium
     - node.type.article
   module:
-    - image
-    - text
+    - bootstrap_layout_builder
+    - layout_builder
     - user
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: false
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles:
+              background:
+                background_type: null
+              background_color:
+                class: null
+              background_media:
+                image:
+                  media_id: null
+                video:
+                  media_id: null
+                background_options:
+                  background_position: center
+                  background_repeat: no-repeat
+                  background_attachment: not_fixed
+                  background_size: cover
+              text_color:
+                class: null
+              padding:
+                class: _none
+              padding_left:
+                class: _none
+              padding_top:
+                class: _none
+              padding_right:
+                class: _none
+              padding_bottom:
+                class: _none
+              margin:
+                class: _none
+              margin_left:
+                class: _none
+              margin_top:
+                class: _none
+              margin_right:
+                class: _none
+              margin_bottom:
+                class: bs-mb-5
+              border:
+                border_style:
+                  class: null
+                border_width:
+                  class: _none
+                border_color:
+                  class: null
+                rounded_corners:
+                  class: _none
+                border_left_style:
+                  class: null
+                border_left_width:
+                  class: _none
+                border_left_color:
+                  class: null
+                border_top_style:
+                  class: null
+                border_top_width:
+                  class: _none
+                border_top_color:
+                  class: null
+                border_right_style:
+                  class: null
+                border_right_width:
+                  class: _none
+                border_right_color:
+                  class: null
+                border_bottom_style:
+                  class: null
+                border_bottom_width:
+                  class: _none
+                border_bottom_color:
+                  class: null
+                rounded_corner_top_left:
+                  class: _none
+                rounded_corner_top_right:
+                  class: _none
+                rounded_corner_bottom_left:
+                  class: _none
+                rounded_corner_bottom_right:
+                  class: _none
+              scroll_effects:
+                class: null
+              text_alignment:
+                class: null
+              box_shadow:
+                class: null
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          layout_builder_styles_style:
+            product_section_tabs: 0
+            tertiary_background: tertiary_background
+            background_black: 0
+            background_secondary_section: 0
+            blue_10_section_background: 0
+          context_mapping: {  }
+        components:
+          e0f6b9d6-c345-4b4f-8de8-42f7cc6676bc:
+            uuid: e0f6b9d6-c345-4b4f-8de8-42f7cc6676bc
+            region: blb_region_col_2
+            configuration:
+              id: 'extra_field_block:node:article:links'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+            weight: 1
+            additional: {  }
+          862cfd75-a034-4109-971c-a799f34d580b:
+            uuid: 862cfd75-a034-4109-971c-a799f34d580b
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:node:article:body'
+              label: Body
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: text_summary_or_trimmed
+                label: visually_hidden
+                settings:
+                  trim_length: 150
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                alert_light: 0
+                background_light_badge: 0
+                background_secondary_block: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                h2_smal_block: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
+                padding_3: 0
+                padding_5_block: 0
+                padding_y_5_block: 0
+          9f0398c4-fb86-4cb1-8cfe-dd40477b68b0:
+            uuid: 9f0398c4-fb86-4cb1-8cfe-dd40477b68b0
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:node:article:field_image'
+              label: Image
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: responsive_image
+                label: hidden
+                settings:
+                  responsive_image_style: card
+                  image_link: content
+                  image_loading:
+                    attribute: lazy
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                alert_light: 0
+                background_light_badge: 0
+                background_secondary_block: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                h2_smal_block: 0
+                margin_bottom_3: 0
+                object_fit_cover: 0
+                padding_3: 0
+                padding_5_block: 0
+                padding_y_5_block: 0
+        third_party_settings: {  }
 _core:
   default_config_hash: O8PxzfG8DOHHRu6M23kwR6TDPq_MNfYQ10Mp367ICUQ
 id: node.article.teaser
 targetEntityType: node
 bundle: article
 mode: teaser
-content:
-  body:
-    type: text_summary_or_trimmed
-    label: hidden
-    settings:
-      trim_length: 600
-    third_party_settings: {  }
-    weight: 0
-    region: content
-  field_image:
-    type: image
-    label: hidden
-    settings:
-      image_link: content
-      image_style: medium
-      image_loading:
-        attribute: lazy
-    third_party_settings: {  }
-    weight: -1
-    region: content
-  field_tags:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 10
-    region: content
-  links:
-    weight: 100
-    region: content
+content: {  }
 hidden:
+  body: true
   comment: true
   field_hero_media: true
+  field_image: true
   field_show_in_hero: true
+  field_tags: true
   langcode: true
   layout_builder__layout: true
+  links: true

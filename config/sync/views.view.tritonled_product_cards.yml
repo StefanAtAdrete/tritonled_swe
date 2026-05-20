@@ -558,8 +558,10 @@ display:
         arguments: false
         filters: false
         filter_groups: false
+        header: false
       css_class: container
       display_description: 'Filtrerat block med produkter från term'
+      header: {  }
       display_extenders: {  }
       block_description: 'Produkt kategori filtrerat'
     cache_metadata:
