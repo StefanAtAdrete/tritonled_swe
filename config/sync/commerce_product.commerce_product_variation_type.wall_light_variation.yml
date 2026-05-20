@@ -1,0 +1,10 @@
+uuid: 6615d453-111f-485a-a1ef-4d0c9aed93ea
+langcode: sv
+status: true
+dependencies: {  }
+id: wall_light_variation
+label: 'Väggarmatur Variation'
+traits: {  }
+locked: false
+orderItemType: quote
+generateTitle: true

@@ -1,0 +1,23 @@
+uuid: c5dae3b2-69d2-480f-a1ec-cd16b20a8727
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - field.storage.commerce_product.field_warranty
+id: commerce_product.wall_light.field_warranty
+field_name: field_warranty
+entity_type: commerce_product
+bundle: wall_light
+label: Warranty
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

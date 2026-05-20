@@ -1,0 +1,108 @@
+uuid: 95d16c81-c19c-4efa-b356-1dc75cc14520
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - field.field.commerce_product.wall_light.field_brand
+    - field.field.commerce_product.wall_light.field_cable
+    - field.field.commerce_product.wall_light.field_datasheet
+    - field.field.commerce_product.wall_light.field_dimming
+    - field.field.commerce_product.wall_light.field_driver
+    - field.field.commerce_product.wall_light.field_features
+    - field.field.commerce_product.wall_light.field_hero_media
+    - field.field.commerce_product.wall_light.field_installation_environment
+    - field.field.commerce_product.wall_light.field_ip_class
+    - field.field.commerce_product.wall_light.field_lumen_range
+    - field.field.commerce_product.wall_light.field_producers
+    - field.field.commerce_product.wall_light.field_product_categories
+    - field.field.commerce_product.wall_light.field_product_media
+    - field.field.commerce_product.wall_light.field_product_sku
+    - field.field.commerce_product.wall_light.field_series
+    - field.field.commerce_product.wall_light.field_short_description
+    - field.field.commerce_product.wall_light.field_show_in_hero
+    - field.field.commerce_product.wall_light.field_warranty
+    - field.field.commerce_product.wall_light.field_watt_range
+  module:
+    - commerce
+    - path
+id: commerce_product.wall_light.default
+targetEntityType: commerce_product
+bundle: wall_light
+mode: default
+content:
+  created:
+    type: datetime_timestamp
+    weight: 10
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  langcode:
+    type: language_select
+    weight: 2
+    region: content
+    settings:
+      include_locked: true
+    third_party_settings: {  }
+  path:
+    type: path
+    weight: 30
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 90
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  stores:
+    type: commerce_entity_select
+    weight: -10
+    region: content
+    settings:
+      hide_single_entity: true
+      autocomplete_threshold: 7
+      autocomplete_size: 60
+      autocomplete_placeholder: ''
+    third_party_settings: {  }
+  title:
+    type: string_textfield
+    weight: -5
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  uid:
+    type: entity_reference_autocomplete
+    weight: 5
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  field_brand: true
+  field_cable: true
+  field_datasheet: true
+  field_dimming: true
+  field_driver: true
+  field_features: true
+  field_hero_media: true
+  field_installation_environment: true
+  field_ip_class: true
+  field_lumen_range: true
+  field_producers: true
+  field_product_categories: true
+  field_product_media: true
+  field_product_sku: true
+  field_series: true
+  field_short_description: true
+  field_show_in_hero: true
+  field_warranty: true
+  field_watt_range: true
+  variations: true
