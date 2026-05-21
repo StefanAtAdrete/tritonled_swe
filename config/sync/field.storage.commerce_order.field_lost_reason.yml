@@ -1,0 +1,21 @@
+uuid: 024da53a-699b-4019-bdb0-bc565d989526
+langcode: sv
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - options
+id: commerce_order.field_lost_reason
+field_name: field_lost_reason
+entity_type: commerce_order
+type: list_string
+settings:
+  allowed_values: {  }
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

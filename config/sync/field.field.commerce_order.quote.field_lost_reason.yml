@@ -1,0 +1,21 @@
+uuid: d4ce9576-df26-434c-8ca7-6cf58da3bd05
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_type.quote
+    - field.storage.commerce_order.field_lost_reason
+  module:
+    - options
+id: commerce_order.quote.field_lost_reason
+field_name: field_lost_reason
+entity_type: commerce_order
+bundle: quote
+label: 'Förlorad orsak'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string
