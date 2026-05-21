@@ -1,5 +1,8 @@
 <?php
 
+use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\Core\Entity\EntityStorageException;
+
 /**
  * @file
  * Quote checkout customizations for TritonLED.
@@ -67,4 +70,85 @@ function tritonled_quote_inline_entity_form_table_fields_alter(array &$fields, a
   if (isset($fields['unit_price'])) {
     unset($fields['unit_price']);
   }
+}
+
+/**
+ * Implements hook_entity_presave().
+ *
+ * Validation rule:
+ * If quote stage is "lost", require lost reason and comment.
+ */
+function tritonled_quote_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
+  if (!$entity instanceof OrderInterface || $entity->bundle() !== 'quote') {
+    return;
+  }
+
+  if (!$entity->hasField('field_quote_stage')) {
+    return;
+  }
+
+  $stage = (string) $entity->get('field_quote_stage')->value;
+  if ($stage !== 'lost') {
+    return;
+  }
+
+  $lost_reason = $entity->hasField('field_lost_reason') ? (string) $entity->get('field_lost_reason')->value : '';
+  $lost_comment = $entity->hasField('field_lost_comment') ? trim((string) $entity->get('field_lost_comment')->value) : '';
+
+  if ($lost_reason === '' || $lost_comment === '') {
+    throw new EntityStorageException('Förlorad offert kräver både Förlorad orsak och Förlorad kommentar.');
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * Sends customer email when quote stage changes to "sent".
+ */
+function tritonled_quote_entity_update(\Drupal\Core\Entity\EntityInterface $entity) {
+  if (!$entity instanceof OrderInterface || $entity->bundle() !== 'quote') {
+    return;
+  }
+
+  if (!$entity->hasField('field_quote_stage')) {
+    return;
+  }
+
+  $new_stage = (string) $entity->get('field_quote_stage')->value;
+  $old_stage = '';
+
+  if ($entity->original instanceof OrderInterface && $entity->original->hasField('field_quote_stage')) {
+    $old_stage = (string) $entity->original->get('field_quote_stage')->value;
+  }
+
+  // Only trigger on transition into sent.
+  if ($new_stage !== 'sent' || $old_stage === 'sent') {
+    return;
+  }
+
+  $to = (string) $entity->getEmail();
+  if ($to === '') {
+    return;
+  }
+
+  $mail_manager = \Drupal::service('plugin.manager.mail');
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $params = [
+    'subject' => 'Offert skickad',
+    'message' => 'Din offert ' . ($entity->getOrderNumber() ?: ('#' . $entity->id())) . ' har uppdaterats och skickats.',
+  ];
+
+  $mail_manager->mail('tritonled_quote', 'quote_sent', $to, $langcode, $params);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function tritonled_quote_mail($key, &$message, $params) {
+  if ($key !== 'quote_sent') {
+    return;
+  }
+
+  $message['subject'] = $params['subject'] ?? 'Offert skickad';
+  $message['body'][] = $params['message'] ?? 'Din offert har skickats.';
 }

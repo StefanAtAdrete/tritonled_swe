@@ -63,6 +63,7 @@
         "drupal/media_bulk_upload": "^3.0",
         "drupal/menu_link_attributes": "^1.7",
         "drupal/metatag": "^2.2",
+        "drupal/modeler": "^1.0",
         "drupal/modeler_api": "^1.1",
         "drupal/pathauto": "^1.14",
         "drupal/photoswipe": "^5.0",
