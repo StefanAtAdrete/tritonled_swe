@@ -49,6 +49,9 @@ module:
   dblog: 0
   dynamic_page_cache: 0
   eca: 0
+  eca_base: 0
+  eca_content: 0
+  eca_ui: 0
   editor: 0
   entity: 0
   entity_reference_revisions: 0
