@@ -1,0 +1,21 @@
+uuid: 15c82037-eef9-4ea6-8687-059bba396b31
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - field.storage.commerce_product.field_mounting_type
+  module:
+    - options
+id: commerce_product.wall_light.field_mounting_type
+field_name: field_mounting_type
+entity_type: commerce_product
+bundle: wall_light
+label: 'Mounting Type'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

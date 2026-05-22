@@ -23,6 +23,9 @@ settings:
     -
       value: Pole
       label: Pole
+    -
+      value: wall
+      label: Wall
   allowed_values_function: ''
 module: options
 locked: false
