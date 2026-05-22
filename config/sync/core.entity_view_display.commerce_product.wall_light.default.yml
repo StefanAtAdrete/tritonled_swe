@@ -1,0 +1,174 @@
+uuid: 4e3a6ee0-0dc0-44d0-aa2e-4f23adf3a66c
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - field.field.commerce_product.wall_light.field_product_media
+    - field.field.commerce_product.wall_light.field_product_sku
+    - field.field.commerce_product.wall_light.layout_builder__layout
+  module:
+    - bootstrap_layout_builder
+    - layout_builder
+third_party_settings:
+  layout_builder:
+    enabled: true
+    allow_custom: true
+    sections:
+      -
+        layout_id: 'bootstrap_layout_builder:blb_col_2'
+        layout_settings:
+          label: ''
+          container_wrapper_classes: ''
+          container_wrapper_attributes: null
+          container_wrapper:
+            bootstrap_styles: {  }
+          container_wrapper_bg_color_class: ''
+          container_wrapper_bg_media: null
+          container: container
+          section_classes: ''
+          section_attributes: null
+          regions_classes:
+            blb_region_col_1: ''
+            blb_region_col_2: ''
+          regions_attributes:
+            blb_region_col_1: null
+            blb_region_col_2: null
+          breakpoints:
+            desktop: blb_col_6_6
+            tablet: blb_col_6_6
+            mobile: blb_col_12
+          layout_regions_classes:
+            blb_region_col_1:
+              - col-lg-6
+              - col-md-6
+              - col-12
+            blb_region_col_2:
+              - col-lg-6
+              - col-md-6
+              - col-12
+          remove_gutters: '0'
+          context_mapping: {  }
+        components:
+          e7a3a3c4-8a74-4e66-b57a-6066f39e8f2f:
+            uuid: e7a3a3c4-8a74-4e66-b57a-6066f39e8f2f
+            region: blb_region_col_1
+            configuration:
+              id: 'field_block:commerce_product:wall_light:field_product_media'
+              label: 'Product Media'
+              label_display: '0'
+              provider: layout_builder
+              context_mapping:
+                entity: layout_builder.entity
+                view_mode: view_mode
+              formatter:
+                type: entity_reference_entity_view
+                label: above
+                settings:
+                  view_mode: article_image_1_1
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+          1578b6b0-cb88-4c54-9b43-4f4fb1cfec7a:
+            uuid: 1578b6b0-cb88-4c54-9b43-4f4fb1cfec7a
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:wall_light:title'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: hidden
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 0
+            additional:
+              layout_builder_styles_style:
+                h1_title: h1_title
+                margin_bottom_3: margin_bottom_3
+          4c9d4bd2-5fe8-4f71-9f5f-6f98a6a7372c:
+            uuid: 4c9d4bd2-5fe8-4f71-9f5f-6f98a6a7372c
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:wall_light:variations'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: commerce_add_to_cart
+                label: visually_hidden
+                settings:
+                  combine: true
+                third_party_settings: {  }
+            weight: 1
+            additional:
+              layout_builder_styles_style:
+                margin_bottom_3: margin_bottom_3
+          f543abcf-57e5-4152-9f82-e28fb03f166f:
+            uuid: f543abcf-57e5-4152-9f82-e28fb03f166f
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:wall_light:field_product_sku'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: string
+                label: above
+                settings:
+                  link_to_entity: false
+                third_party_settings: {  }
+            weight: 2
+            additional: {  }
+        third_party_settings: {  }
+id: commerce_product.wall_light.default
+targetEntityType: commerce_product
+bundle: wall_light
+mode: default
+content: {  }
+hidden:
+  created: true
+  feeds_item: true
+  field_brand: true
+  field_cable: true
+  field_datasheet: true
+  field_dimming: true
+  field_driver: true
+  field_features: true
+  field_hero_media: true
+  field_installation_environment: true
+  field_ip_class: true
+  field_lumen_range: true
+  field_producers: true
+  field_product_categories: true
+  field_product_media: true
+  field_product_sku: true
+  field_series: true
+  field_short_description: true
+  field_show_in_hero: true
+  field_warranty: true
+  field_watt_range: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  title: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
+  variations: true
