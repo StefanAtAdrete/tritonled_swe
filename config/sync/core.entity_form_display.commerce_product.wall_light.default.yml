@@ -4,7 +4,9 @@ status: true
 dependencies:
   config:
     - commerce_product.commerce_product_type.wall_light
+    - field.field.commerce_product.wall_light.body
     - field.field.commerce_product.wall_light.feeds_item
+    - field.field.commerce_product.wall_light.field_beam_angle
     - field.field.commerce_product.wall_light.field_brand
     - field.field.commerce_product.wall_light.field_cable
     - field.field.commerce_product.wall_light.field_datasheet
@@ -14,11 +16,14 @@ dependencies:
     - field.field.commerce_product.wall_light.field_hero_media
     - field.field.commerce_product.wall_light.field_installation_environment
     - field.field.commerce_product.wall_light.field_ip_class
+    - field.field.commerce_product.wall_light.field_lumen
     - field.field.commerce_product.wall_light.field_lumen_range
+    - field.field.commerce_product.wall_light.field_mounting_type
     - field.field.commerce_product.wall_light.field_producers
     - field.field.commerce_product.wall_light.field_product_categories
     - field.field.commerce_product.wall_light.field_product_media
     - field.field.commerce_product.wall_light.field_product_sku
+    - field.field.commerce_product.wall_light.field_product_type
     - field.field.commerce_product.wall_light.field_series
     - field.field.commerce_product.wall_light.field_short_description
     - field.field.commerce_product.wall_light.field_show_in_hero
@@ -36,11 +41,28 @@ targetEntityType: commerce_product
 bundle: wall_light
 mode: default
 content:
+  body:
+    type: text_textarea_with_summary
+    weight: 28
+    region: content
+    settings:
+      rows: 9
+      summary_rows: 3
+      placeholder: ''
+      show_summary: false
+    third_party_settings: {  }
   created:
     type: datetime_timestamp
     weight: 4
     region: content
     settings: {  }
+    third_party_settings: {  }
+  field_beam_angle:
+    type: number
+    weight: 30
+    region: content
+    settings:
+      placeholder: ''
     third_party_settings: {  }
   field_brand:
     type: string_textfield
@@ -108,6 +130,13 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  field_lumen:
+    type: number
+    weight: 31
+    region: content
+    settings:
+      placeholder: ''
+    third_party_settings: {  }
   field_lumen_range:
     type: string_textfield
     weight: 19
@@ -115,6 +144,12 @@ content:
     settings:
       size: 60
       placeholder: ''
+    third_party_settings: {  }
+  field_mounting_type:
+    type: options_select
+    weight: 18
+    region: content
+    settings: {  }
     third_party_settings: {  }
   field_producers:
     type: options_select
@@ -144,6 +179,16 @@ content:
     weight: 7
     region: content
     settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_product_type:
+    type: entity_reference_autocomplete
+    weight: 29
+    region: content
+    settings:
+      match_operator: CONTAINS
+      match_limit: 10
       size: 60
       placeholder: ''
     third_party_settings: {  }
