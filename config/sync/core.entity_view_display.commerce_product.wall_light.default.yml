@@ -33,7 +33,6 @@ dependencies:
   module:
     - bootstrap_layout_builder
     - layout_builder
-    - options
 third_party_settings:
   layout_builder:
     enabled: true
@@ -137,22 +136,6 @@ third_party_settings:
             additional:
               layout_builder_styles_style:
                 margin_bottom_3: margin_bottom_3
-          f543abcf-57e5-4152-9f82-e28fb03f166f:
-            uuid: f543abcf-57e5-4152-9f82-e28fb03f166f
-            region: blb_region_col_2
-            configuration:
-              id: 'field_block:commerce_product:wall_light:field_product_sku'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: string
-                label: above
-                settings:
-                  link_to_entity: false
-                third_party_settings: {  }
-            weight: 2
-            additional: {  }
           87860d07-6ee4-4635-bb2f-a280703f53a5:
             uuid: 87860d07-6ee4-4635-bb2f-a280703f53a5
             region: blb_region_col_1
@@ -245,114 +228,61 @@ third_party_settings:
                 padding_3: 0
                 padding_5_block: 0
                 padding_y_5_block: 0
-          69cc2737-109a-4d4b-b461-1ff1b3f0b497:
-            uuid: 69cc2737-109a-4d4b-b461-1ff1b3f0b497
-            region: blb_region_col_1
+          28e0eb10-78bf-42c7-97b0-c3d7c9edd352:
+            uuid: 28e0eb10-78bf-42c7-97b0-c3d7c9edd352
+            region: blb_region_col_2
             configuration:
-              id: 'field_block:commerce_product:wall_light:field_product_type'
+              id: 'field_block:commerce_product:wall_light:body'
+              label: Body
               label_display: '0'
+              provider: layout_builder
               context_mapping:
                 entity: layout_builder.entity
+                view_mode: view_mode
               formatter:
-                type: entity_reference_label
-                label: above
-                settings:
-                  link: true
-                third_party_settings: {  }
-            weight: 1
-            additional: {  }
-          d3fa3bd0-2851-4265-9fb0-f4e77b341688:
-            uuid: d3fa3bd0-2851-4265-9fb0-f4e77b341688
-            region: blb_region_col_1
-            configuration:
-              id: 'field_block:commerce_product:wall_light:field_mounting_type'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: list_default
-                label: above
+                type: text_default
+                label: visually_hidden
                 settings: {  }
-                third_party_settings: {  }
-            weight: 2
-            additional: {  }
-          4a5b70c0-1eac-42a9-882b-e5f456c2fb71:
-            uuid: 4a5b70c0-1eac-42a9-882b-e5f456c2fb71
-            region: blb_region_col_1
-            configuration:
-              id: 'field_block:commerce_product:wall_light:field_beam_angle'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: number_integer
-                label: above
-                settings:
-                  thousand_separator: ''
-                  prefix_suffix: true
-                third_party_settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
             weight: 3
-            additional: {  }
-          a5380552-84cf-4f67-b9ca-a6e2dd5b983a:
-            uuid: a5380552-84cf-4f67-b9ca-a6e2dd5b983a
-            region: blb_region_col_1
-            configuration:
-              id: 'field_block:commerce_product:wall_light:field_lumen'
-              label_display: '0'
-              context_mapping:
-                entity: layout_builder.entity
-              formatter:
-                type: number_integer
-                label: above
-                settings:
-                  thousand_separator: ''
-                  prefix_suffix: true
-                third_party_settings: {  }
-            weight: 4
-            additional: {  }
+            additional:
+              layout_builder_styles_style:
+                tab_block_products: 0
+                margin_bottom_3: margin_bottom_3
+                alert_light: 0
+                background_light_badge: 0
+                background_secondary_block: 0
+                badges_standard: 0
+                button_light: 0
+                button_secondary: 0
+                column_medium_4: 0
+                container: 0
+                h1_title: 0
+                h2_smal_block: 0
+                object_fit_cover: 0
+                padding_3: 0
+                padding_5_block: 0
+                padding_y_5_block: 0
         third_party_settings: {  }
 id: commerce_product.wall_light.default
 targetEntityType: commerce_product
 bundle: wall_light
 mode: default
-content:
-  field_beam_angle:
-    type: number_integer
-    label: above
-    settings:
-      thousand_separator: ''
-      prefix_suffix: true
-    third_party_settings: {  }
-    weight: 2
-    region: blb_region_col_1
-  field_lumen:
-    type: number_integer
-    label: above
-    settings:
-      thousand_separator: ''
-      prefix_suffix: true
-    third_party_settings: {  }
-    weight: 3
-    region: blb_region_col_1
-  field_mounting_type:
-    type: list_default
-    label: above
-    settings: {  }
-    third_party_settings: {  }
-    weight: 1
-    region: blb_region_col_1
-  field_product_type:
-    type: entity_reference_label
-    label: above
-    settings:
-      link: true
-    third_party_settings: {  }
-    weight: 0
-    region: blb_region_col_1
+content: {  }
 hidden:
   body: true
   created: true
   feeds_item: true
+  field_beam_angle: true
   field_brand: true
   field_cable: true
   field_datasheet: true
@@ -362,11 +292,14 @@ hidden:
   field_hero_media: true
   field_installation_environment: true
   field_ip_class: true
+  field_lumen: true
   field_lumen_range: true
+  field_mounting_type: true
   field_producers: true
   field_product_categories: true
   field_product_media: true
   field_product_sku: true
+  field_product_type: true
   field_series: true
   field_short_description: true
   field_show_in_hero: true
