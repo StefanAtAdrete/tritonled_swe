@@ -1,0 +1,106 @@
+uuid: 4c5ca258-e071-42b5-ace2-40237d611265
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+    - core.entity_view_mode.commerce_product.card
+    - field.field.commerce_product.wall_light.body
+    - field.field.commerce_product.wall_light.feeds_item
+    - field.field.commerce_product.wall_light.field_beam_angle
+    - field.field.commerce_product.wall_light.field_brand
+    - field.field.commerce_product.wall_light.field_cable
+    - field.field.commerce_product.wall_light.field_datasheet
+    - field.field.commerce_product.wall_light.field_dimming
+    - field.field.commerce_product.wall_light.field_driver
+    - field.field.commerce_product.wall_light.field_features
+    - field.field.commerce_product.wall_light.field_hero_media
+    - field.field.commerce_product.wall_light.field_installation_environment
+    - field.field.commerce_product.wall_light.field_ip_class
+    - field.field.commerce_product.wall_light.field_lumen
+    - field.field.commerce_product.wall_light.field_lumen_range
+    - field.field.commerce_product.wall_light.field_mounting_type
+    - field.field.commerce_product.wall_light.field_producers
+    - field.field.commerce_product.wall_light.field_product_categories
+    - field.field.commerce_product.wall_light.field_product_media
+    - field.field.commerce_product.wall_light.field_product_sku
+    - field.field.commerce_product.wall_light.field_product_type
+    - field.field.commerce_product.wall_light.field_series
+    - field.field.commerce_product.wall_light.field_short_description
+    - field.field.commerce_product.wall_light.field_show_in_hero
+    - field.field.commerce_product.wall_light.field_warranty
+    - field.field.commerce_product.wall_light.field_watt_range
+    - field.field.commerce_product.wall_light.layout_builder__layout
+  module:
+    - commerce_product
+id: commerce_product.wall_light.card
+targetEntityType: commerce_product
+bundle: wall_light
+mode: card
+content:
+  field_product_media:
+    type: entity_reference_entity_view
+    label: hidden
+    settings:
+      view_mode: card
+      link: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  field_short_description:
+    type: basic_string
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  title:
+    type: string
+    label: hidden
+    settings:
+      link_to_entity: true
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  variations:
+    type: commerce_add_to_cart
+    label: above
+    settings:
+      combine: true
+    third_party_settings: {  }
+    weight: 10
+    region: content
+hidden:
+  body: true
+  created: true
+  feeds_item: true
+  field_beam_angle: true
+  field_brand: true
+  field_cable: true
+  field_datasheet: true
+  field_dimming: true
+  field_driver: true
+  field_features: true
+  field_hero_media: true
+  field_installation_environment: true
+  field_ip_class: true
+  field_lumen: true
+  field_lumen_range: true
+  field_mounting_type: true
+  field_producers: true
+  field_product_categories: true
+  field_product_sku: true
+  field_product_type: true
+  field_series: true
+  field_show_in_hero: true
+  field_warranty: true
+  field_watt_range: true
+  langcode: true
+  layout_builder__layout: true
+  stores: true
+  uid: true
+  variation_block__certifications: true
+  variation_block__electrical: true
+  variation_block__gallery: true
+  variation_block__mechanical: true
+  variation_block__token: true
