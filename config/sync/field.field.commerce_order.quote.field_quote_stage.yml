@@ -1,0 +1,23 @@
+uuid: 45bcec5a-9151-4aa5-a484-3f21f84f8cc4
+langcode: sv
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_type.quote
+    - field.storage.commerce_order.field_quote_stage
+  module:
+    - options
+id: commerce_order.quote.field_quote_stage
+field_name: field_quote_stage
+entity_type: commerce_order
+bundle: quote
+label: Offertsteg
+description: ''
+required: true
+translatable: true
+default_value:
+  -
+    value: draft
+default_value_callback: ''
+settings: {  }
+field_type: list_string

@@ -3,9 +3,6 @@ contexts:
     context: ''
     translations:
       -
-        source: '%title added to your cart'
-        translation: '%title added to your quote request'
-      -
         source: 'Add to cart'
         translation: 'Request Quote'
       -

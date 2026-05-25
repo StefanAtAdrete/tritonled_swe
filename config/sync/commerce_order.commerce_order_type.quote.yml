@@ -10,7 +10,7 @@ third_party_settings:
     cart_block_view: commerce_cart_block
     cart_form_view: commerce_cart_form
     cart_expiration: {  }
-    enable_cart_message: true
+    enable_cart_message: false
   commerce_checkout:
     checkout_flow: quote_request
 id: quote
@@ -18,10 +18,10 @@ label: Quote
 traits: {  }
 locked: false
 workflow: order_default
+showOrderEditLinks: null
 numberPattern: null
 refresh_mode: customer
 refresh_frequency: 300
 sendReceipt: true
 receiptBcc: ''
 receiptSubject: ''
-checkout_flow: quote_request

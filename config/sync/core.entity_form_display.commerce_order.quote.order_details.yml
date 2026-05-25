@@ -8,8 +8,13 @@ dependencies:
     - field.field.commerce_order.quote.field_company_name
     - field.field.commerce_order.quote.field_contact_person
     - field.field.commerce_order.quote.field_desired_delivery_date
+    - field.field.commerce_order.quote.field_lost_comment
+    - field.field.commerce_order.quote.field_lost_reason
     - field.field.commerce_order.quote.field_phone
     - field.field.commerce_order.quote.field_project_description
+    - field.field.commerce_order.quote.field_quote_stage
+  module:
+    - text
 id: commerce_order.quote.order_details
 targetEntityType: commerce_order
 bundle: quote
@@ -21,6 +26,26 @@ content:
     region: content
     settings:
       display_label: true
+    third_party_settings: {  }
+  field_lost_comment:
+    type: text_textarea
+    weight: 17
+    region: content
+    settings:
+      rows: 3
+      placeholder: ''
+    third_party_settings: {  }
+  field_lost_reason:
+    type: options_select
+    weight: 16
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  field_quote_stage:
+    type: options_select
+    weight: 15
+    region: content
+    settings: {  }
     third_party_settings: {  }
   mail:
     type: email_default

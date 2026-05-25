@@ -189,7 +189,15 @@ yarn-error.log*
 # Håll docs (men inte Claude-skills eller produktfiler)
 !/docs/
 /docs/skills/
-/docs/produkter/
+/docs/produkter
+/docs/product-assets/
+/docs/product-data/
+/docs/produkter/inbox/
+/docs/produkter/extracted/
+/docs/produkter/normalized/
+/docs/produkter/import-ready/
+/docs/produkter/reports/
+/docs/produkter/source-original/
 
 # Håll scripts
 !/scripts/

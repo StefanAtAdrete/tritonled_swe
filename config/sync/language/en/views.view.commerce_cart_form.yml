@@ -1,4 +1,3 @@
-label: 'Cart form'
 display:
   default:
     display_title: Master
@@ -13,17 +12,16 @@ display:
       fields:
         purchased_entity:
           label: Item
-          separator: ', '
         unit_price__number:
           label: Price
-          separator: ', '
         edit_quantity:
           label: Quantity
         remove_button:
           label: Remove
         total_price__number:
           label: Total
-          separator: ', '
+        title_1:
+          label: Product
       arguments:
         order_id:
           exception:
