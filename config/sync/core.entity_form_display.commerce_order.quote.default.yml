@@ -7,8 +7,11 @@ dependencies:
     - field.field.commerce_order.quote.field_company_name
     - field.field.commerce_order.quote.field_contact_person
     - field.field.commerce_order.quote.field_desired_delivery_date
+    - field.field.commerce_order.quote.field_lost_comment
+    - field.field.commerce_order.quote.field_lost_reason
     - field.field.commerce_order.quote.field_phone
     - field.field.commerce_order.quote.field_project_description
+    - field.field.commerce_order.quote.field_quote_stage
   module:
     - commerce_order
     - datetime
@@ -113,6 +116,9 @@ content:
     third_party_settings: {  }
 hidden:
   customer_comments: true
+  field_lost_comment: true
+  field_lost_reason: true
+  field_quote_stage: true
   ip_address: true
   order_number: true
   state: true

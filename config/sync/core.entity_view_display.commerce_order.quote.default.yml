@@ -7,8 +7,11 @@ dependencies:
     - field.field.commerce_order.quote.field_company_name
     - field.field.commerce_order.quote.field_contact_person
     - field.field.commerce_order.quote.field_desired_delivery_date
+    - field.field.commerce_order.quote.field_lost_comment
+    - field.field.commerce_order.quote.field_lost_reason
     - field.field.commerce_order.quote.field_phone
     - field.field.commerce_order.quote.field_project_description
+    - field.field.commerce_order.quote.field_quote_stage
   module:
     - commerce_order
     - commerce_payment
@@ -178,6 +181,9 @@ hidden:
   balance: true
   changed: true
   coupons: true
+  field_lost_comment: true
+  field_lost_reason: true
+  field_quote_stage: true
   order_number: true
   store_id: true
   total_paid: true

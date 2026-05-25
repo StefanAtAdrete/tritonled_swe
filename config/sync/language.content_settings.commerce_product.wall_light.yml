@@ -1,0 +1,16 @@
+uuid: 43258ae9-6ca9-4603-9004-33edfee79775
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_type.wall_light
+  module:
+    - content_translation
+third_party_settings:
+  content_translation:
+    enabled: true
+id: commerce_product.wall_light
+target_entity_type_id: commerce_product
+target_bundle: wall_light
+default_langcode: site_default
+language_alterable: true

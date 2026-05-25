@@ -1,0 +1,21 @@
+uuid: 102545de-62c2-4716-b3a0-406101059d0b
+langcode: sv
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - options
+id: commerce_order.field_quote_stage
+field_name: field_quote_stage
+entity_type: commerce_order
+type: list_string
+settings:
+  allowed_values: {  }
+  allowed_values_function: ''
+module: options
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

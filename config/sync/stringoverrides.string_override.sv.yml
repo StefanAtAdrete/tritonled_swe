@@ -1,1 +1,7 @@
-contexts: {  }
+contexts:
+  -
+    context: ''
+    translations:
+      -
+        source: 'Add to cart'
+        translation: 'Begär offert'
