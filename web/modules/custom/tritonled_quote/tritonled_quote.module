@@ -2,6 +2,7 @@
 
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * @file
@@ -151,4 +152,92 @@ function tritonled_quote_mail($key, &$message, $params) {
 
   $message['subject'] = $params['subject'] ?? 'Offert skickad';
   $message['body'][] = $params['message'] ?? 'Din offert har skickats.';
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Shows a variant dropdown on quote add-to-cart forms for all product bundles
+ * except MAX/OPTI/SROW bundle, and preselects single-variant products.
+ */
+function tritonled_quote_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  if (strpos($form_id, 'commerce_order_item_add_to_cart_form_') !== 0) {
+    return;
+  }
+
+  $form_object = $form_state->getFormObject();
+  $order_item = $form_object ? $form_object->getEntity() : NULL;
+  if (!$order_item || $order_item->bundle() !== 'quote') {
+    return;
+  }
+
+  $product = $form_state->get('product');
+  if (!$product) {
+    return;
+  }
+
+  if (in_array($product->bundle(), ['led_luminaire_max_opti', 'led_luminaire_srow'], TRUE)) {
+    return;
+  }
+
+  if (empty($form['purchased_entity']['widget'][0]['variation'])) {
+    return;
+  }
+
+  $variations = $product->getVariations();
+  if (empty($variations)) {
+    return;
+  }
+
+  $options = [];
+  foreach ($variations as $variation) {
+    $variation_id = (string) $variation->id();
+    if ($variation_id === '') {
+      continue;
+    }
+    $sku = trim((string) $variation->getSku());
+    $variation_label = trim((string) $variation->label());
+    if ($sku !== '' && $variation_label !== '') {
+      $option_label = $sku . ' — ' . $variation_label;
+    }
+    elseif ($sku !== '') {
+      $option_label = $sku;
+    }
+    elseif ($variation_label !== '') {
+      $option_label = $variation_label;
+    }
+    else {
+      $option_label = 'Variant ' . $variation_id;
+    }
+    $options[$variation_id] = $option_label;
+  }
+
+  $default_variation = (string) ($form['purchased_entity']['widget'][0]['variation']['#value'] ?? '');
+  if ($default_variation === '' || !isset($options[$default_variation])) {
+    $default_variation = (string) array_key_first($options);
+  }
+
+  $form['purchased_entity']['widget'][0]['variation_selector'] = [
+    '#type' => 'select',
+    '#title' => 'Variant',
+    '#options' => $options,
+    '#default_value' => $default_variation,
+    '#weight' => -5,
+  ];
+
+  $form['#validate'][] = 'tritonled_quote_add_to_cart_variant_validate';
+}
+
+/**
+ * Validation callback for add-to-cart: map variant select to purchased_entity.
+ */
+function tritonled_quote_add_to_cart_variant_validate(array &$form, FormStateInterface $form_state) {
+  $selected = $form_state->getValue(['purchased_entity', 0, 'variation_selector']);
+  if (empty($selected)) {
+    return;
+  }
+
+  $selected = (string) $selected;
+  $form_state->setValue(['purchased_entity', 0, 'variation'], $selected);
+  $form_state->setValue(['purchased_entity', 0, 'target_id'], $selected);
 }
