@@ -1,0 +1,83 @@
+uuid: 3d1d735c-6445-4bea-b2b7-62f991927abb
+langcode: en
+status: true
+dependencies:
+  config:
+    - media.type.image
+  module:
+    - feeds
+    - media
+label: 'TritonLED Linear LED Media'
+id: tritonled_linear_led_media
+description: 'Imports linear LED image media assets from CSV (URL based).'
+help: ''
+import_period: -1
+import_period_per_feed: false
+fetcher: directory
+fetcher_configuration:
+  allowed_extensions: csv
+  directory: 'private://feeds/incoming'
+parser: csv
+parser_configuration:
+  delimiter: ','
+  no_headers: false
+  line_limit: 1000
+processor: 'entity:media'
+processor_configuration:
+  values:
+    bundle: image
+  langcode: en
+  insert_new: 1
+  update_existing: 2
+  update_non_existent: _keep
+  skip_hash_check: true
+  skip_validation: true
+  skip_validation_types: {  }
+  authorize: false
+  revision: false
+  expire: -1
+  owner_feed_author: false
+  owner_id: 1
+custom_sources:
+  image_url:
+    value: image_url
+    label: image_url
+    machine_name: image_url
+    type: csv
+  title_text:
+    value: title_text
+    label: title_text
+    machine_name: title_text
+    type: csv
+  status:
+    value: status
+    label: status
+    machine_name: status
+    type: csv
+mappings:
+  -
+    target: name
+    map:
+      value: title_text
+    settings:
+      language: en
+    unique: {  }
+  -
+    target: field_media_image
+    map:
+      target_id: image_url
+      alt: title_text
+      title: title_text
+    settings:
+      language: en
+      file_exists: 'use existing'
+      move: false
+    unique:
+      target_id: 1
+  -
+    target: status
+    map:
+      value: status
+    settings:
+      language: null
+    unique: {  }
