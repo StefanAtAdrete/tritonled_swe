@@ -24,20 +24,109 @@ export function loadEnvFiles() {
 // Load environment variables before creating config.
 loadEnvFiles();
 
+/** Defaults for provider-based font resolution (weights, styles, subsets). */
+export interface FontDefaults {
+  weights?: string[];
+  styles?: string[];
+  subsets?: string[];
+}
+
+/** Provider-specific options (e.g. Adobe kit ID). */
+export interface FontProviderOptions {
+  adobe?: { id: string[] };
+}
+
+/** Per-axis default value override (axis tag -> number). Used for variable fonts. */
+export type FontAxisDefaults = Record<string, number>;
+
+/** Shared fields for all font family entries. */
+interface FontFamilyEntryBase {
+  name: string;
+  weights?: string[];
+  styles?: string[];
+  /** Optional axis default overrides for variable fonts (e.g. { "wght": 500 }). Clamped to axis min/max. */
+  axisDefaults?: FontAxisDefaults;
+}
+
+/** Font family entry for a local file. */
+export interface LocalFontFamilyEntry extends FontFamilyEntryBase {
+  src: string;
+  provider?: never;
+  subsets?: never;
+}
+
+/** Font family entry for a provider-based font. */
+export interface ProviderFontFamilyEntry extends FontFamilyEntryBase {
+  provider?: 'google' | 'bunny' | 'fontshare' | 'fontsource' | 'npm' | 'adobe';
+  src?: never;
+  /** Subsets to request from the provider (e.g. ['latin', 'cyrillic']). */
+  subsets?: string[];
+}
+
+/** A single font family entry in canvas.brand-kit.json families. */
+export type FontFamilyEntry = LocalFontFamilyEntry | ProviderFontFamilyEntry;
+
+export interface FontsConfig {
+  defaults?: FontDefaults;
+  families: FontFamilyEntry[];
+  providers?: FontProviderOptions;
+}
+
 export interface Config {
   siteUrl: string;
   clientId: string;
   clientSecret: string;
   scope: string;
   userAgent: string;
+  includePages: boolean;
+  includeContentTemplates: boolean;
+  includeBrandKit: boolean;
   all?: boolean;
   // The following properties are loaded from canvas.config.json.
   aliasBaseDir: string;
   outputDir: string;
   componentDir: string;
   pagesDir: string;
+  contentTemplatesDir: string;
   deprecatedComponentDir: string;
   globalCssPath: string;
+  fonts?: FontsConfig;
+}
+
+/** Filename for Brand Kit (font) configuration in the project root. */
+export const BRAND_KIT_CONFIG_FILENAME = 'canvas.brand-kit.json';
+
+/** Global Brand Kit id used by the CLI for font sync (single site-wide kit). */
+export const BRAND_KIT_GLOBAL_ID = 'global';
+
+/** Top-level shape of canvas.brand-kit.json (fonts and future brand kit keys). */
+export interface BrandKitConfigFile {
+  fonts?: FontsConfig;
+}
+
+function loadFontsFromBrandKitFile(hostRoot: string): FontsConfig | undefined {
+  const configPath = path.resolve(hostRoot, BRAND_KIT_CONFIG_FILENAME);
+  if (!fs.existsSync(configPath)) {
+    return undefined;
+  }
+  const raw = fs.readFileSync(configPath, 'utf-8');
+  let parsed: BrandKitConfigFile;
+  try {
+    parsed = JSON.parse(raw) as BrandKitConfigFile;
+  } catch (err) {
+    const message =
+      err instanceof SyntaxError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : String(err);
+    throw new Error(`Invalid JSON in ${BRAND_KIT_CONFIG_FILENAME}: ${message}`);
+  }
+  const fonts = parsed?.fonts;
+  if (fonts && typeof fonts === 'object' && Array.isArray(fonts.families)) {
+    return fonts;
+  }
+  return undefined;
 }
 
 const {
@@ -45,24 +134,114 @@ const {
   outputDir,
   componentDir,
   pagesDir,
+  contentTemplatesDir,
   deprecatedComponentDir,
   globalCssPath,
 } = resolveCanvasConfig({ hostRoot: process.cwd() });
+
+export const DEFAULT_INCLUDE_PAGES = false;
+export const DEFAULT_INCLUDE_CONTENT_TEMPLATES = false;
+export const DEFAULT_INCLUDE_BRAND_KIT = false;
+
+const BASE_SCOPE =
+  'canvas:js_component canvas:asset_library canvas:media:image:create canvas:media:view';
+
+export function parseBooleanSetting(value: string): boolean | undefined {
+  const normalizedValue = value.trim().toLowerCase();
+
+  if (['1', 'true', 'yes', 'on'].includes(normalizedValue)) {
+    return true;
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(normalizedValue)) {
+    return false;
+  }
+
+  return undefined;
+}
+
+export function getDefaultScope(
+  includePages: boolean,
+  includeBrandKit: boolean = false,
+  includeContentTemplates: boolean = false,
+): string {
+  const parts = [BASE_SCOPE];
+  if (includePages) {
+    parts.push('canvas:page:create canvas:page:read canvas:page:edit');
+  }
+  if (includeContentTemplates) {
+    parts.push('canvas:content_template');
+  }
+  if (includeBrandKit) {
+    parts.push('canvas:brand_kit');
+  }
+  return parts.join(' ');
+}
+
+export function usesManagedDefaultScope(scope: string): boolean {
+  if (scope.length === 0) return true;
+  const tokens = new Set(scope.split(/\s+/));
+  const baseTokens = BASE_SCOPE.split(/\s+/);
+  const optionalTokens = [
+    'canvas:page:create',
+    'canvas:page:read',
+    'canvas:page:edit',
+    'canvas:content_template',
+    'canvas:brand_kit',
+  ];
+  for (const token of baseTokens) {
+    if (!tokens.has(token)) return false;
+    tokens.delete(token);
+  }
+  for (const token of tokens) {
+    if (!optionalTokens.includes(token)) return false;
+  }
+  return true;
+}
+
+function getEnvBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return parseBooleanSetting(value) ?? fallback;
+}
+
+const includePages = getEnvBoolean(
+  process.env.CANVAS_INCLUDE_PAGES,
+  DEFAULT_INCLUDE_PAGES,
+);
+
+const includeContentTemplates = getEnvBoolean(
+  process.env.CANVAS_INCLUDE_CONTENT_TEMPLATES,
+  DEFAULT_INCLUDE_CONTENT_TEMPLATES,
+);
+
+const includeBrandKit = getEnvBoolean(
+  process.env.CANVAS_INCLUDE_BRAND_KIT,
+  DEFAULT_INCLUDE_BRAND_KIT,
+);
 
 let config: Config = {
   siteUrl: process.env.CANVAS_SITE_URL || '',
   clientId: process.env.CANVAS_CLIENT_ID || '',
   clientSecret: process.env.CANVAS_CLIENT_SECRET || '',
-  scope: process.env.CANVAS_SCOPE || 'canvas:js_component canvas:asset_library',
+  scope:
+    process.env.CANVAS_SCOPE ||
+    getDefaultScope(includePages, includeBrandKit, includeContentTemplates),
   userAgent: process.env.CANVAS_USER_AGENT || '',
+  includePages,
+  includeContentTemplates,
+  includeBrandKit,
   aliasBaseDir: aliasBaseDir,
   outputDir: outputDir,
   componentDir: componentDir,
   pagesDir: pagesDir,
-  // We need this because the old commands use './components' as a default
-  // but the new componentDir that supports flexible codebases defaults to process.cwd().
+  contentTemplatesDir: contentTemplatesDir,
+  // We need this because the old commands use './components' as a default.
   deprecatedComponentDir: deprecatedComponentDir,
   globalCssPath: globalCssPath,
+  fonts: loadFontsFromBrandKitFile(process.cwd()),
 };
 
 export function getConfig(): Config {
@@ -73,29 +252,21 @@ export function setConfig(newConfig: Partial<Config>): void {
   config = { ...config, ...newConfig };
 }
 
-let legacyComponentDirMigrationHandled = false;
-
 interface LegacyMigrationOptions {
   skipPrompt?: boolean;
 }
 
 /**
- * Detects legacy CANVAS_COMPONENT_DIR usage and helps users migrate to
- * canvas.config.json.
+ * Ensures that canvas.config.json has a componentDir defined.
+ *
+ * Resolution order:
+ * 1. canvas.config.json has componentDir — done
+ * 2. CANVAS_COMPONENT_DIR env var — use it with deprecation warning, offer to persist
+ * 3. None — prompt to create canvas.config.json (or show instructions if non-interactive)
  */
 export async function handleLegacyComponentDirMigration(
   options: LegacyMigrationOptions = {},
 ): Promise<void> {
-  if (legacyComponentDirMigrationHandled) {
-    return;
-  }
-  legacyComponentDirMigrationHandled = true;
-
-  const legacyComponentDir = process.env.CANVAS_COMPONENT_DIR?.trim();
-  if (!legacyComponentDir) {
-    return;
-  }
-
   const configPath = path.resolve(process.cwd(), 'canvas.config.json');
   const hasConfigFile = fs.existsSync(configPath);
 
@@ -125,15 +296,19 @@ export async function handleLegacyComponentDirMigration(
     return;
   }
 
-  p.log.warn(
-    'CANVAS_COMPONENT_DIR is deprecated for component directory configuration. Use componentDir in canvas.config.json instead.',
-  );
+  const legacyComponentDir =
+    process.env.CANVAS_COMPONENT_DIR?.trim() || 'src/components';
 
-  // Preserve behavior for the current run while migration is in progress.
-  setConfig({
-    componentDir: legacyComponentDir,
-    deprecatedComponentDir: legacyComponentDir,
-  });
+  if (process.env.CANVAS_COMPONENT_DIR) {
+    p.log.warn(
+      'CANVAS_COMPONENT_DIR is deprecated. Set "componentDir" in canvas.config.json instead.',
+    );
+    // Preserve behavior for the current run.
+    setConfig({
+      componentDir: legacyComponentDir,
+      deprecatedComponentDir: legacyComponentDir,
+    });
+  }
 
   if (configParseError) {
     p.log.warn(
@@ -149,23 +324,24 @@ export async function handleLegacyComponentDirMigration(
     return;
   }
 
-  const shouldWriteConfig = await p.confirm({
+  const componentDir = await p.text({
     message: hasConfigFile
-      ? `Add "componentDir": "${legacyComponentDir}" to canvas.config.json?`
-      : `Create canvas.config.json with "componentDir": "${legacyComponentDir}"?`,
-    initialValue: true,
+      ? 'canvas.config.json is missing "componentDir". Enter the component directory:'
+      : 'No canvas.config.json found. Enter the component directory:',
+    defaultValue: legacyComponentDir,
+    placeholder: legacyComponentDir,
   });
 
-  if (p.isCancel(shouldWriteConfig) || !shouldWriteConfig) {
-    p.log.info(
-      `Skipped config update. You can set "componentDir": "${legacyComponentDir}" in canvas.config.json later.`,
+  if (p.isCancel(componentDir)) {
+    p.cancel(
+      'No component directory configured. Use --dir <directory> or set "componentDir" in canvas.config.json.',
     );
-    return;
+    process.exit(1);
   }
 
   const nextConfig = hasConfigFile
-    ? { ...(parsedConfig ?? {}), componentDir: legacyComponentDir }
-    : { componentDir: legacyComponentDir };
+    ? { ...(parsedConfig ?? {}), componentDir }
+    : { componentDir };
 
   fs.writeFileSync(
     configPath,
@@ -173,10 +349,7 @@ export async function handleLegacyComponentDirMigration(
     'utf-8',
   );
   p.log.info('Updated canvas.config.json with componentDir.');
-}
-
-export function resetLegacyComponentDirMigrationForTests(): void {
-  legacyComponentDirMigrationHandled = false;
+  setConfig({ componentDir });
 }
 
 export type ConfigKey = keyof Config;

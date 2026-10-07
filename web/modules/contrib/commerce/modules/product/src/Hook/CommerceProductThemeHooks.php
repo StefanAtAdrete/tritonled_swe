@@ -152,9 +152,9 @@ class CommerceProductThemeHooks {
   }
 
   /**
-   * Implements hook_theme_suggestions_commerce_product_commerce_product_attribute_value().
+   * Implements hook_theme_suggestions_commerce_product_attribute_value().
    */
-  #[Hook('commerce_product_commerce_product_attribute_value')]
+  #[Hook('theme_suggestions_commerce_product_attribute_value')]
   public function themeSuggestionsCommerceProductAttributeValue(array $variables): array {
     return _commerce_entity_theme_suggestions('commerce_product_attribute_value', $variables);
   }

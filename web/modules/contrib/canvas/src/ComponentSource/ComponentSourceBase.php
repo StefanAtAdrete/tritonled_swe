@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\ComponentSource;
 
+use Drupal\canvas\Entity\Component;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Config\Schema\Mapping;
 use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Plugin\ContextAwarePluginAssignmentTrait;
 use Drupal\Core\Plugin\ContextAwarePluginTrait;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
 
 /**
  * @internal
@@ -124,50 +127,6 @@ abstract class ComponentSourceBase extends PluginBase implements ComponentSource
   }
 
   /**
-   * Returns the plugin dependencies being removed.
-   *
-   * The function recursively computes the intersection between all plugin
-   * dependencies and all removed dependencies.
-   *
-   * Note: The two arguments do not have the same structure.
-   *
-   * @param array[] $plugin_dependencies
-   *   A list of dependencies having the same structure as the return value of
-   *   ConfigEntityInterface::calculateDependencies().
-   * @param array[] $removed_dependencies
-   *   A list of dependencies having the same structure as the input argument of
-   *   ConfigEntityInterface::onDependencyRemoval().
-   *
-   * @return array
-   *   A recursively computed intersection.
-   *
-   * @see \Drupal\Core\Config\Entity\ConfigEntityInterface::calculateDependencies()
-   * @see \Drupal\Core\Config\Entity\ConfigEntityInterface::onDependencyRemoval()
-   * @see \Drupal\Core\Entity\EntityDisplayBase::getPluginRemovedDependencies()
-   * @todo Remove this verbatim copy of \Drupal\Core\Entity\EntityDisplayBase::getPluginRemovedDependencies() and move it to a trait in Drupal core.
-   */
-  protected function getPluginRemovedDependencies(array $plugin_dependencies, array $removed_dependencies) {
-    $intersect = [];
-    foreach ($plugin_dependencies as $type => $dependencies) {
-      if (\array_key_exists($type, $removed_dependencies) && $removed_dependencies[$type]) {
-        // Config and content entities have the dependency names as keys while
-        // module and theme dependencies are indexed arrays of dependency names.
-        // @see \Drupal\Core\Config\ConfigManager::callOnDependencyRemoval()
-        if (\in_array($type, ['config', 'content'], TRUE)) {
-          $removed = array_intersect_key($removed_dependencies[$type], array_flip($dependencies));
-        }
-        else {
-          $removed = array_values(array_intersect($removed_dependencies[$type], $dependencies));
-        }
-        if ($removed) {
-          $intersect[$type] = $removed;
-        }
-      }
-    }
-    return $intersect;
-  }
-
-  /**
    * Gets information about the explicit inputs.
    *
    * @return array<string, mixed>
@@ -178,6 +137,30 @@ abstract class ComponentSourceBase extends PluginBase implements ComponentSource
    *   - …
    */
   abstract protected function getExplicitInputDefinitions(): array;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getResolvedExplicitInput(string $uuid, ComponentTreeItem $item, ?FieldableEntityInterface $host_entity = NULL): array {
+    $explicit_input = $this->getExplicitInput($uuid, $item, $host_entity);
+    $component = $item->getComponent();
+    \assert($component instanceof Component);
+    $required_props_with_default_values_in_current_implementation = $component
+      ->loadVersion($component->getActiveVersion())
+      ->getComponentSource()
+      ->getDefaultExplicitInput(only_required: TRUE);
+    // Avoid side effects.
+    $component->loadVersion($item->getComponentVersion());
+
+    return $this->hydrateComponent(
+      explicit_input: $explicit_input,
+      slot_definitions: [],
+      // Return the stored explicit input, populating values for required
+      // explicit inputs in the active version of the Component (i.e. the live
+      // implementation).
+      active_required_explicit_inputs: $required_props_with_default_values_in_current_implementation,
+    );
+  }
 
   /**
    * {@inheritdoc}

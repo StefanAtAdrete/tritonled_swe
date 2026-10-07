@@ -462,3 +462,12 @@ function photoswipe_update_9011() {
     ->set('options.showHideAnimationType', 'zoom')
     ->save();
 }
+
+/**
+ * Add download button tooltip setting.
+ */
+function photoswipe_update_9012() {
+  \Drupal::configFactory()->getEditable('photoswipe.settings')
+    ->set('options.downloadTitle', 'Download')
+    ->save();
+}

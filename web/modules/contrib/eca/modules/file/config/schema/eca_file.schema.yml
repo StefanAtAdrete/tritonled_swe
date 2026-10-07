@@ -1,3 +1,7 @@
+eca.event.plugin.file:download:
+  type: eca.event.plugin
+  label: 'File download'
+
 action.configuration.eca_file_rename:
   type: mapping
   label: 'Configuration for the "File Rename" action'
@@ -11,7 +15,7 @@ action.configuration.eca_file_rename:
       type: string
       label: 'Behavior'
       constraints:
-        Choice:
+        EcaChoice:
           callback: '\Drupal\eca_file\Plugin\Action\FileRename::getAllValidFileBehaviors'
         NotBlank: []
     object:

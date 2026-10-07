@@ -89,6 +89,105 @@ class ComponentTreeItemListTest extends CanvasKernelTestBase {
   }
 
   /**
+   * Tests ::getTranslatableInputKeys() scenarios across entity types.
+   *
+   * Tests only edge case scenarios: invalid component trees. This ensures that
+   * ::getTranslatableInputKeys() always returns a sensible result, even when
+   * translating an invalid component tree — which could occur e.g. for an
+   * auto-saved version of it.
+   *
+   * These are source-agnostic. Non-edge case scenarios are tested for each
+   * component source.
+   *
+   * @see \Drupal\canvas\ComponentSource\ComponentInstanceInputsConfigSchemaGeneratorInterface
+   * @see \Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource\ComponentSourceTestBase::testGetTranslatableInputKeys()
+   * @legacy-covers \Drupal\canvas\Plugin\DataType\ComponentInputs::getTranslatableInputKeys()
+   */
+  #[DataProvider('hostEntityProvider')]
+  public function testGetTranslatableInputKeysSourceAgnosticEdgeCases(string $host_entity_type_id, array $host_entity_values): void {
+    // Content templates require nodes to exist, the full view mode, and >=1
+    // bundle.
+    if ($host_entity_type_id === ContentTemplate::ENTITY_TYPE_ID) {
+      $this->enableModules(['node', 'field']);
+      $this->installConfig(['node']);
+      NodeType::create(['type' => 'article', 'name' => 'Article'])->save();
+    }
+
+    // Simulate the expected host entity containing this component tree exists,
+    // without actually creating (and saving) the host entity.
+    $host_entity = match ($host_entity_type_id) {
+      Page::ENTITY_TYPE_ID => Page::create($host_entity_values)->enforceIsNew(FALSE),
+      PageRegion::ENTITY_TYPE_ID => PageRegion::create($host_entity_values),
+      Pattern::ENTITY_TYPE_ID => Pattern::create($host_entity_values),
+      ContentTemplate::ENTITY_TYPE_ID => ContentTemplate::create($host_entity_values),
+      default => throw new \LogicException("Unhandled host entity type ID $host_entity_type_id in " . __METHOD__),
+    };
+    if ($host_entity instanceof ContentEntityInterface) {
+      $this->installEntitySchema($host_entity_type_id);
+    }
+
+    $get_translatable_input_keys = function (string $component_instance_uuid) use ($host_entity): ?array {
+      return $host_entity->getComponentTree()
+        ->getComponentTreeItemByUuid($component_instance_uuid)
+        ?->get('inputs')
+          ->getTranslatableInputKeys();
+    };
+
+    // Scenario 1: Non-existent Component.
+    // Should robustly return [] without crashing.
+    $host_entity->setComponentTree([
+      [
+        'uuid' => 'd6f7e5f2-b3c1-5d0f-9e2f-b9d8e4f0c3f5',
+        'component_id' => 'nonexistent.component.id',
+        'component_version' => 'abc123',
+        'inputs' => ['key' => 'value'],
+      ],
+    ]);
+    $this->assertSame(
+      [],
+      $get_translatable_input_keys('d6f7e5f2-b3c1-5d0f-9e2f-b9d8e4f0c3f5'),
+      'Scenario 1: Non-existent Component should return empty array (robustness principle).'
+    );
+
+    // Scenario 2: Invalid component version (falls back to active).
+    // Use a valid component but an invalid version string.
+    $host_entity->setComponentTree([
+      [
+        'uuid' => 'e7f8f6f3-c4d2-5e1f-0f3f-c0e9f5f1d4f6',
+        'component_id' => 'sdc.canvas_test_sdc.my-cta',
+        'component_version' => 'invalid_version_xyz',
+        'inputs' => [
+          'text' => 'Some text',
+          'href' => ['uri' => 'https://example.com', 'options' => []],
+        ],
+      ],
+    ]);
+    // Should fall back to active version and return same keys as Scenario 1.
+    $this->assertSame(
+      ['text', 'href'],
+      $get_translatable_input_keys('e7f8f6f3-c4d2-5e1f-0f3f-c0e9f5f1d4f6'),
+      'Scenario 2: Invalid version should fall back to active version and return same translatable keys.'
+    );
+
+    // Scenario 3: Malformed/NULL inputs (treated as empty for refinement).
+    // The method should handle NULL inputs gracefully and return the component version's translatable keys.
+    $host_entity->setComponentTree([
+      [
+        'uuid' => 'f8f9f7f4-d5e3-5f2f-1f4f-d1f0f6f2e5f7',
+        'component_id' => 'sdc.canvas_test_sdc.my-cta',
+        'component_version' => '89881c04a0fde367',
+        'inputs' => [],
+      ],
+    ]);
+    // With empty inputs, all props that are translatable by definition should be returned.
+    $this->assertSame(
+      ['text', 'href'],
+      $get_translatable_input_keys('f8f9f7f4-d5e3-5f2f-1f4f-d1f0f6f2e5f7'),
+      'Scenario 3: Empty inputs should return all translatable props for the component version.'
+    );
+  }
+
+  /**
    * Tests hydration and rendering.
    *
    * @legacy-covers ::getHydratedTree
@@ -127,7 +226,7 @@ class ComponentTreeItemListTest extends CanvasKernelTestBase {
       ContentTemplate::ENTITY_TYPE_ID => ContentTemplate::create($host_entity_values),
       default => throw new \LogicException("Unhandled host entity type ID $host_entity_type_id in " . __METHOD__),
     };
-    self::populateActiveComponentVersionPlaceholders($value);
+    $value = self::populateActiveComponentVersionPlaceholders($value);
     $host_entity->setComponentTree($value);
 
     $typed_data_manager = $this->container->get(TypedDataManagerInterface::class);
@@ -145,7 +244,6 @@ class ComponentTreeItemListTest extends CanvasKernelTestBase {
 
     // Every test case must be valid on its own.
     $violations = $item_list->validate();
-    // @phpcs:ignore Canvas.Tests.KernelTestBase.RequireAssertEntityIsValid
     $this->assertSame([], self::violationsToArray($violations));
 
     // The test case (a component tree) must also result in a valid entity that
@@ -1396,16 +1494,16 @@ HTML,
 <!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1"
       component-url="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js"
       component-export="default"
-      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js"
+      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
       props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
       ssr="" client="only"
-      opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
+      opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
       component-url="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js"
       component-export="default"
-      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js"
+      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
       props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
       ssr="" client="only"
-      opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
+      opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
   <h1 style="font-size: 3em; margin: 0.5em 0; color: #333;"><!-- canvas-prop-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading -->Clurichaun<!-- canvas-prop-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading --></h1>
 </div>
 <!-- canvas-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><!-- canvas-slot-end-e0b92f23-c177-4196-8fa4-3e837f99a357/the_body -->
@@ -1550,16 +1648,16 @@ HTML,
      <!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1"
           component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta"
           component-export="default"
-          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js"
+          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
           props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
           ssr="" client="only"
-          opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
+          opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
           component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save"
           component-export="default"
-          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js"
+          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
           props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
           ssr="" client="only"
-          opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save - Draft&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
+          opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save - Draft&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
       <h1 style="font-size: 3em; margin: 0.5em 0; color: #333;"><!-- canvas-prop-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading -->Clurichaun<!-- canvas-prop-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading --></h1>
      </div>
      <!-- canvas-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><!-- canvas-slot-end-e0b92f23-c177-4196-8fa4-3e837f99a357/the_body -->

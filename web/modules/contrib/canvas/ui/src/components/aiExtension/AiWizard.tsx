@@ -755,7 +755,7 @@ const AiWizard = () => {
         </Flex>
         <DeepChat
           ref={chatElementRef}
-          history={chatHistory}
+          history={chatHistory.length > 0 ? chatHistory : undefined}
           images={{
             files: {
               acceptedFormats: '.jpg, .png, .jpeg',
@@ -992,7 +992,6 @@ const AiWizard = () => {
           style={{
             width: '283px',
             height: '100%',
-            border: 'none',
           }}
           messageStyles={{
             default: {
@@ -1064,6 +1063,9 @@ const AiWizard = () => {
             },
           }}
           auxiliaryStyle="
+          :host {
+            border: none !important;
+          }
           .aiLoader, .aiCompletedIcon {
             display: inline-block;
             box-sizing: border-box;

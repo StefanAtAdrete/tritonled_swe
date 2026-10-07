@@ -5,6 +5,7 @@ namespace Drupal\ai_agents\PluginManager;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Utility\Token;
@@ -55,6 +56,8 @@ class AiAgentManager extends DefaultPluginManager {
    *   The artifact helper service.
    * @param \Drupal\Component\Uuid\UuidInterface $uuid
    *   The UUID service.
+   * @param \Drupal\Core\Logger\LoggerChannelInterface $logger
+   *   The logger channel.
    */
   public function __construct(
     \Traversable $namespaces,
@@ -69,6 +72,7 @@ class AiAgentManager extends DefaultPluginManager {
     protected AiProviderPluginManager $aiProviderPluginManager,
     protected ArtifactHelper $artifactHelper,
     protected UuidInterface $uuid,
+    protected LoggerChannelInterface $logger,
   ) {
     parent::__construct(
       'Plugin/AiAgent',
@@ -110,6 +114,7 @@ class AiAgentManager extends DefaultPluginManager {
         $this->aiProviderPluginManager,
         $this->artifactHelper,
         $this->uuid,
+        $this->logger,
       );
       return $instance;
     }

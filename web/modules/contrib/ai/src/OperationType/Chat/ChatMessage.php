@@ -269,7 +269,7 @@ class ChatMessage {
       // @todo find out if this can be changed to 'files'
       'images' => $images,
       'tools' => $this->tools ? $this->getRenderedTools() : NULL,
-      'tool_id' => $this->toolId ?? NULL,
+      'tool_id' => $this->toolId,
     ];
   }
 

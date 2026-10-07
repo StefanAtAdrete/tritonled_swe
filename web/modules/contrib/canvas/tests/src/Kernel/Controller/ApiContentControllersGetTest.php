@@ -115,6 +115,7 @@ class ApiContentControllersGetTest extends CanvasKernelTestBase {
         'autoSaveLabel' => NULL,
         'autoSavePath' => NULL,
         'components' => [],
+        'description' => '',
         'links' => [
           CanvasUriDefinitions::LINK_REL_UNPUBLISH => '/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_EDIT => '/canvas/editor/canvas_page/1',
@@ -176,6 +177,7 @@ class ApiContentControllersGetTest extends CanvasKernelTestBase {
             'component_version' => '85a5c0c7dd53e0bb',
             'inputs' => ['heading' => 'Welcome'],
             'label' => NULL,
+            'inputs_resolved' => ['heading' => 'Welcome'],
           ],
           [
             'parent_uuid' => '09365c2d-1ee1-47fd-b5a3-7e4f34866186',
@@ -185,8 +187,10 @@ class ApiContentControllersGetTest extends CanvasKernelTestBase {
             'component_version' => '85a5c0c7dd53e0bb',
             'inputs' => ['heading' => 'Nested'],
             'label' => NULL,
+            'inputs_resolved' => ['heading' => 'Nested'],
           ],
         ],
+        'description' => '',
         'links' => [
           CanvasUriDefinitions::LINK_REL_UNPUBLISH => '/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_EDIT => '/canvas/editor/canvas_page/1',

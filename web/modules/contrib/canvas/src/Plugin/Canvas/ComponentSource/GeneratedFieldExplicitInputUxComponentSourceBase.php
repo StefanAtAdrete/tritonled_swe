@@ -7,13 +7,13 @@ namespace Drupal\canvas\Plugin\Canvas\ComponentSource;
 use Drupal\canvas\InvalidComponentInputsPropSourceException;
 use Drupal\canvas\Entity\ContentTemplate;
 use Drupal\canvas\PropSource\EntityFieldPropSource;
+use Drupal\canvas\PropSource\LinkedPropSourceInterface;
 use Drupal\canvas\PropExpressions\StructuredData\ObjectPropExpressionInterface;
 use Drupal\canvas\PropExpressions\StructuredData\ReferencePropExpressionInterface;
 use Drupal\canvas\PropShape\PropShapeRepositoryInterface;
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
 use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
 use Drupal\canvas\ShapeMatcher\PropSourceSuggester;
-use Drupal\canvas\PropSource\HostEntityUrlPropSource;
 use Drupal\canvas\Utility\ComponentMetadataHelper;
 use Drupal\Component\Assertion\Inspector;
 use Drupal\Component\Plugin\DependentPluginInterface;
@@ -166,7 +166,10 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
     \assert(\array_key_exists('prop_field_definitions', $this->configuration));
     \assert(\is_array($this->configuration['prop_field_definitions']));
     $dependencies = [];
-    foreach ($this->configuration['prop_field_definitions'] as $prop_name => ['field_type' => $field_type, 'field_widget' => $field_widget]) {
+    foreach ($this->configuration['prop_field_definitions'] as $prop_name => [
+      'field_type' => $field_type,
+      'field_widget' => $field_widget,
+    ]) {
       $field_widget_definition = $this->fieldWidgetPluginManager->getDefinition($field_widget);
       $dependencies['module'][] = $field_widget_definition['provider'];
       $prop_source = $this->getDefaultStaticPropSource($prop_name, FALSE);
@@ -193,8 +196,10 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
    *
    * @return \Drupal\canvas\PropSource\StaticPropSource
    *   The prop source object.
+   *
+   * @internal
    */
-  private function getDefaultStaticPropSource(string $prop_name, bool $validate_prop_name): StaticPropSource {
+  public function getDefaultStaticPropSource(string $prop_name, bool $validate_prop_name): StaticPropSource {
     if ($validate_prop_name && !\array_key_exists($prop_name, $this->getMetadata()->schema['properties'] ?? [])) {
       throw new \OutOfRangeException(\sprintf("'%s' is not a prop on the code powering the component '%s'.", $prop_name, $this->getComponentDescription()));
     }
@@ -253,8 +258,10 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
 
   /**
    * {@inheritdoc}
+   *
+   * @return array{'required': string[], 'shapes': array<string, array>}
    */
-  protected function getExplicitInputDefinitions(): array {
+  public function getExplicitInputDefinitions(): array {
     // Use the referenced Component version to determine required props.
     $required = \array_keys(\array_filter($this->configuration['prop_field_definitions'], static fn (array $definition) => $definition['required'] ?? FALSE));
     $prop_shapes = self::getComponentInputsForMetadata($this->getSourceSpecificComponentId(), $this->getMetadata());
@@ -335,6 +342,15 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
   /**
    * {@inheritdoc}
    */
+  public function getResolvedExplicitInput(string $uuid, ComponentTreeItem $item, ?FieldableEntityInterface $host_entity = NULL): array {
+    $hydrated_inputs = parent::getResolvedExplicitInput($uuid, $item, $host_entity);
+    \assert(\array_key_exists(self::EXPLICIT_INPUT_NAME, $hydrated_inputs));
+    return $hydrated_inputs[self::EXPLICIT_INPUT_NAME];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getExplicitInput(string $uuid, ComponentTreeItem $item, ?FieldableEntityInterface $host_entity = NULL): array {
     if (!$this->requiresExplicitInput()) {
       return [
@@ -361,6 +377,24 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
     };
 
     $values = $item->getInputs() ?? [];
+
+    // Populate missing multivalue properties as empty arrays
+    if (isset($this->configuration['prop_field_definitions'])) {
+      foreach ($this->configuration['prop_field_definitions'] as $prop_name => $definition) {
+        // Skip if already present in inputs
+        if (\array_key_exists($prop_name, $values)) {
+          continue;
+        }
+        // Check if this is a multivalue field.
+        $cardinality = $definition['cardinality'] ?? 1;
+        if ($cardinality === -1 || $cardinality > 1) {
+          // Represent the absence of values as an empty array.
+          $values[$prop_name] = $this->getDefaultStaticPropSource($prop_name, FALSE)->toArray();
+          $values[$prop_name]['value'] = [];
+        }
+      }
+    }
+
     $resolved_values = [];
     foreach ($values as $prop => $input) {
       $values[$prop] = $this->uncollapse($input, $prop)->toArray();
@@ -573,12 +607,14 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
     // @see ::getExplicitInputDefinitions()
     $required_props = \array_keys(\array_filter($prop_field_definitions, static fn (array $definition) => $definition['required'] ?? FALSE));
     foreach ($inputValues as $component_prop_name => $raw_prop_source) {
-      $raw_prop_source = $this->uncollapse($raw_prop_source, $component_prop_name)->toArray();
+      $source = $this->uncollapse($raw_prop_source, $component_prop_name);
+      $raw_prop_source = $source->toArray();
       // Store the expanded prop source with all the values populated from the
       // composite field type.
       $inputValues[$component_prop_name] = $raw_prop_source;
 
       if (str_starts_with($raw_prop_source['sourceType'], 'static:')) {
+        \assert($source instanceof StaticPropSource);
         try {
           \assert(\array_key_exists('expression', $raw_prop_source) && \array_key_exists('value', $raw_prop_source) && \array_key_exists('sourceType', $raw_prop_source));
           StaticPropSource::isMinimalRepresentation($raw_prop_source);
@@ -591,9 +627,18 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
           // In other words: let a prop source being emptier than it portrays
           // result in the appropriate validation errors at the component level.
           // @see \Drupal\canvas\PropSource\StaticPropSource::withValue(allow_empty: TRUE)
-          // @todo Expand to support multiple-cardinality.
-          unset($inputValues[$component_prop_name]);
-          continue;
+          // If a StaticPropSource's field item list is empty, consider it not
+          // set at all.
+          // Note: this catch only fires when value contains items the field
+          // type considers empty (e.g. [10, NULL, 20]). A fully empty array
+          // (value: []) never reaches here — isMinimalRepresentation() passes
+          // it unchanged (before and after filterEmptyItems() both equal 0),
+          // so [] flows through to ComponentValidator and is validated against
+          // the JSON Schema directly.
+          if ($source->isEmpty()) {
+            unset($inputValues[$component_prop_name]);
+            continue;
+          }
         }
         catch (\LogicException $e) {
           $violations->add(new ConstraintViolation(
@@ -782,7 +827,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
         ));
       }
       $disabled = FALSE;
-      $linked_prop_source = ($source instanceof EntityFieldPropSource || $source instanceof HostEntityUrlPropSource) ? $source : NULL;
+      $linked_prop_source = $source instanceof LinkedPropSourceInterface ? $source : NULL;
       if (!$source instanceof StaticPropSource) {
         // @todo Build EntityFieldPropSource UX in https://www.drupal.org/i/3541037. Related: https://www.drupal.org/project/canvas/issues/3459234
         // @todo Design is undefined for the AdaptedPropSource UX.
@@ -797,6 +842,19 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
       $description = $component_schema['properties'][$sdc_prop_name]['description'] ?? NULL;
       $widget = $source->getWidget($component->id(), $component->getLoadedVersion(), $sdc_prop_name, $label, $field_widget_plugin_id, $description);
       $is_required = $static_prop_source_field_definition['required'];
+      // For array props: JSON Schema `required: [prop]` means "the key must be
+      // present" — it does NOT enforce ≥1 items. Only `minItems: 1` does that.
+      // Drupal's setRequired(TRUE) enforces ≥1 value (displaying the required
+      // asterisk and preventing the user from removing the last item in the
+      // UI). Passing $is_required=TRUE for a required array without minItems: 1
+      // would over-enforce: the user couldn't remove all items even though the
+      // JSON Schema allows an empty array. So only mark array props as
+      // Drupal-required when minItems: 1 is explicitly set.
+      // @see https://www.drupal.org/project/canvas/issues/3516754
+      $prop_schema = $component_schema['properties'][$sdc_prop_name] ?? [];
+      if ($is_required && ($prop_schema['type'] ?? NULL) === 'array' && ($prop_schema['minItems'] ?? 0) < 1) {
+        $is_required = FALSE;
+      }
       $form[$sdc_prop_name] = $source->formTemporaryRemoveThisExclamationExclamationExclamation($widget, $sdc_prop_name, $is_required, $entity_object_for_field_widget, $form, $form_state);
       $form[$sdc_prop_name]['#disabled'] = $disabled;
 
@@ -834,7 +892,13 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
 
       $widget_definition = $this->fieldWidgetPluginManager->getDefinition($widget->getPluginId());
       if (\array_key_exists('canvas', $widget_definition) && \array_key_exists('transforms', $widget_definition['canvas'])) {
-        $transforms[$sdc_prop_name] = $widget_definition['canvas']['transforms'];
+        $transforms[$sdc_prop_name] = \array_map(
+          static fn (array $transform): array =>
+          [
+            ...$transform,
+            'multiple' => $default_static_source->getCardinality() !== 1,
+          ],
+          $widget_definition['canvas']['transforms']);
       }
       else {
         throw new \LogicException(\sprintf(
@@ -993,7 +1057,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
       // @see \Drupal\canvas\Form\ComponentInstanceForm
       $field_data[$prop_name] = [
         'required' => \in_array($prop_name, $this->getMetadata()->schema['required'] ?? [], TRUE),
-        'jsonSchema' => array_diff_key($prop_shape->resolvedSchema, array_flip(['meta:enum', 'x-translation-context'])),
+        'jsonSchema' => self::stripNonStandardJsonSchemaKeys($prop_shape->resolvedSchema),
       ] + \array_diff_key($default_static_prop_source->toArray(), \array_flip(['value']));
       if ($default_resolved->value !== NULL) {
         $field_data[$prop_name]['default_values']['source'] = $default_source_value;
@@ -1295,6 +1359,18 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
         if ($is_static_prop_source && !\array_key_exists('value', $prop_source)) {
           $prop_source['value'] = $prop_value;
         }
+        // Required integer/float static props must never be stored with a NULL
+        // value: the numeric input in the UI defaults 0 when the value is
+        // empty and the prop is required. Mirror that behavior here so that
+        // rendering always receives a valid numeric value instead of NULL,
+        // which would cause an InvalidComponentException.
+        // @see https://www.drupal.org/project/canvas/issues/3583639
+        if ($is_required_prop && ($prop_source['value'] ?? NULL) === NULL && $is_static_prop_source) {
+          $field_type = $this->configuration['prop_field_definitions'][$prop]['field_type'] ?? NULL;
+          if (\in_array($field_type, ['integer', 'float'], TRUE)) {
+            $prop_source['value'] = 0;
+          }
+        }
         $source = PropSource::parse($prop_source);
         if ($source instanceof EntityFieldPropSource) {
           if ($host_entity === NULL) {
@@ -1309,10 +1385,18 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
         // do not need cached responses: the client model changes rapidly.
         $evaluated = $source->evaluate($host_entity, $is_required_prop)->value;
 
-        // Optional component props that evaluate to NULL can be omitted:
+        // Optional component props that evaluate to nothing can be omitted:
         // storing these would be a waste of storage space.
-        if (!$is_required_prop && $evaluated === NULL) {
-          continue;
+        if ($source instanceof StaticPropSource) {
+          $prop_evaluates_to_nothing = match ($source->getCardinality()) {
+            // Nothing for single-cardinality prop: NULL evaluation result.
+            1 => $evaluated === NULL,
+            // Nothing for multi-cardinality prop: empty result.
+            default => $source->isEmpty(),
+          };
+          if (!$is_required_prop && $prop_evaluates_to_nothing) {
+            continue;
+          }
         }
 
         // Required string component props that are completely free-form (so:
@@ -1324,8 +1408,7 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
         // string input, as they're thinking about what string they do want.
         // ⚠️ This won't work for components whose logic specifically checks for
         // an empty string and refuses to render then.
-        // @todo Expand to support multiple-cardinality.
-        if ($is_required_prop && $evaluated === '' && $this->getExplicitInputDefinitions()['shapes'][$prop] === ['type' => 'string']) {
+        if ($is_required_prop && $evaluated === '' && PropShape::isPlainOrRichProse($this->getExplicitInputDefinitions()['shapes'][$prop])) {
           // Confirm that *if* this weren't special-cased, that this would
           // indeed enter the next branch, which would cause it to be skipped.
           // @todo Consider adding a new `GracefulDegradationPropSource` to
@@ -1351,6 +1434,34 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
         continue;
       }
       $props[$prop] = $this->collapse($source, $prop);
+    }
+
+    // Uphold the guarantee that every required prop appears in the result
+    // when the UI removes the prop key from 'source' entirely (e.g. via a
+    // "Remove" action), so the foreach loop above never processes it.
+    // Without this, ::buildComponentInstanceForm() would fail with an
+    // assertion error and return a 500 instead of gracefully rendering the
+    // form so that validation can surface a proper user-facing error message.
+    // For integer/float field types the stored value is 0 (not NULL) to
+    // mirror what the numeric UI input produces and avoid an
+    // InvalidComponentException during preview rendering.
+    // Note: the case where the client sends value=null for a required
+    // integer/float prop is handled earlier in this method, before parsing.
+    // @see ::buildComponentInstanceForm()
+    // @see https://www.drupal.org/project/canvas/issues/3583639
+    foreach ($required_props as $required_prop) {
+      if (
+        !\array_key_exists($required_prop, $props)
+        && \array_key_exists($required_prop, $this->configuration['prop_field_definitions'] ?? [])
+        && \in_array(
+          $this->configuration['prop_field_definitions'][$required_prop]['field_type'] ?? NULL,
+          ['integer', 'float'],
+          TRUE
+        )
+      ) {
+        // Default to 0 so rendering receives a valid numeric value.
+        $props[$required_prop] = $this->collapse($this->uncollapse(0, $required_prop), $required_prop);
+      }
     }
 
     return $props;
@@ -1449,6 +1560,29 @@ abstract class GeneratedFieldExplicitInputUxComponentSourceBase extends Componen
       }
     }
     return $source->toArray();
+  }
+
+  /**
+   * Strips non-standard JSON Schema keys recursively from a schema array.
+   *
+   * Keys like `meta:enum` and `x-translation-context` are valid in SDC
+   * component definitions but are not part of the JSON Schema spec. They must
+   * be removed before sending the schema to the client, where a strict-mode
+   * JSON Schema validator (Ajv) would reject them as unknown keywords.
+   *
+   * @param array<string, mixed> $schema
+   *
+   * @return array<string, mixed>
+   */
+  protected static function stripNonStandardJsonSchemaKeys(array $schema): array {
+    $keys_to_remove = ['meta:enum', 'x-translation-context'];
+    $schema = array_diff_key($schema, array_flip($keys_to_remove));
+    foreach ($schema as $key => $value) {
+      if (\is_array($value)) {
+        $schema[$key] = self::stripNonStandardJsonSchemaKeys($value);
+      }
+    }
+    return $schema;
   }
 
   /**

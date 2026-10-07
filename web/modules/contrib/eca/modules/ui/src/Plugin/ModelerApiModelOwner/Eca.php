@@ -214,13 +214,13 @@ class Eca extends ModelOwnerBase {
   public function modelConstraints(): array {
     return [
       Api::COMPONENT_TYPE_START => [
-        'successors' => ['requireConditionWhenParallel' => TRUE],
+        'successors' => ['requireConditionWhenParallel' => TRUE, 'allowConditionReuse' => TRUE],
       ],
       Api::COMPONENT_TYPE_ELEMENT => [
-        'successors' => ['requireConditionWhenParallel' => TRUE],
+        'successors' => ['requireConditionWhenParallel' => TRUE, 'allowConditionReuse' => TRUE],
       ],
       Api::COMPONENT_TYPE_GATEWAY => [
-        'successors' => ['requireConditionWhenParallel' => TRUE],
+        'successors' => ['requireConditionWhenParallel' => TRUE, 'allowConditionReuse' => TRUE],
       ],
     ];
   }
@@ -262,7 +262,7 @@ class Eca extends ModelOwnerBase {
    * {@inheritdoc}
    */
   public function availableOwnerComponents(int $type): array {
-    return match($type) {
+    return match ($type) {
       Api::COMPONENT_TYPE_START => $this->eventsService()->events(),
       Api::COMPONENT_TYPE_LINK => $this->conditionsService()->conditions(),
       Api::COMPONENT_TYPE_ELEMENT => $this->actionsService()->actions(),
@@ -288,7 +288,7 @@ class Eca extends ModelOwnerBase {
    * {@inheritdoc}
    */
   public function ownerComponent(int $type, string $id, array $config = []): ?PluginInspectionInterface {
-    return match($type) {
+    return match ($type) {
       Api::COMPONENT_TYPE_START => $this->eventsService()->createInstance($id, $config),
       Api::COMPONENT_TYPE_LINK => $this->conditionsService()->createInstance($id, $config),
       Api::COMPONENT_TYPE_ELEMENT => $this->actionsService()->createInstance($id, $config),
@@ -306,7 +306,7 @@ class Eca extends ModelOwnerBase {
         $form = $this->actionsService()->getConfigurationForm($plugin, $form_state) ?? [
           'error_message' => [
             '#type' => 'markup',
-            '#markup' => '<strong>' . $this->t('Error in configuration form!!!') . '</strong><br><br>' . $this->t('Details can be found in the Drupal error log.'),
+            '#markup' => '<strong>' . $this->t('Error in configuration form!!!') . '</strong><br /><br />' . $this->t('Details can be found in the Drupal error log.'),
           ],
         ];
       }
@@ -320,7 +320,7 @@ class Eca extends ModelOwnerBase {
     catch (\Throwable $ex) {
       $form['error_message'] = [
         '#type' => 'markup',
-        '#markup' => '<strong>' . $this->t('Error in configuration form!!!') . '</strong><br><br>' . $ex->getMessage(),
+        '#markup' => '<strong>' . $this->t('Error in configuration form!!!') . '</strong><br /><br />' . $ex->getMessage(),
       ];
     }
     return $form;
@@ -342,7 +342,7 @@ class Eca extends ModelOwnerBase {
    * {@inheritdoc}
    */
   public function skipConfigurationValidation(int $type, string $id): bool {
-    return match($type) {
+    return match ($type) {
       Api::COMPONENT_TYPE_ELEMENT => in_array($id, ['action_send_email_action', 'node_assign_owner_action'], TRUE),
       default => FALSE,
     };

@@ -3,6 +3,7 @@
 namespace Drupal\ai_test\Plugin\AiProvider;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -49,7 +50,6 @@ use Drupal\ai_test\OperationType\Echo\EchoInput;
 use Drupal\ai_test\OperationType\Echo\EchoInterface;
 use Drupal\ai_test\OperationType\Echo\EchoOutput;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Plugin implementation of the 'mock' provider.
@@ -114,7 +114,7 @@ class EchoProvider extends AiProviderClientBase implements
    */
   public function getApiDefinition(): array {
     // Load the configuration.
-    return Yaml::parseFile($this->moduleHandler->getModule('ai_test')->getPath() . '/definitions/api_defaults.yml');
+    return Yaml::decode(file_get_contents($this->moduleHandler->getModule('ai_test')->getPath() . '/definitions/api_defaults.yml'));
   }
 
   /**
@@ -450,8 +450,8 @@ class EchoProvider extends AiProviderClientBase implements
     $responses = [];
     foreach ($entities as $entity) {
       $responses[] = [
-        'request' => Yaml::parse($entity->get('request')->value),
-        'response' => Yaml::parse($entity->get('response')->value),
+        'request' => Yaml::decode($entity->get('request')->value),
+        'response' => Yaml::decode($entity->get('response')->value),
         'wait' => $entity->get('sleep_time')->value,
       ];
     }
@@ -497,7 +497,7 @@ class EchoProvider extends AiProviderClientBase implements
             if (is_file($file_path)) {
               $file_contents = file_get_contents($file_path);
               if ($file_contents !== FALSE) {
-                $data = Yaml::parse($file_contents);
+                $data = Yaml::decode($file_contents);
                 if (!empty($data)) {
                   $requests[] = $data;
                 }

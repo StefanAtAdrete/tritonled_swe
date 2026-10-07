@@ -184,7 +184,7 @@ class AgentStatusSubscriber implements EventSubscriberInterface {
         request_data: $event->getChatInput()->toArray(),
         provider_name: $event->getAgent()->getAiProvider()->getPluginId(),
         model_name: $event->getAgent()->getModelName(),
-        config: $event->getAgent()->getAiConfiguration(),
+        config: $event->getAgent()->getAiConfiguration() ?? [],
         calling_agent_id: $event->getCallerId(),
       ));
     }

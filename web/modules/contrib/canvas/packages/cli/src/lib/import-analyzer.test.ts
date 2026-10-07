@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { parseFileImports } from './import-analyzer';
+import { collectImports, parseFileImports } from './import-analyzer';
 
 describe('parseFileImports', () => {
   let tmpDir: string;
@@ -94,6 +94,30 @@ describe('parseFileImports', () => {
     );
   });
 
+  it('marks asset imports with query strings and hashes with appropriate flags', async () => {
+    const filePath = await writeFixture(
+      'assets-query.tsx',
+      `
+        import heroImg from './hero.jpg?url';
+        import posterImg from './poster.webp#poster';
+      `,
+    );
+    const imports = await parseFileImports(filePath);
+
+    expect(imports).toContainEqual(
+      expect.objectContaining({
+        source: './hero.jpg?url',
+        isImage: true,
+      }),
+    );
+    expect(imports).toContainEqual(
+      expect.objectContaining({
+        source: './poster.webp#poster',
+        isImage: true,
+      }),
+    );
+  });
+
   it('categorizes relative imports as relative', async () => {
     const filePath = await writeFixture(
       'relative.tsx',
@@ -145,6 +169,135 @@ describe('parseFileImports', () => {
         source: 'swiper/css',
         category: 'third-party',
       }),
+    );
+  });
+});
+
+describe('collectImports', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'canvas-collect-imports-test-'),
+    );
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function writeFixture(name: string, content: string): Promise<string> {
+    const dir = path.dirname(path.join(tmpDir, name));
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(tmpDir, name);
+    await fs.writeFile(filePath, content);
+    return filePath;
+  }
+
+  it('excludes Canvas builtin alias imports from alias results', async () => {
+    const entryFile = await writeFixture(
+      'components/button/index.tsx',
+      `
+        import { cn } from "@/lib/utils";
+        import { FormattedText } from "@/lib/FormattedText";
+        import { myHelper } from "@/lib/my-helper";
+      `,
+    );
+    // Only provide the non-builtin local file
+    await writeFixture('lib/my-helper.ts', 'export const myHelper = 1;');
+
+    const result = await collectImports(
+      [entryFile],
+      path.join(tmpDir, 'components'),
+      tmpDir,
+    );
+
+    // Builtin aliases should not appear in aliasImports or unresolvedAliasImports
+    expect(result.aliasImports.has('@/lib/utils')).toBe(false);
+    expect(result.aliasImports.has('@/lib/FormattedText')).toBe(false);
+    expect(result.unresolvedAliasImports.has('@/lib/utils')).toBe(false);
+    expect(result.unresolvedAliasImports.has('@/lib/FormattedText')).toBe(
+      false,
+    );
+    // Non-builtin alias should still be collected
+    expect(result.aliasImports.has('@/lib/my-helper')).toBe(true);
+  });
+
+  it('collects relative Vite-style image imports as deployable asset imports', async () => {
+    const entryFile = await writeFixture(
+      'components/card/index.tsx',
+      `
+        import heroImage from './hero.webp';
+        export default function Card() {
+          return <img src={heroImage} />;
+        }
+      `,
+    );
+    const imagePath = await writeFixture('components/card/hero.webp', 'image');
+
+    const result = await collectImports(
+      [entryFile],
+      path.join(tmpDir, 'components'),
+      tmpDir,
+    );
+
+    expect(result.assetImports).toEqual(
+      new Map([['@/components/card/hero.webp', imagePath]]),
+    );
+    expect(result.aliasImports.size).toBe(0);
+  });
+
+  it('collects alias image imports under components as asset imports', async () => {
+    const entryFile = await writeFixture(
+      'components/card/index.tsx',
+      `
+        import heroImage from '@/components/card/hero.webp';
+        export default function Card() {
+          return <img src={heroImage} />;
+        }
+      `,
+    );
+    const imagePath = await writeFixture('components/card/hero.webp', 'image');
+
+    const result = await collectImports(
+      [entryFile],
+      path.join(tmpDir, 'components'),
+      tmpDir,
+    );
+
+    expect(result.assetImports).toEqual(
+      new Map([['@/components/card/hero.webp', imagePath]]),
+    );
+  });
+
+  it('collects image imports with query strings and hashes as asset imports', async () => {
+    const entryFile = await writeFixture(
+      'components/card/index.tsx',
+      `
+        import heroImage from './hero.webp?url';
+        import posterImage from '@/components/card/poster.jpg#poster';
+        export default function Card() {
+          return <img src={heroImage || posterImage} />;
+        }
+      `,
+    );
+    const heroPath = await writeFixture('components/card/hero.webp', 'image');
+    const posterPath = await writeFixture(
+      'components/card/poster.jpg',
+      'image',
+    );
+
+    const result = await collectImports(
+      [entryFile],
+      path.join(tmpDir, 'components'),
+      tmpDir,
+    );
+
+    expect(result.assetImports).toEqual(
+      new Map([
+        ['@/components/card/hero.webp', heroPath],
+        ['@/components/card/poster.jpg', posterPath],
+      ]),
     );
   });
 });

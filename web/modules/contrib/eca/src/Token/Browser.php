@@ -7,6 +7,7 @@ use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Utility\Random;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
+use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\TempStore\PrivateTempStore;
@@ -79,6 +80,10 @@ final class Browser {
 
   /**
    * List of normalized values plus a hash of the original value.
+   *
+   * Scoped to a single execution chain, not to the lifetime of this service:
+   * the Processor clears it at the root execution boundary. See
+   * ::resetProcessedValues() for why that matters.
    *
    * @var array
    */
@@ -194,6 +199,13 @@ final class Browser {
    *   The hash or NULL.
    */
   public function storeHistory(array $history, ?string $event = NULL): ?string {
+    // Collapse content-identical sub-trees across steps and nested levels into
+    // compact '@same' markers before the data is compressed and persisted.
+    // This runs at storage time — the same conceptual point as compression —
+    // so the markers survive into the temp store and across the API to the
+    // Workflow Modeler, which expands them lazily at render time. The pass is
+    // marker-aware: it leaves existing '@prev'/'@ref'/'@same' markers intact.
+    $history = ProcessDebugger::deduplicateHistory($history);
     if ($event === NULL) {
       $compressed = $this->compress($history);
       $hash = md5($compressed);
@@ -251,7 +263,10 @@ final class Browser {
    *   The history data.
    */
   public function getHistoryByHash(string $hash): array {
-    return ProcessDebugger::expandHistory($this->decompress($this->privateTempStore()->get($hash)));
+    // Return the raw, compact data with deduplication markers (@ref / @prev)
+    // intact. The Workflow Modeler frontend expands these markers lazily, so
+    // expanding them here would re-inflate the payload to its full size.
+    return $this->decompress($this->privateTempStore()->get($hash));
   }
 
   /**
@@ -264,7 +279,10 @@ final class Browser {
    *   The history data.
    */
   public function getHistoryByEvent(string $event): array {
-    return ProcessDebugger::expandHistory($this->getRawHistoryByEvent($event));
+    // Return the raw, compact data with deduplication markers (@ref / @prev)
+    // intact. The Workflow Modeler frontend expands these markers lazily, so
+    // expanding them here would re-inflate the payload to its full size.
+    return $this->getRawHistoryByEvent($event);
   }
 
   /**
@@ -352,7 +370,10 @@ final class Browser {
         $this->state->delete('_eca_internal_debug_test_started');
         $this->sharedTempStore()->delete('jobid::reset_debug::' . $jobId);
       }
-      return ProcessDebugger::expandHistory($data['history'] ?? []);
+      // Return the raw, compact data with deduplication markers (@ref / @prev)
+      // intact. The Workflow Modeler frontend expands these markers lazily, so
+      // expanding them here would re-inflate the payload to its full size.
+      return $data['history'] ?? [];
     }
     return NULL;
   }
@@ -373,6 +394,30 @@ final class Browser {
         $this->state->delete('_eca_internal_debug_test_started');
       }
     }
+  }
+
+  /**
+   * Releases the cache of normalized token values.
+   *
+   * This service is a plain shared service, so a single instance lives for the
+   * whole container lifetime, while the normalized value cache is only useful
+   * within one execution chain. Releasing it at the end of that chain bounds
+   * the memory it holds: every cached entry keeps a fully normalized sub-tree
+   * of an entity, and in a long-running single process - drush cron, a queue
+   * worker, a batch - nothing else would ever let go of them.
+   *
+   * Correctness does not depend on this. The validity hash is taken over the
+   * data a token resolves to, so a change is noticed wherever it happens,
+   * including between two steps of one chain.
+   *
+   * The cache within a chain is untouched: only the Processor calls this, at
+   * the root execution boundary where it also forgets its execution history.
+   *
+   * @see \Drupal\eca\Token\Browser::validityHash()
+   * @see \Drupal\eca\Processor::execute()
+   */
+  public function resetProcessedValues(): void {
+    $this->processedValues = [];
   }
 
   /**
@@ -409,6 +454,13 @@ final class Browser {
         'eventClass' => $definition['event_class'],
       ];
     }
+    // The data a provider contributes, captured while checking whether the
+    // token exists at all, keyed by token key. $data holds the #[Token]
+    // attribute for those keys - deliberately, because ::normalizeValue()
+    // builds the property tree from the attribute - so the attribute is all
+    // the validity hash would otherwise have to go on, and that is
+    // content-identical on every pass.
+    $resolvedValues = [];
     /** @var \Drupal\eca\Attribute\Token $supportedToken */
     foreach ($this->getSupportedTokens($this->eventClasses[$eventName]['class'], $this->eventClasses[$eventName]['eventClass']) as $supportedToken) {
       // Make sure this is not overriding an existing token. Try to find an
@@ -428,8 +480,16 @@ final class Browser {
       }
       // Only add the token if it actually exists. An example of a declared but
       // often not existing token is the session_user.
-      if ($this->token->hasTokenData($key)) {
+      //
+      // ::hasTokenData() is defined as a NULL check on ::getTokenData(), so
+      // resolving here costs exactly what the existence check already cost,
+      // and it hands the validity hash the data it needs without a second
+      // resolve.
+      // @see \Drupal\eca\Token\TokenDecoratorTrait::hasTokenData()
+      $resolvedValue = $this->token->getTokenData($key);
+      if ($resolvedValue !== NULL) {
         $data[$key] = $supportedToken;
+        $resolvedValues[$key] = $resolvedValue;
       }
     }
     // Query dynamic data providers for their available keys. This covers
@@ -445,15 +505,54 @@ final class Browser {
       }
     }
     $normalizedData = [];
+    $entityIndex = [];
     foreach ($data as $key => $value) {
-      try {
-        $hash = md5(serialize($value));
+      // Suppress the spurious empty-string token key. It carries no usable
+      // token name but serializes a full token data tree (a ~1.47MB user
+      // snapshot in practice), so it is skipped entirely during
+      // normalization.
+      if ($key === '') {
+        continue;
       }
-      catch (\Throwable) {
-        // If serialization fails (e.g. closures or resources in the data),
-        // use a unique hash so the value is always re-normalized.
-        $hash = md5((new Random())->string(16));
+      // Check for entity deduplication: when the same content entity
+      // appears under multiple token names (e.g. 'entity' and
+      // 'node'), only serialize it once and store a reference
+      // for duplicates.
+      //
+      // Dedup is keyed on "entityType:UUID" rather than "entityType:id".
+      // Content entities receive their UUID at object construction, before
+      // they are saved, so the UUID is populated even for new/unsaved
+      // entities (e.g. the anonymous user on the registration form, exposed
+      // as both 'entity' and 'user'). Keying on the id would skip those,
+      // because a new entity has no id yet. The UUID is also globally
+      // unique, so it cannot mis-collapse two distinct new entities the way
+      // an empty id ("user:") would.
+      //
+      // This dedup is intentionally per-step: $entityIndex is reset on every
+      // call, so it only asserts identity within a single synchronous
+      // snapshot of token data (same object, same instant), which UUID
+      // equality guarantees. It must not be extended across steps.
+      $entity = $this->resolveEntity($key, $value);
+      if ($entity instanceof ContentEntityInterface) {
+        $uuid = $entity->uuid();
+        // Only dedup when a non-empty UUID is available. If it is missing
+        // (extremely unusual for content entities), fall through to normal
+        // normalization rather than keying on the id.
+        if (is_string($uuid) && $uuid !== '') {
+          $entityKey = $entity->getEntityTypeId() . ':' . $uuid;
+          if (isset($entityIndex[$entityKey])) {
+            $keyParts = explode(':', $key);
+            $normalizedData[$key] = [
+              'label' => ucwords(str_replace(['_', '-'], ' ', end($keyParts))),
+              'token' => $key,
+              ProcessDebugger::TOKEN_DATA_REF => $entityIndex[$entityKey],
+            ];
+            continue;
+          }
+          $entityIndex[$entityKey] = $key;
+        }
       }
+      $hash = $this->validityHash($key, $value, $resolvedValues);
       if (!isset($this->processedValues[$key]) || $this->processedValues[$key]['hash'] !== $hash) {
         $this->processedValues[$key] = [
           'data' => $this->normalizeValue($key, $value),
@@ -468,6 +567,48 @@ final class Browser {
   }
 
   /**
+   * Computes the cache validity hash for one token value.
+   *
+   * The hash has to change whenever the data behind a token changes, because
+   * it is the only thing standing between a debug step and a stale
+   * normalization. Hashing the value stored in the token data array is right
+   * for anything put there directly, but wrong for a token contributed by a
+   * DataProviderInterface: what is stored for those is the #[Token] attribute
+   * that declared the token, which is content-identical on every pass while
+   * the data it resolves to is not.
+   *
+   * The resolved data therefore gets hashed instead. It is normally already at
+   * hand, because ::normalizedTokenData() captured it when it checked whether
+   * the token exists at all; the fallback only covers an attribute that
+   * reached the token data array by some other route.
+   *
+   * @param string $key
+   *   The token key.
+   * @param mixed $value
+   *   The token value as stored in the token data array.
+   * @param array $resolvedValues
+   *   The already resolved provider data, keyed by token key.
+   *
+   * @return string
+   *   The validity hash.
+   */
+  private function validityHash(string $key, mixed $value, array $resolvedValues): string {
+    try {
+      if ($value instanceof Token) {
+        $value = array_key_exists($key, $resolvedValues)
+          ? $resolvedValues[$key]
+          : $this->token->getTokenData($key);
+      }
+      return md5(serialize($value));
+    }
+    catch (\Throwable) {
+      // If resolving or serialization fails (e.g. closures or resources in
+      // the data), use a unique hash so the value is always re-normalized.
+      return md5((new Random())->string(16));
+    }
+  }
+
+  /**
    * Normalizes a single token value.
    *
    * @param string $token
@@ -476,11 +617,19 @@ final class Browser {
    *   The token value.
    * @param int $depth
    *   The current recursion depth.
+   * @param array $visited
+   *   A per-path set of already expanded entities, keyed by
+   *   "entityType:id". Used to stop self-referencing entity-reference
+   *   chains from expanding the same entity twice along one path. This is
+   *   intentionally passed by value so that sibling branches each get their
+   *   own copy and a single entity may still appear under two distinct
+   *   branches. It must not be confused with the global top-level
+   *   deduplication in normalizedTokenData().
    *
    * @return array
    *   The normalized data for this value.
    */
-  private function normalizeValue(string $token, mixed $value, int $depth = 1): array {
+  private function normalizeValue(string $token, mixed $value, int $depth = 1, array $visited = []): array {
     $keyParts = explode(':', $token);
     $key = end($keyParts);
     $normalized = [
@@ -515,7 +664,15 @@ final class Browser {
     if (isset($this->tokenInfo['types'][$key])) {
       $dataNeeded = $this->tokenInfo['types'][$key]['needs-data'] ?? NULL;
       if ($dataNeeded && isset($this->tokenInfo['tokens'][$dataNeeded])) {
-        $normalized['data'] = $this->normalizeRecursive($token, $dataNeeded, [$key => $value]);
+        // When the token type resolves to a concrete content entity, honor
+        // the per-path cycle guard and count this expansion towards the
+        // depth budget so that the referenced entity's own fields cannot
+        // re-open a fresh, unbounded expansion.
+        if ($value instanceof ContentEntityInterface && !$this->canExpandEntity($value, $depth, $visited)) {
+          return $normalized;
+        }
+        $childVisited = $this->markVisited($value, $visited);
+        $normalized['data'] = $this->normalizeRecursive($token, $dataNeeded, [$key => $value], $depth, $childVisited);
       }
     }
     elseif (is_scalar($value)) {
@@ -525,7 +682,7 @@ final class Browser {
       if ($depth < $this->depth()) {
         $normalized['data'] = [];
         foreach ($value as $subKey => $subValue) {
-          $normalized['data'][$subKey] = $this->normalizeValue($token . ':' . $subKey, $subValue, $depth + 1);
+          $normalized['data'][$subKey] = $this->normalizeValue($token . ':' . $subKey, $subValue, $depth + 1, $visited);
         }
       }
     }
@@ -533,7 +690,7 @@ final class Browser {
       if ($value->properties) {
         $normalized['data'] = [];
         foreach ($value->properties as $property) {
-          $normalized['data'][$property->name] = $this->normalizeValue($token . ':' . $property->name, $property, $depth + 1);
+          $normalized['data'][$property->name] = $this->normalizeValue($token . ':' . $property->name, $property, $depth + 1, $visited);
         }
       }
       else {
@@ -544,8 +701,14 @@ final class Browser {
       $normalized['value'] = $value->getValue();
     }
     elseif ($value instanceof ContentEntityInterface) {
-      $entityTypeId = $value->getEntityTypeId();
-      $normalized['data'] = $this->normalizeRecursive($token, $entityTypeId, [$entityTypeId => $value]);
+      // Stop self-referencing entity-reference chains: if this exact entity
+      // has already been expanded along the current path, or the depth
+      // budget is exhausted, do not recurse into its fields again.
+      if ($this->canExpandEntity($value, $depth, $visited)) {
+        $entityTypeId = $value->getEntityTypeId();
+        $childVisited = $this->markVisited($value, $visited);
+        $normalized['data'] = $this->normalizeRecursive($token, $entityTypeId, [$entityTypeId => $value], $depth, $childVisited);
+      }
     }
     elseif ($value instanceof DataTransferObject) {
       // For complex DTOs, we've already converted its properties to an
@@ -571,20 +734,43 @@ final class Browser {
    * @param string $tokenType
    *   The token type to normalize (e.g. 'node').
    * @param array $data
-   *   The data for token replacement.
+   *   The data for token replacement. This stays bound to the root context
+   *   for the whole recursion, because the token paths built below are
+   *   root-anchored chains (e.g. '[node:author:name]') that can only be
+   *   resolved against the data the chain starts from.
    * @param int $depth
    *   The current recursion depth.
+   * @param array $visited
+   *   A per-path set of already expanded entities, keyed by
+   *   "entityType:id". See normalizeValue() for the semantics.
+   * @param \Drupal\Core\Entity\ContentEntityInterface|null $currentEntity
+   *   The content entity whose tokens are being normalized at this level, or
+   *   NULL when this level does not belong to a resolvable entity. Unlike
+   *   $data this does follow the chain, and it is used exclusively by the
+   *   cycle guard below. It defaults to the source entity of $data, which is
+   *   the correct value for the top level.
    *
    * @return array
    *   The normalized data for this level.
    */
-  private function normalizeRecursive(string $tokenPath, string $tokenType, array $data, int $depth = 1): array {
+  private function normalizeRecursive(string $tokenPath, string $tokenType, array $data, int $depth = 1, array $visited = [], ?ContentEntityInterface $currentEntity = NULL): array {
     $normalized = [];
     if ($depth > $this->depth() || !isset($this->tokenInfo['tokens'][$tokenType])) {
       return $normalized;
     }
 
+    if ($currentEntity === NULL) {
+      $source = reset($data);
+      $currentEntity = $source instanceof ContentEntityInterface ? $source : NULL;
+    }
+
     foreach ($this->tokenInfo['tokens'][$tokenType] as $dataKey => $dataValue) {
+      // Skip 'original' tokens below the first depth level. The pre-save
+      // entity snapshot creates exponential self-referencing chains that
+      // are not useful for debug/replay purposes.
+      if ($dataKey === 'original' && $depth > 1) {
+        continue;
+      }
       $currentTokenPath = $tokenPath . ':' . $dataKey;
       $normalized[$dataKey] = [
         'label' => $dataValue['name'],
@@ -592,17 +778,66 @@ final class Browser {
       ];
 
       $value = reset($data);
-      if ($depth === 1 && ($dataValue['type'] ?? '') === 'url' && $value instanceof ContentEntityInterface && $value->isNew()) {
+      // Flatten the 'original' pre-save snapshot to scalar field values only.
+      // The snapshot is an entity copy whose own fields would otherwise be
+      // expanded into a nested entity tree, re-inflating the debug/replay
+      // payload. Issue #3585592 already stopped 'original' from recursing
+      // below level 1; here its level-1 content is reduced to scalar field
+      // values, dropping any nested entity expansion.
+      if ($dataKey === 'original' && $depth === 1 && isset($dataValue['type']) && isset($this->tokenInfo['tokens'][$dataValue['type']])) {
+        $flattened = $this->normalizeScalarFields($currentTokenPath, $dataValue['type'], $data);
+        if (!empty($flattened)) {
+          $normalized[$dataKey]['data'] = $flattened;
+        }
+      }
+      elseif ($depth === 1 && ($dataValue['type'] ?? '') === 'url' && $value instanceof ContentEntityInterface && $value->isNew()) {
         // On the top level, we could have a new entity which doesn't have an ID
         // yet, and hence there wouldn't be a URL either.
         $normalized[$dataKey]['value'] = '';
       }
       elseif (isset($dataValue['type']) && isset($this->tokenInfo['types'][$dataValue['type']])) {
+        $subType = $dataValue['type'];
+        // Per-path cycle guard for entity-reference chains. When the current
+        // sub-token resolves to a concrete content entity (e.g. an
+        // entity-reference field such as employer_id, owner or
+        // user_picture), expand it only if that exact entity has not already
+        // been expanded earlier along this path. This stops self-referencing
+        // loops (employer_id -> employer_id) and back-references
+        // (owner -> user_picture -> owner) while still allowing distinct
+        // entities of the same type to be expanded (user A -> user B).
+        //
+        // The trailing segment of $currentTokenPath is a field of the entity
+        // this level belongs to, so the lookup has to be made against
+        // $currentEntity and not against $data. Issue #3590450: $data was
+        // used here, which meant the root entity was asked for a field of a
+        // nested one. That lookup missed, the guard was skipped instead of
+        // consulted, and a back-referenced entity was expanded a second time
+        // along one path.
+        //
+        // A NULL result is not a cycle verdict but an unresolved reference:
+        // the segment does not name an entity-reference field of
+        // $currentEntity, or the current level has no entity at all. The
+        // depth budget remains the backstop for those branches.
+        //
+        // The lookup is restricted to a single resolved entity and is
+        // therefore cheap; non-entity sub-tokens (dates, plain references)
+        // are unaffected. The $visited set is passed by value, so sibling
+        // branches keep their own view.
+        $referenced = $this->resolveReferencedEntity($currentTokenPath, $currentEntity);
+        if ($referenced instanceof ContentEntityInterface && !$this->canExpandEntity($referenced, $depth + 1, $visited)) {
+          continue;
+        }
+        $childVisited = $this->markVisited($referenced ?? $value, $visited);
         // If we have a subsequent level, we process that recursively and
         // don't replace the token itself, because that could be very
         // expensive, i.e. if the current token is an entity that would be
         // fully rendered when used in token replacement.
-        $nestedData = $this->normalizeRecursive($currentTokenPath, $dataValue['type'], $data, $depth + 1);
+        //
+        // $data deliberately stays the root context so that token
+        // replacement keeps working for the root-anchored chains built at
+        // the deeper levels; only the cycle guard follows the chain, through
+        // $referenced.
+        $nestedData = $this->normalizeRecursive($currentTokenPath, $subType, $data, $depth + 1, $childVisited, $referenced);
         if (!empty($nestedData)) {
           $normalized[$dataKey]['data'] = $nestedData;
         }
@@ -617,6 +852,204 @@ final class Browser {
       }
     }
     return $normalized;
+  }
+
+  /**
+   * Normalizes only the scalar leaf fields of a token type.
+   *
+   * Used to flatten the 'original' pre-save snapshot: it iterates the tokens
+   * of the given type and keeps only the scalar leaf values, deliberately
+   * dropping any sub-token that resolves to another token type (i.e. a nested
+   * entity expansion). This keeps the snapshot compact while still exposing
+   * the field values that are useful for debug/replay purposes.
+   *
+   * @param string $tokenPath
+   *   The current token path (e.g. 'node:original').
+   * @param string $tokenType
+   *   The token type to normalize (e.g. 'node').
+   * @param array $data
+   *   The data for token replacement.
+   *
+   * @return array
+   *   The normalized scalar field values for this type.
+   */
+  private function normalizeScalarFields(string $tokenPath, string $tokenType, array $data): array {
+    $normalized = [];
+    if (!isset($this->tokenInfo['tokens'][$tokenType])) {
+      return $normalized;
+    }
+    foreach ($this->tokenInfo['tokens'][$tokenType] as $dataKey => $dataValue) {
+      // Skip a nested 'original' token to avoid re-introducing the snapshot
+      // chain that this flattening is meant to eliminate.
+      if ($dataKey === 'original') {
+        continue;
+      }
+      // Drop sub-tokens that resolve to another token type: those would be
+      // nested entity expansions, which we intentionally do not include.
+      if (isset($dataValue['type']) && isset($this->tokenInfo['types'][$dataValue['type']])) {
+        continue;
+      }
+      $currentTokenPath = $tokenPath . ':' . $dataKey;
+      $normalized[$dataKey] = [
+        'label' => $dataValue['name'],
+        'token' => $currentTokenPath,
+      ];
+      try {
+        $normalized[$dataKey]['value'] = $this->token->replaceClear('[' . $currentTokenPath . ']', $data);
+      }
+      catch (\Throwable) {
+        // Ignore exceptions during token replacement.
+      }
+    }
+    return $normalized;
+  }
+
+  /**
+   * Builds the per-path visited key for a content entity.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity.
+   *
+   * @return string|null
+   *   The "entityType:id" key, or NULL for new entities that have no ID
+   *   yet and therefore cannot meaningfully participate in cycle detection.
+   */
+  private function entityVisitKey(ContentEntityInterface $entity): ?string {
+    if ($entity->isNew()) {
+      return NULL;
+    }
+    $id = (string) $entity->id();
+    if ($id === '') {
+      return NULL;
+    }
+    return $entity->getEntityTypeId() . ':' . $id;
+  }
+
+  /**
+   * Determines whether an entity may still be expanded along the current path.
+   *
+   * Expansion is denied when the depth budget is exhausted or when the same
+   * entity has already been expanded earlier on this path (cycle guard).
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity.
+   * @param int $depth
+   *   The current recursion depth.
+   * @param array $visited
+   *   The per-path visited set, keyed by "entityType:id".
+   *
+   * @return bool
+   *   TRUE if the entity may be expanded, FALSE otherwise.
+   */
+  private function canExpandEntity(ContentEntityInterface $entity, int $depth, array $visited): bool {
+    if ($depth > $this->depth()) {
+      return FALSE;
+    }
+    $key = $this->entityVisitKey($entity);
+    return $key === NULL || !isset($visited[$key]);
+  }
+
+  /**
+   * Returns a copy of the visited set with the given entity marked.
+   *
+   * The set is copied (not mutated in place) so that sibling branches each
+   * receive their own per-path view: an entity may legitimately appear under
+   * two different branches, but never twice along the same path.
+   *
+   * @param mixed $value
+   *   The value being expanded; only content entities are tracked.
+   * @param array $visited
+   *   The current per-path visited set.
+   *
+   * @return array
+   *   The visited set, with the entity added when applicable.
+   */
+  private function markVisited(mixed $value, array $visited): array {
+    if ($value instanceof ContentEntityInterface) {
+      $key = $this->entityVisitKey($value);
+      if ($key !== NULL) {
+        $visited[$key] = TRUE;
+      }
+    }
+    return $visited;
+  }
+
+  /**
+   * Resolves the content entity a sub-token refers to, if any.
+   *
+   * This inspects the entity the current level belongs to and, when the
+   * trailing token segment maps to an entity-reference field, returns the
+   * first referenced content entity. It is intentionally cheap: it only ever
+   * loads a single referenced entity and never triggers token replacement or
+   * rendering. It is used purely for per-path cycle detection; callers must
+   * treat a NULL result as "not a tracked entity reference" and continue
+   * normally.
+   *
+   * The source entity is passed in rather than read from the token data
+   * context, because that context stays bound to the root of the chain for
+   * the benefit of token replacement, while the trailing segment belongs to
+   * the entity reached at the current level. See ::normalizeRecursive().
+   *
+   * @param string $tokenPath
+   *   The current token path (e.g. 'node:author' or 'node:employer_id').
+   * @param \Drupal\Core\Entity\ContentEntityInterface|null $source
+   *   The entity the trailing segment is a field of, or NULL when the
+   *   current level does not belong to a resolvable entity.
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface|null
+   *   The referenced content entity, or NULL when the segment does not
+   *   resolve to a loadable entity reference.
+   */
+  private function resolveReferencedEntity(string $tokenPath, ?ContentEntityInterface $source): ?ContentEntityInterface {
+    if ($source === NULL) {
+      return NULL;
+    }
+    $segments = explode(':', $tokenPath);
+    $fieldName = end($segments);
+    if (!$source->hasField($fieldName)) {
+      return NULL;
+    }
+    try {
+      $itemList = $source->get($fieldName);
+    }
+    catch (\Throwable) {
+      return NULL;
+    }
+    if (!($itemList instanceof EntityReferenceFieldItemListInterface)) {
+      return NULL;
+    }
+    try {
+      $referenced = $itemList->referencedEntities();
+    }
+    catch (\Throwable) {
+      return NULL;
+    }
+    $first = $referenced[0] ?? NULL;
+    return $first instanceof ContentEntityInterface ? $first : NULL;
+  }
+
+  /**
+   * Resolves a token value to its underlying content entity, if any.
+   *
+   * Used for deduplication: when the same entity appears under multiple
+   * token names, this method extracts the entity so it can be compared.
+   *
+   * @param string $key
+   *   The token key.
+   * @param mixed $value
+   *   The token value.
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface|null
+   *   The content entity, or NULL if the value is not an entity.
+   */
+  private function resolveEntity(string $key, mixed $value): ?ContentEntityInterface {
+    if ($value instanceof EntityAdapter) {
+      $value = $value->getEntity();
+    }
+    elseif ($value instanceof Token && $value->type !== '') {
+      $value = $this->token->getTokenData($key);
+    }
+    return $value instanceof ContentEntityInterface ? $value : NULL;
   }
 
   /**
@@ -728,7 +1161,8 @@ final class Browser {
    */
   private function compress(array $data): string {
     try {
-      return self::COMPRESS_PREFIX . gzcompress(serialize($data));
+      $encoded = json_encode($data, JSON_THROW_ON_ERROR);
+      return self::COMPRESS_PREFIX . gzcompress($encoded);
     }
     catch (\Throwable) {
       return '';
@@ -751,7 +1185,8 @@ final class Browser {
         if ($decompressed === FALSE) {
           return [];
         }
-        return unserialize($decompressed) ?: [];
+        $decoded = json_decode($decompressed, TRUE, 512, JSON_THROW_ON_ERROR);
+        return is_array($decoded) ? $decoded : [];
       }
       catch (\Throwable) {
         return [];

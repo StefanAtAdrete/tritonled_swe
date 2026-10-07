@@ -2,7 +2,6 @@
 
 namespace Drupal\photoswipe_dynamic_caption\Form;
 
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -23,6 +22,16 @@ class PhotoswipeDynamicCaptionSettings extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->configFactory->get('photoswipe_dynamic_caption.settings');
+
+    // Warn when HTML captions are enabled but DOMPurify is not installed.
+    if (!empty($config->get('allowHtmlCaptions'))) {
+      $libraryFileFinder = \Drupal::service('library.libraries_directory_file_finder');
+      if (empty($libraryFileFinder->find('dompurify/dist/purify.min.js'))) {
+        $this->messenger()->addWarning($this->t('Allow HTML captions is enabled, but the DOMPurify library was not found at <code>libraries/dompurify/dist/purify.min.js</code>. Captions will be escaped as plain text until the library is installed. Download it from <a href=":url" target="_blank" rel="noopener noreferrer">DOMPurify releases</a>.', [
+          ':url' => 'https://github.com/cure53/DOMPurify/releases/latest',
+        ]));
+      }
+    }
 
     $form['type'] = [
       '#type' => 'radios',
@@ -75,6 +84,15 @@ class PhotoswipeDynamicCaptionSettings extends ConfigFormBase {
       '#description' => $this->t('If enabled, the image will always be vertically centered in the remaining space between caption and the rest of viewport.<br> If disabled, the image will only be raised, if the caption does not fit below the picture.'),
     ];
 
+    $form['allowHtmlCaptions'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Allow HTML captions'),
+      '#default_value' => $config->get('allowHtmlCaptions'),
+      '#description' => $this->t('If enabled, captions may contain sanitized HTML via the optional <a href=":url" target="_blank" rel="noopener noreferrer">DOMPurify</a> library (<code>libraries/dompurify/dist/purify.min.js</code>). If disabled or DOMPurify is not installed, captions are escaped as plain text.', [
+        ':url' => 'https://github.com/cure53/DOMPurify/releases/latest',
+      ]),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -88,11 +106,13 @@ class PhotoswipeDynamicCaptionSettings extends ConfigFormBase {
       ->set('options.horizontalEdgeThreshold', $form_state->getValue('horizontalEdgeThreshold'))
       ->set('options.mobileCaptionOverlapRatio', $form_state->getValue('mobileCaptionOverlapRatio'))
       ->set('options.verticallyCenterImage', $form_state->getValue('verticallyCenterImage'))
+      ->set('allowHtmlCaptions', $form_state->getValue('allowHtmlCaptions'))
       ->save();
     parent::submitForm($form, $form_state);
 
-    // @todo This can probably be more fine graded in the future:
-    Cache::invalidateTags(['rendered']);
+    // DOMPurify is attached via library_info_alter when allowHtmlCaptions is
+    // enabled.
+    \Drupal::service('library.discovery')->clearCachedDefinitions();
   }
 
   /**

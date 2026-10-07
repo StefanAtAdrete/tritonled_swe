@@ -14,8 +14,11 @@ use Drupal\eca_form\Event\FormEvents;
 use Drupal\eca_form\Event\FormProcess;
 use Drupal\eca_form\Event\FormSubmit;
 use Drupal\eca_form\Event\FormValidate;
+use Drupal\eca_form\Plugin\Action\FormFieldGetFiles;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\file\Entity\File;
+use Drupal\file\FileInterface;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
@@ -42,6 +45,7 @@ class FormActionsTest extends KernelTestBase {
     'system',
     'user',
     'field',
+    'file',
     'filter',
     'text',
     'options',
@@ -1260,6 +1264,72 @@ YAML;
   }
 
   /**
+   * Tests that "eca_form_field_set_value" also writes the user input.
+   *
+   * When an Ajax handler limits validation to the very field the action writes
+   * to, the form state keeps that field in its values while the user input
+   * stays stale. The action must therefore also write the value into the user
+   * input so that a rebuilt Ajax form re-reads the updated value.
+   */
+  public function testFormFieldSetValueWritesUserInput(): void {
+    // Create a long text field for the article bundle and show it on the form.
+    FieldStorageConfig::create([
+      'field_name' => 'field_string_long',
+      'type' => 'string_long',
+      'entity_type' => 'node',
+      'cardinality' => 1,
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'field_string_long',
+      'label' => 'A long string field.',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    ])->save();
+    $form_display = EntityFormDisplay::load('node.article.default');
+    $form_display->setComponent('field_string_long', ['type' => 'string_textarea']);
+    $form_display->save();
+
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldSetValue $action */
+    $action = $this->actionManager->createInstance('eca_form_field_set_value', [
+      'field_name' => 'field_string_long.0.value',
+      'field_value' => 'Automatically set value',
+      'use_yaml' => FALSE,
+    ]);
+
+    /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher */
+    $event_dispatcher = \Drupal::service('event_dispatcher');
+    $form_builder = \Drupal::formBuilder();
+
+    $access_result = NULL;
+    $event_dispatcher->addListener(FormEvents::SUBMIT, function (FormSubmit $event) use (&$access_result, $action) {
+      $action->setEvent($event);
+      $access_result = $access_result ?? $action->access(NULL);
+      if ($action->access(NULL)) {
+        $action->execute();
+      }
+    });
+
+    $form_object = \Drupal::entityTypeManager()->getFormObject('node', 'default');
+    $form_object->setEntity(Node::create([
+      'type' => 'article',
+      'title' => 'Original title',
+    ]));
+    $form_state = new FormState();
+    $form_builder->buildForm($form_object, $form_state);
+    $form_state->setValues([
+      'field_string_long' => [['value' => 'Initial value']],
+    ] + $form_state->getValues());
+    $form_state->setUserInput([
+      'field_string_long' => [['value' => 'Initial value']],
+    ] + $form_state->getUserInput());
+    $form_builder->submitForm($form_object, $form_state);
+
+    $this->assertTrue($access_result);
+    $this->assertEquals('Automatically set value', $form_state->getUserInput()['field_string_long'][0]['value']);
+    $this->assertEquals('Automatically set value', $form_state->getValues()['field_string_long'][0]['value']);
+  }
+
+  /**
    * Tests the action plugin "eca_form_get_errors".
    */
   public function testFormGetErrors(): void {
@@ -1412,6 +1482,406 @@ YAML;
     $this->assertInstanceOf(Url::class, $redirect);
     /** @var \Drupal\Core\Url $redirect */
     $this->assertSame("/admin/structure", $redirect->toString());
+  }
+
+  /**
+   * Tests YAML validation in "eca_form_field_set_value" access check.
+   *
+   * The access check must evaluate the "field_value" configuration key, which
+   * is the key this plugin actually stores. Reading a non-existent "value" key
+   * passes NULL into the string-typed YamlParser::parse() and throws a
+   * TypeError instead of returning an access result.
+   *
+   * @see https://git.drupalcode.org/project/eca/-/work_items/3590420
+   */
+  public function testFormFieldSetValueYamlValidation(): void {
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldSetValue $valid */
+    $valid = $this->actionManager->createInstance('eca_form_field_set_value', [
+      'field_name' => 'custom_value',
+      'field_value' => 'mykey: "My value"',
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldSetValue $invalid */
+    $invalid = $this->actionManager->createInstance('eca_form_field_set_value', [
+      'field_name' => 'custom_value',
+      'field_value' => 'mykey: "unclosed',
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+
+    /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher */
+    $event_dispatcher = \Drupal::service('event_dispatcher');
+    $form_builder = \Drupal::formBuilder();
+
+    $valid_access = NULL;
+    $invalid_access = NULL;
+    $event_dispatcher->addListener(FormEvents::VALIDATE, function (FormValidate $event) use ($valid, $invalid, &$valid_access, &$invalid_access) {
+      $valid->setEvent($event);
+      $invalid->setEvent($event);
+      $valid_access = $valid_access ?? $valid->access(NULL);
+      $invalid_access = $invalid_access ?? $invalid->access(NULL);
+    });
+
+    $form_object = \Drupal::entityTypeManager()->getFormObject('node', 'default');
+    $form_object->setEntity(Node::create([
+      'type' => 'article',
+      'title' => 'Original title',
+    ]));
+    $form_state = new FormState();
+    $form_builder->buildForm($form_object, $form_state);
+    $form_builder->submitForm($form_object, $form_state);
+
+    $this->assertTrue($valid_access, 'Valid YAML is allowed.');
+    $this->assertFalse($invalid_access, 'Malformed YAML is forbidden.');
+  }
+
+  /**
+   * Tests YAML validation in "eca_form_state_set_property_value" access check.
+   *
+   * The access check must evaluate the "property_value" configuration key,
+   * which is the key this plugin actually stores. Reading a non-existent
+   * "value" key passes NULL into the string-typed YamlParser::parse() and
+   * throws a TypeError instead of returning an access result.
+   *
+   * @see https://git.drupalcode.org/project/eca/-/work_items/3590420
+   */
+  public function testFormStateSetPropertyValueYamlValidation(): void {
+    /** @var \Drupal\eca_form\Plugin\Action\FormStateSetPropertyValue $valid */
+    $valid = $this->actionManager->createInstance('eca_form_state_set_property_value', [
+      'property_name' => 'someprop',
+      'property_value' => 'mykey: "My value"',
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+    /** @var \Drupal\eca_form\Plugin\Action\FormStateSetPropertyValue $invalid */
+    $invalid = $this->actionManager->createInstance('eca_form_state_set_property_value', [
+      'property_name' => 'someprop',
+      'property_value' => 'mykey: "unclosed',
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+
+    /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher */
+    $event_dispatcher = \Drupal::service('event_dispatcher');
+    $form_builder = \Drupal::formBuilder();
+
+    $valid_access = NULL;
+    $invalid_access = NULL;
+    $event_dispatcher->addListener(FormEvents::BUILD, function (FormBuild $event) use ($valid, $invalid, &$valid_access, &$invalid_access) {
+      $valid->setEvent($event);
+      $invalid->setEvent($event);
+      $valid_access = $valid_access ?? $valid->access(NULL);
+      $invalid_access = $invalid_access ?? $invalid->access(NULL);
+    });
+
+    $form_object = \Drupal::entityTypeManager()->getFormObject('node', 'default');
+    $form_object->setEntity(Node::create([
+      'type' => 'article',
+      'title' => $this->randomMachineName(),
+    ]));
+    $form_state = new FormState();
+    $form_builder->buildForm($form_object, $form_state);
+
+    $this->assertTrue($valid_access, 'Valid YAML is allowed.');
+    $this->assertFalse($invalid_access, 'Malformed YAML is forbidden.');
+  }
+
+  /**
+   * Tests YAML validation in "eca_form_add_optionsfield" access check.
+   *
+   * This plugin inherits access() from FormFieldSetOptionsTrait, which must
+   * evaluate the "options" configuration key, the key the trait actually
+   * stores. Reading a non-existent "value" key passes NULL into the
+   * string-typed YamlParser::parse() and throws a TypeError instead of
+   * returning an access result.
+   *
+   * The sibling FormFieldSetOptions overrides access() and therefore never
+   * reaches the trait implementation.
+   *
+   * @see https://git.drupalcode.org/project/eca/-/work_items/3590420
+   */
+  public function testFormAddOptionsFieldYamlValidation(): void {
+    $options = <<<YAML
+key1: Value One
+key2: Value Two
+YAML;
+    /** @var \Drupal\eca_form\Plugin\Action\FormAddOptionsField $valid */
+    $valid = $this->actionManager->createInstance('eca_form_add_optionsfield', [
+      'name' => 'myoptions',
+      'type' => 'select',
+      'multiple' => FALSE,
+      'options' => $options,
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+    /** @var \Drupal\eca_form\Plugin\Action\FormAddOptionsField $invalid */
+    $invalid = $this->actionManager->createInstance('eca_form_add_optionsfield', [
+      'name' => 'myoptions',
+      'type' => 'select',
+      'multiple' => FALSE,
+      'options' => 'key1: "unclosed',
+      'use_yaml' => TRUE,
+      'validate_yaml' => TRUE,
+    ]);
+
+    /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher */
+    $event_dispatcher = \Drupal::service('event_dispatcher');
+    $form_builder = \Drupal::formBuilder();
+
+    $valid_access = NULL;
+    $invalid_access = NULL;
+    $event_dispatcher->addListener(FormEvents::PROCESS, function (FormProcess $event) use ($valid, $invalid, &$valid_access, &$invalid_access) {
+      $valid->setEvent($event);
+      $invalid->setEvent($event);
+      $valid_access = $valid_access ?? $valid->access(NULL);
+      $invalid_access = $invalid_access ?? $invalid->access(NULL);
+    });
+
+    $form_object = \Drupal::entityTypeManager()->getFormObject('node', 'default');
+    $form_object->setEntity(Node::create([
+      'type' => 'article',
+      'title' => $this->randomMachineName(),
+    ]));
+    $form_state = new FormState();
+    $form_builder->buildForm($form_object, $form_state);
+
+    $this->assertTrue($valid_access, 'Valid YAML is allowed.');
+    $this->assertFalse($invalid_access, 'Malformed YAML is forbidden.');
+  }
+
+  /**
+   * Tests "eca_form_field_get_files" with a single-value file field.
+   *
+   * The plain field name is all the configuration needs: no delta and no
+   * widget internal "fids" key, and the resulting token directly holds the
+   * file entity.
+   */
+  public function testFormFieldGetFilesSingleValue(): void {
+    $this->setUpFileField('field_file_single', 1);
+    $file = $this->createUploadedFile('single.txt');
+
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldGetFiles $action */
+    $action = $this->actionManager->createInstance('eca_form_field_get_files', [
+      'field_name' => 'field_file_single',
+      'token_name' => 'uploaded',
+    ]);
+
+    $access_result = $this->executeGetFilesOnSubmit($action, [
+      'field_file_single' => [
+        0 => [
+          'fids' => [(int) $file->id()],
+          'display' => 1,
+          'description' => '',
+        ],
+      ],
+    ]);
+
+    $this->assertTrue($access_result);
+    $this->assertEquals($file->id(), $this->tokenService->replaceClear('[uploaded:fid]'));
+    $this->assertEquals($file->getFilename(), $this->tokenService->replaceClear('[uploaded:name]'));
+  }
+
+  /**
+   * Tests "eca_form_field_get_files" with a multi-value file field.
+   */
+  public function testFormFieldGetFilesMultiValue(): void {
+    $this->setUpFileField('field_file_multi', 3);
+    $first = $this->createUploadedFile('first.txt');
+    $second = $this->createUploadedFile('second.txt');
+
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldGetFiles $action */
+    $action = $this->actionManager->createInstance('eca_form_field_get_files', [
+      'field_name' => 'field_file_multi',
+      'token_name' => 'uploaded',
+    ]);
+
+    $access_result = $this->executeGetFilesOnSubmit($action, [
+      'field_file_multi' => [
+        0 => ['fids' => [(int) $first->id()], 'display' => 1, 'description' => ''],
+        1 => ['fids' => [(int) $second->id()], 'display' => 1, 'description' => ''],
+      ],
+    ], [], [
+      'field_file_multi' => [
+        ['target_id' => $first->id()],
+        ['target_id' => $second->id()],
+      ],
+    ]);
+
+    $this->assertTrue($access_result);
+    $this->assertEquals($first->id(), $this->tokenService->replaceClear('[uploaded:0:fid]'));
+    $this->assertEquals($second->id(), $this->tokenService->replaceClear('[uploaded:1:fid]'));
+    // A multi-value field always keeps the list, even for a single upload, so
+    // that the token stays predictable for the site builder.
+    $this->assertEquals('', $this->tokenService->replaceClear('[uploaded:fid]'));
+  }
+
+  /**
+   * Tests "eca_form_field_get_files" without any uploaded file.
+   *
+   * Nothing gets stored, so that a "Token: exists" condition can be used to
+   * find out whether the field is populated.
+   */
+  public function testFormFieldGetFilesWithoutUpload(): void {
+    $this->setUpFileField('field_file_single', 1);
+
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldGetFiles $action */
+    $action = $this->actionManager->createInstance('eca_form_field_get_files', [
+      'field_name' => 'field_file_single',
+      'token_name' => 'uploaded',
+    ]);
+
+    $access_result = $this->executeGetFilesOnSubmit($action);
+
+    $this->assertTrue($access_result);
+    $this->assertFalse($this->tokenService->hasTokenData('uploaded'));
+  }
+
+  /**
+   * Tests "eca_form_field_get_files" with file IDs from raw user input.
+   *
+   * A browser submits the file IDs of a managed file element as a single
+   * space-separated string, which only gets converted into an array of
+   * integers once the form element processed that input.
+   *
+   * @see \Drupal\file\Element\ManagedFile::valueCallback()
+   */
+  public function testFormFieldGetFilesFromUserInput(): void {
+    $this->setUpFileField('field_file_multi', 3);
+    $first = $this->createUploadedFile('first.txt');
+    $second = $this->createUploadedFile('second.txt');
+
+    /** @var \Drupal\eca_form\Plugin\Action\FormFieldGetFiles $action */
+    $action = $this->actionManager->createInstance('eca_form_field_get_files', [
+      'field_name' => 'field_file_multi',
+      'token_name' => 'uploaded',
+    ]);
+
+    $access_result = $this->executeGetFilesOnSubmit($action, [], [
+      'field_file_multi' => [
+        0 => ['fids' => $first->id() . ' ' . $second->id()],
+      ],
+    ], [
+      'field_file_multi' => [
+        ['target_id' => $first->id()],
+      ],
+    ]);
+
+    $this->assertTrue($access_result);
+    $this->assertEquals($first->id(), $this->tokenService->replaceClear('[uploaded:0:fid]'));
+    $this->assertEquals($second->id(), $this->tokenService->replaceClear('[uploaded:1:fid]'));
+  }
+
+  /**
+   * Creates a file field on the article content type.
+   *
+   * @param string $field_name
+   *   The name of the field to create.
+   * @param int $cardinality
+   *   The storage cardinality of the field.
+   */
+  protected function setUpFileField(string $field_name, int $cardinality): void {
+    $this->installEntitySchema('file');
+    FieldStorageConfig::create([
+      'field_name' => $field_name,
+      'type' => 'file',
+      'entity_type' => 'node',
+      'cardinality' => $cardinality,
+    ])->save();
+    FieldConfig::create([
+      'field_name' => $field_name,
+      'label' => 'A file field.',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+    ])->save();
+    $form_display = EntityFormDisplay::load('node.article.default');
+    $form_display->setComponent($field_name, ['type' => 'file_generic']);
+    $form_display->save();
+  }
+
+  /**
+   * Creates a file entity, as an upload would have left it behind.
+   *
+   * @param string $filename
+   *   The name of the file.
+   *
+   * @return \Drupal\file\FileInterface
+   *   The saved file entity.
+   */
+  protected function createUploadedFile(string $filename): FileInterface {
+    $file = File::create([
+      'uri' => 'public://' . $filename,
+      'filename' => $filename,
+      'filemime' => 'text/plain',
+    ]);
+    $file->setPermanent();
+    $file->save();
+    return $file;
+  }
+
+  /**
+   * Submits the article form and executes the given action on submit.
+   *
+   * The submitted values are being injected within the submit event, because
+   * \Drupal\file\Element\ManagedFile::valueCallback() would otherwise process
+   * them once more as if they were raw user input.
+   *
+   * @param \Drupal\eca_form\Plugin\Action\FormFieldGetFiles $action
+   *   The action to execute.
+   * @param array $values
+   *   The processed form values to inject.
+   * @param array $user_input
+   *   The raw user input to inject. The according form values are being
+   *   removed, as that is the state of a form that was not yet processed.
+   * @param array $entity_values
+   *   Field values for the node the form gets built for. A multi-value file
+   *   widget needs at least one existing item, as core does not build an
+   *   empty upload row for a programmatically submitted form.
+   *   @see \Drupal\file\Plugin\Field\FieldWidget\FileWidget::formMultipleElements()
+   *
+   * @return bool
+   *   The access result of the action.
+   */
+  protected function executeGetFilesOnSubmit(FormFieldGetFiles $action, array $values = [], array $user_input = [], array $entity_values = []): bool {
+    /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher */
+    $event_dispatcher = \Drupal::service('event_dispatcher');
+    $form_builder = \Drupal::formBuilder();
+    // Reading the properties of a file entity requires a user who is allowed
+    // to view it, both for the action itself and for the token replacement
+    // of the resulting file tokens.
+    $this->container->get('current_user')->setAccount(User::load(1));
+
+    $access_result = NULL;
+    $event_dispatcher->addListener(FormEvents::SUBMIT, function (FormSubmit $event) use (&$access_result, $action, $values, $user_input) {
+      $form_state = $event->getFormState();
+      if ($values) {
+        $form_state->setValues($values + $form_state->getValues());
+      }
+      if ($user_input) {
+        $form_state->setValues(array_diff_key($form_state->getValues(), $user_input));
+        $form_state->setUserInput($user_input + $form_state->getUserInput());
+      }
+      $action->setEvent($event);
+      $access_result = $access_result ?? $action->access(NULL);
+      if ($action->access(NULL)) {
+        $action->execute();
+      }
+    });
+
+    $form_object = \Drupal::entityTypeManager()->getFormObject('node', 'default');
+    $form_object->setEntity(Node::create([
+      'type' => 'article',
+      'title' => 'A node with uploads',
+    ] + $entity_values));
+    // The form only gets submitted, without building it upfront: a programmed
+    // submission takes the form values as its user input, and core's managed
+    // file element would then try to process the already processed file IDs
+    // of a built form once more.
+    // @see \Drupal\file\Element\ManagedFile::valueCallback()
+    $form_state = new FormState();
+    $form_builder->submitForm($form_object, $form_state);
+
+    return (bool) $access_result;
   }
 
 }

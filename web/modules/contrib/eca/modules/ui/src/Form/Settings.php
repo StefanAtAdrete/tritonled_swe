@@ -66,14 +66,24 @@ class Settings extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $config = $this->config('eca.settings');
-    $form['debug_mode'] = [
+    $form['debug'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Debug settings'),
+      '#description' => $this->t('These settings control the ECA debugger. Unlike the other settings on this form, they are not stored in config but in the site state, so they are environment specific and are not exported with the site configuration.'),
+      '#open' => FALSE,
+      '#weight' => -35,
+      // Keep the children flat (no tree) so the submit handler can read each
+      // value by its own key.
+      '#tree' => FALSE,
+    ];
+    $form['debug']['debug_mode'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Debug mode'),
       '#description' => $this->t('Enable debug mode to collect detailed information about ECA processing, including token data and event history. Warning: this has a significant performance impact and should not be left enabled on production sites.'),
       '#default_value' => $this->state->get('_eca_internal_debug_mode', FALSE) ?? FALSE,
       '#weight' => -35,
     ];
-    $form['debug_data_depth'] = [
+    $form['debug']['debug_data_depth'] = [
       '#type' => 'number',
       '#title' => $this->t('Debug data depth'),
       '#description' => $this->t('Maximum recursion depth for normalizing token data in the debugger. Higher values provide more detail but increase processing time.'),
@@ -81,23 +91,22 @@ class Settings extends ConfigFormBase {
       '#min' => 2,
       '#weight' => -30,
     ];
-    $form['debug_data_cases'] = [
+    $form['debug']['debug_data_cases'] = [
       '#type' => 'number',
       '#title' => $this->t('Debug data cases'),
       '#description' => $this->t('Maximum number of history cases stored per event. Each case captures a complete processing run for later inspection.'),
       '#default_value' => $this->state->get('_eca_internal_debug_data_cases', 10) ?? 10,
       '#min' => 1,
       '#weight' => -31,
+      // The number of cases only applies when debug mode is enabled, so it is
+      // hidden until the debug mode checkbox is checked.
+      '#states' => [
+        'visible' => [
+          ':input[name="debug_mode"]' => ['checked' => TRUE],
+        ],
+      ],
     ];
-    $form['debug_test_timeout'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Debug test timeout'),
-      '#description' => $this->t('Timeout in seconds for the temporary debug mode triggered by the test button. When the test button auto-enables debug mode, it will be automatically disabled after this duration. Set to 0 to disable the timeout. Default: 300 (5 minutes).'),
-      '#default_value' => $this->state->get('_eca_internal_debug_test_timeout', 300) ?? 300,
-      '#min' => 0,
-      '#weight' => -29,
-    ];
-    $form['debug_test_timeout'] = [
+    $form['debug']['debug_test_timeout'] = [
       '#type' => 'number',
       '#title' => $this->t('Debug test timeout'),
       '#description' => $this->t('Timeout in seconds for the temporary debug mode triggered by the test button. When the test button auto-enables debug mode, it will be automatically disabled after this duration. Set to 0 to disable the timeout. Default: 300 (5 minutes).'),
@@ -124,21 +133,21 @@ class Settings extends ConfigFormBase {
     $form['user'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Execute models with user'),
-      '#description' => $this->t('Specify here, which user ECA should always switch to when executing models. Leave empty to let ECA always execute models with the current user. <br/>Can be a numeric user ID (UID) or a valid UUID that identifies the user.<br/>When a user is specified here, you will have access to the original ID of the session user with the <em>[session_user:uid]</em> token.'),
+      '#description' => $this->t('Specify here, which user ECA should always switch to when executing models. Leave empty to let ECA always execute models with the current user. <br />Can be a numeric user ID (UID) or a valid UUID that identifies the user.<br />When a user is specified here, you will have access to the original ID of the session user with the <em>[session_user:uid]</em> token.'),
       '#default_value' => $config->get('user'),
       '#weight' => 0,
     ];
     $form['service_user'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Service account user'),
-      '#description' => $this->t('The service account is a Drupal user that ECA will switch to when the action "Switch to service user" will be executed in a model. <br/>Can be a numeric user ID (UID) or a valid UUID that identifies the user.'),
+      '#description' => $this->t('The service account is a Drupal user that ECA will switch to when the action "Switch to service user" will be executed in a model. <br />Can be a numeric user ID (UID) or a valid UUID that identifies the user.<br />Everything after that action runs with the permissions of this account, so grant it only what your models actually need. ECA does not check any permission before the switch, because elevating to the service account is the very purpose of that action. Each model using it is responsible for making sure that its triggering event and the conditions in front of the action cannot be reached by an account that should not be able to cause the switch.'),
       '#default_value' => $config->get('service_user'),
       '#weight' => 5,
     ];
     $form['dependency_calculation'] = [
       '#type' => 'details',
       '#title' => $this->t('Dependency calculation'),
-      '#open' => TRUE,
+      '#open' => FALSE,
       '#weight' => 20,
       '#tree' => TRUE,
     ];

@@ -5,6 +5,7 @@ import {
   DrupalContainerTextFormatFilterGuidelines,
   DrupalContainerTextFormatFilterHelp,
 } from '@/components/form/components/drupal/DrupalContainerTextFormat';
+import DrupalDatetimeMultivalueForm from '@/components/form/components/drupal/DrupalDatetimeMultivalueForm';
 import DrupalDetails from '@/components/form/components/drupal/DrupalDetails';
 import DrupalForm from '@/components/form/components/drupal/DrupalForm';
 import DrupalFormElement from '@/components/form/components/drupal/DrupalFormElement';
@@ -14,9 +15,11 @@ import DrupalInputMultivalueForm from '@/components/form/components/drupal/Drupa
 import DrupalMediaLibraryFieldset from '@/components/form/components/drupal/DrupalMediaLibraryFieldset.tsx';
 import DrupalMediaLibraryItem from '@/components/form/components/drupal/DrupalMediaLibraryItem.tsx';
 import DrupalMediaListContainer from '@/components/form/components/drupal/DrupalMediaListContainer.tsx';
+import DrupalMultivalueSubmit from '@/components/form/components/drupal/DrupalMultivalueSubmit';
 import DrupalPathWidget from '@/components/form/components/drupal/DrupalPathWidget';
 import { DrupalRadioGroup } from '@/components/form/components/drupal/DrupalRadio';
 import DrupalSelect from '@/components/form/components/drupal/DrupalSelect';
+import DrupalSelectMultivalueForm from '@/components/form/components/drupal/DrupalSelectMultivalueForm';
 import DrupalTextArea from '@/components/form/components/drupal/DrupalTextArea';
 import DrupalToggle from '@/components/form/components/drupal/DrupalToggle';
 import DrupalVerticalTabs from '@/components/form/components/drupal/DrupalVerticalTabs';
@@ -41,6 +44,9 @@ const twigToJSXComponentMap = {
   'drupal-canvas-input--url': DrupalInput,
   'drupal-canvas-input--textfield--inwidget-path': DrupalPathWidget,
   'drupal-canvas-input--multivalue-form': DrupalInputMultivalueForm,
+  'drupal-canvas-datetime-wrapper--multivalue-form':
+    DrupalDatetimeMultivalueForm,
+  'drupal-canvas-select--multivalue-form': DrupalSelectMultivalueForm,
   'drupal-canvas-radios': DrupalRadioGroup,
   'drupal-canvas-select': DrupalSelect,
   'drupal-canvas-textarea': DrupalTextArea,
@@ -58,6 +64,7 @@ const twigToJSXComponentMap = {
   'drupal-canvas-media-list-container': DrupalMediaListContainer,
   'drupal-canvas-media-library-item': DrupalMediaLibraryItem,
   'drupal-canvas-media-library-fieldset': DrupalMediaLibraryFieldset,
+  'drupal-canvas-multivalue-submit': DrupalMultivalueSubmit,
 };
 
 export default twigToJSXComponentMap;

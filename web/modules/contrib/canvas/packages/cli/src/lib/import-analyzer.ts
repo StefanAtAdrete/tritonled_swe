@@ -4,6 +4,8 @@ import { parse } from '@babel/parser';
 import * as p from '@clack/prompts';
 import { ASSET_EXTENSIONS, JS_EXTENSIONS } from '@drupal-canvas/discovery';
 
+import { DRUPAL_CANVAS_EXTERNALS } from './vite-build-config';
+
 export type ImportCategory = 'alias' | 'third-party' | 'relative';
 
 export interface ParsedImport {
@@ -34,6 +36,7 @@ export interface ImportAnalysisResult {
 export interface CollectDependenciesResult {
   thirdPartyPackages: Set<string>;
   aliasImports: Map<string, string>;
+  assetImports: Map<string, string>;
   unresolvedAliasImports: Set<string>;
 }
 
@@ -53,8 +56,32 @@ function isSVGFile(filePath: string): boolean {
 }
 
 function isImageFile(filePath: string): boolean {
-  const ext = path.extname(filePath).toLowerCase();
+  const ext = path.extname(stripQueryAndHash(filePath)).toLowerCase();
   return (ASSET_EXTENSIONS as readonly string[]).includes(ext);
+}
+
+function stripQueryAndHash(value: string): string {
+  return value.split('?')[0].split('#')[0];
+}
+
+function toPosixPath(value: string): string {
+  return value.replaceAll('\\', '/');
+}
+
+function getAssetImportSpecifier(
+  resolvedPath: string,
+  aliasBaseDir: string,
+): string | null {
+  const relativePath = path.relative(
+    path.resolve(aliasBaseDir),
+    stripQueryAndHash(resolvedPath),
+  );
+
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    return null;
+  }
+
+  return `@/${toPosixPath(relativePath)}`;
 }
 
 function categorizeImport(source: string): ImportCategory {
@@ -103,7 +130,7 @@ export function resolveAliasPath(
     return null;
   }
 
-  const suffix = aliasSource.slice(ALIAS_PREFIX.length);
+  const suffix = stripQueryAndHash(aliasSource.slice(ALIAS_PREFIX.length));
   // aliasBaseDir is relative to project root (cwd), not scanRoot
   const unresolvedTarget = path.resolve(aliasBaseDir, suffix);
 
@@ -306,6 +333,7 @@ export async function collectImports(
 ): Promise<CollectDependenciesResult> {
   const thirdPartyPackages = new Set<string>();
   const aliasImports = new Map<string, string>();
+  const assetImports = new Map<string, string>();
   const unresolvedAliasImports = new Set<string>();
 
   // Use analyzeImports to get all files and their imports
@@ -328,14 +356,40 @@ export async function collectImports(
         // Ignore cross-component imports (@/components/*)
         // These do not need to be bundled since they are existing components
         // that get built as part of the component build process.
-        if (imp.source.startsWith('@/components/')) {
+        if (
+          imp.source.startsWith('@/components/') &&
+          !imp.isImage &&
+          !imp.isSVG
+        ) {
+          continue;
+        }
+        // Skip alias imports provided by Canvas's global import map.
+        if (DRUPAL_CANVAS_EXTERNALS.includes(imp.source)) {
           continue;
         }
         const resolvedPath = resolveAliasPath(imp.source, aliasBaseDir);
         if (resolvedPath) {
-          aliasImports.set(imp.source, resolvedPath);
+          if (imp.isImage || imp.isSVG) {
+            assetImports.set(stripQueryAndHash(imp.source), resolvedPath);
+          } else {
+            aliasImports.set(imp.source, resolvedPath);
+          }
         } else {
           unresolvedAliasImports.add(imp.source);
+        }
+      }
+
+      if (imp.category === 'relative' && (imp.isImage || imp.isSVG)) {
+        const resolvedPath = path.resolve(
+          path.dirname(analyzedFile.filePath),
+          stripQueryAndHash(imp.source),
+        );
+        const assetSpecifier = getAssetImportSpecifier(
+          resolvedPath,
+          aliasBaseDir,
+        );
+        if (assetSpecifier && existsSync(resolvedPath)) {
+          assetImports.set(assetSpecifier, resolvedPath);
         }
       }
     }
@@ -344,6 +398,7 @@ export async function collectImports(
   return {
     thirdPartyPackages,
     aliasImports,
+    assetImports,
     unresolvedAliasImports,
   };
 }

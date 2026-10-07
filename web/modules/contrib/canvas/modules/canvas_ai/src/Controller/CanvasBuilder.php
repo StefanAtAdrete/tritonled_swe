@@ -12,14 +12,17 @@ use Drupal\ai_agents\Service\AgentStatus\UpdateItems\TextGenerated;
 use Drupal\canvas_ai\Plugin\AiFunctionCall\BuilderResponseFunctionCallInterface;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\Environment;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\ai_agents\PluginInterfaces\AiAgentInterface;
 use Drupal\Core\File\FileExists;
-use Drupal\Core\File\FileSystemInterface;
+use Drupal\file\Upload\FileUploadHandlerInterface;
+use Drupal\file\Upload\FormUploadedFile;
 use Drupal\canvas_ai\CanvasAiPageBuilderHelper;
 use Drupal\canvas_ai\CanvasAiTempStore;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,7 +42,7 @@ final class CanvasBuilder extends ControllerBase {
     protected CsrfTokenGenerator $csrfTokenGenerator,
     protected CanvasAiPageBuilderHelper $canvasAiPageBuilderHelper,
     protected CanvasAiTempStore $canvasAiTempStore,
-    protected FileSystemInterface $fileSystem,
+    protected FileUploadHandlerInterface $fileUploadHandler,
     protected AiAgentStatusPollerServiceInterface $poller,
   ) {}
 
@@ -53,7 +56,7 @@ final class CanvasBuilder extends ControllerBase {
       $container->get('csrf_token'),
       $container->get('canvas_ai.page_builder_helper'),
       $container->get('canvas_ai.tempstore'),
-      $container->get('file_system'),
+      $container->get('file.upload_handler'),
       $container->get('ai_agents.agent_status_poller'),
     );
   }
@@ -111,28 +114,36 @@ final class CanvasBuilder extends ControllerBase {
     }
     $image_files = [];
     foreach ($files as $file) {
-      $allowed_image_types = ['image/jpeg', 'image/png'];
-      $mime_type = $file->getClientMimeType();
-
-      if (!\in_array($mime_type, $allowed_image_types, TRUE)) {
+      if (!$file instanceof UploadedFile) {
+        continue;
+      }
+      // Validate and store the upload through the core file upload pipeline.
+      // Once validated, we discard it, but we want to centralize validation.
+      $upload_result = $this->fileUploadHandler->handleFileUpload(
+        new FormUploadedFile($file),
+        validators: [
+          'FileNameLength' => [],
+          'FileExtension' => ['extensions' => 'png jpg jpeg'],
+          'FileSizeLimit' => ['fileLimit' => Environment::getUploadMaxSize()],
+          'FileIsImage' => [],
+        ],
+        destination: 'temporary://',
+        fileExists: FileExists::Rename,
+      );
+      if ($upload_result->hasViolations()) {
         return new JsonResponse([
           'status' => FALSE,
           'message' => 'Only image files are allowed (jpeg, png, jpg).',
         ]);
       }
-      // Copy the file to the temp directory.
-      $filename = $file->getClientOriginalName();
-      $tmp_name = 'temporary://' . $filename;
-      $this->fileSystem->copy($file->getPathname(), $tmp_name, FileExists::Replace);
-      // Create actual file entities.
-      $file = $this->entityTypeManager()->getStorage('file')->create([
-        'uid' => $this->currentUser()->id(),
-        'filename' => $filename,
-        'uri' => $tmp_name,
-        'status' => 0,
-      ]);
-      $file->save();
-      $binary = file_get_contents($tmp_name);
+      $uploaded_file = $upload_result->getFile();
+      $mime_type = (string) $uploaded_file->getMimeType();
+      $filename = (string) $uploaded_file->getFilename();
+      $binary = file_get_contents((string) $uploaded_file->getFileUri());
+
+      // Delete the managed file immediately, we only care about the contents.
+      $uploaded_file->delete();
+
       if ($binary === FALSE) {
         return new JsonResponse([
           'status' => FALSE,
@@ -260,7 +271,10 @@ final class CanvasBuilder extends ControllerBase {
           if ($tool instanceof BuilderResponseFunctionCallInterface) {
             $response = array_merge($response, $tool->getStructuredOutput());
           }
-          if (\in_array($tool->getPluginId(), ['ai_agents::ai_agent::canvas_page_builder_agent', 'ai_agents::ai_agent::canvas_template_builder_agent'], TRUE)) {
+          if (\in_array($tool->getPluginId(), [
+            'ai_agents::ai_agent::canvas_page_builder_agent',
+            'ai_agents::ai_agent::canvas_template_builder_agent',
+          ], TRUE)) {
             $this->canvasAiTempStore->deleteData(CanvasAiTempStore::CURRENT_LAYOUT_KEY);
           }
         }
@@ -435,7 +449,7 @@ final class CanvasBuilder extends ControllerBase {
         "name" => "formatted_text",
         "type" => "Built-in custom package",
         "description" => "A built-in component to render text with trusted HTML using [`dangerouslySetInnerHTML`](https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html). The content is safe when processed through Drupal's filter system that is [correctly configured](https://www.drupal.org/docs/administering-a-drupal-site/security-in-drupal/configuring-text-formats-aka-input-formats-for-security).",
-        "code" => "``jsx\nimport FormattedText from 'drupal-canvas';\n\nexport default function Example() {\n  return (\n    <FormattedText>\n      <em>Hello, world!</em>\n    </FormattedText>\n  );\n}\n```",
+        "code" => "```jsx\nimport { FormattedText } from 'drupal-canvas';\n\nexport default function Example() {\n  return (\n    <FormattedText>\n      <em>Hello, world!</em>\n    </FormattedText>\n  );\n}\n```",
       ],
       [
         "name" => "cn",
@@ -460,6 +474,24 @@ final class CanvasBuilder extends ControllerBase {
         "type" => "Bundled npm package",
         "description" => "CVA helps you define components with multiple visual variants (like size, color, state) in a clean, type-safe way. Instead of manually concatenating CSS classes or writing complex conditional logic, you define variants upfront and let CVA handle the class composition.",
         "code" => "```js\nimport { cva } from 'class-variance-authority';\n\nconst button = cva(\n  'font-semibold border rounded', // base classes\n  {\n    variants: {\n      intent: {\n        primary: 'bg-blue-500 text-white border-blue-500',\n        secondary: 'bg-gray-200 text-gray-900 border-gray-200',\n      },\n      size: {\n        small: 'text-sm py-1 px-2',\n        medium: 'text-base py-2 px-4',\n      },\n    },\n    defaultVariants: {\n      intent: 'primary',\n      size: 'medium',\n    },\n  },\n);\n\n// Usage\nbutton({ intent: 'secondary', size: 'small' });\n// Returns: \"font-semibold border rounded bg-gray-200 text-gray-900 border-gray-200 text-sm py-1 px-2\"\n```",
+      ],
+      [
+        "name" => "json_api_client",
+        "type" => "Bundled npm package",
+        "description" => "A JSON:API client for fetching Drupal content from code components. Use it with drupal-jsonapi-params to build query strings and swr to load and cache remote data.",
+        "code" => "```js\nimport { JsonApiClient } from '@drupal-api-client/json-api-client';\nimport { DrupalJsonApiParams } from 'drupal-jsonapi-params';\nimport useSWR from 'swr';\n```",
+      ],
+      [
+        "name" => "drupal_jsonapi_params",
+        "type" => "Bundled npm package",
+        "description" => "A helper package for generating JSON:API query strings, including includes, filters, fields, sorts, and pagination.",
+        "code" => "```js\nimport { DrupalJsonApiParams } from 'drupal-jsonapi-params';\n\nconst params = new DrupalJsonApiParams()\n  .addInclude(['field_media_image'])\n  .addFields('node--article', ['title', 'path', 'field_media_image']);\n```",
+      ],
+      [
+        "name" => "swr",
+        "type" => "Bundled npm package",
+        "description" => "A React data fetching hook for loading, caching, and revalidating content in code components.",
+        "code" => "```js\nimport useSWR from 'swr';\n\nconst { data, error, isLoading } = useSWR('/jsonapi/node/article', fetcher);\n```",
       ],
       [
         "name" => "tailwind_merge",

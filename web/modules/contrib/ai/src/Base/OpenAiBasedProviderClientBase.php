@@ -2,6 +2,7 @@
 
 namespace Drupal\ai\Base;
 
+use Drupal\ai\Exception\AiSetupFailureException;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\File\FileExists;
@@ -84,6 +85,22 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
    * @var array
    */
   protected array $rateLimitHeaders = [];
+
+  /**
+   * The image mime types the image endpoints may return, with file extension.
+   */
+  protected const ALLOWED_IMAGE_MIME_TYPES = [
+    'image/png' => 'png',
+    'image/jpeg' => 'jpeg',
+    'image/webp' => 'webp',
+  ];
+
+  /**
+   * The audio mime types the audio endpoints may return, with file extension.
+   */
+  protected const ALLOWED_AUDIO_MIME_TYPES = [
+    'audio/mpeg' => 'mp3',
+  ];
 
   /**
    * {@inheritdoc}
@@ -199,9 +216,19 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
     if ($this->hasAuthentication()) {
       // Only set authentication when not set.
       if (empty($this->apiKey)) {
-        $this->setAuthentication($this->loadApiKey());
+        try {
+          $key = $this->loadApiKey();
+        }
+        catch (AiSetupFailureException $e) {
+          $this->loggerFactory->get('ai')->error($e->getMessage());
+        }
+        if (!empty($key)) {
+          $this->setAuthentication($key);
+        }
       }
-      $clientFactory = $clientFactory->withApiKey($this->apiKey);
+      if (!empty($this->apiKey)) {
+        $clientFactory = $clientFactory->withApiKey($this->apiKey);
+      }
     }
 
     $client = $clientFactory->withHttpClient($this->httpClient);
@@ -341,9 +368,11 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
           }
         }
 
-        // Create the final message from accumulated data.
-        $message = $stream->reconstructChatOutput()->getNormalized();
-        $chat_output = new ChatOutput($message, $response, []);
+        // Create the final message from accumulated data, carrying over the
+        // token usage collected while consuming the stream.
+        $reconstructed = $stream->reconstructChatOutput();
+        $message = $reconstructed->getNormalized();
+        $chat_output = new ChatOutput($message, $response, [], $reconstructed->getTokenUsage());
       }
       else {
         $initialResponse = $this->client->chat()->create($payload);
@@ -373,8 +402,8 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
       return $chat_output;
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
       throw $e;
     }
     return new ChatOutput($message, $response, []);
@@ -402,13 +431,13 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
     try {
       $response = $this->client->moderations()->create($payload)->toArray();
-      $normalized = new ModerationResponse($response['results'][0]['flagged'], $response['results'][0]['category_scores']);
-      return new ModerationOutput($normalized, $response, []);
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
       throw $e;
     }
+    $normalized = new ModerationResponse($response['results'][0]['flagged'], $response['results'][0]['category_scores']);
+    return new ModerationOutput($normalized, $response, []);
   }
 
   /**
@@ -429,8 +458,8 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
     try {
       $response = $this->client->images()->create($payload)->toArray();
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
     }
 
     $images = [];
@@ -440,21 +469,17 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
     foreach ($response['data'] as $data) {
       if (isset($data['b64_json'])) {
-        $images[] = new ImageFile(base64_decode($data['b64_json']), 'image/png', 'generated.png');
-      }
-      elseif (isset($data['url']) && !empty($data['url'])) {
-        try {
-          $image_content = file_get_contents($data['url']);
-          if ($image_content !== FALSE) {
-            $images[] = new ImageFile($image_content, 'image/png', 'generated.png');
-          }
+        $image_content = base64_decode($data['b64_json'], TRUE);
+        if ($image_content === FALSE) {
+          throw new AiResponseErrorException('Failed to decode base64 image data from the API response.');
         }
-        catch (\Exception $e) {
-          $this->loggerFactory->get('ai')->error('Failed to fetch image from URL @url: @message', [
-            '@url' => $data['url'],
-            '@message' => $e->getMessage(),
-          ]);
+        // Determine the mime type from the actual binary data, so that only
+        // real images can end up in the output.
+        $mime_type = $this->detectMimeType($image_content, static::ALLOWED_IMAGE_MIME_TYPES);
+        if ($mime_type === NULL) {
+          throw new AiResponseErrorException('The API returned an image with an unsupported mime type.');
         }
+        $images[] = new ImageFile(base64_decode($image_content), 'image/png', 'generated.png');
       }
     }
 
@@ -482,13 +507,19 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
     try {
       $response = $this->client->audio()->speech($payload);
-      $output = new AudioFile($response, 'audio/mpeg', 'speech.mp3');
-      return new TextToSpeechOutput([$output], $response, []);
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
       throw $e;
     }
+    // Determine the mime type from the actual binary data, so that only
+    // real audio files can end up in the output.
+    $mime_type = $this->detectMimeType($response, static::ALLOWED_AUDIO_MIME_TYPES);
+    if ($mime_type === NULL) {
+      throw new AiResponseErrorException('The API returned an audio file with an unsupported mime type.');
+    }
+    $output = new AudioFile($response, 'audio/mpeg', 'speech.mp3');
+    return new TextToSpeechOutput([$output], $response, []);
   }
 
   /**
@@ -511,10 +542,9 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
     try {
       $response = $this->client->audio()->transcribe($payload)->toArray();
-      return new SpeechToTextOutput($response['text'], $response, []);
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
       throw $e;
     }
     finally {
@@ -522,6 +552,7 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
         fclose($input);
       }
     }
+    return new SpeechToTextOutput($response['text'], $response, []);
   }
 
   /**
@@ -541,12 +572,12 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
 
     try {
       $response = $this->client->embeddings()->create($payload)->toArray();
-      return new EmbeddingsOutput($response['data'][0]['embedding'], $response, []);
     }
-    catch (\Exception $e) {
-      $this->handleApiException($e);
+    catch (\Throwable $e) {
+      $this->handleApiThrowable($e);
       throw $e;
     }
+    return new EmbeddingsOutput($response['data'][0]['embedding'], $response, []);
   }
 
   /**
@@ -567,6 +598,43 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
       throw new AiQuotaException($e->getMessage());
     }
     throw $e;
+  }
+
+  /**
+   * Handle any Throwable from the API client.
+   *
+   * Call sites catching \Throwable should route through this method. PHP
+   * errors (e.g. \TypeError from the OpenAI PHP client) are wrapped in an
+   * AiResponseErrorException so that all consumers receive a regular
+   * exception they can catch. Everything else delegates to
+   * handleApiException(), preserving backwards compatibility with
+   * subclasses that override handleApiException(\Exception $e).
+   *
+   * Subclasses that want a single hook covering both exceptions and errors
+   * may override this method directly.
+   *
+   * Two methods exist — handleApiException(\Exception) and
+   * handleApiThrowable(\Throwable) — because a previous widening of
+   * handleApiException() to \Throwable was an incompatible change
+   * that broke subclasses (e.g. the Anthropic provider) overriding it with
+   * \Exception. The wider hook was reintroduced here as an opt-in method
+   * so contributed providers can keep their existing overrides.
+   *
+   * @param \Throwable $e
+   *   The throwable to handle.
+   *
+   * @throws \Drupal\ai\Exception\AiRateLimitException
+   * @throws \Drupal\ai\Exception\AiQuotaException
+   * @throws \Drupal\ai\Exception\AiResponseErrorException
+   * @throws \Exception
+   */
+  protected function handleApiThrowable(\Throwable $e): void {
+    // Wrap PHP errors (TypeError, ValueError, etc.) in an
+    // AiResponseErrorException so consumers can catch a single exception type.
+    if ($e instanceof \Error) {
+      throw new AiResponseErrorException($e->getMessage(), $e->getCode(), $e);
+    }
+    $this->handleApiException($e);
   }
 
   /**
@@ -616,6 +684,31 @@ abstract class OpenAiBasedProviderClientBase extends AiProviderClientBase implem
     }
     return $dto;
 
+  }
+
+  /**
+   * Detects the mime type of binary data and validates it.
+   *
+   * @param string $binary
+   *   The binary data to check.
+   * @param array|string $allowed
+   *   Either an array of accepted mime types keyed by mime type, or a
+   *   primary mime type such as "image" or "audio" that the detected mime
+   *   type has to belong to.
+   *
+   * @return string|null
+   *   The detected mime type, or NULL if it is not allowed.
+   */
+  protected function detectMimeType(string $binary, array|string $allowed): ?string {
+    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+    $mime_type = $finfo->buffer($binary);
+    if (!is_string($mime_type)) {
+      return NULL;
+    }
+    if (is_array($allowed)) {
+      return isset($allowed[$mime_type]) ? $mime_type : NULL;
+    }
+    return str_starts_with($mime_type, $allowed . '/') ? $mime_type : NULL;
   }
 
   /**

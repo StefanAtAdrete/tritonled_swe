@@ -80,11 +80,16 @@ class AiAutomatorEntityModifier {
    *   If a specific field should be processed, this is the field name.
    * @param bool $isAutomated
    *   If this is an automated process or not.
+   * @param string|null $specificAutomatorId
+   *   If a specific automator should be processed, this is the automator
+   *   config entity ID. Used to isolate a single automator when multiple
+   *   automators are configured on the same field (e.g. separate Field
+   *   Widget Action buttons for Translate and Summarize on the same field).
    *
    * @return \Drupal\Core\Entity\ContentEntityInterface|null
    *   The entity or NULL if no automator fields are found.
    */
-  public function saveEntity(EntityInterface $entity, $isInsert = FALSE, $specificField = NULL, $isAutomated = TRUE) {
+  public function saveEntity(EntityInterface $entity, $isInsert = FALSE, $specificField = NULL, $isAutomated = TRUE, $specificAutomatorId = NULL) {
     // Only run on Content Interfaces.
     if (!($entity instanceof ContentEntityInterface)) {
       return NULL;
@@ -93,6 +98,22 @@ class AiAutomatorEntityModifier {
     $configs = $this->entityHasConfig($entity);
     if (!count($configs)) {
       return NULL;
+    }
+
+    // If a specific automator ID is set, only process that one. Configs are
+    // keyed by the automator config entity ID (see entityHasConfig()), so
+    // this isolates a single automator when several are configured on the
+    // same field. This filter must run before the usort() below, which
+    // reindexes the array to sequential integer keys and would otherwise
+    // destroy the automator ID keys this filter relies on.
+    if ($specificAutomatorId) {
+      $configs = array_filter($configs, function ($config, $automatorId) use ($specificAutomatorId) {
+        return $automatorId === $specificAutomatorId;
+      }, ARRAY_FILTER_USE_BOTH);
+      // If no configs are found, return NULL.
+      if (!count($configs)) {
+        return NULL;
+      }
     }
 
     // Resort on weight to create in the right order.
@@ -178,7 +199,6 @@ class AiAutomatorEntityModifier {
     $fieldDefinitions = $this->fieldManager->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle());
 
     $fieldConfigs = [];
-    $automatorConfig = [];
     /** @var \Drupal\ai_automators\Entity\AiAutomator $field */
     foreach ($fields as $field) {
       // Check if enabled and return the config.
@@ -269,8 +289,26 @@ class AiAutomatorEntityModifier {
     $value = $rule->checkIfEmpty($value, $automatorConfig);
     $value = $this->applyPostCheckIfEmpty($rule, $entity, $value, $automatorConfig);
 
-    // Determine if should process based on isEmpty check.
-    $shouldProcess = $this->isValueEmptyAfterCheck($value);
+    $shouldProcess = FALSE;
+
+    // If the field is empty, always process.
+    if ($this->isValueEmptyAfterCheck($value)) {
+      $shouldProcess = TRUE;
+    }
+    // If edit mode is on, check for changes in the base field.
+    elseif (!empty($automatorConfig['edit_mode'])) {
+      // Token mode does not require a base field, but when one is configured
+      // use it for change detection.
+      if (empty($automatorConfig['base_field'])) {
+        $shouldProcess = TRUE;
+      }
+      else {
+        $originalEntity = $this->getOriginalEntity($entity);
+        $original = $originalEntity ? json_encode($originalEntity->get($automatorConfig['base_field'])->getValue()) : NULL;
+        $current = json_encode($entity->get($automatorConfig['base_field'])->getValue());
+        $shouldProcess = $current !== $original;
+      }
+    }
 
     // Dispatch event to allow modifying the decision after isEmpty check.
     $event = new ShouldProcessFieldEvent($entity, $fieldDefinition, $automatorConfig, $shouldProcess);

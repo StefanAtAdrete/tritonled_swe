@@ -262,8 +262,34 @@ abstract class AutomatorBaseAction extends FieldWidgetActionBase {
       $entity->get($form_key)->filterEmptyItems();
     }
     $form_state->setValue($form_key, NULL);
-    // Run the automator for the entity.
-    $entity = $this->entityModifier->saveEntity($entity, FALSE, $form_key, FALSE);
+
+    // Run the specific automator for the entity. Passing the automator ID
+    // ensures only this automator runs, even when multiple automators are
+    // configured on the same field. Catch any failure so the user sees a
+    // real error message instead of a silent no-op.
+    try {
+      $entity = $this->entityModifier->saveEntity($entity, FALSE, $form_key, FALSE, $automator_id);
+    }
+    catch (\Throwable $e) {
+      $this->loggerFactory->get('ai_automators')->error('AI automator failed for field @field: @msg', [
+        '@field' => $form_key,
+        '@msg' => $e->getMessage(),
+      ]);
+      $this->messenger->addError($this->t('The AI automator failed to run. Please try again or check the logs for details.'));
+      return $form[$form_key] ?? [];
+    }
+
+    // saveEntity() returns NULL when no automator config matches this
+    // field/automator combination (e.g. the automator has since been
+    // reconfigured for a different field). Bail gracefully instead of
+    // calling methods on NULL.
+    if (!$entity) {
+      $this->loggerFactory->get('ai_automators')->warning('Automator @automator_id did not process field @field. Check the automator configuration.', [
+        '@automator_id' => $automator_id,
+        '@field' => $form_key,
+      ]);
+      return $form[$form_key] ?? [];
+    }
     // Ensure the widget has enough elements for all values.
     $form[$form_key]['widget']['#items_count'] = count($entity->get($form_key));
 

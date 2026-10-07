@@ -15,6 +15,7 @@ use Drupal\ai\Service\FunctionCalling\FunctionGroupPluginManager;
 use Drupal\ai_agents\Entity\AiAgent;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Yaml\Yaml;
+use Drupal\Component\Serialization\Yaml as SerializationYaml;
 
 /**
  * AI Agent form.
@@ -69,11 +70,13 @@ final class AiAgentForm extends EntityForm {
       'orchestration_agent' => FALSE,
       'triage_agent' => FALSE,
       'max_loops' => 3,
+      'max_loops_message' => '',
       'system_prompt' => '',
       'secured_system_prompt' => '[ai_agent:agent_instructions]',
       'default_information_tools' => '',
       'structured_output_enabled' => FALSE,
       'structured_output_schema' => '',
+      'hostname_filter_disabled' => FALSE,
     ];
   }
 
@@ -143,6 +146,14 @@ final class AiAgentForm extends EntityForm {
       '#description' => $this->t('The maximum amount of loops that the AI agent can run to feed itself with new context before giving up. This is a security feature to prevent infinite loops.'),
       '#default_value' => $config['max_loops'],
       '#required' => TRUE,
+    ];
+
+    $form['max_loops_message'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Max loops message'),
+      '#description' => $this->t('The message displayed to the user when the agent reaches its maximum number of loops. Leave empty for the default message.'),
+      '#default_value' => $config['max_loops_message'],
+      '#rows' => 3,
     ];
 
     $form['prompt_detail'] = [
@@ -227,6 +238,20 @@ final class AiAgentForm extends EntityForm {
       '#default_value' => $config['structured_output_schema'],
     ];
 
+    $form['prompt_detail']['advanced']['security'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Security settings'),
+      '#description' => $this->t('These settings will help the AI agent to handle security-related tasks.'),
+      '#open' => FALSE,
+    ];
+
+    $form['prompt_detail']['advanced']['security']['hostname_filter_disabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Disable hostname filtering'),
+      '#description' => $this->t('Check this box if you want to disable hostname filtering for this agent. Hostname filtering is a security feature that restricts the agent from making requests to certain hostnames. Disabling it can be useful for agents that need to access a wide range of hostnames, but it can also pose a security risk if the agent is not properly configured. Only disable this if you know what you are doing and have other security measures in place.'),
+      '#default_value' => $config['hostname_filter_disabled'] ?? FALSE,
+    ];
+
     return $form;
   }
 
@@ -250,11 +275,13 @@ final class AiAgentForm extends EntityForm {
         'orchestration_agent' => $this->entity->get('orchestration_agent'),
         'triage_agent' => $this->entity->get('triage_agent'),
         'max_loops' => $this->entity->get('max_loops') ?? 3,
+        'max_loops_message' => $this->entity->get('max_loops_message') ?? '',
         'system_prompt' => $this->entity->get('system_prompt'),
         'secured_system_prompt' => $this->entity->get('secured_system_prompt') ?? '[ai_agent:agent_instructions]',
-        'default_information_tools' => $this->entity->get('default_information_tools') ? Yaml::dump(Yaml::parse($this->entity->get('default_information_tools') ?? ''), 10, 2) : NULL,
+        'default_information_tools' => $this->entity->get('default_information_tools') ? Yaml::dump(SerializationYaml::decode($this->entity->get('default_information_tools') ?? ''), 10, 2) : NULL,
         'structured_output_enabled' => $this->entity->get('structured_output_enabled') ?? FALSE,
         'structured_output_schema' => $this->entity->get('structured_output_schema') ?? '',
+        'hostname_filter_disabled' => $this->entity->get('hostname_filter_disabled') ?? FALSE,
       ] + self::defaultConfigMetadata('id'),
       'id',
       $this->entity->isNew(),
@@ -459,7 +486,10 @@ final class AiAgentForm extends EntityForm {
         $not_break = $form_state->getValue([
           'tool_usage',
           $tool_definition['id'],
+          'property_restrictions',
+          'table',
           $property_name,
+          'restrictions',
           'not_break',
         ]);
       }
@@ -641,17 +671,20 @@ final class AiAgentForm extends EntityForm {
         }
         $tool_settings[$tool_id]['progress_message'] = $tool_usage['progress_message'] ?? '';
         $tool_settings[$tool_id]['use_artifacts'] = $tool_usage['use_artifacts'] ?? FALSE;
+        $processed_restrictions = [];
         if (isset($tool_usage['property_restrictions'])) {
           foreach ($tool_usage['property_restrictions'] as $property_name => $values) {
             // Only set if an action is set.
-            if ($values['action']) {
+            if (!empty($values['action'])) {
               $cleaned_values = str_replace("\r\n", "\n", $values['values'] ?? '');
               // Trim and remove all empty values.
               $all_values = $values['not_break'] ? [trim($cleaned_values)] : array_filter(array_map('trim', explode("\n", $cleaned_values)));
-              $tool_usage['property_restrictions'][$property_name]['values'] = $all_values;
-            }
-            else {
-              unset($tool_usage[$property_name]);
+              $processed_restrictions[$property_name] = [
+                'action' => $values['action'],
+                'values' => $all_values,
+                'hide_property' => $values['hide_property'] ?? FALSE,
+                'not_break' => $values['not_break'] ?? FALSE,
+              ];
             }
             // Save the property description override as well.
             if (!empty($tool_usage['property_restrictions'][$property_name]['property_description_enabled'])) {
@@ -663,15 +696,10 @@ final class AiAgentForm extends EntityForm {
                 unset($tool_settings[$tool_id]['property_description_override'][$property_name]);
               }
             }
-            // Remove it from the tool_usage.
-            if (isset($tool_usage['property_restrictions'][$property_name]) && isset($tool_usage['property_restrictions'][$property_name]['property_description_override'])) {
-              unset($tool_usage['property_restrictions'][$property_name]['property_description_override']);
-              unset($tool_usage['property_restrictions'][$property_name]['property_description_enabled']);
-            }
           }
         }
         if (count($tool_usage)) {
-          $tool_usage_limits[$tool_id] = $tool_usage['property_restrictions'] ?? [];
+          $tool_usage_limits[$tool_id] = $processed_restrictions;
         }
       }
     }

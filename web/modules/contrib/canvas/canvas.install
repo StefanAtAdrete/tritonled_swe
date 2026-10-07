@@ -4,27 +4,8 @@ declare(strict_types=1);
 
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Extension\ThemeInstallerInterface;
-use Drupal\Core\Hook\Attribute\LegacyRequirementsHook;
 use Drupal\canvas\AutoSave\AutoSaveManager;
-
-/**
- * Implements hook_install().
- */
-function canvas_install(bool $is_syncing): void {
-  if ($is_syncing) {
-    return;
-  }
-  // Ensure canvas_stark is installed.
-  // For that to happen when installing canvas with a recipe, we cannot do this
-  // conditionally based on the `$is_syncing` flag.
-  // @see \Drupal\canvas\Theme\CanvasThemeNegotiator
-  // @see \Drupal\Core\Theme\ThemeNegotiator::determineActiveTheme()
-  \Drupal::service(ThemeInstallerInterface::class)->install(['canvas_stark']);
-
-  // @todo This is a bad practice, and shouldn't be needed, but without it some
-  //   tests are failing. Investigate in https://www.drupal.org/i/3580247
-  drupal_flush_all_caches();
-}
+use Drupal\canvas\CanvasNotificationHandler;
 
 /**
  * Implements hook_module_preinstall().
@@ -55,11 +36,22 @@ function canvas_module_preuninstall(string $module, bool $is_syncing): void {
 }
 
 /**
+ * Implements hook_uninstall().
+ */
+function canvas_uninstall(bool $is_syncing): void {
+  $schema = \Drupal::database()->schema();
+  foreach ([CanvasNotificationHandler::NOTIFICATION_TABLE, CanvasNotificationHandler::NOTIFICATION_READ_TABLE] as $table) {
+    if ($schema->tableExists($table)) {
+      $schema->dropTable($table);
+    }
+  }
+}
+
+/**
  * Implements hook_requirements().
  *
  * @todo Remove when https://www.drupal.org/project/drupal/issues/3472008 is fixed in Drupal core.
  */
-#[LegacyRequirementsHook]
 function canvas_requirements(string $phase): array {
   $requirements = [];
   if ($phase === 'install' || $phase == 'runtime') {
@@ -112,5 +104,4 @@ function canvas_update_11200(): void {
     // No need to manually flush caches during the update.
     // @see \Drupal\system\Controller\DbUpdateController::triggerBatch()
   }
-
 }

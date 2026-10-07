@@ -7,3 +7,4 @@ pswp
 testfunction
 Zoomable
 zoomable
+photoswipe

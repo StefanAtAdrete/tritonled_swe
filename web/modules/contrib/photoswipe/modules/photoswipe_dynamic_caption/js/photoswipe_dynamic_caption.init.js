@@ -11,6 +11,8 @@
     attach(context, settings) {
       const captionOptions =
         settings?.photoswipe?.options?.captionOptions || {};
+      const allowHtmlCaptions =
+        settings?.photoswipe?.options?.allowHtmlCaptions || false;
 
       // Attaches caption plugin.
       once('photoswipeCaption', '.photoswipe-gallery', context).forEach(
@@ -20,7 +22,13 @@
 
             new PhotoSwipeDynamicCaption(lightbox, {
               captionContent: (slide) => {
-                return slide.data.element.getAttribute('data-overlay-title');
+                const title = slide.data.element.getAttribute('data-overlay-title') || '';
+                // Sanitize with DOMPurify when opted in and available;
+                // otherwise escape as plain text.
+                if (allowHtmlCaptions && typeof DOMPurify !== 'undefined') {
+                  return DOMPurify.sanitize(title);
+                }
+                return Drupal.checkPlain(title);
               },
               ...captionOptions,
             });

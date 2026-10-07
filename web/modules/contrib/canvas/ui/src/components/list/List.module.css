@@ -25,10 +25,14 @@
 .folderTrigger {
   width: 100%;
   border-radius: var(--radius-2);
+
+  &, & * {
+    cursor: grab;
+  }
   .chevron {
     cursor: pointer;
     &:hover {
-        color: var(--blue-9);
+      color: var(--blue-9);
     }
   }
   .folderCount {
@@ -57,9 +61,41 @@
 }
 
 .isDragging {
-  opacity: 0.5;
   cursor: grabbing;
+  border-radius: var(--radius-2);
+  background: var(--blue-9);
 }
+
+.draggingFolderTrigger {
+  --sidebar-node-dots-color: white;
+  --sidebar-node-dots-hover-color: white;
+  --bg-hover-dots: var(--blue-7);
+
+  color: white;
+  background: var(--blue-9);
+
+  .folderName {
+    color: white;
+  }
+
+  button {
+    color: white;
+  }
+
+  .folderIcon {
+    color: white;
+  }
+
+  .folderCount {
+    color: var(--blue-9);
+    background-color: var(--blue-5);
+  }
+
+  .chevron {
+    color: white;
+  }
+}
+
 
 .emptyDropZone {
   min-height: var(--space-6);
@@ -70,15 +106,15 @@
 }
 
 .dropIndicatorAbove::before {
-  content: '';
   position: absolute;
-  top: -4px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--blue-9);
   z-index: 10;
+  top: -4px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: '';
   border-radius: 1px;
+  background-color: var(--blue-9);
 }
 
 .dropIndicatorBelow {
@@ -86,13 +122,13 @@
 }
 
 .dropIndicatorBelow::after {
-  content: '';
   position: absolute;
+  z-index: 10;
+  right: 0;
   bottom: -4px;
   left: 0;
-  right: 0;
   height: 2px;
-  background-color: var(--blue-9);
-  z-index: 10;
+  content: '';
   border-radius: 1px;
+  background-color: var(--blue-9);
 }

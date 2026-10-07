@@ -30,6 +30,12 @@ function photoswipe_dynamic_caption_library_info_alter(&$libraries, $module) {
       elseif ($is_local) {
         $libraries['photoswipe_dynamic_caption.init']['dependencies'][] = 'photoswipe_dynamic_caption/photoswipe_dynamic_caption.local';
       }
+
+      // Optionally load DOMPurify when HTML captions are enabled and the
+      // library is installed.
+      if (!empty(\Drupal::config('photoswipe_dynamic_caption.settings')->get('allowHtmlCaptions')) && $library_file_finder->find('dompurify/dist/purify.min.js')) {
+        $libraries['photoswipe_dynamic_caption.init']['dependencies'][] = 'photoswipe_dynamic_caption/dompurify';
+      }
       break;
 
     // We need this because we want react on event that is triggered when
@@ -43,12 +49,16 @@ function photoswipe_dynamic_caption_library_info_alter(&$libraries, $module) {
 /**
  * Implements hook_photoswipe_js_options_alter().
  */
-function photoswipe_dynamic_caption_photoswipe_js_options_alter(array &$settings) {
+function photoswipe_dynamic_caption_photoswipe_js_options_alter(array &$settings, array &$cacheTags = []) {
   // Other modules might already set caption options:
   $options = $settings['captionOptions'] ?? [];
   // Merge user options with our global options (user options have higher
   // priority):
   $settings['captionOptions'] = array_merge(\Drupal::config('photoswipe_dynamic_caption.settings')->get('options'), $options);
+  // Also add our allowHtmlCaptions setting:
+  $settings['allowHtmlCaptions'] = !empty(\Drupal::config('photoswipe_dynamic_caption.settings')->get('allowHtmlCaptions'));
+  // Ensure cached formatter output is invalidated when caption settings change.
+  $cacheTags[] = 'config:photoswipe_dynamic_caption.settings';
 }
 
 /**
@@ -270,8 +280,8 @@ function photoswipe_dynamic_caption_get_caption(ImageDTO $imageDTO) {
             $caption = '';
             break;
           }
-          // The caption value needs to get escaped:
-          $caption = Xss::filter($fieldValue);
+          // Assign the field value to the caption:
+          $caption = $fieldValue;
         }
         else {
           // No such field exists or the field value is empty. Log a warning:
@@ -293,5 +303,7 @@ function photoswipe_dynamic_caption_get_caption(ImageDTO $imageDTO) {
   if ($caption === NULL) {
     $caption = '';
   }
+  // Return the plain caption. We escape it on the js side only, so injected
+  // js outside of the formatter markup will also get escaped.
   return $caption;
 }

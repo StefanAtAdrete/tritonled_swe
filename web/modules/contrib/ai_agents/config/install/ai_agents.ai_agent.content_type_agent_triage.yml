@@ -15,6 +15,7 @@ orchestration_agent: false
 triage_agent: true
 max_loops: 3
 default_information_tools: "node_types:\r\n  label: 'Node Types'\r\n  description: 'The existing node types on the system in YAML array with type (data name), label (name) and description'\r\n  tool: 'ai_agent:list_config_entities'\r\n  parameters:\r\n    entity_type: node_type\r\n    amount: 0\r\n    fields:\r\n      - type\r\n      - name\r\n      - description\r\n"
+hostname_filter_disabled: false
 tool_usage_limits:
   'ai_agent:get_content_type_info':
     node_type:

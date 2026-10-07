@@ -208,7 +208,7 @@ canvas.api.config.patch:
     _canvas_http_eligible_config_entity: 'TRUE'
     _entity_access: 'canvas_config_entity.update'
     # Allow a subset: `Component` config entities are read-only via the internal HTTP API.
-    canvas_config_entity_type_id: '(folder|pattern|js_component|asset_library|brand_kit)'
+    canvas_config_entity_type_id: '(content_template|folder|pattern|js_component|asset_library|brand_kit)'
   options:
     parameters:
       canvas_config_entity:
@@ -289,6 +289,22 @@ canvas.api.content.get:
     parameters:
       canvas_page:
         type: entity:canvas_page
+    _format: 'json'
+    # Indicate that external applications may use this route. For authentication, see `modules/canvas_oauth/README.md`.
+    canvas_external_api: true
+  methods: [GET]
+# @todo https://www.drupal.org/i/3498525 should generalize this to all eligible content entity types by using a route callback
+canvas.api.content.get.by_uuid:
+  path: '/canvas/api/v0/content/canvas_page/by-uuid/{canvas_page}'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiContentControllers::get'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _entity_access: 'canvas_page.view'
+  options:
+    parameters:
+      canvas_page:
+        type: canvas_entity_by_uuid:canvas_page
     _format: 'json'
     # Indicate that external applications may use this route. For authentication, see `modules/canvas_oauth/README.md`.
     canvas_external_api: true
@@ -407,6 +423,22 @@ canvas.api.form.content_entity:
     # Used by Drupal's AJAX system.
     - POST
 
+canvas.api.layout.content_template_draft:
+  path: '/canvas/api/v0/layout-content-template-draft/{entity_type}/{preview_entity}'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiLayoutController::draftContentTemplate'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _permission: 'administer content templates'
+    _entity_access: 'preview_entity.view'
+    _format: 'json'
+  options:
+    parameters:
+      preview_entity:
+        type: entity:{entity_type}
+    canvas_external_api: true
+  methods: [POST]
+
 canvas.api.layout.get: &layout_get_route
   path: '/canvas/api/v0/layout/{entity_type}/{entity}'
   defaults:
@@ -508,6 +540,91 @@ canvas.api.log_error:
   methods: ['POST']
   options:
     _format: 'json'
+
+canvas.api.media.upload:
+  path: '/canvas/api/v0/media/{media_type}/upload'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiMediaControllers::upload'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _entity_create_access: 'media:{media_type}'
+    _format: 'json'
+  methods: [POST]
+  options:
+    parameters:
+      media_type:
+        type: entity:media_type
+    canvas_external_api: true
+
+canvas.api.notifications.get:
+  path: '/canvas/api/v0/notifications'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiNotificationController::list'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _canvas_ui_access: 'TRUE'
+  methods: ['GET']
+  options:
+    _format: 'json'
+
+canvas.api.notifications.read:
+  path: '/canvas/api/v0/notifications/read'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiNotificationController::markRead'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _canvas_ui_access: 'TRUE'
+  methods: ['POST']
+  options:
+    _format: 'json'
+
+canvas.api.push.complete:
+  path: '/canvas/api/v0/push/complete'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiPushController::complete'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _permission: 'administer code components'
+  methods: [POST]
+  options:
+    _format: 'json'
+    canvas_external_api: true
+
+canvas.api.push.fail:
+  path: '/canvas/api/v0/push/fail'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiPushController::fail'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _permission: 'administer code components'
+  methods: [POST]
+  options:
+    _format: 'json'
+    canvas_external_api: true
+
+canvas.api.push.start:
+  path: '/canvas/api/v0/push/start'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\ApiPushController::start'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _permission: 'administer code components'
+  methods: [POST]
+  options:
+    _format: 'json'
+    canvas_external_api: true
+
+canvas.api.site_data:
+  path: '/canvas/api/v0/site-data'
+  defaults:
+    _controller: 'Drupal\canvas\Controller\SiteDataController::get'
+  requirements:
+    _canvas_authentication_required: TRUE
+    _canvas_ui_access: 'TRUE'
+    _format: 'json'
+  methods: [GET]
+  options:
+    canvas_external_api: true
 
 canvas.api.staged-update.auto-save.post:
   path: '/canvas/api/v0/staged-update/auto-save'
@@ -668,3 +785,29 @@ entity.component.enable:
     _canvas_authentication_required: TRUE
     _entity_access: 'component.enable'
     _csrf_token: 'TRUE'
+# @todo Remove this once linking to the Canvas Content Template editor UI is possible in https://www.drupal.org/i/3551708
+entity.content_template.edit_form:
+  path: '/admin/structure/content-template/{content_template}'
+  defaults:
+    _controller: '\Drupal\canvas\Controller\NoUiConfigController::placeholder'
+    _title_callback: '\Drupal\Core\Entity\Controller\EntityController::editTitle'
+  requirements:
+    _permission: 'administer content templates'
+  options:
+    parameters:
+      content_template:
+        type: entity:content_template
+    _admin_route: TRUE
+# @todo Remove this once linking to the Canvas Page Region "focus" editor UI is possible in https://www.drupal.org/i/3502765
+entity.page_region.edit_form:
+  path: '/admin/appearance/page-region/{page_region}'
+  defaults:
+    _controller: '\Drupal\canvas\Controller\NoUiConfigController::placeholder'
+    _title_callback: '\Drupal\Core\Entity\Controller\EntityController::editTitle'
+  requirements:
+    _permission: 'administer page template'
+  options:
+    parameters:
+      page_region:
+        type: entity:page_region
+    _admin_route: TRUE

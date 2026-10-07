@@ -85,3 +85,7 @@ services:
   ai.hostname_filter_service:
     class: Drupal\ai\Service\HostnameFilter
     arguments: ['@logger.factory', '@config.factory']
+  ai.validator:
+    class: Drupal\ai\Service\AiValidator
+  Drupal\ai\Service\AiValidator: "@ai.validator"
+  Drupal\ai\Service\AiValidatorInterface: "@ai.validator"

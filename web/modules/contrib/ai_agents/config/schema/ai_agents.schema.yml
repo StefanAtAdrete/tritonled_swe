@@ -72,6 +72,10 @@ ai_agents.ai_agent.*:
       label: Max Loops
       description: 'The maximum number of loops that the AI agent can do. This is to prevent infinite loops. If the AI agent reaches this number of loops, it will stop and return the result.'
       default: 3
+    max_loops_message:
+      type: string
+      label: Max Loops Message
+      description: 'The message displayed when the agent reaches its maximum number of loops. If empty, a default message will be used.'
     default_information_tools:
       type: string
       label: Default Information Tools
@@ -103,3 +107,8 @@ ai_agents.ai_agent.*:
       label: Structured Output Schema
       description: 'The schema that defines the structured output format for the AI agent. This schema guides how the AI agent should format its responses when structured output is enabled. It should be in JSON Schema format.'
       default: ''
+    hostname_filter_disabled:
+      type: boolean
+      label: Hostname Filter Disabled
+      description: 'Whether to disable hostname whitelisting for the AI agent. If this is set to true, the AI agent will not filter tool usage based on hostnames. This can be useful for agents that need to access a wide range of tools without restrictions.'
+      default: false

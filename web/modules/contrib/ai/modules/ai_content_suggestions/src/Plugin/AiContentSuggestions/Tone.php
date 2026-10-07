@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\ai_content_suggestions\Plugin\AiContentSuggestions;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\ai\AiProviderPluginManager;
 use Drupal\ai_content_suggestions\AiContentSuggestionsPluginBase;
@@ -26,7 +26,7 @@ final class Tone extends AiContentSuggestionsPluginBase {
   /**
    * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
@@ -42,14 +42,14 @@ final class Tone extends AiContentSuggestionsPluginBase {
    *
    * @var \Drupal\Core\Config\Config
    */
-  private $toneConfig;
+  protected $toneConfig;
 
   /**
    * The Default prompt for this functionality.
    *
    * @var string
    */
-  private string $defaultPrompt = 'Change the tone of the following text to be {{ tone }} using the same language as the following text:';
+  protected string $defaultPrompt = 'Change the tone of the following text to be {{ tone }} using the same language as the following text:';
 
   /**
    * {@inheritdoc}
@@ -78,7 +78,7 @@ final class Tone extends AiContentSuggestionsPluginBase {
     $plugin_definition,
     protected AiProviderPluginManager $providerPluginManager,
     ConfigFactoryInterface $configFactory,
-    EntityTypeManager $entityTypeManager,
+    EntityTypeManagerInterface $entityTypeManager,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $providerPluginManager, $configFactory);
     $this->config = $configFactory->get('ai_content_suggestions.settings');

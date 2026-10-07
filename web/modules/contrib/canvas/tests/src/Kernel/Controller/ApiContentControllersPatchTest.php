@@ -20,7 +20,6 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 /**
@@ -77,6 +76,7 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
       'path' => ['alias' => '/this-is-the-old-path'],
       'components' => [],
     ]);
+    self::assertEntityIsValid($page);
     $page->save();
 
     $request = Request::create(\sprintf(self::URL, $page->id()),
@@ -122,6 +122,7 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
         'autoSaveLabel' => NULL,
         'autoSavePath' => NULL,
         'components' => [],
+        'description' => '',
         'links' => [
           CanvasUriDefinitions::LINK_REL_UNPUBLISH => '/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_EDIT => '/canvas/editor/canvas_page/1',
@@ -175,6 +176,7 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
             'component_version' => '85a5c0c7dd53e0bb',
             'inputs' => ['heading' => 'Welcome'],
             'label' => NULL,
+            'inputs_resolved' => ['heading' => 'Welcome'],
           ],
           [
             'parent_uuid' => '09365c2d-1ee1-47fd-b5a3-7e4f34866186',
@@ -184,8 +186,10 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
             'component_version' => '85a5c0c7dd53e0bb',
             'inputs' => ['heading' => 'Nested'],
             'label' => NULL,
+            'inputs_resolved' => ['heading' => 'Nested'],
           ],
         ],
+        'description' => '',
         'links' => [
           CanvasUriDefinitions::LINK_REL_UNPUBLISH => '/canvas/api/v0/content/auto-save/canvas_page/1',
           CanvasUriDefinitions::LINK_REL_EDIT => '/canvas/editor/canvas_page/1',
@@ -196,14 +200,67 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
     ];
   }
 
+  /**
+   * Tests that PATCHing a path alias results in exactly one alias being set.
+   */
+  #[DataProvider('providerPatchPathAlias')]
+  public function testPatchPathAlias(array $initial_path): void {
+    $page = Page::create([
+      'title' => 'Initial title',
+      'status' => TRUE,
+      'path' => $initial_path,
+      'components' => [],
+    ]);
+    self::assertEntityIsValid($page);
+    $page->save();
+
+    $alias_storage = \Drupal::entityTypeManager()
+      ->getStorage('path_alias');
+    $internal_path = ['path' => '/page/' . $page->id()];
+
+    $this->assertCount(
+      !empty($initial_path) ? 1 : 0,
+      $alias_storage->loadByProperties($internal_path),
+    );
+
+    $this->request(Request::create(
+      \sprintf(self::URL, $page->id()),
+      'PATCH',
+      server: ['CONTENT_TYPE' => 'application/json'],
+      content: \json_encode([
+        'title' => 'Initial title',
+        'status' => TRUE,
+        'path' => '/new-alias',
+        'components' => [],
+      ], JSON_THROW_ON_ERROR),
+    ));
+
+    $path_aliases = $alias_storage->loadByProperties($internal_path);
+    $this->assertCount(1, $path_aliases);
+    $this->assertSame('/new-alias', reset($path_aliases)->getAlias());
+  }
+
+  public static function providerPatchPathAlias(): \Generator {
+    yield 'With a pre-existing alias' => [
+      ['alias' => '/old-alias'],
+      1,
+    ];
+    yield 'Without a pre-existing alias' => [
+      [],
+      0,
+    ];
+  }
+
   public function testConflictErrorIfPatchingEntityWithAutoSaveDataPresent(): void {
     $this->expectException(ConflictHttpException::class);
+    $this->expectExceptionMessage('Page with ID 1 has existing auto-saved data. Please use the Canvas UI to publish or discard it before pushing.');
     $page = Page::create([
       'title' => 'Initial title',
       'status' => FALSE,
       'path' => ['alias' => '/this-is-the-old-path'],
       'components' => [],
     ]);
+    self::assertEntityIsValid($page);
     $page->save();
 
     // Create some auto-save data. We don't know yet if should be discarded or
@@ -214,7 +271,7 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
     $page->set('path', '/autosaved/path');
     $autoSaveManager->saveEntity($page);
 
-    $request = Request::create(\sprintf(self::URL, $page->id()),
+    $this->request(Request::create(\sprintf(self::URL, $page->id()),
       'PATCH',
       server: ['CONTENT_TYPE' => 'application/json'],
       content: \json_encode([
@@ -223,15 +280,7 @@ class ApiContentControllersPatchTest extends CanvasKernelTestBase {
         'path' => '/patched',
         'components' => [],
       ], JSON_THROW_ON_ERROR),
-    );
-    $response = $this->request($request);
-    // The response of a patch shouldn't be cacheable.
-    \assert($response instanceof JsonResponse && !$response instanceof CacheableJsonResponse);
-
-    $this->assertSame(Response::HTTP_CONFLICT, $response->getStatusCode());
-    $this->assertSame([
-      'error' => 'Page with ID 1 has existing auto-saved data. Please use the UI to publish it or discard it.',
-    ], $this->decodeResponse($response));
+    ));
   }
 
 }

@@ -224,7 +224,7 @@ class ChatTranslationProvider extends AiProviderClientBase implements
     $promptText = strtr($promptText, $replacements);
     try {
       $messages = new ChatInput([
-        new chatMessage('user', $promptText),
+        new ChatMessage('user', $promptText),
       ]);
       $messages->setSystemPrompt('You are a helpful translator.');
 

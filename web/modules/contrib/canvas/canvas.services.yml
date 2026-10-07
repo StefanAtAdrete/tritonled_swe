@@ -54,10 +54,17 @@ services:
     public: false
   Drupal\canvas\ShapeMatcher\HostEntityUrlPropSourceMatcher:
     public: false
+  Drupal\canvas\ShapeMatcher\HostEntityPropSourceMatcher:
+    public: false
 
   # Utilities.
+  Drupal\canvas\CanvasNotificationHandler: {}
   Drupal\canvas\AssetRenderer: {}
   Drupal\canvas\Utility\HomePageHelper: {}
+  Drupal\canvas\Component\Schema\PropChoiceOptionsResolver:
+    arguments:
+      $stringTranslation: '@string_translation'
+  Drupal\canvas\Component\Schema\PropMetadataNormalizer: {}
   logger.channel.canvas:
     parent: logger.channel_base
     arguments: ['canvas']
@@ -105,6 +112,7 @@ services:
     class: Drupal\canvas\EventSubscriber\CanvasRouteOptionsEventSubscriber
     tags:
       - { name: 'event_subscriber' }
+  Drupal\canvas\EventSubscriber\ComponentTreeConfigEntityTransformer: ~
   canvas.image_style.route_alter:
     class: Drupal\canvas\EventSubscriber\ImageStyleRoutesEventSubscriber
     tags:
@@ -133,6 +141,9 @@ services:
   Drupal\canvas\Routing\ContentTemplatePreviewEntityEnhancer:
     tags:
       - { name: route_enhancer }
+  Drupal\canvas\Routing\CanvasEntityByUuidConverter:
+    tags:
+      - { name: paramconverter }
   Drupal\canvas\Routing\ContentTemplatePreviewEntityConverter:
     tags:
       - { name: paramconverter }
@@ -176,6 +187,7 @@ services:
   Drupal\canvas\Controller\ApiLayoutController: {}
   Drupal\canvas\Controller\ApiLogController: {}
   Drupal\canvas\Controller\ApiContentControllers: {}
+  Drupal\canvas\Controller\ApiMediaControllers: {}
   Drupal\canvas\Controller\ApiStagedConfigUpdateAutoSaveController: {}
   Drupal\canvas\Controller\ComponentStatusController: {}
   Drupal\canvas\Controller\ComponentAuditController: {}
@@ -186,6 +198,9 @@ services:
   Drupal\canvas\Controller\AddPageController: {}
   Drupal\canvas\Controller\ViewModeDisplayController: {}
   Drupal\canvas\Controller\ApiArtifactController: {}
+  Drupal\canvas\Controller\ApiNotificationController: {}
+  Drupal\canvas\Controller\ApiPushController: {}
+  Drupal\canvas\Controller\SiteDataController: {}
 
   # Decorators.
   Drupal\canvas\Render\ImportMapResponseAttachmentsProcessor:

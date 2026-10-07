@@ -1,21 +1,30 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { discoverCanvasProject } from '@drupal-canvas/discovery';
+import {
+  discoverCanvasProject,
+  loadComponentsMetadata,
+} from '@drupal-canvas/discovery';
 import {
   ensureHostGlobalCssExists,
   extractComponentPreviewMetadataFromComponentYaml,
   getWorkbenchHostGlobalCssVirtualUrl,
 } from '@drupal-canvas/vite-compat';
 
+import { isTopLevelContentTemplateSpecPath } from '../lib/content-template-spec-path';
+import { isTopLevelPageSpecPath } from '../lib/page-spec-path';
 import { buildPreviewManifest } from '../lib/preview-contract';
 import {
+  toDiscoveredContentTemplateName,
   toDiscoveredPageName,
+  toPreviewContentTemplateSpec,
   toPreviewManifestComponentMocks,
   toPreviewPageSpec,
 } from '../lib/spec-discovery';
 
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { DiscoveryResult } from '@drupal-canvas/discovery';
 import type { Plugin } from 'vite';
+import type { EnrichedDiscoveredPage } from '../lib/discovery-client';
 import type {
   PreviewManifestComponent,
   PreviewManifestComponentMock,
@@ -36,11 +45,6 @@ function isPreviewSourcePath(filePath: string): boolean {
   return /\.(js|jsx|ts|tsx|css)$/.test(normalizedPath);
 }
 
-function isTopLevelPageSpecPath(filePath: string): boolean {
-  const normalizedPath = filePath.replaceAll('\\', '/');
-  return /(^|\/)pages\/[^/]+\.json$/.test(normalizedPath);
-}
-
 function isMockSpecPath(filePath: string): boolean {
   const normalizedPath = filePath.replaceAll('\\', '/');
   return (
@@ -49,14 +53,28 @@ function isMockSpecPath(filePath: string): boolean {
   );
 }
 
+/**
+ * Whether to serve the Workbench shell index.html for a dev-server request.
+ * Mirrors SPA fallback: any extensionless path except APIs, Vite internals, and
+ * non-HTML entries under /canvas/ (so /canvas/workbench-preview.html still falls
+ * through to the static file handler).
+ */
 function shouldServeWorkbenchIndexHtml(requestUrl: string): boolean {
   const pathname = new URL(requestUrl, 'http://localhost').pathname;
 
-  if (pathname === '/') {
-    return true;
+  if (pathname.startsWith('/__canvas/')) {
+    return false;
   }
 
-  if (pathname.startsWith('/__canvas/')) {
+  if (pathname.startsWith('/@') || pathname.startsWith('/node_modules/')) {
+    return false;
+  }
+
+  if (pathname.startsWith('/__')) {
+    return false;
+  }
+
+  if (pathname.startsWith('/canvas/') && !pathname.endsWith('.html')) {
     return false;
   }
 
@@ -64,7 +82,7 @@ function shouldServeWorkbenchIndexHtml(requestUrl: string): boolean {
     return false;
   }
 
-  return pathname.startsWith('/component') || pathname.startsWith('/page');
+  return true;
 }
 
 function toExpectedMockPaths(component: PreviewManifestComponent): string[] {
@@ -84,6 +102,7 @@ async function loadComponentMocks(
   componentRoot: string,
   allComponentNames: string[],
   componentExampleProps: Record<string, unknown>,
+  componentRequiredPropNames: string[],
 ): Promise<{
   mocks: PreviewManifestComponentMock[];
   warnings: PreviewWarning[];
@@ -118,6 +137,7 @@ async function loadComponentMocks(
       componentName: component.name,
       componentNames: allComponentNames,
       componentExampleProps,
+      componentRequiredPropNames,
     });
     warnings.push(...parsed.warnings);
     mocks.push(...parsed.mocks);
@@ -126,10 +146,67 @@ async function loadComponentMocks(
   return { mocks, warnings };
 }
 
-async function loadPageTitle(pagePath: string): Promise<string | null> {
+interface PageFileMetadata {
+  title: string | null;
+  path: string | null;
+}
+
+async function loadPageFileMetadata(
+  filePath: string,
+): Promise<PageFileMetadata> {
   let fileContent: string;
   try {
-    fileContent = await fs.readFile(pagePath, 'utf-8');
+    fileContent = await fs.readFile(filePath, 'utf-8');
+  } catch {
+    return { title: null, path: null };
+  }
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(fileContent);
+  } catch {
+    return { title: null, path: null };
+  }
+
+  const title = toDiscoveredPageName(
+    parsedJson,
+    filePath,
+    path.basename(filePath, '.json'),
+  );
+
+  const obj = parsedJson as Record<string, unknown>;
+  let pagePath = typeof obj.path === 'string' && obj.path ? obj.path : null;
+  if (pagePath && !pagePath.startsWith('/')) {
+    pagePath = `/${pagePath}`;
+  }
+
+  return { title, path: pagePath };
+}
+
+async function enrichDiscoveredPages(discoveryResult: DiscoveryResult) {
+  const pages: EnrichedDiscoveredPage[] = await Promise.all(
+    discoveryResult.pages.map(async (page) => {
+      const metadata = await loadPageFileMetadata(page.path);
+      return {
+        ...page,
+        name: metadata.title ?? page.name,
+        pagePath: metadata.path,
+      };
+    }),
+  );
+
+  return {
+    ...discoveryResult,
+    pages,
+  };
+}
+
+async function loadContentTemplateName(
+  templatePath: string,
+): Promise<string | null> {
+  let fileContent: string;
+  try {
+    fileContent = await fs.readFile(templatePath, 'utf-8');
   } catch {
     return null;
   }
@@ -141,24 +218,26 @@ async function loadPageTitle(pagePath: string): Promise<string | null> {
     return null;
   }
 
-  return toDiscoveredPageName(
+  return toDiscoveredContentTemplateName(
     parsedJson,
-    pagePath,
-    path.basename(pagePath, '.json'),
+    templatePath,
+    path.basename(templatePath, '.json'),
   );
 }
 
-async function enrichDiscoveredPages(discoveryResult: DiscoveryResult) {
-  const pages = await Promise.all(
-    discoveryResult.pages.map(async (page) => ({
-      ...page,
-      name: (await loadPageTitle(page.path)) ?? page.name,
+async function enrichDiscoveredContentTemplates<
+  T extends { contentTemplates: DiscoveryResult['contentTemplates'] },
+>(discoveryResult: T): Promise<T> {
+  const contentTemplates = await Promise.all(
+    discoveryResult.contentTemplates.map(async (template) => ({
+      ...template,
+      name: (await loadContentTemplateName(template.path)) ?? template.name,
     })),
   );
 
   return {
     ...discoveryResult,
-    pages,
+    contentTemplates,
   };
 }
 
@@ -225,6 +304,81 @@ async function loadPreviewPageSpec(
   };
 }
 
+async function loadPreviewContentTemplateSpec(
+  discoveryResult: DiscoveryResult,
+  slug: string,
+): Promise<{
+  spec: unknown | null;
+  metadata: {
+    label: string;
+    entityTypeId: string;
+    bundle: string;
+    viewMode: string;
+  } | null;
+  status: number;
+  error: string | null;
+}> {
+  const template = discoveryResult.contentTemplates.find(
+    (candidate) => candidate.slug === slug,
+  );
+  if (!template) {
+    return {
+      spec: null,
+      metadata: null,
+      status: 404,
+      error: `No content template found for slug "${slug}".`,
+    };
+  }
+
+  let fileContent: string;
+  try {
+    fileContent = await fs.readFile(template.path, 'utf-8');
+  } catch {
+    return {
+      spec: null,
+      metadata: null,
+      status: 404,
+      error: `Failed to read content template file: ${template.path}`,
+    };
+  }
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(fileContent);
+  } catch {
+    return {
+      spec: null,
+      metadata: null,
+      status: 400,
+      error: `Failed to parse content template JSON file: ${template.path}`,
+    };
+  }
+
+  const parsedTemplate = toPreviewContentTemplateSpec(parsedJson, {
+    sourcePath: template.path,
+    componentNames: discoveryResult.components.map(
+      (component) => component.name,
+    ),
+  });
+  if (!parsedTemplate.spec || !parsedTemplate.metadata) {
+    return {
+      spec: null,
+      metadata: null,
+      status: 400,
+      error:
+        parsedTemplate.issues[0]?.message ??
+        `Content template spec is invalid: ${template.path}`,
+    };
+  }
+
+  return {
+    spec: parsedTemplate.spec,
+    metadata: parsedTemplate.metadata,
+    status: 200,
+    error: null,
+  };
+}
+
 async function loadWorkbenchHtmlTemplate(
   appHtmlPath: string,
   url: string,
@@ -251,6 +405,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
       cachedResult = await discoverCanvasProject({
         componentRoot: paths.componentDiscoveryRoot,
         pagesRoot: paths.pagesDiscoveryRoot,
+        contentTemplatesRoot: paths.contentTemplatesDiscoveryRoot,
         projectRoot: paths.hostProjectRoot,
       });
     })();
@@ -264,6 +419,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
 
   return {
     name: 'canvas-workbench-discovery',
+    enforce: 'pre',
     resolveId(source) {
       if (source === virtualHostGlobalCssId) {
         return resolvedVirtualHostGlobalCssId;
@@ -294,15 +450,92 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
 
       server.watcher.add(paths.watchRoots);
 
+      const workbenchIndexHtmlMiddleware = (
+        req: IncomingMessage,
+        res: ServerResponse,
+        next: (err?: unknown) => void,
+      ) => {
+        if (
+          req.method !== 'GET' ||
+          !req.url ||
+          !shouldServeWorkbenchIndexHtml(req.url)
+        ) {
+          next();
+          return;
+        }
+
+        void (async () => {
+          const transformed = await loadWorkbenchHtmlTemplate(
+            paths.appHtmlPath,
+            req.url!,
+            (url, html) => server.transformIndexHtml(url, html),
+          );
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'text/html');
+          res.end(transformed);
+        })().catch((error) => {
+          server.config.logger.error(
+            `Failed to serve Workbench app HTML: ${String(error)}`,
+          );
+          next(error);
+        });
+      };
+
+      // Register first so this plugin runs before other plugins' configureServer
+      // middleware; avoids mutating connect's stack with unshift (fragile in some
+      // Vite versions).
+      server.middlewares.use(workbenchIndexHtmlMiddleware);
+
       server.middlewares.use('/__canvas/discovery', (_req, res) => {
         void (async () => {
           await refresh();
 
-          const responseResult = await enrichDiscoveredPages(cachedResult!);
+          const withEnrichedPages = await enrichDiscoveredPages(cachedResult!);
+          const responseResult =
+            await enrichDiscoveredContentTemplates(withEnrichedPages);
 
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(responseResult));
+        })().catch((error) => {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        });
+      });
+
+      server.middlewares.use('/__canvas/workbench-config', (_req, res) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+          JSON.stringify({
+            siteUrl: paths.siteUrl,
+          }),
+        );
+      });
+
+      server.middlewares.use('/__canvas/components-metadata', (_req, res) => {
+        void (async () => {
+          await refresh();
+          const metadata = await loadComponentsMetadata(cachedResult!);
+          const shapes: Record<
+            string,
+            { propKeys: string[]; slotKeys: string[] }
+          > = {};
+          for (const m of metadata) {
+            const serverComponentId = `js.${m.machineName}`;
+            shapes[serverComponentId] = {
+              propKeys: Object.keys(m.props.properties ?? {}).sort(),
+              slotKeys: Object.keys(m.slots ?? {}).sort(),
+            };
+          }
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(shapes));
         })().catch((error) => {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
@@ -334,6 +567,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
                 manifest.componentRoot,
                 discoveredComponentNames,
                 exampleProps,
+                componentPreviewMetadata.requiredPropNames,
               );
               return {
                 component: {
@@ -373,29 +607,6 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
               error: error instanceof Error ? error.message : String(error),
             }),
           );
-        });
-      });
-
-      server.middlewares.use('/__canvas/preview-frame', (req, res, next) => {
-        if (req.method !== 'GET') {
-          next();
-          return;
-        }
-
-        void (async () => {
-          const transformed = await loadWorkbenchHtmlTemplate(
-            paths.appHtmlPath,
-            req.url!,
-            (url, html) => server.transformIndexHtml(url, html),
-          );
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/html');
-          res.end(transformed);
-        })().catch((error) => {
-          server.config.logger.error(
-            `Failed to serve preview frame HTML: ${String(error)}`,
-          );
-          next(error);
         });
       });
 
@@ -443,32 +654,55 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
         },
       );
 
-      server.middlewares.use((req, res, next) => {
-        if (
-          req.method !== 'GET' ||
-          !req.url ||
-          !shouldServeWorkbenchIndexHtml(req.url)
-        ) {
-          next();
-          return;
-        }
+      server.middlewares.use(
+        '/__canvas/content-template-preview-spec',
+        (req, res, next) => {
+          if (req.method !== 'GET') {
+            next();
+            return;
+          }
 
-        void (async () => {
-          const transformed = await loadWorkbenchHtmlTemplate(
-            paths.appHtmlPath,
-            req.url!,
-            (url, html) => server.transformIndexHtml(url, html),
-          );
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/html');
-          res.end(transformed);
-        })().catch((error) => {
-          server.config.logger.error(
-            `Failed to serve Workbench app HTML: ${String(error)}`,
-          );
-          next(error);
-        });
-      });
+          void (async () => {
+            await refresh();
+
+            const requestUrl = new URL(req.url ?? '', 'http://localhost');
+            const slug = requestUrl.searchParams.get('slug');
+            if (!slug) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(
+                JSON.stringify({ error: 'Missing required slug parameter.' }),
+              );
+              return;
+            }
+
+            const templateResult = await loadPreviewContentTemplateSpec(
+              cachedResult!,
+              slug,
+            );
+            res.statusCode = templateResult.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify(
+                templateResult.error
+                  ? { error: templateResult.error }
+                  : {
+                      spec: templateResult.spec,
+                      metadata: templateResult.metadata,
+                    },
+              ),
+            );
+          })().catch((error) => {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+              }),
+            );
+          });
+        },
+      );
 
       server.watcher.on('all', (event, filePath) => {
         if (!['add', 'change', 'unlink'].includes(event)) {
@@ -478,11 +712,14 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
         const metadataChanged = isComponentMetadataPath(filePath);
         const sourceChanged = isPreviewSourcePath(filePath);
         const pageChanged = isTopLevelPageSpecPath(filePath);
+        const contentTemplateChanged =
+          isTopLevelContentTemplateSpecPath(filePath);
         const mockChanged = isMockSpecPath(filePath);
         if (
           !metadataChanged &&
           !sourceChanged &&
           !pageChanged &&
+          !contentTemplateChanged &&
           !mockChanged
         ) {
           return;
@@ -492,6 +729,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
           metadataChanged ||
           mockChanged ||
           pageChanged ||
+          contentTemplateChanged ||
           (sourceChanged && event !== 'change');
         if (!requiresManifestRefresh) {
           server.ws.send({

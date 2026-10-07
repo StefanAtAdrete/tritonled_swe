@@ -75,6 +75,94 @@ describe('bundleVendorDependencies', () => {
     );
   });
 
+  it('skips packages provided by Canvas global import map', async () => {
+    const result = await bundleVendorDependencies(
+      new Set([
+        'preact',
+        'clsx',
+        'class-variance-authority',
+        'tailwind-merge',
+        'swr',
+        'drupal-canvas',
+        '@tailwindcss/typography',
+        'next-image-standalone',
+        '@drupal-api-client/json-api-client',
+      ]),
+      '/project',
+      'src',
+      'build',
+    );
+
+    expect(viteBuild).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.importMap.imports).toEqual({});
+    expect(result.bundledPackages).toHaveLength(0);
+  });
+
+  it('filters Canvas externals but bundles other packages', async () => {
+    vi.mocked(fsMock.readFile).mockResolvedValueOnce(
+      JSON.stringify({
+        'node_modules/lodash-es/lodash.js': {
+          file: 'lodash-es-abc123.js',
+          name: 'lodash-es',
+          src: 'node_modules/lodash-es/lodash.js',
+          isEntry: true,
+        },
+      }),
+    );
+
+    const result = await bundleVendorDependencies(
+      new Set(['preact', 'clsx', 'lodash-es']),
+      '/project',
+      'src',
+      'build',
+    );
+
+    expect(viteBuild).toHaveBeenCalledTimes(1);
+    expect(result.success).toBe(true);
+    // Only lodash-es should be bundled, not preact or clsx
+    expect(result.importMap.imports['lodash-es']).toMatch(
+      /lodash-es-abc123\.js$/,
+    );
+    expect(result.importMap.imports).not.toHaveProperty('preact');
+    expect(result.importMap.imports).not.toHaveProperty('clsx');
+  });
+
+  it('keeps shared chunks created for packages with common dependencies', async () => {
+    vi.mocked(fsMock.readFile).mockResolvedValueOnce(
+      JSON.stringify({
+        'node_modules/package-a/index.js': {
+          file: 'package-a-abc123.js',
+          name: 'package-a',
+          src: 'node_modules/package-a/index.js',
+          isEntry: true,
+        },
+        'node_modules/package-b/index.js': {
+          file: 'package-b-def456.js',
+          name: 'package-b',
+          src: 'node_modules/package-b/index.js',
+          isEntry: true,
+        },
+        'shared-common-ghi789.js': {
+          file: 'shared-common-ghi789.js',
+        },
+      }),
+    );
+
+    const result = await bundleVendorDependencies(
+      new Set(['package-a', 'package-b']),
+      '/project',
+      'src',
+      'build',
+    );
+
+    expect(result.importMap.imports).toEqual({
+      'package-a': './vendor/package-a-abc123.js',
+      'package-b': './vendor/package-b-def456.js',
+    });
+    expect(result.sharedChunks).toEqual(['./vendor/shared-common-ghi789.js']);
+  });
+
   it('bubbles Vite build errors to caller', async () => {
     vi.mocked(viteBuild).mockRejectedValueOnce(new Error('Vite exploded'));
 

@@ -32,7 +32,6 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
     public readonly int|null $delta,
     public readonly array $objectPropsToFieldProps,
   ) {
-    \assert(!empty($this->objectPropsToFieldProps));
     \assert(Inspector::assertAllStrings(\array_keys($this->objectPropsToFieldProps)));
     \assert(Inspector::assertAll(function ($expr) {
       return $expr instanceof FieldPropExpression || $expr instanceof ReferenceFieldPropExpression;
@@ -91,15 +90,6 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
       $dependencies = NestedArray::mergeDeep($dependencies, $expr->calculateDependencies($host_entity));
     }
     return $dependencies;
-  }
-
-  public function withDelta(int $delta): static {
-    return new static(
-      $this->entityType,
-      $this->fieldName,
-      $delta,
-      $this->objectPropsToFieldProps,
-    );
   }
 
   public static function fromString(string $representation): static {

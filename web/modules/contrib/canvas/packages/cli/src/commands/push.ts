@@ -1,33 +1,52 @@
 import fs from 'fs/promises';
 import path from 'path';
 import chalk from 'chalk';
+import { Option } from 'commander';
 import * as p from '@clack/prompts';
 import { discoverCanvasProject } from '@drupal-canvas/discovery';
 
 import { ensureConfig, getConfig } from '../config.js';
-import { createApiService } from '../services/api.js';
-import { analyzeAndBundleImports } from '../utils/analyze-and-bundle-imports';
-import { buildTailwindForComponents } from '../utils/build-tailwind';
 import {
+  buildFontPushPlannedResults,
+  pushFonts,
+} from '../lib/fonts/font-push.js';
+import { createApiService, ensureAuthConfig } from '../services/api.js';
+import { buildCanvasProject } from '../utils/build-project';
+import {
+  parseBooleanOption,
   pluralize,
   pluralizeComponent,
   updateConfigFromOptions,
 } from '../utils/command-helpers';
-import { generateManifest } from '../utils/generate-manifest';
 import {
-  buildAndPushComponents,
+  collectContentTemplateResults,
+  prepareContentTemplates,
+  pushContentTemplates,
+} from '../utils/prepare-content-templates-push';
+import {
+  collectPageResults,
+  preparePages,
+  pushPages,
+} from '../utils/prepare-pages-push';
+import {
+  pushBuiltComponents,
   uploadGlobalAssetLibrary,
 } from '../utils/prepare-push';
 import { reportResults } from '../utils/report-results';
 import { createProgressCallback, processInPool } from '../utils/request-pool';
+import { validateContentTemplates } from '../utils/validate-content-template';
+import { validatePages } from '../utils/validate-page';
 
 import type { Command } from 'commander';
 import type { ApiService } from '../services/api.js';
 import type {
+  BrandKitFontEntry,
   BuildManifest,
   UploadedArtifact,
   UploadedArtifactResult,
 } from '../types/Component.js';
+import type { ContentTemplateListItem } from '../types/ContentTemplate.js';
+import type { PageListItem } from '../types/Page.js';
 import type { Result } from '../types/Result.js';
 
 interface PushOptions {
@@ -35,6 +54,9 @@ interface PushOptions {
   clientSecret?: string;
   siteUrl?: string;
   scope?: string;
+  includePages?: boolean;
+  includeContentTemplates?: boolean;
+  includeBrandKit?: boolean;
   dir?: string;
   yes?: boolean;
 }
@@ -104,10 +126,14 @@ async function uploadAndBuildManifest(
   const uploadProgress = createProgressCallback(
     spinner,
     'Uploading artifacts',
-    files.length,
+    new Set(files.map((file) => file.filePath)).size,
   );
 
-  const results = await processInPool(files, async (file) => {
+  const uniqueFiles = Array.from(
+    new Map(files.map((file) => [file.filePath, file])).values(),
+  );
+
+  const results = await processInPool(uniqueFiles, async (file) => {
     const absolutePath = path.resolve(distDir, file.filePath);
     const fileBuffer = await fs.readFile(absolutePath);
     const filename = path.basename(file.filePath);
@@ -116,14 +142,22 @@ async function uploadAndBuildManifest(
       await apiService.uploadArtifact(filename, fileBuffer);
     uploadProgress();
 
-    return {
-      entry: {
-        name: file.name,
-        uri: uploadResult.uri,
-      } satisfies UploadedArtifact,
-      type: file.type,
-    };
+    return uploadResult;
   });
+
+  const uploadedByFilePath = new Map<string, UploadedArtifactResult>();
+  const errors: string[] = [];
+
+  for (const result of results) {
+    if (result.success && result.result) {
+      uploadedByFilePath.set(uniqueFiles[result.index].filePath, result.result);
+    } else {
+      const fileName = uniqueFiles[result.index]?.name || 'unknown';
+      errors.push(
+        `Failed to upload ${fileName}: ${result.error?.message || 'Unknown error'}`,
+      );
+    }
+  }
 
   const grouped: {
     vendor: UploadedArtifact[];
@@ -134,16 +168,16 @@ async function uploadAndBuildManifest(
     local: [],
     shared: [],
   };
-  const errors: string[] = [];
 
-  for (const result of results) {
-    if (result.success && result.result) {
-      grouped[result.result.type].push(result.result.entry);
-    } else {
-      const fileName = files[result.index]?.name || 'unknown';
-      errors.push(
-        `Failed to upload ${fileName}: ${result.error?.message || 'Unknown error'}`,
-      );
+  if (errors.length === 0) {
+    for (const file of files) {
+      const uploadResult = uploadedByFilePath.get(file.filePath);
+      if (uploadResult) {
+        grouped[file.type].push({
+          name: file.name,
+          uri: uploadResult.uri,
+        });
+      }
     }
   }
 
@@ -241,46 +275,164 @@ export function pushCommand(program: Command): void {
   program
     .command('push')
     .description(
-      'build and push local components, global CSS, and vendor/local artifacts to Drupal',
+      'build and push local components, global CSS, vendor/local artifacts, and optional fonts and pages to Drupal',
     )
     .option('--client-id <id>', 'Client ID')
     .option('--client-secret <secret>', 'Client Secret')
     .option('--site-url <url>', 'Site URL')
     .option('--scope <scope>', 'Scope')
+    .addOption(
+      new Option(
+        '--include-pages [enabled]',
+        'Include pages in the push operation',
+      )
+        .preset('true')
+        .argParser(parseBooleanOption)
+        .default(undefined),
+    )
+    .addOption(
+      new Option(
+        '--include-content-templates [enabled]',
+        'Include content templates in the push operation',
+      )
+        .preset('true')
+        .argParser(parseBooleanOption)
+        .default(undefined),
+    )
+    .addOption(
+      new Option(
+        '--include-brand-kit [enabled]',
+        'Include brand kit (fonts) in the push operation',
+      )
+        .preset('true')
+        .argParser(parseBooleanOption)
+        .default(undefined),
+    )
     .option('-d, --dir <directory>', 'Component directory')
     .option('-y, --yes', 'Skip confirmation prompts')
     .action(async (options: PushOptions) => {
+      let apiService: ApiService | undefined;
       try {
         p.intro(chalk.bold('Drupal Canvas CLI: push'));
         // Update config with CLI options.
         updateConfigFromOptions(options);
 
-        await ensureConfig([
-          'siteUrl',
-          'clientId',
-          'clientSecret',
-          'scope',
-          'componentDir',
-        ]);
+        await ensureAuthConfig();
+        await ensureConfig(['componentDir']);
         const config = getConfig();
         const { componentDir, aliasBaseDir, outputDir } = config;
-        // Step 1. Discover all components.
+        const includesPages = config.includePages;
+        const includesContentTemplates = config.includeContentTemplates;
+        const includesBrandKit = config.includeBrandKit;
+        const hasBrandKitFontsConfig = config.fonts !== undefined;
+        // Step 1. Discover all components, pages, and content templates.
         const discoveryResult = await discoverCanvasProject({
           componentRoot: componentDir,
+          pagesRoot: config.pagesDir,
+          contentTemplatesRoot: config.contentTemplatesDir,
           projectRoot: process.cwd(),
         });
-        const { components, warnings } = discoveryResult;
+        const {
+          components,
+          pages: allDiscoveredPages,
+          contentTemplates: allDiscoveredContentTemplates,
+          warnings,
+        } = discoveryResult;
+        const discoveredPages = includesPages ? allDiscoveredPages : [];
+        const hasIgnoredPages = !includesPages && allDiscoveredPages.length > 0;
+        const discoveredContentTemplates = includesContentTemplates
+          ? allDiscoveredContentTemplates
+          : [];
+        const hasIgnoredContentTemplates =
+          !includesContentTemplates && allDiscoveredContentTemplates.length > 0;
 
-        if (components.length === 0) {
-          p.log.warn('No components found.');
-          p.outro('Push aborted (no components)');
+        if (
+          components.length === 0 &&
+          discoveredPages.length === 0 &&
+          discoveredContentTemplates.length === 0 &&
+          !(includesBrandKit && hasBrandKitFontsConfig)
+        ) {
+          if (hasIgnoredPages) {
+            p.log.info(
+              'Ignoring local pages. Use --include-pages or set CANVAS_INCLUDE_PAGES=true to push them.',
+            );
+          }
+          if (hasIgnoredContentTemplates) {
+            p.log.info(
+              'Ignoring local content templates. Use --include-content-templates or set CANVAS_INCLUDE_CONTENT_TEMPLATES=true to push them.',
+            );
+          }
+          p.log.warn('No components, pages, or content templates found.');
+          p.outro('Push aborted (nothing to push)');
           return;
         }
 
-        const apiService = await createApiService();
-        const existingComponents = await apiService.listComponents();
+        if (
+          components.length === 0 &&
+          discoveredPages.length === 0 &&
+          discoveredContentTemplates.length === 0 &&
+          includesBrandKit &&
+          hasBrandKitFontsConfig
+        ) {
+          p.log.info(
+            'No components, pages, or content templates found; syncing Brand Kit fonts from canvas.brand-kit.json.',
+          );
+        }
+
+        if (components.length === 0) {
+          p.log.info('No components found. Skipping component push.');
+        }
+
+        if (hasIgnoredPages && components.length > 0) {
+          p.log.info(
+            'Ignoring local pages. Use --include-pages or set CANVAS_INCLUDE_PAGES=true to push them.',
+          );
+        }
+
+        if (hasIgnoredContentTemplates && components.length > 0) {
+          p.log.info(
+            'Ignoring local content templates. Use --include-content-templates or set CANVAS_INCLUDE_CONTENT_TEMPLATES=true to push them.',
+          );
+        }
+
+        apiService = await createApiService();
+        const existingComponents =
+          components.length > 0 ? await apiService.listComponents() : {};
         const remoteNames = new Set(Object.keys(existingComponents));
         const localNames = new Set(components.map((c) => c.name));
+
+        let remoteBrandKitFonts: BrandKitFontEntry[] = [];
+        if (includesBrandKit && config.fonts !== undefined) {
+          try {
+            const brandKit = await apiService.getBrandKit();
+            remoteBrandKitFonts = brandKit.fonts ?? [];
+          } catch {
+            remoteBrandKitFonts = [];
+          }
+        }
+
+        // Fetch remote pages early for the planned operations summary.
+        const remotePages =
+          includesPages && discoveredPages.length > 0
+            ? await apiService.listPages()
+            : {};
+        const remotePageByUuid = new Map<string, PageListItem>();
+        for (const remotePage of Object.values(remotePages)) {
+          remotePageByUuid.set(remotePage.uuid, remotePage);
+        }
+
+        // Fetch remote content templates early for the planned summary.
+        const remoteContentTemplates =
+          includesContentTemplates && discoveredContentTemplates.length > 0
+            ? await apiService.listContentTemplates()
+            : {};
+        const remoteContentTemplateById = new Map<
+          string,
+          ContentTemplateListItem
+        >();
+        for (const remote of Object.values(remoteContentTemplates)) {
+          remoteContentTemplateById.set(remote.id, remote);
+        }
 
         // Build a preview of planned operations.
         const operationLabels: Record<string, string> = {
@@ -291,6 +443,7 @@ export function pushCommand(program: Command): void {
         const plannedResults: Result[] = [
           ...components.map((c) => ({
             itemName: c.name,
+            itemType: 'Component',
             success: true,
             details: [
               {
@@ -304,13 +457,56 @@ export function pushCommand(program: Command): void {
             .filter((name) => !localNames.has(name))
             .map((name) => ({
               itemName: name,
+              itemType: 'Component',
               success: true,
               details: [{ content: operationLabels.delete }],
             })),
+          ...discoveredPages.map((page) => ({
+            itemName: page.name,
+            itemType: 'Page',
+            success: true,
+            details: [
+              {
+                content:
+                  page.uuid && remotePageByUuid.has(page.uuid)
+                    ? operationLabels.update
+                    : operationLabels.create,
+              },
+            ],
+          })),
+          ...discoveredContentTemplates.map((template) => {
+            const hasFullId =
+              template.entityTypeId && template.bundle && template.viewMode;
+            const templateId = hasFullId
+              ? `${template.entityTypeId}.${template.bundle}.${template.viewMode}`
+              : null;
+            return {
+              itemName: template.label ?? template.name,
+              itemType: 'Content template',
+              success: true,
+              details: [
+                {
+                  content:
+                    templateId && remoteContentTemplateById.has(templateId)
+                      ? operationLabels.update
+                      : operationLabels.create,
+                },
+              ],
+            };
+          }),
+          ...(includesBrandKit && config.fonts !== undefined
+            ? buildFontPushPlannedResults(config.fonts, remoteBrandKitFonts, {
+                create: operationLabels.create,
+                update: operationLabels.update,
+                delete: operationLabels.delete,
+              })
+            : []),
         ];
-        reportResults(plannedResults, 'Planned operations', 'Component', {
-          preview: true,
-        });
+        if (plannedResults.length > 0) {
+          reportResults(plannedResults, 'Planned operations', 'Item', {
+            preview: true,
+          });
+        }
 
         for (const warning of warnings) {
           const location = warning.path ? chalk.dim(` (${warning.path})`) : '';
@@ -318,106 +514,95 @@ export function pushCommand(program: Command): void {
         }
 
         if (!options.yes) {
+          const parts: string[] = [];
+          if (components.length > 0) {
+            parts.push(
+              `${components.length} ${pluralizeComponent(components.length)}`,
+            );
+          }
+          if (discoveredPages.length > 0) {
+            parts.push(
+              `${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
+            );
+          }
+          if (includesBrandKit && hasBrandKitFontsConfig) {
+            parts.push('Brand Kit fonts (canvas.brand-kit.json)');
+          }
           const confirmed = await p.confirm({
             message: `Push these changes to ${config.siteUrl}?`,
             initialValue: true,
           });
           if (p.isCancel(confirmed) || !confirmed) {
             p.cancel('Operation cancelled');
-            process.exit(0);
+            return;
           }
         }
 
-        // Step 2: Build Tailwind CSS + Global CSS
+        await apiService.signalPushStart();
+
+        // Step 2: Build components, global CSS, and manifest artifacts.
         const s2 = p.spinner();
-        s2.start('Building Tailwind CSS');
-        const tailwindResult = await buildTailwindForComponents(
-          components,
-          true,
+        s2.start('Building project');
+        const canvasBuild = await buildCanvasProject({
+          projectRoot: process.cwd(),
+          componentDir,
+          aliasBaseDir,
           outputDir,
-        );
-        s2.stop(
-          chalk.green(
-            `Processed Tailwind CSS classes from ${components.length} selected local ${pluralizeComponent(components.length)} and all online components`,
-          ),
-        );
-        reportResults([tailwindResult], 'Built assets', 'Asset');
-        if (!tailwindResult.success) {
-          p.note(
-            chalk.red('Tailwind build failed, global assets upload aborted.'),
+          discoveryResult,
+          cleanOutputDir: true,
+          buildTailwind: true,
+          requireJsEntries: true,
+          useLocalGlobalCss: true,
+        });
+        s2.stop(chalk.green('Built project'));
+
+        if (canvasBuild.componentResults.some((r) => !r.success)) {
+          reportResults(
+            canvasBuild.componentResults,
+            'Built components',
+            'Component',
           );
-          p.note(chalk.red('Push aborted. Nothing was pushed.'));
-          process.exit(1);
+          throw new Error('Component build failed. Nothing was pushed.');
         }
 
-        // Step 3: Analyze and bundle imports (vendor + local) and generate canvas-manifest.json
-        const entryFiles = components
-          .filter((c) => c.jsEntryPath)
-          .map((c) => c.jsEntryPath as string);
+        if (canvasBuild.tailwindResult) {
+          reportResults([canvasBuild.tailwindResult], 'Built assets', 'Asset');
+          if (!canvasBuild.tailwindResult.success) {
+            throw new Error(
+              'Tailwind build failed, global assets upload aborted. Nothing was pushed.',
+            );
+          }
+        }
 
-        if (entryFiles.length > 0) {
-          p.log.info('Analyzing and bundling imports');
-
-          const { imports, vendorResult, localResult, sharedChunks } =
-            await analyzeAndBundleImports({
-              entryFiles,
-              componentDir,
-              aliasBaseDir,
-              outputDir,
-            });
-          const vendorImportMap = vendorResult.importMap;
-          const localImportMap = localResult.localImportMap;
+        if (canvasBuild.vendorImportCount > 0) {
           p.log.info(
             chalk.green(
-              `Analyzed imports: ${imports.thirdPartyPackages.size} vendor, ${imports.aliasImports.size} local`,
+              `Bundled ${canvasBuild.vendorImportCount} vendor ${pluralize(canvasBuild.vendorImportCount, 'package')} → ${outputDir}/vendor/`,
             ),
           );
-          if (vendorResult.success) {
-            const vendorImportCount = vendorResult.bundledPackages.length;
-            if (vendorImportCount > 0)
-              p.log.info(
-                chalk.green(
-                  `Bundled ${vendorImportCount} vendor ${pluralize(vendorImportCount, 'package')} → ${outputDir}/vendor/`,
-                ),
-              );
-          }
-          if (localResult.success) {
-            const bundledLocalImportCount = Object.keys(localImportMap).length;
-            if (bundledLocalImportCount > 0) {
-              p.log.info(
-                chalk.green(
-                  `Bundled ${bundledLocalImportCount} local ${pluralize(bundledLocalImportCount, 'import')} → ${outputDir}/local/`,
-                ),
-              );
-            }
-          }
-          // Generate manifest for the bundled imports
-          await generateManifest({
-            outputDir,
-            vendorImportMap,
-            localImportMap,
-            sharedChunks,
-          });
+        }
+        if (canvasBuild.localImportCount > 0) {
+          p.log.info(
+            chalk.green(
+              `Bundled ${canvasBuild.localImportCount} local ${pluralize(canvasBuild.localImportCount, 'import')} → ${outputDir}/local/`,
+            ),
+          );
         }
 
         let componentResults: Result[] = [];
+        let includeGlobalCss = false;
+        let fontCount = 0;
 
         // Build and push components
         if (components.length > 0) {
-          componentResults = await buildAndPushComponents(
-            components,
+          componentResults = await pushBuiltComponents(
+            canvasBuild.builtComponents,
             apiService,
-            true,
             'Pushing',
           );
           if (componentResults.some((r) => !r.success)) {
-            reportResults(componentResults, 'Built components', 'Component');
-            p.note(
-              chalk.red(
-                'Component build failed, push aborted. Nothing was pushed.',
-              ),
-            );
-            process.exit(1);
+            reportResults(componentResults, 'Pushed components', 'Component');
+            throw new Error('Component push failed. Push aborted.');
           }
           reportResults(componentResults, 'Pushed components', 'Component');
         }
@@ -429,19 +614,285 @@ export function pushCommand(program: Command): void {
         );
         reportResults([globalCssResult], 'Pushed assets', 'Asset');
         if (!globalCssResult.success) {
-          p.note(chalk.red('Push aborted (incomplete). Try again.'));
-          process.exit(1);
+          throw new Error('Push aborted (incomplete). Try again.');
+        }
+        includeGlobalCss = true;
+
+        // Step 4b: Push fonts from canvas.brand-kit.json (when configured)
+        if (includesBrandKit && config.fonts) {
+          const fontOutcomeLabels: Record<string, string> = {
+            create: chalk.green('Create'),
+            update: chalk.cyan('Update'),
+            delete: chalk.red('Delete'),
+            unchanged: chalk.dim('Unchanged'),
+          };
+          const fontSpinner = p.spinner();
+          fontSpinner.start('Pushing fonts');
+          try {
+            const result = await pushFonts(config, apiService);
+            fontCount = result.count + result.skipped + result.deleted;
+            const parts: string[] = [];
+            if (result.count > 0) {
+              parts.push(`${result.count} new`);
+            }
+            if (result.skipped > 0) {
+              parts.push(`${result.skipped} unchanged`);
+            }
+            if (result.deleted > 0) {
+              parts.push(`${result.deleted} deleted`);
+            }
+            fontSpinner.stop(
+              chalk.green(
+                parts.length > 0
+                  ? `${parts.join(', ')} font variants updated`
+                  : 'No font variants to update',
+              ),
+            );
+            if (result.outcomes.length > 0) {
+              reportResults(
+                result.outcomes.map((o) => ({
+                  itemName: o.itemName,
+                  success: true,
+                  details: [{ content: fontOutcomeLabels[o.operation] }],
+                })),
+                'Pushed fonts',
+                'Font variant',
+              );
+            }
+          } catch (err) {
+            fontSpinner.stop(chalk.red('Font push failed'));
+            throw err;
+          }
         }
 
         // Step 5: Upload vendor/local artifacts and sync manifest
-        await syncManifestArtifacts(outputDir, {
+        const { artifactCount } = await syncManifestArtifacts(outputDir, {
           apiService,
           createSpinner: () => p.spinner(),
           logInfo: (msg) => p.log.info(msg),
         });
 
-        p.outro(`⬆️ Push completed`);
+        // Validate and push pages.
+        if (discoveredPages.length > 0) {
+          // Validate pages against the catalog.
+          const validationSpinner = p.spinner();
+          validationSpinner.start(
+            `Validating ${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
+          );
+
+          const { results: pageValidationResults } = await validatePages(
+            discoveryResult,
+            { remotePageByUuid },
+          );
+
+          validationSpinner.stop(
+            chalk.green(
+              `Validated ${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
+            ),
+          );
+
+          if (pageValidationResults.some((r) => !r.success)) {
+            reportResults(
+              pageValidationResults,
+              'Page validation results',
+              'Page',
+            );
+            throw new Error(
+              'Page validation failed. Fix the errors above before pushing.',
+            );
+          }
+
+          // Prepare and push pages.
+          const componentVersions = await apiService.listComponentVersions();
+
+          const pageSpinner = p.spinner();
+          pageSpinner.start('Preparing pages');
+
+          const {
+            valid: validPages,
+            failed: failedPreps,
+            pendingMediaReconciliations,
+          } = await preparePages(
+            discoveredPages,
+            componentVersions,
+            discoveryResult,
+          );
+
+          if (pendingMediaReconciliations.length > 0) {
+            throw new Error(
+              'Some pages contain media that references external URLs instead of Drupal media entities.\n' +
+                'Run `npx canvas reconcile-media` to download the external media, upload them to Drupal, and replace them in page files before pushing.',
+            );
+          }
+
+          if (validPages.length === 0) {
+            pageSpinner.stop(chalk.yellow('No valid pages to push'));
+          } else {
+            const pushProgress = createProgressCallback(
+              pageSpinner,
+              'Pushing pages',
+              validPages.length,
+            );
+            pageSpinner.message('Pushing pages');
+
+            const pushResults = await pushPages(
+              validPages,
+              remotePageByUuid,
+              apiService,
+            );
+
+            // Count progress for each successful result.
+            for (const r of pushResults) {
+              if (r.success) pushProgress();
+            }
+
+            pageSpinner.stop(
+              chalk.green(
+                `Processed ${pushResults.length} ${pluralize(pushResults.length, 'page')}`,
+              ),
+            );
+
+            const pageResults = collectPageResults(
+              pushResults,
+              failedPreps,
+              discoveredPages,
+            );
+
+            reportResults(pageResults, 'Pushed pages', 'Page');
+          }
+        }
+
+        // Validate and push content templates.
+        let pushedContentTemplateCount = 0;
+        if (discoveredContentTemplates.length > 0) {
+          const ctValidationSpinner = p.spinner();
+          ctValidationSpinner.start(
+            `Validating ${discoveredContentTemplates.length} ${pluralize(discoveredContentTemplates.length, 'content template')}`,
+          );
+
+          const { results: ctValidationResults } =
+            await validateContentTemplates(discoveryResult, { apiService });
+
+          ctValidationSpinner.stop(
+            chalk.green(
+              `Validated ${discoveredContentTemplates.length} ${pluralize(discoveredContentTemplates.length, 'content template')}`,
+            ),
+          );
+
+          if (ctValidationResults.some((r) => !r.success)) {
+            reportResults(
+              ctValidationResults,
+              'Content template validation results',
+              'Content template',
+            );
+            throw new Error(
+              'Content template validation failed. Fix the errors above before pushing.',
+            );
+          }
+
+          const componentVersions = await apiService.listComponentVersions();
+
+          const ctSpinner = p.spinner();
+          ctSpinner.start('Preparing content templates');
+
+          const { valid: validTemplates, failed: failedCtPreps } =
+            await prepareContentTemplates(
+              discoveredContentTemplates,
+              componentVersions,
+              discoveryResult,
+            );
+
+          if (validTemplates.length === 0 && failedCtPreps.length > 0) {
+            ctSpinner.stop(chalk.yellow('No valid content templates to push'));
+            const ctResults = collectContentTemplateResults(
+              [],
+              failedCtPreps,
+              discoveredContentTemplates,
+            );
+            reportResults(
+              ctResults,
+              'Pushed content templates',
+              'Content template',
+            );
+          } else if (validTemplates.length > 0) {
+            const ctProgress = createProgressCallback(
+              ctSpinner,
+              'Pushing content templates',
+              validTemplates.length,
+            );
+            ctSpinner.message('Pushing content templates');
+
+            const ctPushResults = await pushContentTemplates(
+              validTemplates,
+              remoteContentTemplateById,
+              apiService,
+            );
+
+            for (const r of ctPushResults) {
+              if (r.success) ctProgress();
+            }
+            pushedContentTemplateCount = ctPushResults.filter(
+              (r) => r.success,
+            ).length;
+
+            ctSpinner.stop(
+              chalk.green(
+                `Processed ${ctPushResults.length} ${pluralize(ctPushResults.length, 'content template')}`,
+              ),
+            );
+
+            const ctResults = collectContentTemplateResults(
+              ctPushResults,
+              failedCtPreps,
+              discoveredContentTemplates,
+            );
+
+            reportResults(
+              ctResults,
+              'Pushed content templates',
+              'Content template',
+            );
+          } else {
+            ctSpinner.stop(chalk.yellow('No valid content templates to push'));
+          }
+        }
+
+        await apiService.signalPushComplete();
+        const componentCount = components.length;
+        const parts = [];
+        if (componentCount > 0) {
+          parts.push(`${componentCount} ${pluralizeComponent(componentCount)}`);
+        }
+        if (discoveredPages.length > 0) {
+          parts.push(
+            `${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
+          );
+        }
+        if (pushedContentTemplateCount > 0) {
+          parts.push(
+            `${pushedContentTemplateCount} ${pluralize(
+              pushedContentTemplateCount,
+              'content template',
+            )}`,
+          );
+        }
+        if (includeGlobalCss) {
+          parts.push('global CSS');
+        }
+        if (artifactCount > 0) {
+          parts.push(`${artifactCount} artifacts`);
+        }
+        if (fontCount > 0) {
+          parts.push(
+            `${fontCount} font ${fontCount === 1 ? 'variant' : 'variants'}`,
+          );
+        }
+
+        p.outro(`⬆️ Push completed: ${parts.join(', ') || 'done'}`);
       } catch (error) {
+        await apiService?.signalPushFail(
+          error instanceof Error ? error.message : undefined,
+        );
         if (error instanceof Error) {
           p.note(chalk.red(`Error: ${error.message}`));
         } else {

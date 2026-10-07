@@ -3,6 +3,7 @@
 namespace Drupal\photoswipe\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -74,6 +75,8 @@ class PhotoswipeFieldFormatter extends FormatterBase {
       'photoswipe_image_style' => '',
       'photoswipe_reference_image_field' => '',
       'photoswipe_view_mode' => '',
+      'photoswipe_remove_gallery_wrapper_class' => FALSE,
+      'photoswipe_show_download_button' => FALSE,
       'image_loading' => [
         'attribute' => 'lazy',
       ],
@@ -104,7 +107,9 @@ class PhotoswipeFieldFormatter extends FormatterBase {
    * @param \Drupal\photoswipe\PhotoswipeAssetsManagerInterface $assets_manager
    *   The assets manager.
    * @param \Drupal\Core\Entity\EntityStorageInterface $image_style_storage
-   *   The module handler.
+   *   The image style storage.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entityTypeBundleInfo
+   *   The entity type bundle info.
    */
   public function __construct(
     $plugin_id,
@@ -118,6 +123,7 @@ class PhotoswipeFieldFormatter extends FormatterBase {
     EntityRepositoryInterface $entity_repository,
     PhotoswipeAssetsManagerInterface $assets_manager,
     EntityStorageInterface $image_style_storage,
+    protected EntityTypeBundleInfoInterface $entityTypeBundleInfo,
   ) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->fieldDefinition = $field_definition;
@@ -147,6 +153,7 @@ class PhotoswipeFieldFormatter extends FormatterBase {
       $container->get('entity.repository'),
       $container->get('photoswipe.assets_manager'),
       $container->get('entity_type.manager')->getStorage('image_style'),
+      $container->get('entity_type.bundle.info'),
     );
   }
 
@@ -182,7 +189,7 @@ class PhotoswipeFieldFormatter extends FormatterBase {
       '#description' => $this->t('Select the image style to display the image in the Photoswipe modal.'),
     ];
 
-    // This class originally never extended the ImgaeFormatter class, as we
+    // This class originally never extended the ImageFormatter class, as we
     // don't want to extend it now, simply copy the "image_loading" code from
     // there:
     $image_loading = $this->getSetting('image_loading');
@@ -218,6 +225,24 @@ class PhotoswipeFieldFormatter extends FormatterBase {
         }
       }
     }
+
+    $element['photoswipe_remove_gallery_wrapper_class'] = [
+      '#title' => $this->t('Remove photoswipe-gallery wrapper class'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->getSetting('photoswipe_remove_gallery_wrapper_class'),
+      '#description' => $this->t('Advanced: Removes the default "photoswipe-gallery" wrapper class. This is useful to combine multiple fields into a single gallery by wrapping them in a custom parent container with the "photoswipe-gallery" class, e.g. through Views or Fences.'),
+    ];
+    $element['photoswipe_show_download_button'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Show download button'),
+      '#default_value' => $this->getSetting('photoswipe_show_download_button'),
+      '#description' => $this->t('Display a download button in the PhotoSwipe toolbar.'),
+      '#states' => [
+        'visible' => [
+          ':input[name$="[settings][photoswipe_remove_gallery_wrapper_class]"]' => ['checked' => FALSE],
+        ],
+      ],
+    ];
 
     // Add the current view mode so we can control view mode for entity fields.
     $element['photoswipe_view_mode'] = [
@@ -263,7 +288,8 @@ class PhotoswipeFieldFormatter extends FormatterBase {
     }
 
     $target_type = $this->fieldDefinition->getSetting('target_type');
-    $target_bundles = $this->fieldDefinition->getSetting('handler_settings')['target_bundles'];
+    $fieldDefinitionHandlerSettings = $this->fieldDefinition->getSetting('handler_settings');
+    $target_bundles = empty($fieldDefinitionHandlerSettings['target_bundles']) ? array_keys($this->entityTypeBundleInfo->getBundleInfo($target_type)) : $fieldDefinitionHandlerSettings['target_bundles'];
 
     /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $fields */
     $fields = [];
@@ -275,8 +301,8 @@ class PhotoswipeFieldFormatter extends FormatterBase {
     });
 
     $field_options = [];
-    foreach ($fields as $name => $field) {
-      $field_options[$name] = $field->getName();
+    foreach ($fields as $name => $fieldDefinition) {
+      $field_options[$name] = $fieldDefinition->getName() . ' (' . $fieldDefinition->getLabel() . ')';
     }
 
     $element['photoswipe_reference_image_field'] = [
@@ -338,6 +364,12 @@ class PhotoswipeFieldFormatter extends FormatterBase {
       '@attribute' => $image_loading['attribute'],
     ]);
 
+    $removeWrapperClassStatus = $this->getSetting('photoswipe_remove_gallery_wrapper_class') ? $this->t('Yes') : $this->t('No');
+    $summary[] = $this->t('Remove photoswipe-gallery wrapper class: %status', ['%status' => $removeWrapperClassStatus]);
+
+    $showDownloadButton = $this->getSetting('photoswipe_show_download_button') ? $this->t('Yes') : $this->t('No');
+    $summary[] = $this->t('Show download button:: %status', ['%status' => $showDownloadButton]);
+
     return $summary;
   }
 
@@ -351,7 +383,14 @@ class PhotoswipeFieldFormatter extends FormatterBase {
       $elements['#attributes'] = new Attribute();
     }
     // Add the gallery wrapper class to the field:
-    $elements['#attributes']->addClass('photoswipe-gallery');
+    if (!$this->getSetting('photoswipe_remove_gallery_wrapper_class')) {
+      $elements['#attributes']->addClass('photoswipe-gallery');
+
+      // This can only be set when the gallery wrapper exists:
+      if ($this->getSetting('photoswipe_show_download_button')) {
+        $elements['#attributes']->setAttribute('data-show-download-button', 'true');
+      }
+    }
     return $elements;
   }
 

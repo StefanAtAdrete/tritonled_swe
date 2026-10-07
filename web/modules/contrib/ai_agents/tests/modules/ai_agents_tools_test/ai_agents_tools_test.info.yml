@@ -1,0 +1,11 @@
+name: AI Agents Tools Test
+type: module
+description: Provides test AI function call plugins for AI Agents kernel tests.
+package: Testing
+core_version_requirement: ^10.3 || ^11
+hidden: true
+
+# Information added by Drupal.org packaging script on 2026-08-13
+version: '1.2.7'
+project: 'ai_agents'
+datestamp: 1786611122

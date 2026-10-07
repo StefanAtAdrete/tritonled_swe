@@ -66,10 +66,6 @@ final class ComponentTreeStructureConstraintValidator extends ConstraintValidato
       $base_property_path = $this->context->getPropertyPath();
     }
     $object = $this->context->getObject();
-    if ($object instanceof Sequence) {
-      // Remove keys from config-based component trees.
-      $value = \array_values($value);
-    }
     if (\is_array($value) && $object instanceof TypedDataInterface && !($object instanceof Sequence)) {
       $type = $object->getDataDefinition()->getDataType();
       if ($type === 'field.value.component_tree' && ($parent = $object->getParent()) !== NULL) {
@@ -293,7 +289,16 @@ final class ComponentTreeStructureConstraintValidator extends ConstraintValidato
     }
 
     \assert($parent_config_entity instanceof Component);
-    $parent_config_entity->loadVersion($parent_instance['component_version']);
+    try {
+      $parent_config_entity->loadVersion($parent_instance['component_version']);
+    }
+    catch (\OutOfRangeException) {
+      // The parent component instance's version does not exist; this will
+      // already trigger a validation error for the ValidConfigEntityVersion
+      // constraint. Avoid duplicating that message.
+      // @see \Drupal\canvas\Plugin\Validation\Constraint\ValidConfigEntityVersionConstraint
+      return;
+    }
     $slots = $parent_config_entity->getSlotDefinitions();
     if (\count($slots) === 0) {
       $context->buildViolation('Invalid component subtree. A component subtree must only exist for components with >=1 slot, but the component %component has no slots, yet a subtree exists for the instance with UUID %uuid.', [

@@ -11,7 +11,7 @@ hidden: true
 dependencies:
   - ai_agents:ai_agents
 
-# Information added by Drupal.org packaging script on 2026-02-26
-version: '1.2.3'
+# Information added by Drupal.org packaging script on 2026-08-13
+version: '1.2.7'
 project: 'ai_agents'
-datestamp: 1772092824
+datestamp: 1786611122

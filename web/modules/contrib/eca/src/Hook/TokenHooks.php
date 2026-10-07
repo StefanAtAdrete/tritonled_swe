@@ -2,6 +2,7 @@
 
 namespace Drupal\eca\Hook;
 
+use Drupal\Component\Render\MarkupInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -11,10 +12,13 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Render\Markup;
+use Drupal\Core\TypedData\ComplexDataInterface;
 use Drupal\Core\TypedData\ListInterface;
+use Drupal\Core\TypedData\PrimitiveInterface;
 use Drupal\Core\TypedData\TraversableTypedDataInterface;
 use Drupal\Core\TypedData\TypedDataInterface;
 use Drupal\Core\Utility\Token;
+use Drupal\eca\Plugin\DataType\DataTransferObject;
 use Drupal\eca\Token\TokenServices;
 
 /**
@@ -244,17 +248,49 @@ class TokenHooks {
     if ($type === '_eca_root_token') {
       $available = $data + TokenServices::get()->getTokenData();
       foreach ($tokens as $name => $original) {
-        if (isset($available[$name])) {
-          $value = $available[$name];
-          $replacement = is_scalar($value) || (is_object($value) && method_exists($value, '__toString')) ? (string) $value : ($value instanceof EntityInterface ? $value->id() : '');
-          if ($replacement !== '') {
-            $replacements[$original] = Markup::create($replacement);
-          }
+        if (!isset($available[$name])) {
+          continue;
         }
+        $value = $available[$name];
+        // Every branch below needs the string form: either as the replacement
+        // itself, or - for markup objects - at least to decide whether there
+        // is anything to replace at all. Markup::create('') must keep behaving
+        // like an empty string, so the emptiness guard is shared by all of
+        // them and skips recording a replacement entirely. That leaves the
+        // token text in place, unless the "clear" option asks otherwise.
+        $replacement = $this->rootTokenValueToString($value);
+        if ($replacement === '') {
+          continue;
+        }
+        $replacements[$original] = match (TRUE) {
+          // Already-safe markup passes through as the original object, so
+          // Token::replace() legitimately skips escaping and any rendering
+          // behavior attached to that object stays intact.
+          $value instanceof MarkupInterface => $value,
+          // DTOs deliberately share the author-trust assumption of the "dto"
+          // token type above, so that [mydto] and [mydto:some:property] behave
+          // consistently. TokenInterface::addTokenData() wraps every
+          // non-entity value into a DTO, which makes this the common case for
+          // root-level tokens.
+          // @todo Reconsider this once https://www.drupal.org/node/2580723
+          // got fixed.
+          $value instanceof DataTransferObject => Markup::create($replacement),
+          // Anything else - raw scalars and stringable objects handed in
+          // through $data, plus entity IDs - carries no safety promise, so
+          // leave it unwrapped and let Token::replace() escape it.
+          default => $replacement,
+        };
       }
     }
 
     if ($type === 'plain') {
+      // Bypassing the auto-escaping of Token::replace() is the whole point of
+      // the "plain" token type: [plain:*] is documented to return the plain
+      // text value of any available token "without escaping HTML characters".
+      // Wrapping the replacement as safe markup is therefore intentional and
+      // must not be "hardened" away.
+      // @see \Drupal\eca\Hook\TokenHooks::tokenInfo()
+      // @see \Drupal\Tests\eca\Kernel\TokenTest::testPlainText()
       foreach ($tokens as $name => $original) {
         $replacement = $this->token->replacePlain('[' . $name . ']', $data, ['clear' => TRUE] + $options, $bubbleable_metadata);
         if ($replacement !== '') {
@@ -264,6 +300,42 @@ class TokenHooks {
     }
 
     return $replacements;
+  }
+
+  /**
+   * Builds the string form of a root-level token value.
+   *
+   * The order of the checks matters: a stringable object wins over the entity
+   * ID, so that entities implementing __toString() keep rendering through it.
+   *
+   * Typed data values are resolved through their own ::getString() method.
+   * This deliberately only covers primitives, complex data and lists, and not
+   * TypedDataInterface as a whole: the "any" data type accepts arrays, and
+   * \Drupal\Core\TypedData\TypedData::getString() casts the raw value with
+   * (string), which would emit an "array to string conversion" notice. Do not
+   * simplify these three checks into a single TypedDataInterface check.
+   *
+   * @param mixed $value
+   *   The value that a root-level token resolved to.
+   *
+   * @return string
+   *   The string form of the value, or an empty string if the value cannot be
+   *   expressed as a token replacement at all. That covers NULL, arrays,
+   *   FALSE, objects without a string representation - including typed data
+   *   holding an arbitrary value - and entities that have no ID yet because
+   *   they were never saved.
+   */
+  private function rootTokenValueToString(mixed $value): string {
+    if (is_scalar($value) || (is_object($value) && method_exists($value, '__toString'))) {
+      return (string) $value;
+    }
+    if ($value instanceof EntityInterface) {
+      return (string) $value->id();
+    }
+    if ($value instanceof PrimitiveInterface || $value instanceof ComplexDataInterface || $value instanceof ListInterface) {
+      return (string) $value->getString();
+    }
+    return '';
   }
 
 }

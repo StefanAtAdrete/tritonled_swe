@@ -1,12 +1,8 @@
-
-# README
-
-## About
+# Photoswipe
 
 Uses [Photoswipe](https://photoswipe.com/) to display picture galleries on your
 Drupal website. This Javascript lightbox library offers very nice mobile
 browsing features (in particular swiping to the next picture)!
-
 
 ## Installation
 
@@ -90,3 +86,102 @@ follows:
 ~~~
 {{ attach_photoswipe({'bgOpacity': 0.2}) }}
 ~~~
+
+### Combining Multiple Fields into a Shared Gallery
+By default, each field using the Photoswipe formatter gets wrapped in its own `photoswipe-gallery` class. If you want to combine images from multiple fields (or multiple paragraphs/blocks) into a single, shared gallery, you can check the **Remove photoswipe-gallery wrapper class** option in each field formatter's settings.
+
+Once the default wrapper class is disabled, you must manually wrap the fields in a container that has the `photoswipe-gallery` class. Here are a few ways to do this.
+*If you don't add one, `js/prepare-galleries.js` will add a fallback around each image!*
+
+#### 1. Using the Fences Module
+If you are using the [Fences](https://www.drupal.org/project/fences) module to customize your field markup, you can:
+- Edit the parent entity/paragraph containing the fields.
+- Configure the Fences wrapper settings on the container element or parent field.
+- Add `photoswipe-gallery` to the custom CSS classes of the wrapper element.
+
+#### 2. Manually in Twig Templates (Theme)
+You can wrap the fields in your custom twig template (e.g., `paragraph--my-gallery.html.twig` or `node--article.html.twig`).
+
+```twig
+{# Wrap multiple fields into a single shared gallery #}
+<div class="photoswipe-gallery my-custom-gallery-layout">
+  {{ content.field_gallery_images_1 }}
+  {{ content.field_gallery_images_2 }}
+</div>
+```
+
+#### 3. Using the Views Module
+If you are displaying multiple fields in a View:
+- Disable the default wrapper class on the fields.
+- In your View's format settings (e.g., Grid or HTML List), add `photoswipe-gallery` to the Row class or the Inner class.
+- Alternatively, rewrite the output of a field or use a custom Views template to wrap multiple fields in a `<div class="photoswipe-gallery">` container.
+
+### Download Button
+The Photoswipe formatter includes a **Show download button** setting that adds a
+download button to the PhotoSwipe toolbar.
+
+If you enable the **Remove photoswipe-gallery wrapper class** setting and
+provide your own `photoswipe-gallery` wrapper instead, you must add the
+`data-show-download-button` data attribute to that wrapper yourself to show
+the download button.
+
+## Photoswipe Dynamic Caption Submodule
+
+This module provides integration with the
+[photoswipe dynamic caption plugin](https://github.com/dimsemenov/photoswipe-dynamic-caption-plugin/tree/main).
+Starting from [photoswipe 5](https://photoswipe.com/caption/), there is separate
+plugin dedicated to (dynamic) captions.
+
+**Note**: In PhotoSwipe 5 the "Photoswipe image caption" option is present on
+the regular Display page of image fields (on 
+`/admin/structure/types/manage/library/display`), but missing for the same
+image field in a View.
+
+The solution to the problem is Drupal core issue
+[Formatter third party settings missing from Views UI](https://www.drupal.org/project/drupal/issues/2686145)
+and you should 
+[patch Drupal core](https://www.drupal.org/docs/develop/using-composer/manage-dependencies#s-patching-drupal-core-and-modules) until it gets fixed.
+
+### Installation
+
+#### Composer installation (recommended)
+
+- Enable usage of third-party libraries using composer, see
+  [here](https://www.drupal.org/docs/develop/using-composer/manage-dependencies#third-party-libraries)
+  for an explanation.
+- Install caption library using following composer command: <br>
+  `composer require "npm-asset/photoswipe-dynamic-caption-plugin:^1.2"`
+- Check your status report
+
+#### Manual Installation
+
+- Clone https://github.com/dimsemenov/photoswipe-dynamic-caption-plugin
+repository into libraries folder.
+- Check the status report for errors
+
+#### CDN installation
+- Enable "Load PhotoSwipe library from CDN" in the photoswipe settings
+(/admin/config/media/photoswipe)
+- Check the status report for errors
+
+### Optional HTML captions (DOMPurify)
+
+By default, captions are escaped as plain text. To allow sanitized HTML in
+captions, install the optional
+[DOMPurify](https://github.com/cure53/DOMPurify/releases/latest) library.
+
+#### Manual installation
+
+1. Download the latest "purify.min.js" asset from: [https://github.com/cure53/DOMPurify/releases/latest](https://github.com/cure53/DOMPurify/releases/latest).
+2. Copy the purify.min.js to `libraries/dompurify/dist/purify.min.js`
+3. Enable the "allowHtmlCaptions" global setting.
+
+### Configuration
+
+The module has predefined hardcoded [configuration](./config/install/photoswipe_dynamic_caption.settings.yml).
+There are two possible ways of altering configuration:
+1. (recommended) Using `hook_photoswipe_js_options_alter` simply put custom
+option in `$settings['captionOptions']`. Check
+`photoswipe_dynamic_caption_photoswipe_js_options_alter` for details.
+2. Override manually configuration file and import it.
+

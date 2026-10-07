@@ -9,6 +9,7 @@ use Drupal\Core\Asset\LibraryDiscoveryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Hook\Order\OrderAfter;
 use Drupal\Core\Security\TrustedCallbackInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
@@ -27,6 +28,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * @see docs/redux-integrated-field-widgets.md
  */
 class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
+
+  use StringTranslationTrait;
 
   public function __construct(
     private readonly ModuleHandlerInterface $moduleHandler,
@@ -152,6 +155,12 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
 
   #[Hook('field_widget_single_element_link_default_form_alter')]
   public function fieldWidgetSingleElementLinkDefaultWidgetFormAlter(array &$form, FormStateInterface $form_state, array $context): void {
+    // Mark the URI input so Canvas UI can resolve selected entity references
+    // into the `entity:<type>/<id>` URI scheme on selection.
+    // @see \Drupal\canvas\Hook\ReduxIntegratedFieldWidgetsHooks::fieldWidgetInfoAlter()
+    // @see ui/src/components/form/components/TextFieldAutocomplete.tsx
+    $form['uri']['#attributes']['data-canvas-resolve-entity-uri'] = 'true';
+
     if ($this->themeManager->getActiveTheme()->getName() === 'canvas_stark') {
       // We want the link widget to have less information, so we need to revert
       // the description mangling happening at
@@ -177,38 +186,6 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
       if (isset($form['alias']['#description'])) {
         unset($form['alias']['#description']);
       }
-    }
-  }
-
-  /**
-   * Implements hook_preprocess_field_multiple_value_form().
-   */
-  #[Hook('preprocess_field_multiple_value_form')]
-  public static function canvasStarkPreprocessFieldMultipleValueForm(array &$variables): void {
-    // Only apply custom multivalue form styling if canvas_dev_mode is enabled.
-    $module_handler = \Drupal::moduleHandler();
-    if (!$module_handler->moduleExists('canvas_dev_mode')) {
-      return;
-    }
-
-    // Add classes to table columns to enable Canvas-specific styling.
-    if (isset($variables['table']['#rows'])) {
-      foreach ($variables['table']['#rows'] as &$row) {
-        // Add class to column 0 (drag handle).
-        if (isset($row['data'][0])) {
-          $row['data'][0]['class'] = ['field-multiple-drag', 'canvas-drag-handle'];
-        }
-        // Add class to column 2 (actions/remove button).
-        if (isset($row['data'][2])) {
-          $row['data'][2]['class'] = ['canvas-remove-action'];
-        }
-      }
-
-      // Attach the library for multivalue form styles.
-      $variables['table']['#attached']['library'][] = 'canvas/multivalue-form';
-    }
-    if (isset($variables['button']['#value'])) {
-      $variables['button']['#value'] = t('+ Add new');
     }
   }
 
@@ -264,18 +241,18 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
       }
     }
 
-    if ($this->moduleHandler->moduleExists('canvas_dev_mode')) {
-      // Check if this is a multivalue field.
-      $field_definition = $context['items']->getFieldDefinition();
-      $is_multiple = $field_definition->getFieldStorageDefinition()->isMultiple();
+    // Check if this is a multivalue field.
+    $field_definition = $context['items']->getFieldDefinition();
+    $is_multiple = $field_definition->getFieldStorageDefinition()->isMultiple();
 
-      if ($is_multiple && $this->themeManager->getActiveTheme()->getName() === 'canvas_stark') {
-        // Get the field label to add to all input elements.
-        $field_label = $field_definition->getLabel();
-        // Mark all input elements within multivalue widgets and add field
-        // title.
-        $this->markMultivalueFormElements($widget, $field_label);
-      }
+    if ($is_multiple && $this->themeManager->getActiveTheme()->getName() === 'canvas_stark') {
+      // Get the field label to add to all input elements.
+      $field_label = $field_definition->getLabel();
+      // Get the field cardinality for limiting selections.
+      $cardinality = $field_definition->getFieldStorageDefinition()->getCardinality();
+      // Mark all input elements within multivalue widgets and add field
+      // title.
+      $this->markMultivalueFormElements($widget, $field_label, $cardinality);
     }
   }
 
@@ -286,23 +263,34 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
    *   The form element to process.
    * @param string $field_label
    *   The field label to add to input elements.
+   * @param int $cardinality
+   *   The field cardinality (-1 for unlimited, or a positive integer).
    */
-  private function markMultivalueFormElements(array &$element, string $field_label): void {
+  private function markMultivalueFormElements(array &$element, string $field_label, int $cardinality): void {
     foreach (Element::children($element) as $key) {
       // Mark input elements.
       if (isset($element[$key]['#type']) &&
-          \in_array($element[$key]['#type'], ['textfield', 'number', 'url', 'entity_autocomplete'], TRUE)) {
+          \in_array($element[$key]['#type'], ['textfield', 'number', 'url', 'entity_autocomplete', 'submit', 'select'], TRUE)) {
         $element[$key]['#is_multivalue_form'] = TRUE;
         $element[$key]['#attributes']['data-field-label'] = $field_label;
+        $element[$key]['#attributes']['data-cardinality'] = $cardinality;
         // Hide the sub-field label for url and entity_autocomplete types so
         // that labels like "URL" are not shown in the multivalue table rows.
         if (\in_array($element[$key]['#type'], ['url', 'entity_autocomplete'], TRUE)) {
           $element[$key]['#title_display'] = 'invisible';
         }
       }
+
+      // Skip recursion into datetime elements since they are handled as a unit
+      // by the DrupalDatetimeMultivalueForm component.
+      if (isset($element[$key]['#type']) && $element[$key]['#type'] === 'datetime') {
+        $element[$key]['#multivalue_field_label'] = $field_label;
+        continue;
+      }
+
       // Recursively process child elements.
       if (\is_array($element[$key])) {
-        $this->markMultivalueFormElements($element[$key], $field_label);
+        $this->markMultivalueFormElements($element[$key], $field_label, $cardinality);
       }
     }
   }
@@ -311,9 +299,9 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
    * Implements hook_field_widget_info_alter().
    */
   #[Hook('field_widget_info_alter')]
-  public function fieldWidgetInfoAlter(array &$info): void {
+  public static function fieldWidgetInfoAlter(array &$info): void {
     $map = [
-      'boolean_checkbox' => ['mainProperty' => ['list' => \FALSE]],
+      'boolean_checkbox' => ['mainProperty' => []],
       'datetime_default' => ['mainProperty' => [], 'dateTime' => []],
       'daterange_default' => ['dateRange' => []],
       'email_default' => ['mainProperty' => []],
@@ -345,7 +333,7 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
    * Implements hook_field_widget_info_alter().
    */
   #[Hook('field_widget_info_alter', module: 'media_library')]
-  public function mediaLibraryFieldWidgetInfoAlter(array &$info): void {
+  public static function mediaLibraryFieldWidgetInfoAlter(array &$info): void {
     $info['media_library_widget']['canvas'] = [
       'transforms' => [
         'mediaSelection' => [],
@@ -355,7 +343,7 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
   }
 
   #[Hook('element_info_alter', order: new OrderAfter(['editor']))]
-  public function elementInfoAlter(array &$info): void {
+  public static function elementInfoAlter(array &$info): void {
     if (isset($info['text_format'])) {
       $info['text_format']['#process'][] = [ReduxIntegratedFieldWidgetsHooks::class, 'processTextFormat'];
       $info['text_format']['#pre_render'][] = [ReduxIntegratedFieldWidgetsHooks::class, 'preRenderTextFormat'];
@@ -372,10 +360,15 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
   public static function processTextFormat(array $element, FormStateInterface $form_state, array &$form): array {
     $form_id = $form['form_id']['#value'] ?? NULL;
 
-    // If we aren't in the component instance form, remove text formats that are
-    // exclusive to that form.
+    // If we aren't in the component instance or config translation form, remove
+    // text formats that are exclusive to Canvas.
     // @see \Drupal\canvas\Hook\ShapeMatchingHooks::filterFormatAccess()
-    if ($form_id !== ComponentInstanceForm::FORM_ID) {
+    $forms_with_static_prop_sources = [
+      ComponentInstanceForm::FORM_ID,
+      'config_translation_add_form',
+      'config_translation_edit_form',
+    ];
+    if (!\in_array($form_id, $forms_with_static_prop_sources, TRUE)) {
       // @see config/install/filter.format.canvas_html_block.yml
       unset($element['format']['format']['#options']['canvas_html_block']);
       // @see config/install/filter.format.canvas_html_inline.yml
@@ -388,7 +381,11 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
     // Only proceed if this is a Canvas page data or component instance form.
     // This restructures the render array to simplify integration of the
     // CKEditor5 React component.
-    if (isset($element['#attributes']['data-form-id']) && \in_array($element['#attributes']['data-form-id'], [ComponentInstanceForm::FORM_ID, ModuleHooks::PAGE_DATA_FORM_ID], TRUE)) {
+    $relevant_forms = [
+      ComponentInstanceForm::FORM_ID,
+      ModuleHooks::PAGE_DATA_FORM_ID,
+    ];
+    if (isset($element['#attributes']['data-form-id']) && \in_array($element['#attributes']['data-form-id'], $relevant_forms, TRUE)) {
       $element['value']['#attributes']['data-form-id'] = $element['#attributes']['data-form-id'];
       // The data-editor-for attribute triggers a vanilla JS initialization of
       // CKEditor5. Rename the attribute so we can instead use a React-specific
@@ -410,7 +407,11 @@ class ReduxIntegratedFieldWidgetsHooks implements TrustedCallbackInterface {
         // Include the #name and #id render array properties as name and id
         // attributes.
         \assert(\is_iterable($element['format']['format']['#attributes']));
-        $element['value']['#attributes']['data-canvas-format-select-attributes'] = Json::encode([...$element['format']['format']['#attributes'], 'name' => $element['format']['format']['#name'], 'id' => $element['format']['format']['#id']]);
+        $element['value']['#attributes']['data-canvas-format-select-attributes'] = Json::encode([
+          ...$element['format']['format']['#attributes'],
+          'name' => $element['format']['format']['#name'],
+          'id' => $element['format']['format']['#id'],
+        ]);
         if (isset($element['format']['format']['#options'])) {
           // Serialize the list of available text formats to pass via attribute.
           $element['value']['#attributes']['data-canvas-available-formats'] = Json::encode($element['format']['format']['#options']);

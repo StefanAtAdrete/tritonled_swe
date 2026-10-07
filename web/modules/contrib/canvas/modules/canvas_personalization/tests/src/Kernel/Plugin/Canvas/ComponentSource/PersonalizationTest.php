@@ -543,4 +543,86 @@ HTML,
     return '';
   }
 
+  public static function providerSymmetricallyTranslatableComponentInstanceScenarios(string $host_entity_type_id): \Generator {
+    yield 'p13n.case' => [
+      'p13n.case',
+      [
+        'variant_id' => Personalization::POC_ONLY_HARDCODED_VARIANTS_HALLOWEEN,
+        'segments' => [
+          'halloween',
+          Segment::DEFAULT_ID,
+        ],
+      ],
+      // Defaults to fallback, so nothing is translatable.
+      // @see \Drupal\canvas\ComponentSource\FallbackComponentInstanceInputsConfigSchemaGenerator
+      [],
+    ];
+    yield 'p13n.switch' => [
+      'p13n.switch',
+      [
+        'variants' => [Personalization::POC_ONLY_HARDCODED_VARIANTS_HALLOWEEN],
+      ],
+      // Defaults to fallback, so nothing is translatable.
+      // @see \Drupal\canvas\ComponentSource\FallbackComponentInstanceInputsConfigSchemaGenerator
+      [],
+    ];
+  }
+
+  public static function providerResolvedComponentInputs(): \Generator {
+    yield 'p13n case' => [
+      'p13n.case',
+      [
+        'variant_id' => 'my_variation',
+        'segments' => [
+          'andalusian_visitors',
+          'halloween',
+          Segment::DEFAULT_ID,
+        ],
+      ],
+      [
+        'variant_id' => 'my_variation',
+        'segments' => [
+          'andalusian_visitors',
+          'halloween',
+          Segment::DEFAULT_ID,
+        ],
+      ],
+    ];
+    yield 'p13n switch' => [
+      'p13n.switch',
+      [
+        'variants' => [
+          'my_variation' => [
+            'label' => 'My variation',
+            'segments' => [
+              'andalusian_visitors',
+            ],
+          ],
+          'default' => [
+            'label' => 'Default',
+            'segments' => [
+              Segment::DEFAULT_ID,
+            ],
+          ],
+        ],
+      ],
+      [
+        'variants' => [
+          'my_variation' => [
+            'label' => 'My variation',
+            'segments' => [
+              'andalusian_visitors',
+            ],
+          ],
+          'default' => [
+            'label' => 'Default',
+            'segments' => [
+              Segment::DEFAULT_ID,
+            ],
+          ],
+        ],
+      ],
+    ];
+  }
+
 }
