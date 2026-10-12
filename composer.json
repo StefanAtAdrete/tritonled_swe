@@ -59,7 +59,6 @@
         "drupal/klaro": "^3.0",
         "drupal/lb_tabs": "*",
         "drupal/mcp": "^1.2",
-        "drupal/mcp_tools": "^1.0@beta",
         "drupal/media_bulk_upload": "^3.0",
         "drupal/menu_link_attributes": "^1.7",
         "drupal/metatag": "^2.2",
@@ -101,7 +100,8 @@
             "oomphinc/composer-installers-extender": true,
             "php-http/discovery": true,
             "php-tuf/composer-integration": true,
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "symfony/runtime": true
         },
         "sort-packages": true
     },
