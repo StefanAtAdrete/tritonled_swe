@@ -214,6 +214,11 @@ The Splide module has several sub-modules:
   Features a "Vanilla" mode and a
   [robust API](https://git.drupalcode.org/project/splide/blob/3.0.x/splide.api.php)
   for custom/theme implementations.
+* **Editor Friendly:**
+
+  The `Splide Filter` provides a streamlined shortcode for embedding rich
+  multimedia content directly within text editors; see
+  [Filter tips](/filter/tips).
 * **Modular Skins & Versatile Designs**:
 
   Fullscreen, Split, multi-row, or Grid layouts built with pure CSS and zero
@@ -234,14 +239,11 @@ The Splide module has several sub-modules:
   A single **Media switcher** option for various interactions: image to content,
   iframe, and (quasi-)lightboxes: Slick lightbox, Colorbox, PhotoSwipe, Flybox,
   Magnific Popup, Zooming, etc.
-* **Editor Friendly:**
-
-  `Splide Filter` using simple shortcodes, see [Filter tips](/filter/tips).
 * **Navigation/ Pager Options**:
 
   Arrows, Dots (circle, static grid, or hoverable), Tabs, and Image Thumbnails.
   Almost similar to Slick, what Slick has, Splide does, too, but even more.
-  + **Robus navigations**, even for Vanilla slides.
+  + **Robust navigations**, even for Vanilla slides.
   + **Arrows**
   + **Dots**, circle dots, dots as static grid thumbnails, and dots with
     hoverable thumbnails.

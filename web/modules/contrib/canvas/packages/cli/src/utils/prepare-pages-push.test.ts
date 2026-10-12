@@ -5,11 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   collectPageResults,
+  entitiesHaveColorProps,
   preparePages,
   pushPages,
 } from './prepare-pages-push';
 
-import type { DiscoveredPage, DiscoveryResult } from '@drupal-canvas/discovery';
+import type {
+  ComponentMetadata,
+  DiscoveredPage,
+  DiscoveryResult,
+} from '@drupal-canvas/discovery';
 import type { ApiService } from '../services/api';
 import type { PageListItem } from '../types/Page';
 
@@ -19,21 +24,24 @@ const emptyDiscoveryResult: DiscoveryResult = {
   components: [],
   pages: [],
   contentTemplates: [],
+  pageTemplates: [],
   warnings: [],
   stats: { scannedFiles: 0, ignoredFiles: 0 },
+  componentSchemas: new Map(),
 };
 
 function mockDiscoveredPage(
   name: string,
   uuid: string | null,
   filePath: string,
+  relativePath = name + '.json',
 ): DiscoveredPage {
   return {
     name,
     slug: name,
     uuid,
     path: filePath,
-    relativePath: name + '.json',
+    relativePath,
   };
 }
 
@@ -75,6 +83,7 @@ describe('preparePages', () => {
       JSON.stringify({
         uuid: 'page-uuid-1',
         title: 'Home',
+        pageVariant: 'marketing',
         elements: {
           'comp-1': { type: 'js.hero', props: { heading: 'Welcome' } },
         },
@@ -95,6 +104,7 @@ describe('preparePages', () => {
     expect(valid).toHaveLength(1);
     expect(valid[0].result.title).toBe('Home');
     expect(valid[0].result.uuid).toBe('page-uuid-1');
+    expect(valid[0].result.pageVariant).toBe('marketing');
     expect(valid[0].result.components).toHaveLength(1);
     expect(valid[0].result.components[0].component_id).toBe('js.hero');
     expect(valid[0].result.components[0].component_version).toBe('v1');
@@ -136,6 +146,138 @@ describe('preparePages', () => {
   });
 });
 
+describe('entitiesHaveColorProps', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pages-color-check-'));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns true when a page uses a component with color props', async () => {
+    const pagePath = path.join(tmpDir, 'home.json');
+    await fs.writeFile(
+      pagePath,
+      JSON.stringify({
+        title: 'Home',
+        elements: {
+          card: {
+            type: 'js.color-card',
+            props: { accent: 'canvas-color:brand-red' },
+          },
+        },
+      }),
+      'utf-8',
+    );
+
+    const pages = [mockDiscoveredPage('home', null, pagePath)];
+    const metadata: ComponentMetadata[] = [
+      {
+        name: 'Color Card',
+        machineName: 'color-card',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            accent: {
+              title: 'Accent',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+          },
+        },
+      },
+    ];
+
+    await expect(entitiesHaveColorProps(pages, metadata)).resolves.toBe(true);
+  });
+
+  it('returns false when no page uses components with color props', async () => {
+    const pagePath = path.join(tmpDir, 'home.json');
+    await fs.writeFile(
+      pagePath,
+      JSON.stringify({
+        title: 'Home',
+        elements: {
+          hero: {
+            type: 'js.hero',
+            props: { heading: 'Hello' },
+          },
+        },
+      }),
+      'utf-8',
+    );
+
+    const pages = [mockDiscoveredPage('home', null, pagePath)];
+    const metadata: ComponentMetadata[] = [
+      {
+        name: 'Hero',
+        machineName: 'hero',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            heading: {
+              title: 'Heading',
+              type: 'string',
+            },
+          },
+        },
+      },
+    ];
+
+    await expect(entitiesHaveColorProps(pages, metadata)).resolves.toBe(false);
+  });
+
+  it('returns true when a content-template-shaped file uses a component with color props', async () => {
+    const templatePath = path.join(tmpDir, 'node.article.full.json');
+    await fs.writeFile(
+      templatePath,
+      JSON.stringify({
+        label: 'Article — Full',
+        entityType: 'node',
+        bundle: 'article',
+        viewMode: 'full',
+        elements: {
+          card: {
+            type: 'js.color-card',
+            props: { accent: 'canvas-color:brand-red' },
+          },
+        },
+      }),
+      'utf-8',
+    );
+
+    const metadata: ComponentMetadata[] = [
+      {
+        name: 'Color Card',
+        machineName: 'color-card',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            accent: {
+              title: 'Accent',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+          },
+        },
+      },
+    ];
+
+    await expect(
+      entitiesHaveColorProps([{ path: templatePath }], metadata),
+    ).resolves.toBe(true);
+  });
+});
+
 describe('pushPages', () => {
   let tmpDir: string;
 
@@ -162,10 +304,10 @@ describe('pushPages', () => {
           uuid: 'page-uuid-1',
           title: 'Home',
           description: '',
+          pageVariant: 'marketing',
           path: '/home',
           components: [],
           filePath,
-          pendingMediaReconciliations: [],
         },
       },
     ];
@@ -185,7 +327,57 @@ describe('pushPages', () => {
     expect(results[0].success).toBe(true);
     expect(results[0].result?.operation).toBe('Updated');
     expect(api.updatePage).toHaveBeenCalledTimes(1);
+    expect(api.updatePage).toHaveBeenCalledWith(1, {
+      title: 'Home',
+      description: '',
+      pageVariant: 'marketing',
+      status: true,
+      path: '/home',
+      components: [],
+    });
     expect(api.createPage).not.toHaveBeenCalled();
+  });
+
+  it('omits page variants when the site does not support them', async () => {
+    const filePath = path.join(tmpDir, 'home.json');
+    await fs.writeFile(
+      filePath,
+      JSON.stringify({ uuid: 'page-uuid-1', title: 'Home', elements: {} }),
+      'utf-8',
+    );
+    const prepared = [
+      {
+        index: 0,
+        result: {
+          uuid: 'page-uuid-1',
+          title: 'Home',
+          description: '',
+          pageVariant: 'marketing',
+          path: '/home',
+          components: [],
+          filePath,
+        },
+      },
+    ];
+    const remoteByUuid = new Map([
+      ['page-uuid-1', mockPageListItem(1, 'page-uuid-1', 'Home', '/home')],
+    ]);
+    const updatePage = vi.fn().mockResolvedValue({});
+
+    await pushPages(
+      prepared,
+      remoteByUuid,
+      { updatePage, createPage: vi.fn() },
+      false,
+    );
+
+    expect(updatePage).toHaveBeenCalledWith(1, {
+      title: 'Home',
+      description: '',
+      status: true,
+      path: '/home',
+      components: [],
+    });
   });
 
   it('should reject path alias changes for existing pages', async () => {
@@ -203,10 +395,10 @@ describe('pushPages', () => {
           uuid: 'page-uuid-1',
           title: 'Home',
           description: '',
+          pageVariant: null,
           path: '/new-home',
           components: [],
           filePath,
-          pendingMediaReconciliations: [],
         },
       },
     ];
@@ -224,6 +416,7 @@ describe('pushPages', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].success).toBe(false);
+    expect(results[0].pageTitle).toBe('Home');
     expect(results[0].error?.message).toBe(
       'Path alias changes are not allowed for existing pages. Remote path is "/home"; local path is "/new-home".',
     );
@@ -246,10 +439,10 @@ describe('pushPages', () => {
           uuid: 'page-uuid-1',
           title: 'Home',
           description: '',
+          pageVariant: null,
           path: '',
           components: [],
           filePath,
-          pendingMediaReconciliations: [],
         },
       },
     ];
@@ -267,6 +460,7 @@ describe('pushPages', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].success).toBe(false);
+    expect(results[0].pageTitle).toBe('Home');
     expect(results[0].error?.message).toBe(
       'Path alias changes are not allowed for existing pages. Remote path is "/home"; local path is "".',
     );
@@ -289,10 +483,10 @@ describe('pushPages', () => {
           uuid: null as string | null,
           title: 'New Page',
           description: '',
+          pageVariant: null,
           path: '',
           components: [],
           filePath,
-          pendingMediaReconciliations: [],
         },
       },
     ];
@@ -313,11 +507,54 @@ describe('pushPages', () => {
     expect(results[0].success).toBe(true);
     expect(results[0].result?.operation).toBe('Created');
     expect(api.createPage).toHaveBeenCalledTimes(1);
+    expect(api.createPage).toHaveBeenCalledWith({
+      title: 'New Page',
+      description: '',
+      pageVariant: null,
+      status: false,
+      path: '',
+      components: [],
+    });
     expect(api.updatePage).not.toHaveBeenCalled();
 
     // Verify UUID was written back to the file.
     const content = JSON.parse(await fs.readFile(filePath, 'utf-8'));
     expect(content.uuid).toBe('server-assigned-uuid');
+  });
+
+  it('keeps failed push results aligned to the original discovered page index', async () => {
+    const secondFilePath = path.join(tmpDir, 'second.json');
+
+    const prepared = [
+      {
+        index: 1,
+        result: {
+          uuid: 'page-uuid-2',
+          title: 'Second',
+          description: '',
+          pageVariant: null,
+          path: '/changed-second',
+          components: [],
+          filePath: secondFilePath,
+        },
+      },
+    ];
+
+    const remoteByUuid = new Map([
+      ['page-uuid-2', mockPageListItem(2, 'page-uuid-2', 'Second', '/second')],
+    ]);
+
+    const api = {
+      updatePage: vi.fn(),
+      createPage: vi.fn(),
+    } as unknown as Pick<ApiService, 'createPage' | 'updatePage'>;
+
+    const results = await pushPages(prepared, remoteByUuid, api);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].success).toBe(false);
+    expect(results[0].index).toBe(1);
+    expect(results[0].pageTitle).toBe('Second');
   });
 });
 
@@ -352,22 +589,52 @@ describe('collectPageResults', () => {
   });
 
   it('should collect failed push results', () => {
-    const pages = [mockDiscoveredPage('home', null, '/tmp/home.json')];
+    const pages = [
+      mockDiscoveredPage('home', null, '/tmp/home.json', 'pages/home.json'),
+    ];
 
     const pushResults = [
-      { success: false, error: new Error('API error'), index: 0 },
+      {
+        success: false,
+        error: new Error('API error'),
+        index: 0,
+        pageTitle: 'Home',
+      },
     ];
 
     const results = collectPageResults(pushResults, [], pages);
 
     expect(results).toHaveLength(1);
     expect(results[0].success).toBe(false);
-    expect(results[0].itemName).toBe('home');
+    expect(results[0].itemName).toBe('Home (pages/home.json)');
     expect(results[0].details?.[0].content).toBe('API error');
   });
 
-  it('should collect failed preparations', () => {
-    const pages = [mockDiscoveredPage('bad', null, '/tmp/bad.json')];
+  it('collects failed preparations with the title and relative path', () => {
+    const pages = [
+      mockDiscoveredPage('bad', null, '/tmp/bad.json', 'pages/bad.json'),
+    ];
+
+    const failedPreps = [
+      {
+        index: 0,
+        error: new Error('Invalid components'),
+        pageTitle: 'Broken page',
+      },
+    ];
+
+    const results = collectPageResults([], failedPreps, pages);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].success).toBe(false);
+    expect(results[0].itemName).toBe('Broken page (pages/bad.json)');
+    expect(results[0].details?.[0].content).toBe('Invalid components');
+  });
+
+  it('falls back to the relative path for failed preparations without a title', () => {
+    const pages = [
+      mockDiscoveredPage('bad', null, '/tmp/bad.json', 'pages/bad.json'),
+    ];
 
     const failedPreps = [{ index: 0, error: new Error('Invalid JSON') }];
 
@@ -375,7 +642,7 @@ describe('collectPageResults', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].success).toBe(false);
-    expect(results[0].itemName).toBe('bad');
+    expect(results[0].itemName).toBe('pages/bad.json');
     expect(results[0].details?.[0].content).toBe('Invalid JSON');
   });
 });

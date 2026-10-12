@@ -47,6 +47,15 @@ final class AiAgentEntityWrapperDetermineSolvabilityTest extends KernelTestBase 
   protected int $finishedEventCount = 0;
 
   /**
+   * Tags captured from the mock AI provider's chat() call.
+   *
+   * Public so the anonymous mock provider classes below can write to it.
+   *
+   * @var array
+   */
+  public array $capturedTags = [];
+
+  /**
    * {@inheritdoc}
    */
   protected static $modules = [
@@ -84,6 +93,14 @@ final class AiAgentEntityWrapperDetermineSolvabilityTest extends KernelTestBase 
       ->getStorage('ai_agent')
       ->create($data);
     $agent->save();
+
+    // The ai_agent config entity's calculateDependencies() triggers
+    // ai_function_calls discovery mid-save, which lazy-instantiates
+    // plugin.manager.ai_agents before the new entity is committed to
+    // storage. Both managers end up with stale definitions that omit the
+    // entity being saved. Reset them so subsequent lookups see it.
+    $this->container->set('plugin.manager.ai_agents', NULL);
+    $this->container->get('plugin.manager.ai.function_calls')->clearCachedDefinitions();
 
     // Set echoai as the default provider for chat_with_tools.
     $this->container->get('config.factory')
@@ -153,7 +170,8 @@ final class AiAgentEntityWrapperDetermineSolvabilityTest extends KernelTestBase 
    *
    * When the AI provider chat() call throws an exception,
    * determineSolvability() should catch it, dispatch
-   * AgentFinishedExecutionEvent, and return JOB_NOT_SOLVABLE.
+   * AgentFinishedExecutionEvent, return JOB_NOT_SOLVABLE, and record the
+   * exception message so it can be retrieved via getLastError().
    */
   public function testChatExceptionDispatchesFinishedEvent(): void {
     $this->resetEventCounters();
@@ -198,6 +216,7 @@ final class AiAgentEntityWrapperDetermineSolvabilityTest extends KernelTestBase 
     $this->assertSame(AiAgentInterface::JOB_NOT_SOLVABLE, $result);
     $this->assertSame(1, $this->startedEventCount, 'AgentStartedExecutionEvent should be dispatched before the chat call.');
     $this->assertSame(1, $this->finishedEventCount, 'AgentFinishedExecutionEvent should be dispatched when chat() throws.');
+    $this->assertSame('No budget/quota left', $agent_wrapper->getLastError(), 'getLastError() should return the exception message from the failed chat() call.');
   }
 
   /**
@@ -257,6 +276,145 @@ final class AiAgentEntityWrapperDetermineSolvabilityTest extends KernelTestBase 
     $this->assertSame(AiAgentInterface::JOB_SOLVABLE, $result);
     $this->assertSame(1, $this->startedEventCount, 'AgentStartedExecutionEvent should be dispatched for normal execution.');
     $this->assertSame(1, $this->finishedEventCount, 'AgentFinishedExecutionEvent should be dispatched for normal execution.');
+  }
+
+  /**
+   * Tests that extra tags include the caller runner and thread ids.
+   *
+   * When the agent has a caller agent runner id and a progress thread id
+   * set, determineSolvability() should pass tags for both of them to the
+   * AI provider's chat() call, alongside the base runner tag.
+   */
+  public function testExtraTagsIncludeCallerRunnerAndThreadIds(): void {
+    $wrapper = $this->functionCallManager->createInstance('ai_agents::ai_agent::drupal_cms_assistant');
+
+    // Access the inner AiAgentEntityWrapper.
+    $inner_ref = new \ReflectionProperty($wrapper, 'agent');
+    $inner_ref->setAccessible(TRUE);
+    $agent_wrapper = $inner_ref->getValue($wrapper);
+
+    $agent_wrapper->setCallerAgentRunnerId('caller-runner-id');
+    $agent_wrapper->setProgressThreadId('thread-id');
+
+    // Create a mock provider that captures the tags it was called with.
+    // It also needs getPluginId(), since setting a thread id makes
+    // AgentStatusSubscriber log the request, which reads it off the
+    // provider.
+    $response_message = new ChatMessage('assistant', 'Hello, I can help!');
+    $expected_output = new ChatOutput($response_message, NULL, NULL);
+
+    $mock_provider = new class ($expected_output, $this) {
+
+      /**
+       * Constructor.
+       */
+      public function __construct(
+        protected ChatOutput $output,
+        protected AiAgentEntityWrapperDetermineSolvabilityTest $test,
+      ) {
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function setChatSystemRole(string $message): void {
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function getPluginId(): string {
+        return 'mock_provider';
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function chat(mixed $input, string $model_id, array $tags = []): ChatOutput {
+        $this->test->capturedTags = $tags;
+        return $this->output;
+      }
+
+    };
+
+    $agent_wrapper->setAiProvider($mock_provider);
+    $agent_wrapper->setModelName('test-model');
+
+    // Provide chat input.
+    $chat_input = new ChatInput([
+      new ChatMessage('user', 'Hello.'),
+    ]);
+    $wrapper->setChatInput($chat_input);
+
+    $wrapper->determineSolvability();
+
+    $this->assertContains('ai_agents_caller_runner_caller-runner-id', $this->capturedTags, 'Tags should include the caller agent runner id.');
+    $this->assertContains('ai_agents_thread_thread-id', $this->capturedTags, 'Tags should include the progress thread id.');
+  }
+
+  /**
+   * Tests that extra tags omit caller runner and thread ids when unset.
+   *
+   * When no caller agent runner id or progress thread id has been set,
+   * determineSolvability() should not add tags for either of them, while
+   * still adding the base runner tag.
+   */
+  public function testExtraTagsExcludeCallerRunnerAndThreadIdsWhenUnset(): void {
+    $wrapper = $this->functionCallManager->createInstance('ai_agents::ai_agent::drupal_cms_assistant');
+
+    // Access the inner AiAgentEntityWrapper.
+    $inner_ref = new \ReflectionProperty($wrapper, 'agent');
+    $inner_ref->setAccessible(TRUE);
+    $agent_wrapper = $inner_ref->getValue($wrapper);
+
+    // Create a mock provider that captures the tags it was called with.
+    $response_message = new ChatMessage('assistant', 'Hello, I can help!');
+    $expected_output = new ChatOutput($response_message, NULL, NULL);
+
+    $mock_provider = new class ($expected_output, $this) {
+
+      /**
+       * Constructor.
+       */
+      public function __construct(
+        protected ChatOutput $output,
+        protected AiAgentEntityWrapperDetermineSolvabilityTest $test,
+      ) {
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function setChatSystemRole(string $message): void {
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function chat(mixed $input, string $model_id, array $tags = []): ChatOutput {
+        $this->test->capturedTags = $tags;
+        return $this->output;
+      }
+
+    };
+
+    $agent_wrapper->setAiProvider($mock_provider);
+    $agent_wrapper->setModelName('test-model');
+
+    // Provide chat input.
+    $chat_input = new ChatInput([
+      new ChatMessage('user', 'Hello.'),
+    ]);
+    $wrapper->setChatInput($chat_input);
+
+    $wrapper->determineSolvability();
+
+    $runner_id = $agent_wrapper->getRunnerId();
+    $this->assertContains('ai_agents_runner_' . $runner_id, $this->capturedTags, 'Tags should include the base runner tag.');
+    foreach ($this->capturedTags as $tag) {
+      $this->assertStringStartsNotWith('ai_agents_caller_runner_', $tag, 'Tags should not include a caller runner tag when unset.');
+      $this->assertStringStartsNotWith('ai_agents_thread_', $tag, 'Tags should not include a thread tag when unset.');
+    }
   }
 
 }

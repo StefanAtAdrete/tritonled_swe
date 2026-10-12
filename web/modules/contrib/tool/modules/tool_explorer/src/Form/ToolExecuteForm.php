@@ -83,11 +83,16 @@ class ToolExecuteForm extends FormBase {
       '#weight' => 100,
     ];
 
-    $form['actions']['submit'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Execute'),
-      '#button_type' => 'primary',
-    ];
+    // An account without the declared permission got the denial markup
+    // instead of widgets (#3583077); offering Execute on that page invites
+    // a submission that can only fail (#3583079).
+    if (!isset($form['access_denied'])) {
+      $form['actions']['submit'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Execute'),
+        '#button_type' => 'primary',
+      ];
+    }
 
     $form['actions']['cancel'] = [
       '#type' => 'link',
@@ -111,6 +116,13 @@ class ToolExecuteForm extends FormBase {
 
     $subform_state = SubformState::createForSubform($form, $form, $form_state);
     $plugin_form->submitConfigurationForm($form, $subform_state);
+
+    // A denied or never-executed submission has no result, and the plugin
+    // form already reported why; reading one anyway would turn the internal
+    // BadMethodCallException into a second error message (#3583079).
+    if (!$tool->hasResult()) {
+      return;
+    }
 
     try {
       $result = $tool->getResult();

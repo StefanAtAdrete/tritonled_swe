@@ -166,7 +166,7 @@ class SplideForm extends SplideFormBase implements SplideFormInterface {
 
       // In case more useful stupidity gets in the way.
       if ($element_type == 'textfield' || $element_type == 'textarea') {
-        $default_value = strip_tags($default_value);
+        $default_value = is_string($default_value) ? strip_tags($default_value) : $default_value;
       }
 
       $form['settings'][$name] = [

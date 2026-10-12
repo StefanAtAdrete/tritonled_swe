@@ -26,17 +26,38 @@ export const PANEL_DIMENSIONS = {
     DEFAULT_WIDTH: 320,
     MIN_WIDTH: 200,
     MAX_WIDTH: 600,
-    COLLAPSED_WIDTH: 40,
+    /** Smallest useful manually constrained floating panel height (px). */
+    MIN_HEIGHT: 120,
+    /**
+     * Gap (px) kept between a floating panel and the edge of the modeler.
+     * Doubles as the clamp margin, so a floating panel can never be dragged
+     * fully out of reach, and as the bottom clearance in the inline
+     * `max-height` that PluginPanelContainer applies to a floating panel.
+     */
+    FLOATING_MARGIN: 16,
+    /** Keyboard nudge step (px) for the floating panel move handle. */
+    FLOATING_NUDGE_STEP: 10,
+    /** Keyboard nudge step (px) when Shift is held. */
+    FLOATING_NUDGE_STEP_LARGE: 50,
+    /** Keyboard resize step (px) for a floating panel's bottom handle. */
+    FLOATING_RESIZE_STEP: 10,
+    /** Keyboard resize step (px) when Shift is held. */
+    FLOATING_RESIZE_STEP_LARGE: 50,
   },
 } as const;
 
 // ============ Node Dimensions ============
-// All node types now share the same uniform card dimensions.
+// Most node types share the same uniform card dimensions.
+// Gateway nodes use a compact height matching condition cards.
 export const NODE_DIMENSIONS = {
   /** Fixed card width for all node types */
   CARD_WIDTH: 180,
-  /** Fixed card height for all node types */
+  /** Fixed card height for most node types */
   CARD_HEIGHT: 120,
+  /** Compact height for gateway nodes (matches condition card height).
+   *  Computed: 2px border + 26px header + 1px divider + 29px body + 2px border = 60px.
+   *  The actual CSS uses height:auto; this constant is the fallback for layout math. */
+  GATEWAY_HEIGHT: 60,
   /** @deprecated Use CARD_WIDTH */
   DEFAULT_WIDTH: 180,
   /** @deprecated Use CARD_HEIGHT */
@@ -56,14 +77,32 @@ export const EDGE_STYLING = {
   STROKE_WIDTH_TRANSITION: 6,
   CONTROL_OFFSET: 40, // Offset for smoother curves
   BORDER_RADIUS: 20, // Rounded corners for step edges
+  /**
+   * Width (px) of the transparent edge-interaction hit path (issue #3585553
+   * follow-on UX). React Flow's <BaseEdge> renders an invisible stroke of
+   * `interactionWidth` for click/hover detection; DefaultEdge hand-rolls its
+   * path, so it renders this hit path itself. 30px is a generous target that
+   * makes edges easy to select when clicking NEAR (not exactly on) the curve,
+   * while staying narrow enough not to overlap neighboring edges in dense
+   * graphs (node spacing is 250px x / 84px y; parallel edges are offset by
+   * CONTROL_OFFSET=40px, comfortably more than 30/2=15px of half-width either
+   * side). It is the default when no `interactionWidth` prop is supplied.
+   */
+  INTERACTION_WIDTH: 30,
+  /** Vertical offset for quick-add buttons above/below a condition card.
+   *  Derived from: half card height (28) + half button (11) + gap (6) = 45. */
+  CONDITION_BUTTON_OFFSET: 45,
+  /** Horizontal and vertical offset to place edge-order badges northeast of a
+   *  quick-add button.  The badge is shifted right by this amount and the
+   *  badge's own -20px vertical lift puts it above the button center. */
+  BADGE_NE_OFFSET: 20,
 } as const;
 
 // ============ Layout & Spacing ============
 export const LAYOUT = {
   GRID_SIZE: 20,
   NODE_SPACING_X: 250,
-  NODE_SPACING_Y: 84, // Compact gap between rows (no condition card)
-  CONDITION_EXTRA_SPACING: 90, // Extra vertical space added when a condition card is present on an edge
+  NODE_SPACING_Y: 84, // Compact gap between rows
   AUTO_LAYOUT_PADDING: 50,
   PASTE_OFFSET: 100, // Offset when pasting nodes
   DEFAULT_PASTE_OFFSET: 50,
@@ -78,8 +117,8 @@ export const VIEWPORT = {
   DEFAULT_ZOOM: 1,
   MIN_ZOOM: 0.1,
   MAX_ZOOM: 4,
-  AUTO_CENTER_ZOOM: 1.2,
-  FIT_VIEW_ZOOM: 1.5,
+  /** Maximum zoom level for fitToNodes / fitView operations (prevents over-zooming). */
+  FIT_MAX_ZOOM: 1.5,
   FIT_VIEW_PADDING: 0.1, // 10% padding
   AUTO_LAYOUT_PADDING: 0.2, // 20% padding
   TOP_ALIGN_OFFSET: 150, // Pixels from top for event nodes
@@ -96,10 +135,7 @@ export const TIMING = {
   SYNC_DELAY: 100,
   REPLAY_SYNC_DELAY: 150,
   CLEANUP_DELAY: 200,
-  VIEWPORT_EFFECT_DELAY: 0,
   NODE_SELECTION_DELAY: 100,
-  VIEWPORT_READY_DELAY: 200,
-  VIEWPORT_PAN_DURATION: 800,
 } as const;
 
 // ============ Interaction Thresholds ============
@@ -149,6 +185,5 @@ export const STORAGE_KEYS = {
   REPLAY_PANEL_WIDTH: 'replayPanelWidth',
   REPLAY_PANEL_COLLAPSED: 'replayPanelCollapsed',
   PROPERTY_PANEL_COLLAPSED: 'propertyPanelCollapsed',
-  REPLAY_SECTION_RATIOS: 'replaySectionRatios',
   THEME: 'modelerTheme',
 } as const;

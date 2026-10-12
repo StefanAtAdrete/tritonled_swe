@@ -275,15 +275,22 @@ class AgentStatusSubscriber implements EventSubscriberInterface {
     $tool = $event->getTool();
     // Create a tool input from contexts.
     $tool_input = [];
-    // Get the input values.
-    $history = $event->getAgent()->getChatHistory();
-    $message = end($history);
-    if ($message->getTools()) {
-      foreach ($message->getTools() as $tool_object) {
-        if ($tool_object->getToolId() == $tool->getToolsId()) {
-          $arguments = $tool_object->getArguments() ?? [];
-          foreach ($arguments as $argument) {
-            $tool_input[$argument->getName()] = Json::encode($argument->getValue());
+    $is_default_information_tool = ($event->isAgentDecision() === FALSE);
+    if ($is_default_information_tool) {
+      foreach ($tool->getContextValues() as $name => $value) {
+        $tool_input[$name] = Json::encode($value);
+      }
+    }
+    else {
+      $history = $event->getAgent()->getChatHistory();
+      $message = end($history);
+      if ($message->getTools()) {
+        foreach ($message->getTools() as $tool_object) {
+          if ($tool_object->getToolId() == $tool->getToolsId()) {
+            $arguments = $tool_object->getArguments() ?? [];
+            foreach ($arguments as $argument) {
+              $tool_input[$argument->getName()] = Json::encode($argument->getValue());
+            }
           }
         }
       }
@@ -299,6 +306,7 @@ class AgentStatusSubscriber implements EventSubscriberInterface {
       calling_agent_id: $event->getCallerId(),
       tool_id: $tool->getToolsId() ?? '',
       tool_feedback_message: $event->getProgressMessage(),
+      is_agent_decision: $event->isAgentDecision(),
     ));
   }
 
@@ -320,15 +328,22 @@ class AgentStatusSubscriber implements EventSubscriberInterface {
     // Create a tool input from contexts.
     $tool_input = [];
     $tool = $event->getTool();
-    // Get the input values.
-    $history = $event->getAgent()->getChatHistory();
-    $message = end($history);
-    if ($message->getTools()) {
-      foreach ($message->getTools() as $tool_object) {
-        if ($tool_object->getToolId() == $tool->getToolsId()) {
-          $arguments = $tool_object->getArguments() ?? [];
-          foreach ($arguments as $argument) {
-            $tool_input[$argument->getName()] = Json::encode($argument->getValue());
+    $is_default_information_tool = ($event->isAgentDecision() === FALSE);
+    if ($is_default_information_tool) {
+      foreach ($tool->getContextValues() as $name => $value) {
+        $tool_input[$name] = Json::encode($value);
+      }
+    }
+    else {
+      $history = $event->getAgent()->getChatHistory();
+      $message = end($history);
+      if ($message->getTools()) {
+        foreach ($message->getTools() as $tool_object) {
+          if ($tool_object->getToolId() == $tool->getToolsId()) {
+            $arguments = $tool_object->getArguments() ?? [];
+            foreach ($arguments as $argument) {
+              $tool_input[$argument->getName()] = Json::encode($argument->getValue());
+            }
           }
         }
       }
@@ -343,6 +358,7 @@ class AgentStatusSubscriber implements EventSubscriberInterface {
       calling_agent_id: $event->getCallerId(),
       tool_id: $tool->getToolsId() ?? '',
       tool_feedback_message: $event->getProgressMessage(),
+      is_agent_decision: $event->isAgentDecision(),
     ));
   }
 

@@ -2,52 +2,89 @@
 
 namespace Drupal\ai_automators\Plugin\FieldWidgetAction;
 
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\field_widget_actions\Attribute\FieldWidgetAction;
 
 /**
  * The Office Hours action.
+ *
+ * Uses the legacy dispatch (custom aiAutomatorsAjax + saveFormValues) —
+ * the office_hours widget pre-allocates slot elements per day and maps
+ * each entity item to a day-specific slot, which doesn't fit the generic
+ * per-delta setFormInput user-input contract.
  */
 #[FieldWidgetAction(
   id: 'automator_office_hours',
   label: new TranslatableMarkup('Automator Office Hours'),
-  widget_types: ['office_hours_default', 'office_hours_list'],
+  widget_types: ['office_hours_default'],
   field_types: ['office_hours'],
 )]
 class OfficeHours extends AutomatorBaseAction {
 
   /**
    * {@inheritdoc}
-   */
-  public string $formElementProperty = 'value';
-
-  /**
-   * Do not filter empty items, as day 0 (Sunday) is valid but falsy.
    *
-   * @var bool
+   * Do not filter empty items: day 0 (Sunday) is a valid value but falsy
+   * under the default filter.
    */
   protected bool $clearEntity = FALSE;
 
   /**
-   * Ajax handler for Automators.
+   * {@inheritdoc}
+   *
+   * Opt out of submit-phase automator run — saveFormValues must operate
+   * on the REBUILT form's render tree so the day-slot mapping is
+   * carried into the AJAX response.
+   */
+  public function runAutomatorSubmit(array &$form, FormStateInterface $form_state): void {
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * No-op: OfficeHours delivers values via saveFormValues (form render
+   * tree), not $form_state->getUserInput().
+   */
+  protected function setFormInput(FieldableEntityInterface $entity, FormStateInterface $form_state, $form_key): void {
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Runs the automator on the rebuilt form so saveFormValues can map
+   * day entries into their pre-allocated slots on the widget render array.
    */
   public function aiAutomatorsAjax(array &$form, FormStateInterface $form_state) {
-    // Get the triggering element, as it contains the settings.
     $triggering_element = $form_state->getTriggeringElement();
-    $array_parents = $triggering_element['#array_parents'];
-    array_pop($array_parents);
-    $array_parents[] = $this->formElementProperty;
-    $raw_key = $array_parents[2] ?? NULL;
-    $key = is_numeric($raw_key) ? (int) $raw_key : NULL;
-    $form_key = $array_parents[0];
-    return $this->populateAutomatorValues($form, $form_state, $form_key, $key);
+    $form_key = $triggering_element['#field_widget_action_field_name'] ?? NULL;
+    if ($form_key === NULL) {
+      $array_parents = $triggering_element['#array_parents'];
+      array_pop($array_parents);
+      $form_key = $array_parents[0] ?? NULL;
+    }
+    if (!$form_key || !isset($form[$form_key])) {
+      return [];
+    }
+    $key = $triggering_element['#field_widget_action_field_delta'] ?? NULL;
+    return $this->populateAutomatorValues($form, $form_state, $form_key, is_numeric($key) ? (int) $key : NULL);
   }
 
   /**
    * {@inheritdoc}
    */
   protected function saveFormValues(array &$form, string $form_key, $entity, ?int $key = NULL): array {
+    // The day-slot mapping below is specific to the
+    // office_hours widgets' ['widget']['value'] layout. Bail out with a log
+    // entry rather than a TypeError if a widget renders a different shape.
+    if (!isset($form[$form_key]['widget']['value']) || !is_array($form[$form_key]['widget']['value'])) {
+      $this->loggerFactory->get('ai_automators')->warning('The office hours widget for field @field did not render the expected slot structure, so generated values could not be applied.', [
+        '@field' => $form_key,
+      ]);
+      return $form[$form_key] ?? [];
+    }
+
     // Build mapping from day number to form slot indices.
     $day_slots = [];
     foreach ($form[$form_key]['widget']['value'] as $slot_index => $slot) {
@@ -57,6 +94,24 @@ class OfficeHours extends AutomatorBaseAction {
       $day = $slot['#value']['day'] ?? NULL;
       if ($day !== NULL) {
         $day_slots[$day][] = $slot_index;
+      }
+    }
+
+    // Once the automator has run, $entity is the source of
+    // truth for this field. RuleBase::storeValues() replaced the field
+    // outright, so the entity holds exactly the days that were generated and
+    // nothing else. This method's job is to make the widget match it.
+    //
+    // The fill loop below only writes the days the entity has, and used to
+    // leave every other slot holding whatever the user had submitted. That
+    // left the widget showing days the entity no longer contains: a re-run
+    // that generates fewer days than the previous one displayed a mix of the
+    // two, and saving the form put those stale rows back on the entity.
+    // Blanking every slot first makes the widget a faithful render of the
+    // entity regardless of which days came back.
+    foreach ($day_slots as $slot_indexes) {
+      foreach ($slot_indexes as $slot_index) {
+        $this->clearSlot($form[$form_key]['widget']['value'][$slot_index]);
       }
     }
 
@@ -105,9 +160,46 @@ class OfficeHours extends AutomatorBaseAction {
         $slot['comment']['#value'] = $comment;
         $slot['comment']['#default_value'] = $comment;
       }
+      unset($slot);
     }
 
     return $form[$form_key];
+  }
+
+  /**
+   * Empties one rendered day slot, keeping the row and its day identity.
+   *
+   * The office_hours widgets pre-render a fixed row per weekday, so a day the
+   * entity no longer holds cannot simply be removed from the form; its hours
+   * have to be blanked in place. Both the composite value on the slot and the
+   * rendered sub-elements are cleared, since the rebuilt AJAX response renders
+   * from the sub-elements while a later submit reads the composite.
+   *
+   * @param array $slot
+   *   The slot render array, by reference.
+   */
+  protected function clearSlot(array &$slot): void {
+    foreach (['starthours', 'endhours', 'comment', 'all_day'] as $property) {
+      if (isset($slot['#value']) && is_array($slot['#value']) && array_key_exists($property, $slot['#value'])) {
+        $slot['#value'][$property] = '';
+      }
+      if (isset($slot['#default_value']) && is_array($slot['#default_value']) && array_key_exists($property, $slot['#default_value'])) {
+        $slot['#default_value'][$property] = '';
+      }
+      if (!isset($slot[$property]) || !is_array($slot[$property])) {
+        continue;
+      }
+      // The starthours and endhours slots render an inner 'time' input, while
+      // comment and all_day are plain elements.
+      if (isset($slot[$property]['time'])) {
+        $slot[$property]['time']['#value'] = '';
+        $slot[$property]['time']['#default_value'] = '';
+      }
+      else {
+        $slot[$property]['#value'] = '';
+        $slot[$property]['#default_value'] = '';
+      }
+    }
   }
 
 }

@@ -28,10 +28,20 @@ export interface CreateContentRequest {
   entity_type: string;
 }
 
+export interface SetLangcodeRequest {
+  entityId: string;
+  langcode: string;
+}
+
+export interface SetLangcodeResponse {
+  langcode: string;
+}
+
 export interface UpdateContentRequest {
   entityType: string;
   entityId: string;
   status?: boolean;
+  conflictToResolve?: string;
 }
 
 export interface ContentListResult {
@@ -44,6 +54,19 @@ export interface ContentListParams {
   search?: string;
   offset?: number;
 }
+
+const buildUpdateContentBody = ({
+  status,
+  conflictToResolve,
+}: Pick<UpdateContentRequest, 'status' | 'conflictToResolve'>) => {
+  if (conflictToResolve !== undefined) {
+    return { resolved_conflict_id: conflictToResolve };
+  }
+  if (status !== undefined) {
+    return { status };
+  }
+  return {};
+};
 
 export const contentApi = createApi({
   reducerPath: 'contentApi',
@@ -170,10 +193,10 @@ export const contentApi = createApi({
       },
     }),
     updateContent: builder.mutation<void, UpdateContentRequest>({
-      query: ({ entityType, entityId, status }) => ({
+      query: ({ entityType, entityId, status, conflictToResolve }) => ({
         url: `/canvas/api/v0/content/auto-save/${entityType}/${entityId}`,
         method: 'PATCH',
-        body: status !== undefined ? { status } : {},
+        body: buildUpdateContentBody({ status, conflictToResolve }),
       }),
       invalidatesTags: [
         { type: 'Content', id: 'LIST' },
@@ -273,6 +296,13 @@ export const contentApi = createApi({
         { type: 'Content', id: 'LIST' },
       ],
     }),
+    setLangcode: builder.mutation<SetLangcodeResponse, SetLangcodeRequest>({
+      query: ({ entityId, langcode }) => ({
+        url: `/canvas/api/v0/content/canvas_page/${entityId}/langcode`,
+        method: 'PATCH',
+        body: { langcode },
+      }),
+    }),
   }),
 });
 
@@ -283,4 +313,5 @@ export const {
   useUpdateContentMutation,
   useGetStagedConfigQuery,
   useSetStagedConfigMutation,
+  useSetLangcodeMutation,
 } = contentApi;

@@ -1,33 +1,71 @@
 # Photoswipe
 
-Uses [Photoswipe](https://photoswipe.com/) to display picture galleries on your
-Drupal website. This Javascript lightbox library offers very nice mobile
-browsing features (in particular swiping to the next picture)!
+Use [Photoswipe](https://photoswipe.com/) to display picture galleries on your
+Drupal website. This JavaScript Lightbox library offers very nice mobile
+browsing features, in particular swiping to the next picture.
+
+Also supports
+[dynamic captions](https://github.com/dimsemenov/photoswipe-dynamic-caption-plugin/) automatically positioning the text
+below or beside the image, depending on the available space.
+
 
 ## Installation
 
-### Manual Installation
+Install as you would normally install a contributed Drupal module. For further
+information, see
+[Installing Drupal Modules](https://www.drupal.org/docs/extending-drupal/installing-modules).
+
+Optionally, install Photoswipe Dynamic Caption submodule.
+
+
+### Install Photoswipe library
+
+Install the Photoswipe library with Git, Zip, or Composer into the
+[third party external library-folder](https://www.drupal.org/docs/getting-started/understanding-drupal/directory-structure#s-base-level-directories),
+usually at `/web/libraries`, which is also used in the examples below.
+
+#### Git
+
+Clone with Git:
+
+`git clone https://github.com/dimsemenov/photoswipe web/libraries/photoswipe`
+
+#### Zip
+
+- Download the [PhotoSwipe-5.4.4 zip file](https://github.com/dimsemenov/PhotoSwipe/archive/refs/tags/v5.4.4.zip)
+- Unzip the contents so that these files are present:
+    - `/web/libraries/photoswipe/package.json`
+    - `/web/libraries/photoswipe/dist/photoswipe.css`
+    - `/web/libraries/photoswipe/dist/umd/photoswipe.umd.min.js`
+    - `/web/libraries/photoswipe/dist/umd/photoswipe-lightbox.umd.min.js`
+- All other files from the zip-file can be deleted
+- Check the status report for errors
+
+### Alternative Drush installation
 
 - Require the module, e.g. via composer: "composer require drupal/photoswipe"
 - Install the module
-- Download the "PhotoSwipe-5.4.4" zip file
-- Unzip and place the contents of the unzipped "PhotoSwipe-5.4.4" folder
-into "library/photoswipe" folder so that the folder structure is:
-"library/photoswipe/dist/photoswipe.js"
+- Run `drush photoswipe:install-plugin`
 - Check the status report for errors
 
 ### Alternative composer installation (recommended)
 
-- Require the module, e.g. via composer: "composer require drupal/photoswipe"
-- Install the module
-- Enable usage of third-party libraries using composer, see
+- Enable third-party library installation with Composer, see
 [here](https://www.drupal.org/docs/develop/using-composer/manage-dependencies#third-party-libraries) for an explanation.
-- Require the photoswipe library using
-`composer require bower-asset/photoswipe:^5`
-- Check your status report
+- Require the Photoswipe library:  
+    `composer require bower-asset/photoswipe:^5`
 
-Then simply configure your image fields to use photoswipe as their field display
-formatter.
+
+### Verify installation
+
+Check your Status report page `/admin/reports/status`, it should say something like this:
+
+> **Photoswipe plugin**: 5.4.4
+
+
+## Configuration
+
+Configure your image fields to use photoswipe as their field display formatter.
 
 Note: If you would like to use the "Photoswipe Responsive" display formatter,
 please enable the core "Responsive Image" module first.
@@ -48,14 +86,14 @@ formatter applied to, or you can add a media / image field, where you set the
 'Photoswipe' or 'Photoswipe Responsive' display mode similar to
 "Images in entities".
 
-By default, using the Photoswipe formatter on a views field will open single 
-images (not a gallery). To have a gallery of images, you need to set a 
+By default, using the Photoswipe formatter on a views field will open single
+images (not a gallery). To have a gallery of images, you need to set a
 "photoswipe-gallery" class on any wrapper.
 
-For example: If you have an image field with multiple values and you want to 
+For example: If you have an image field with multiple values and you want to
 group them, set this class on the field wrapper.
-If you have multiple image fields and you want to group them all, set the 
-class on the views-row wrapper (this may or may not be possible depending on 
+If you have multiple image fields and you want to group them all, set the
+class on the views-row wrapper (this may or may not be possible depending on
 the display plugin used).
 
 See the Views documentation page section
@@ -184,4 +222,3 @@ There are two possible ways of altering configuration:
 option in `$settings['captionOptions']`. Check
 `photoswipe_dynamic_caption_photoswipe_js_options_alter` for details.
 2. Override manually configuration file and import it.
-

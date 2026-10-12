@@ -552,6 +552,47 @@ Cypress.Commands.add(
   },
 );
 
+/**
+ * Waits for an iframe to contain exactly `count` elements matching a selector.
+ *
+ * Re-queries the *currently active* preview iframe on every retry, so it
+ * tolerates the iframe swap + asynchronous re-render that follow a layout
+ * change (insert/undo/redo): it resolves as soon as the preview settles on the
+ * expected count, rather than reading a single (possibly mid-render) frame.
+ *
+ * @param {string} selector
+ *   The selector to count inside the iframe.
+ * @param {number} count
+ *   The expected number of matching elements.
+ * @param {string} iframeSelector
+ *   The selector of the iframe to check inside. Defaults to the first preview.
+ * @param {number|null} customTimeout
+ *   Optional override for how long to wait for the count to settle.
+ */
+Cypress.Commands.add(
+  'waitForElementCountInIframe',
+  (
+    selector,
+    count,
+    iframeSelector = initializedReadyPreviewIframeSelector,
+    customTimeout,
+  ) => {
+    cy.document().then((doc) => {
+      cy.get(true, {
+        timeout: customTimeout || Cypress.config('defaultCommandTimeout'),
+      }).should(() => {
+        const elements = doc
+          .querySelector(iframeSelector)
+          ?.contentWindow?.document?.body.querySelectorAll(selector);
+        expect(
+          elements?.length ?? 0,
+          `'${selector}' count in iframe '${iframeSelector}'`,
+        ).to.equal(count);
+      });
+    });
+  },
+);
+
 Cypress.Commands.add(
   'waitForElementHTMLInIframe',
   (
@@ -1279,12 +1320,13 @@ Cypress.Commands.add('returnToContentRegion', () => {
 });
 Cypress.Commands.add('sendComponentToRegion', (componentName, regionName) => {
   cy.findByTestId('canvas-primary-panel').as('layersTree');
+  cy.get('@layersTree').findAllByText(componentName).first().scrollIntoView();
   cy.get('@layersTree')
     .findAllByText(componentName)
     .first()
-    .trigger('contextmenu');
-  cy.findByText('Move to global region').click();
-  cy.get(`[data-region-name="${regionName}"]`).click();
+    .rightclick({ scrollBehavior: false });
+  cy.findByText('Move to global region').click({ scrollBehavior: false });
+  cy.get(`[data-region-name="${regionName}"]`).click({ scrollBehavior: false });
 });
 Cypress.Commands.add(
   'publishAllPendingChanges',
@@ -1436,9 +1478,16 @@ Cypress.Commands.add('openMultivaluePopover', (fieldAlias, rowIndex) => {
     .click();
 });
 
+/**
+ * Inserts a component from the open Library panel.
+ *
+ * Set waitForVisible to false when the component does not produce preview
+ * geometry. The command still waits for the refreshed preview and component
+ * input form.
+ */
 Cypress.Commands.add('insertComponent', (identifier, options = {}) => {
   const { id, name } = identifier;
-  const { hasInputs = true } = options;
+  const { hasInputs = true, waitForVisible = true } = options;
 
   cy.findByText('Library', { selector: 'h4' }).should(($el) => {
     expect(
@@ -1461,6 +1510,9 @@ Cypress.Commands.add('insertComponent', (identifier, options = {}) => {
   // Count existing instances robustly (even if zero)
   cy.document().then((doc) => {
     const initialCount = doc.querySelectorAll(previewSelector).length;
+    const initialActiveIframe = doc.querySelector(
+      initializedReadyPreviewIframeSelector,
+    );
 
     // Open contextual menu and click Insert
     cy.get('[data-testid="canvas-primary-panel"]')
@@ -1468,23 +1520,23 @@ Cypress.Commands.add('insertComponent', (identifier, options = {}) => {
       .trigger('contextmenu');
 
     cy.findByText('Insert').click();
-    // Assert new instance appears
-    cy.get(previewSelector).should('have.length', initialCount + 1);
+    // Wait for the preview refresh to replace the active iframe.
+    if (initialActiveIframe) {
+      cy.get(initializedReadyPreviewIframeSelector, { timeout: 10000 }).should(
+        ($iframe) => {
+          expect($iframe).to.have.length(1);
+          expect($iframe[0]).not.to.equal(initialActiveIframe);
+        },
+      );
+    }
 
-    // Ensure the new instance is rendered
-    cy.get(previewSelector)
-      .eq(initialCount) // Get the newly added instance
-      .should('exist');
+    if (waitForVisible) {
+      // Assert new instance appears.
+      cy.get(previewSelector).should('have.length', initialCount + 1);
 
-    // @todo I'm not sure but it seems like some components DON'T have size (e.g. "Canvas test SDC with optional image, without example")
-    // Wait for all instances to have size
-    // cy.get(previewSelector).each(($el) => {
-    //   cy.wrap($el).should(($el) => {
-    //     const rect = $el[0].getBoundingClientRect();
-    //     expect(rect.width).to.be.greaterThan(0);
-    //     expect(rect.height).to.be.greaterThan(0);
-    //   });
-    // });
+      // Ensure the new instance is rendered.
+      cy.get(previewSelector).eq(initialCount).should('exist');
+    }
 
     // Optionally wait for the component input form to have any html
     if (hasInputs) {
@@ -1493,4 +1545,15 @@ Cypress.Commands.add('insertComponent', (identifier, options = {}) => {
         .should('not.be.empty');
     }
   });
+});
+
+// Represents a wait that does not exceed how long it would take for a real
+// user to proceed with a subsequent action. Intended to be used for actions
+// that would only fail if they occur faster than a user could reasonably
+// perform them.
+// This is especially true for excessive preview requests, which are queued to
+// prevent parallel requests. This works fine at even the fastest human speed,
+// but becomes less stable at automated speeds.
+Cypress.Commands.add('reasonableWait', () => {
+  cy.wait(100);
 });

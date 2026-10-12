@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\SubformState;
 use Drupal\Core\TypedData\TypedDataTrait;
 use Drupal\tool\TypedData\Adapter\TypedDataAdapterTrait;
+use Drupal\tool\TypedData\EffectiveDataDefinition;
 
 /**
  * Form for configuring tool plugins.
@@ -30,9 +31,9 @@ class ConfigureToolPluginForm extends ToolPluginFormBase implements ContainerInj
     $form['#tree'] = TRUE;
     $values = $this->plugin->getInputValues();
     foreach ($this->plugin->getInputDefinitions() as $name => $definition) {
-      $typed_data = $this->getTypedDataManager()->create($definition->getDataDefinition(), $values[$name], $name);
+      $typed_data = $this->getTypedDataManager()->create(EffectiveDataDefinition::createFrom($definition), $values[$name], $name);
       $form[$name] = [];
-      $adapter = $this->getAdapterInstance($definition->getDataDefinition(), $name);
+      $adapter = $this->getAdapterInstance(EffectiveDataDefinition::createFrom($definition), $name);
       $subform_state = SubformState::createForSubform($form[$name], $form, $form_state);
       $form[$name] = $adapter->formElement($typed_data, $form[$name], $subform_state);
     }
@@ -45,8 +46,8 @@ class ConfigureToolPluginForm extends ToolPluginFormBase implements ContainerInj
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     $values = $this->plugin->getInputValues();
     foreach ($this->plugin->getInputDefinitions() as $name => $definition) {
-      $adapter = $this->getAdapterInstance($definition->getDataDefinition(), $name);
-      $typed_data = $this->getTypedDataManager()->create($definition->getDataDefinition(), $values[$name], $name);
+      $adapter = $this->getAdapterInstance(EffectiveDataDefinition::createFrom($definition), $name);
+      $typed_data = $this->getTypedDataManager()->create(EffectiveDataDefinition::createFrom($definition), $values[$name], $name);
       $subform_state = SubformState::createForSubform($form[$name], $form, $form_state);
       $adapter->extractFormValues($typed_data, $form[$name], $subform_state);
       $this->plugin->setInputValue($name, $typed_data->getValue());

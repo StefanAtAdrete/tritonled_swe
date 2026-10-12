@@ -5,7 +5,7 @@ type: module
 package: Media
 configure: photoswipe.settings
 
-# Information added by Drupal.org packaging script on 2026-09-04
-version: '5.0.10'
+# Information added by Drupal.org packaging script on 2026-10-08
+version: '5.0.11'
 project: 'photoswipe'
-datestamp: 1788534589
+datestamp: 1791458591

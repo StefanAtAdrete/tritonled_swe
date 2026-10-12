@@ -25,33 +25,25 @@ test.describe('Permission: edit metadata', () => {
       await modeler.goto();
     });
 
-    test('should allow editing metadata fields', async ({ page }) => {
+    test('should allow editing metadata fields', async () => {
       await modeler.openSettings();
 
-      // Label field should be editable
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).toBeVisible();
-      await expect(labelInput).not.toHaveAttribute('readonly');
+      // Top-level fields
+      await expect(modeler.getMetadataField('label')).toBeVisible();
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
+      expect(await modeler.isMetadataFieldEditable('documentation')).toBe(true);
+      expect(await modeler.isMetadataFieldEditable('tags')).toBe(true);
 
-      // Version field should be editable
-      const versionInput = modeler.getMetadataField('version');
-      await expect(versionInput).not.toHaveAttribute('readonly');
+      // Version, storage and changelog live in the collapsed Advanced group
+      await modeler.expandMetadataGroup('Advanced');
+      expect(await modeler.isMetadataFieldEditable('version')).toBe(true);
+      expect(await modeler.isMetadataFieldEditable('changelog')).toBe(true);
+      await expect(modeler.getMetadataField('storage')).toBeEnabled();
 
-      // Documentation textarea should be editable
-      const docField = modeler.getMetadataField('documentation');
-      await expect(docField).not.toHaveAttribute('readonly');
-
-      // Tags input should be editable
-      const tagsInput = modeler.getMetadataField('tags');
-      await expect(tagsInput).not.toHaveAttribute('readonly');
-
-      // Changelog textarea should be editable
-      const changelogField = modeler.getMetadataField('changelog');
-      await expect(changelogField).not.toHaveAttribute('readonly');
-
-      // Storage select should be enabled
-      const storageSelect = modeler.getMetadataField('storage');
-      await expect(storageSelect).toBeEnabled();
+      // The recipe export fields sit in their own group
+      await modeler.expandMetadataGroup('Recipe export');
+      expect(await modeler.isMetadataFieldEditable('summary')).toBe(true);
+      expect(await modeler.isMetadataFieldEditable('config_actions')).toBe(true);
     });
 
     test('should show Save button', async () => {
@@ -70,32 +62,17 @@ test.describe('Permission: edit metadata', () => {
       await modeler.goto();
     });
 
-    test('should make metadata fields read-only for existing models', async ({ page }) => {
+    test('should make metadata fields read-only for existing models', async () => {
       await modeler.openSettings();
 
-      // Label field should be read-only
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(false);
+      expect(await modeler.isMetadataFieldEditable('documentation')).toBe(false);
+      expect(await modeler.isMetadataFieldEditable('tags')).toBe(false);
 
-      // Version field should be read-only
-      const versionInput = modeler.getMetadataField('version');
-      await expect(versionInput).toHaveAttribute('readonly');
-
-      // Documentation textarea should be read-only
-      const docField = modeler.getMetadataField('documentation');
-      await expect(docField).toHaveAttribute('readonly');
-
-      // Tags input should be read-only
-      const tagsInput = modeler.getMetadataField('tags');
-      await expect(tagsInput).toHaveAttribute('readonly');
-
-      // Changelog textarea should be read-only
-      const changelogField = modeler.getMetadataField('changelog');
-      await expect(changelogField).toHaveAttribute('readonly');
-
-      // Storage select should be disabled
-      const storageSelect = modeler.getMetadataField('storage');
-      await expect(storageSelect).toBeDisabled();
+      await modeler.expandMetadataGroup('Advanced');
+      expect(await modeler.isMetadataFieldEditable('version')).toBe(false);
+      expect(await modeler.isMetadataFieldEditable('changelog')).toBe(false);
+      await expect(modeler.getMetadataField('storage')).toBeDisabled();
     });
 
     test('should hide Save button and show Close instead of Cancel', async () => {
@@ -123,8 +100,7 @@ test.describe('Permission: edit metadata', () => {
       await page.waitForSelector('.metadata-modal', { state: 'visible', timeout: 5000 });
 
       // Label field should be editable even though permission is false
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).not.toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
 
       // Save button should be present
       const saveBtn = modeler.getMetadataSaveButton();
@@ -157,9 +133,9 @@ test.describe('MetadataModal: changelog visibility', () => {
 
     await modeler.openSettings();
 
-    // Changelog field should be visible
-    const changelogField = modeler.getMetadataField('changelog');
-    await expect(changelogField).toBeVisible();
+    // Changelog lives in the collapsed Advanced group
+    await modeler.expandMetadataGroup('Advanced');
+    await expect(modeler.getMetadataField('changelog')).toBeVisible();
   });
 });
 
@@ -251,11 +227,12 @@ test.describe('Permission: create template', () => {
       await modeler.openSettings();
 
       // The label field should still be editable
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).not.toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
 
-      // The first checkbox (executable/enabled) should still work
-      const executableCheckbox = modeler.getMetadataModal().locator('input[type="checkbox"]').first();
+      // The Enabled checkbox should still work
+      const executableCheckbox = modeler.getMetadataModal()
+        .locator('label.checkbox-wrapper', { hasText: 'Enabled' })
+        .locator('input[type="checkbox"]');
       await expect(executableCheckbox).toBeEnabled();
     });
   });
@@ -266,7 +243,12 @@ test.describe('Permission: create template', () => {
 // ---------------------------------------------------------------------------
 test.describe('Permission: test', () => {
   test.describe('enabled (default)', () => {
-    test('should show Test button when test_url is configured', async ({ page }) => {
+    test('should expose the Test affordance (listen-to-test) when test_url is configured', async ({ page }) => {
+      // Unified panel (#3576269): there is NO standalone Test button. A test is
+      // started from WITHIN Review mode by selecting the persistent "listen"
+      // item in the execution-replay dropdown. The single gate that grants
+      // access to it is the "Review flow" button, which appears for an event
+      // node when replay/test capability is present.
       await setupMocks(page, {
         withTestUrl: true,
         permissions: { test: true },
@@ -274,42 +256,52 @@ test.describe('Permission: test', () => {
       const modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // Replay panel should appear (test_url enables it)
+      // Unified panel is always present.
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-      // Test button should be visible
-      const testBtn = modeler.getTestButton();
-      await expect(testBtn).toBeVisible();
+      // The Review affordance (gate to the listen-to-test item) is available
+      // for the event node.
+      await modeler.selectNode('event_1');
+      await page.waitForTimeout(300);
+      await expect(modeler.getTestAffordanceGate()).toBeVisible();
+
+      // Entering Review and opening the dropdown surfaces the listen-to-test item.
+      await modeler.enterReviewMode();
+      await modeler.openReplayEntryDropdown();
+      await expect(modeler.getTestButton()).toBeVisible();
     });
   });
 
   test.describe('disabled', () => {
-    test('should hide Test button even when test_url is configured', async ({ page }) => {
+    test('should hide the Test affordance even when test_url is configured', async ({ page }) => {
+      // With test denied (and replay also implicitly gated), the Review
+      // affordance — the only path to the listen-to-test item — must be absent.
       await setupMocks(page, {
         withTestUrl: true,
-        permissions: { test: false },
+        permissions: { test: false, replay: false },
       });
       const modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // Test button should NOT be visible
-      const testBtn = modeler.getTestButton();
-      await expect(testBtn).not.toBeVisible();
+      // No way to reach the listen-to-test item: the Review gate is absent.
+      await modeler.selectNode('event_1');
+      await page.waitForTimeout(300);
+      await expect(modeler.getTestAffordanceGate()).toHaveCount(0);
     });
 
-    test('should still show replay panel if replay data is available', async ({ page }) => {
-      // The test permission does not affect the replay panel availability
+    test('should still expose the Review affordance when replay is available (test is separate)', async ({ page }) => {
+      // The `test` permission alone does not remove replay capability: with
+      // replay still granted, the Review affordance remains available.
       await setupMocks(page, {
         permissions: { test: false },
       });
       const modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // Select event node and load replay data
+      // Select event node — the Review (replay) affordance should be present.
       await modeler.selectNode('event_1');
       await page.waitForTimeout(300);
 
-      // Replay load button should still work (replay permission is separate)
       const replayBtn = modeler.getReplayLoadButton();
       await expect(replayBtn).toBeVisible();
     });
@@ -350,7 +342,7 @@ test.describe('Permission: replay', () => {
   });
 
   test.describe('disabled', () => {
-    test('should hide replay load button in property panel', async ({ page }) => {
+    test('should hide the Review (replay) button in the property panel', async ({ page }) => {
       await setupMocks(page, { permissions: { replay: false } });
       const modeler = new ModelerPage(page);
       await modeler.goto();
@@ -358,28 +350,33 @@ test.describe('Permission: replay', () => {
       await modeler.selectNode('event_1');
       await page.waitForTimeout(300);
 
+      // With no replay capability the Review affordance is not rendered at all.
       const replayBtn = modeler.getReplayLoadButton();
-      await expect(replayBtn).not.toBeVisible();
+      await expect(replayBtn).toHaveCount(0);
     });
 
-    test('should not show replay panel when replay is denied', async ({ page }) => {
-      // Without replay permission, hasReplayUrl becomes false
-      // and without test permission either, no replay capability
+    test('should not show any Review affordance when replay is denied', async ({ page }) => {
+      // Unified panel (#3576269): the property panel itself is ALWAYS present
+      // (it hosts component properties); there is no separate replay column to
+      // hide. The correct contract is that NO Review/replay AFFORDANCE is
+      // offered when capability is absent. Without replay (and without test),
+      // hasAnyReplayCapability is false, so the Review button is never rendered.
       await setupMocks(page, {
         permissions: { replay: false, test: false },
       });
       const modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // The replay panel should not be visible at all (no replay capability)
-      // Give it a moment to see if it appears
+      // Even after selecting an event node, no Review affordance appears.
+      await modeler.selectNode('event_1');
       await page.waitForTimeout(500);
-      await expect(modeler.replayPanel).not.toBeVisible();
+      await expect(modeler.getReviewModeButton()).toHaveCount(0);
     });
 
-    test('should hide test button even if test permission is granted (replay implies test)', async ({ page }) => {
-      // Replay denied but test allowed — test button should still be hidden
-      // because testing is pointless without replay capability
+    test('should hide the Test affordance even if test permission is granted (replay implies test)', async ({ page }) => {
+      // Replay denied but test allowed — the Test affordance must still be
+      // unreachable because the only path to it (the Review flow) requires
+      // replay capability, which is absent.
       await setupMocks(page, {
         withTestUrl: true,
         permissions: { replay: false, test: true },
@@ -387,13 +384,11 @@ test.describe('Permission: replay', () => {
       const modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // Replay panel should not be visible (no replay capability)
+      // No Review affordance → no way to reach the listen-to-test item.
+      await modeler.selectNode('event_1');
       await page.waitForTimeout(500);
-      await expect(modeler.replayPanel).not.toBeVisible();
-
-      // Test button should also be hidden (replay: false implies test: false)
-      const testBtn = modeler.getTestButton();
-      await expect(testBtn).not.toBeVisible();
+      await expect(modeler.getReviewModeButton()).toHaveCount(0);
+      await expect(modeler.getTestAffordanceGate()).toHaveCount(0);
     });
   });
 });
@@ -417,8 +412,7 @@ test.describe('Permission: edit template', () => {
 
       // Metadata modal should be openable and editable
       await modeler.openSettings();
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).not.toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
     });
   });
 
@@ -453,8 +447,7 @@ test.describe('Permission: edit template', () => {
       await modeler.openSettings();
 
       // Label field should be read-only
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(false);
 
       // Save button should not exist in modal
       const saveBtn = modeler.getMetadataSaveButton();
@@ -493,8 +486,7 @@ test.describe('Permission: edit template', () => {
 
       // Metadata should remain editable
       await modeler.openSettings();
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).not.toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
 
       // Template checkbox should be disabled
       const templateCheckbox = modeler.getTemplateCheckbox();
@@ -526,20 +518,19 @@ test.describe('Permissions: combined scenarios', () => {
     const contextSelect = modeler.getContextSelect();
     await expect(contextSelect).not.toBeVisible();
 
-    // Test button should be hidden
-    const testBtn = modeler.getTestButton();
-    await expect(testBtn).not.toBeVisible();
-
-    // Replay load button should be hidden
+    // Select the event node first so the property-panel header is populated.
     await modeler.selectNode('event_1');
     await page.waitForTimeout(300);
+
+    // With replay + test denied, no Review affordance is rendered, so the Test
+    // affordance (reachable only via Review) is unreachable.
     const replayBtn = modeler.getReplayLoadButton();
-    await expect(replayBtn).not.toBeVisible();
+    await expect(replayBtn).toHaveCount(0);
+    await expect(modeler.getTestAffordanceGate()).toHaveCount(0);
 
     // Open metadata modal — fields should be read-only
     await modeler.openSettings();
-    const labelInput = modeler.getMetadataField('label');
-    await expect(labelInput).toHaveAttribute('readonly');
+    expect(await modeler.isMetadataFieldEditable('label')).toBe(false);
 
     // Template checkbox should be disabled
     const templateCheckbox = modeler.getTemplateCheckbox();
@@ -570,23 +561,23 @@ test.describe('Permissions: combined scenarios', () => {
     const contextSelect = modeler.getContextSelect();
     await expect(contextSelect).toBeVisible();
 
-    // Replay panel should appear (test_url configured)
+    // Unified panel is always present.
     await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-    // Test button should be visible
-    const testBtn = modeler.getTestButton();
-    await expect(testBtn).toBeVisible();
-
-    // Replay load button should be visible for event nodes
+    // Review (replay) affordance should be visible for event nodes, and the
+    // listen-to-test item is reachable through it.
     await modeler.selectNode('event_1');
     await page.waitForTimeout(300);
     const replayBtn = modeler.getReplayLoadButton();
     await expect(replayBtn).toBeVisible();
 
+    await modeler.enterReviewMode();
+    await modeler.openReplayEntryDropdown();
+    await expect(modeler.getTestButton()).toBeVisible();
+
     // Open metadata modal — fields should be editable
     await modeler.openSettings();
-    const labelInput = modeler.getMetadataField('label');
-    await expect(labelInput).not.toHaveAttribute('readonly');
+    expect(await modeler.isMetadataFieldEditable('label')).toBe(true);
 
     // Template checkbox should be enabled
     const templateCheckbox = modeler.getTemplateCheckbox();

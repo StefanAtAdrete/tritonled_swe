@@ -21,6 +21,7 @@ import { getCanvasSettings } from '@/utils/drupal-globals';
 import { hasPermission } from '@/utils/permissions';
 
 import AiWizard from '../aiExtension/AiWizard';
+import AiWizardDev from '../aiExtension/AiWizardDev';
 
 import styles from '@/components/sidePanel/PrimaryPanel.module.css';
 
@@ -30,13 +31,14 @@ export const PrimaryPanel = () => {
   const offLeftClasses = useHidePanelClasses('left');
 
   useEffect(() => {
-    if (activePanel === 'templates' && !hasPermission('contentTemplates')) {
+    if (
+      activePanel === 'templates' &&
+      !hasPermission('contentTemplates') &&
+      !hasPermission('pageVariants')
+    ) {
       dispatch(unsetActivePanel());
     }
-    if (
-      activePanel === 'brandKit' &&
-      (!hasPermission('brandKit') || !getCanvasSettings()?.devMode)
-    ) {
+    if (activePanel === 'brandKit' && !hasPermission('brandKit')) {
       dispatch(unsetActivePanel());
     }
   }, [activePanel, dispatch]);
@@ -95,13 +97,11 @@ export const PrimaryPanel = () => {
                     <Code />
                   </ErrorBoundary>
                 )}
-                {activePanel === 'brandKit' &&
-                  hasPermission('brandKit') &&
-                  getCanvasSettings()?.devMode && (
-                    <ErrorBoundary>
-                      <BrandKitPanel />
-                    </ErrorBoundary>
-                  )}
+                {activePanel === 'brandKit' && hasPermission('brandKit') && (
+                  <ErrorBoundary>
+                    <BrandKitPanel />
+                  </ErrorBoundary>
+                )}
                 {activePanel === 'pages' && (
                   <ErrorBoundary>
                     <Pages />
@@ -114,11 +114,16 @@ export const PrimaryPanel = () => {
                 )}
                 {activePanel === 'aiWizard' && (
                   <ErrorBoundary>
-                    <AiWizard />
+                    {getCanvasSettings()?.aiDevMode ? (
+                      <AiWizardDev />
+                    ) : (
+                      <AiWizard />
+                    )}
                   </ErrorBoundary>
                 )}
                 {activePanel === 'templates' &&
-                  hasPermission('contentTemplates') && (
+                  (hasPermission('contentTemplates') ||
+                    hasPermission('pageVariants')) && (
                     <ErrorBoundary>
                       <Templates />
                     </ErrorBoundary>

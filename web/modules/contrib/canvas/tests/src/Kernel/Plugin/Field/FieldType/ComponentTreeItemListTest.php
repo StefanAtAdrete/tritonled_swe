@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-// cspell:ignore vlaquxuup
 namespace Drupal\Tests\canvas\Kernel\Plugin\Field\FieldType;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
+// cspell:ignore vlaquxuup
+
 use Drupal\canvas\AutoSave\AutoSaveManager;
 use Drupal\canvas\Element\RenderSafeComponentContainer;
 use Drupal\canvas\Entity\AssetLibrary;
@@ -41,11 +39,15 @@ use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
 use Drupal\Tests\canvas\Kernel\Traits\CacheBustingTrait;
 use Drupal\Tests\canvas\Kernel\Traits\CiModulePathTrait;
 use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
+use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\canvas\Traits\CreateTestJsComponentTrait;
 use Drupal\Tests\canvas\Traits\DataProviderWithComponentTreeTrait;
 use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -54,9 +56,11 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 #[CoversClass(ComponentTreeItemList::class)]
 #[Group('canvas')]
+#[Group('slow')]
 class ComponentTreeItemListTest extends CanvasKernelTestBase {
 
   use ConstraintViolationsTestTrait;
+  use CrawlerTrait;
   use CreateTestJsComponentTrait;
   use GenerateComponentConfigTrait;
   use CiModulePathTrait;
@@ -301,6 +305,18 @@ class ComponentTreeItemListTest extends CanvasKernelTestBase {
         $value .= '.draft';
       }
     });
+    if ($is_preview) {
+      // Previews mark code component islands for the client renderer, in the
+      // renderable and, as the last attribute of the element, in the markup.
+      // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsComponent::renderComponent()
+      // @see \Drupal\canvas\Element\AstroIsland::preRenderIsland()
+      $expectation['expected_renderable'] = self::markIslandsAsPreview($expectation['expected_renderable']);
+      $expectation['expected_html'] = preg_replace(
+        '/<canvas-island([^>]*)>/',
+        '<canvas-island$1 data-canvas-preview="true">',
+        $expectation['expected_html'],
+      );
+    }
 
     // Add slot placeholders to the expected renderable array.
     $expectation['expected_renderable'] = self::addSlotPlaceholders($expectation['expected_renderable']);
@@ -308,6 +324,18 @@ class ComponentTreeItemListTest extends CanvasKernelTestBase {
     $expectation['expected_html'] = preg_replace('#(<div class="canvas--slot-empty-placeholder">.*?</div>)(.*?)(?=<!--)#', '<div class="canvas--slot-empty-placeholder"></div>', $expectation['expected_html']);
 
     return $expectation;
+  }
+
+  private static function markIslandsAsPreview(array $renderable): array {
+    if (($renderable['#type'] ?? NULL) === 'astro_island') {
+      $renderable['#attributes'] = ['data-canvas-preview' => 'true'];
+    }
+    foreach ($renderable as $key => $value) {
+      if (\is_array($value)) {
+        $renderable[$key] = self::markIslandsAsPreview($value);
+      }
+    }
+    return $renderable;
   }
 
   public static function overwriteRenderableExpectations(array $expectation, array $overwrites): array {
@@ -1265,6 +1293,7 @@ HTML,
                                           '@/lib/drupal-utils' => \sprintf('%s/packages/astro-hydration/dist/drupal-utils.js?2.1.0-alpha3', $path),
                                           'swr' => \sprintf('%s/packages/astro-hydration/dist/swr.js?2.1.0-alpha3', $path),
                                           'drupal-canvas' => \sprintf('%s/packages/astro-hydration/dist/drupal-canvas.js?2.1.0-alpha3', $path),
+                                          'drupal-canvas/react' => \sprintf('%s/packages/astro-hydration/dist/drupal-canvas-react.js?2.1.0-alpha3', $path),
                                           '@tailwindcss/typography' => \sprintf('%s/packages/astro-hydration/dist/tailwindcss-typography.js?2.1.0-alpha3', $path),
                                         ],
                                         ImportMapResponseAttachmentsProcessor::SCOPED_IMPORTS => [],
@@ -1293,6 +1322,7 @@ HTML,
                                         ],
                                       ],
                                       '#name' => 'My First Code Component',
+                                      '#machine_name' => 'my-cta',
                                       '#component_url' => '::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js',
                                       '#props' => [
                                         'text' => 'Hello, from a "code component"!',
@@ -1304,6 +1334,7 @@ HTML,
                                       '#prefix' => Markup::create('<!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 -->'),
                                       '#suffix' => Markup::create('<!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 -->'),
                                       '#uuid' => '2f57ba57-f32a-4a7b-9896-9d1104b446f1',
+                                      '#attributes' => [],
                                     ],
                                   ],
                                   'b4bc6c8f-66f7-458a-99a9-41c29b2801e7' => [
@@ -1341,6 +1372,7 @@ HTML,
                                           '@/lib/drupal-utils' => \sprintf('%s/packages/astro-hydration/dist/drupal-utils.js?2.1.0-alpha3', $path),
                                           'swr' => \sprintf('%s/packages/astro-hydration/dist/swr.js?2.1.0-alpha3', $path),
                                           'drupal-canvas' => \sprintf('%s/packages/astro-hydration/dist/drupal-canvas.js?2.1.0-alpha3', $path),
+                                          'drupal-canvas/react' => \sprintf('%s/packages/astro-hydration/dist/drupal-canvas-react.js?2.1.0-alpha3', $path),
                                           '@tailwindcss/typography' => \sprintf('%s/packages/astro-hydration/dist/tailwindcss-typography.js?2.1.0-alpha3', $path),
                                         ],
                                         ImportMapResponseAttachmentsProcessor::SCOPED_IMPORTS => [],
@@ -1369,6 +1401,7 @@ HTML,
                                         ],
                                       ],
                                       '#name' => 'My Code Component with Auto-Save',
+                                      '#machine_name' => 'my-cta-with-auto-save',
                                       '#component_url' => '::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js',
                                       '#props' => [
                                         'text' => 'Hello, from a "auto-save code component"!',
@@ -1380,6 +1413,7 @@ HTML,
                                       '#prefix' => Markup::create('<!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 -->'),
                                       '#suffix' => Markup::create('<!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 -->'),
                                       '#uuid' => 'b4bc6c8f-66f7-458a-99a9-41c29b2801e7',
+                                      '#attributes' => [],
                                     ],
                                   ],
                                   '9f09ecd8-ec65-408c-b5c8-ef036e6aeb97' => [
@@ -1491,19 +1525,7 @@ HTML,
           <a href="/" rel="home">Canvas Test Site</a>
     Drupal Canvas Test Site
 </div>
-<!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1"
-      component-url="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js"
-      component-export="default"
-      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
-      props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
-      ssr="" client="only"
-      opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
-      component-url="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js"
-      component-export="default"
-      renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
-      props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
-      ssr="" client="only"
-      opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
+<!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1" component-url="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js" component-export="default" renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/zp6hEMcVLAQUXUUP3gsBwM5-MNs4_2kJ_7z16CTg1Sk.js" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7" component-url="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js" component-export="default" renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="::SITE_DIR_BASE_URL::/files/astro-island/dErbetE11Vm2Twy1AoP3OU8bws4QaYAih9Gd8PgRrm4.js" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
   <h1 style="font-size: 3em; margin: 0.5em 0; color: #333;"><!-- canvas-prop-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading -->Clurichaun<!-- canvas-prop-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading --></h1>
 </div>
 <!-- canvas-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><!-- canvas-slot-end-e0b92f23-c177-4196-8fa4-3e837f99a357/the_body -->
@@ -1645,19 +1667,7 @@ HTML,
               <a href="/" rel="home">Canvas Test Site</a>
         Drupal Canvas Test Site
      </div>
-     <!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1"
-          component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta"
-          component-export="default"
-          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
-          props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
-          ssr="" client="only"
-          opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7"
-          component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save"
-          component-export="default"
-          renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3"
-          props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}"
-          ssr="" client="only"
-          opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save - Draft&quot;,&quot;value&quot;:&quot;preact&quot;}"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
+     <!-- canvas-end-68167e4a-9245-41be-b564-f1e1dcad1dec --><!-- canvas-start-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><canvas-island uid="2f57ba57-f32a-4a7b-9896-9d1104b446f1" component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta" component-export="default" renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;My First Code Component&quot;,&quot;value&quot;:&quot;preact&quot;}" data-canvas-preview="true"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta" blocking="render"></script></canvas-island><!-- canvas-end-2f57ba57-f32a-4a7b-9896-9d1104b446f1 --><!-- canvas-start-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><canvas-island uid="b4bc6c8f-66f7-458a-99a9-41c29b2801e7" component-url="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save" component-export="default" renderer-url="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" props="{&quot;text&quot;:[&quot;raw&quot;,&quot;Hello, from a \&quot;auto-save code component\&quot;!&quot;],&quot;href&quot;:[&quot;raw&quot;,&quot;https:\/\/example.com&quot;]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;My Code Component with Auto-Save - Draft&quot;,&quot;value&quot;:&quot;preact&quot;}" data-canvas-preview="true"><script type="module" src="::CANVAS_DIR_BASE_URL::/packages/astro-hydration/dist/canvas-client.js?2.1.0-alpha3" blocking="render"></script><script type="module" src="/canvas/api/v0/auto-saves/js/js_component/my-cta-with-auto-save" blocking="render"></script></canvas-island><!-- canvas-end-b4bc6c8f-66f7-458a-99a9-41c29b2801e7 --><!-- canvas-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><div  data-component-id="canvas_test_entity_reference_shape_alter:props-no-slots" style="font-family: Helvetica, Arial, sans-serif; width: 100%; height: 100vh; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box;">
       <h1 style="font-size: 3em; margin: 0.5em 0; color: #333;"><!-- canvas-prop-start-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading -->Clurichaun<!-- canvas-prop-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97/heading --></h1>
      </div>
      <!-- canvas-end-9f09ecd8-ec65-408c-b5c8-ef036e6aeb97 --><!-- canvas-slot-end-e0b92f23-c177-4196-8fa4-3e837f99a357/the_body -->
@@ -2035,6 +2045,213 @@ HTML,
     // Prop validation fails because optional_text is now required but missing.
     // The error is caught by renderify and handled gracefully.
     $this->assertNoText('[canvas:evolution-test/optional_text] The property optional_text is required.');
+  }
+
+  /**
+   * Tests rendering component trees whose children cannot be placed in a slot.
+   *
+   * Regression test for https://www.drupal.org/i/3590730. `::getHydratedValue()`
+   * places each child in its parent's slot, which assumes the parent offers that
+   * slot. Four scenarios break that assumption:
+   * 1. The parent does not exist.
+   * 2. The parent failed to hydrate, so it has no slots at all.
+   * 3. The parent has no slots.
+   * 4. The parent does not have the claimed slot.
+   *
+   * Scenarios 1, 3 and 4 violate the requirements for the columns storing the
+   * tree structure, so they can only reach rendering if validation was
+   * bypassed, such as by a custom update path or direct database manipulation.
+   * Scenario 2 can also occur for a valid component tree, because hydration
+   * depends on state outside it. Every tree below is rejected by validation.
+   * Rendering must survive them anyway: the rest of the tree must still render,
+   * and the unreachable child must never render.
+   *
+   * @legacy-covers ::getHydratedValue
+   * @see docs/data-model.md#3.2.1
+   */
+  #[DataProvider('providerUnreachableChildren')]
+  public function testToRenderableSurvivesUnreachableChildren(array $code_components, array $tree, ?string $expected_error_wrapper_uuid, array $expected_absent_uuids): void {
+    foreach ($code_components as $machine_name => $slots) {
+      JavaScriptComponent::create([
+        'machineName' => $machine_name,
+        'name' => $machine_name,
+        'status' => TRUE,
+        'props' => [
+          'name' => [
+            'title' => 'Name',
+            'type' => 'string',
+            'examples' => ['Example name'],
+          ],
+        ],
+        'required' => ['name'],
+        'slots' => $slots,
+        'js' => ['original' => 'export default function() { return null; }', 'compiled' => 'export default function() { return null; }'],
+        'css' => ['original' => '', 'compiled' => ''],
+      ])->save();
+    }
+
+    $item_list = self::staticallyCreateDanglingComponentTreeItemList(\Drupal::typedDataManager());
+    $item_list->setValue($tree);
+
+    // Every one of these trees is invalid: validation is what normally prevents
+    // them from being saved. Rendering must nonetheless not crash.
+    self::assertNotEmpty($item_list->validate());
+
+    $build = $item_list->toRenderable(Page::create(['title' => 'A page'])->enforceIsNew(FALSE), FALSE);
+    $crawler = $this->crawlerForRenderArray($build);
+
+    if ($expected_error_wrapper_uuid !== NULL) {
+      self::assertCount(1, $crawler->filter(\sprintf('[data-component-uuid="%s"]:contains("Oops, something went wrong! Site admins have been notified.")', $expected_error_wrapper_uuid)));
+    }
+    foreach ($expected_absent_uuids as $absent_uuid) {
+      self::assertCount(0, $crawler->filter(\sprintf('[data-component-uuid="%s"]', $absent_uuid)));
+    }
+    // Every unreachable child in these trees carries this text.
+    self::assertCount(0, $crawler->filter(':contains("Unreachable")'));
+  }
+
+  /**
+   * Data provider for ::testToRenderableSurvivesUnreachableChildren().
+   */
+  public static function providerUnreachableChildren(): \Generator {
+    $parent_uuid = '2df42d3e-9b91-4b0f-9d1b-e1e6ecd5a001';
+    $child_uuid = '2df42d3e-9b91-4b0f-9d1b-e1e6ecd5a002';
+    $grandchild_uuid = '2df42d3e-9b91-4b0f-9d1b-e1e6ecd5a003';
+    $slotted = ['description' => ['title' => 'Description', 'examples' => ['<p>Example description</p>']]];
+
+    $unreachable_child = [
+      'uuid' => $child_uuid,
+      'component_id' => 'sdc.canvas_test_sdc.my-cta',
+      'inputs' => ['text' => 'Unreachable', 'href' => 'https://example.com'],
+      'parent_uuid' => $parent_uuid,
+      'slot' => 'description',
+    ];
+    // Triggers \OutOfRangeException in ::getExplicitInput() because the prop
+    // does not exist on this component's version.
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::getDefaultStaticPropSource()
+    $inputs_that_fail_to_hydrate = [
+      'name' => 'Parent',
+      'hydration_should_fail_on_this_non_existent_value' => TRUE,
+    ];
+
+    yield 'parent failed to hydrate' => [
+      ['parent_that_fails_to_hydrate' => $slotted],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => JsComponent::componentIdFromJavascriptComponentId('parent_that_fails_to_hydrate'),
+          'inputs' => $inputs_that_fail_to_hydrate,
+        ],
+        $unreachable_child,
+      ],
+      $parent_uuid,
+      [$child_uuid],
+    ];
+
+    // The grandchild is nested inside the child before the child is discarded,
+    // so discarding the child must take the grandchild with it.
+    yield 'ancestor failed to hydrate, grandchild nested below' => [
+      ['ancestor_that_fails_to_hydrate' => $slotted, 'intermediate_parent' => $slotted],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => JsComponent::componentIdFromJavascriptComponentId('ancestor_that_fails_to_hydrate'),
+          'inputs' => $inputs_that_fail_to_hydrate,
+        ],
+        [
+          'uuid' => $child_uuid,
+          'component_id' => JsComponent::componentIdFromJavascriptComponentId('intermediate_parent'),
+          'inputs' => ['name' => 'Intermediate'],
+          'parent_uuid' => $parent_uuid,
+          'slot' => 'description',
+        ],
+        [
+          'uuid' => $grandchild_uuid,
+          'component_id' => 'sdc.canvas_test_sdc.my-cta',
+          'inputs' => ['text' => 'Unreachable', 'href' => 'https://example.com'],
+          'parent_uuid' => $child_uuid,
+          'slot' => 'description',
+        ],
+      ],
+      $parent_uuid,
+      [$child_uuid, $grandchild_uuid],
+    ];
+
+    yield 'parent does not exist' => [
+      [],
+      [$unreachable_child],
+      NULL,
+      [$child_uuid],
+    ];
+
+    // Every ComponentSource in Canvas that can omit the `slots` key is covered
+    // by the next three cases. `BlockComponent` never has slots: it does not
+    // implement `ComponentSourceWithSlotsInterface`. `JsComponent` and
+    // `SingleDirectoryComponent` may have none. `Fallback` always sets a
+    // `slots` key, so it cannot reach this.
+    yield 'parent is a block component, which can never have slots' => [
+      [],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => 'block.system_branding_block',
+          'inputs' => [],
+        ],
+        $unreachable_child,
+      ],
+      NULL,
+      [$child_uuid],
+    ];
+
+    yield 'parent is a code component without slots' => [
+      ['parent_without_slots' => []],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => JsComponent::componentIdFromJavascriptComponentId('parent_without_slots'),
+          'inputs' => ['name' => 'Parent'],
+        ],
+        $unreachable_child,
+      ],
+      NULL,
+      [$child_uuid],
+    ];
+
+    yield 'parent is an SDC without slots' => [
+      [],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => 'sdc.canvas_test_sdc.props-no-slots',
+          'inputs' => ['heading' => 'Parent'],
+        ],
+        $unreachable_child,
+      ],
+      NULL,
+      [$child_uuid],
+    ];
+
+    // Two mechanisms normally prevent this:
+    // 1. The instance pins the component version it was saved with, so a slot
+    //    removed afterwards still exists for that version.
+    // 2. When the instance is updated to a version without that slot, the
+    //    slot's children are removed along with it.
+    // So reaching this requires a modification that bypassed validation, such
+    // as a custom update path or direct database manipulation.
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentInstanceUpdater::update()
+    yield 'parent does not have the claimed slot anymore' => [
+      ['parent_with_other_slot' => $slotted],
+      [
+        [
+          'uuid' => $parent_uuid,
+          'component_id' => JsComponent::componentIdFromJavascriptComponentId('parent_with_other_slot'),
+          'inputs' => ['name' => 'Parent'],
+        ],
+        ['slot' => 'no_longer_existing_slot'] + $unreachable_child,
+      ],
+      NULL,
+      [$child_uuid],
+    ];
   }
 
 }

@@ -3,6 +3,7 @@ import { createSelector, createSlice } from '@reduxjs/toolkit';
 
 import {
   getPropMachineName,
+  serializeDataDependencies,
   serializeProps,
   serializeSlots,
 } from '@/features/code-editor/utils/utils';
@@ -53,6 +54,7 @@ export const initialState: CodeEditorState = {
     machineName: '',
     name: '',
     status: false,
+    type: 'react',
     props: [],
     required: [],
     slots: [],
@@ -80,6 +82,7 @@ export const initialState: CodeEditorState = {
     id: 'global',
     label: 'Global brand kit',
     fonts: null,
+    colors: null,
   },
   previewCompiledJsForSlots: '',
   forceRefresh: false,
@@ -274,6 +277,26 @@ export const codeEditorSlice = createSlice({
       state.status.needsAutoSave = true;
     },
 
+    setEntityFieldExpressions: (
+      state,
+      action: PayloadAction<{
+        propId: string;
+        expressions: string[];
+      }>,
+    ) => {
+      const { propId, expressions } = action.payload;
+      const prop = state.codeComponent.props.find((p) => p.id === propId);
+      if (!prop) {
+        return;
+      }
+      if (expressions.length === 0) {
+        delete prop.entityFieldExpressions;
+      } else {
+        prop.entityFieldExpressions = expressions;
+      }
+      state.status.needsAutoSave = true;
+    },
+
     addSlot: (state) => {
       state.codeComponent.slots.push({
         id: uuidv4(),
@@ -395,6 +418,27 @@ export const codeEditorSlice = createSlice({
       }),
     ),
 
+    setBrandKitColors: create.reducer(
+      (
+        state,
+        action: PayloadAction<
+          | [BrandKit['colors']]
+          | [BrandKit['colors'], Partial<CodeEditorStatusOptions>]
+        >,
+      ) => ({
+        ...state,
+        brandKit: {
+          ...state.brandKit,
+          colors: action.payload[0],
+        },
+        status: {
+          ...state.status,
+          needsAutoSave: false,
+          ...(action.payload[1] && action.payload[1]),
+        },
+      }),
+    ),
+
     setPreviewCompiledJsForSlots: create.reducer(
       (state, action: PayloadAction<string>) => ({
         ...state,
@@ -460,7 +504,10 @@ export const selectCodeComponentSerialized = createSelector(
     compiledJs: codeComponent.compiledJs,
     compiledCss: codeComponent.compiledCss,
     importedJsComponents: codeComponent.importedJsComponents,
-    dataDependencies: codeComponent.dataDependencies,
+    dataDependencies: serializeDataDependencies(
+      codeComponent.props,
+      codeComponent.dataDependencies,
+    ),
   }),
 );
 
@@ -522,11 +569,13 @@ export const {
   setCodeComponentProperty,
   setGlobalAssetLibraryProperty,
   setBrandKitFonts,
+  setBrandKitColors,
   addProp,
   updateProp,
   removeProp,
   reorderProps,
   toggleRequired,
+  setEntityFieldExpressions,
   addSlot,
   updateSlot,
   removeSlot,

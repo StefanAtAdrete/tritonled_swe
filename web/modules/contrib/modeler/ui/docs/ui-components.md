@@ -76,7 +76,6 @@ const nodeTypes = {
 // Custom edges in components/edges/
 const edgeTypes = {
   default: DefaultEdge,      // Basic connections
-  condition: ConditionEdge,   // Edges with conditions and/or annotations
 };
 ```
 
@@ -201,16 +200,40 @@ When the panel has no replay data and no test is running, it shows context-speci
 | `test_url` + no event selected | "Select an event and click Test to execute the workflow and capture the results." |
 | Neither URL available | "Run your workflow to generate execution data" |
 
-### Global Tokens Section
+### Review Mode Header
 
-When `drupalSettings.modeler.global_tokens` is provided and non-empty, a "Global Tokens" section appears at the bottom of the replay panel. This section is always visible regardless of replay state (both in the empty state and when replay data is loaded).
+In review mode the panel header is emptied: its label zone holds a single control, the back button (`.header-review-btn.panel-header-back`) rendered as `FiArrowLeft` plus the label "Back". Clicking it returns to property mode; the replay session, selected entry and current step are preserved. `Alt+Shift+R` (`Option+Shift+R` on Mac) toggles the two modes from the keyboard - see [keyboard-shortcuts.md](keyboard-shortcuts.md).
 
-- **Rendering**: `GlobalTokensContainer` (in `ReplayDataRenderer.tsx`) transforms the Drupal-provided structure (`name`/`raw token`/`token`/`value`/`children`) into the standard `ReplayDataRenderer` format (`label`/`token`/`value`/`data`)
-- **Drag-and-drop**: Each leaf token is draggable into configuration fields, using the `raw token` value (e.g., `[site:name]`) as the drop payload
-- **Children**: Tokens with `children` render as collapsible groups, identical to step data token groups
-- **CSS class**: The section has both `.step-data-section` and `.global-tokens-section` classes
-- **Header**: "Global Tokens" with database icon, matching the Step Data section styling
-- **Accessibility**: All `.data-content` containers have `tabIndex={0}`, `role="region"`, and `aria-label` for keyboard scrolling (required by axe `scrollable-region-focusable` rule)
+### Inline Step Data
+
+When replay data is loaded, the review body is a **single list** of steps (`.replay-steps`). Selecting a step expands its step data inline, directly underneath that step row.
+
+```tsx
+<div ref={el => { stepRefs.current[index] = el; }} className="replay-step-item">
+  <div
+    className={`replay-step ${isSelected ? 'current' : ''} ...`}
+    role="button"
+    tabIndex={0}
+    aria-expanded={isSelected}
+    aria-controls={isSelected ? stepDataId : undefined}
+  >
+    ...
+  </div>
+  {isSelected && (
+    <div id={stepDataId} className="replay-step-data" role="region" aria-label={t('Step data')} tabIndex={0}>
+      <StepDataContainer stepData={stepData} predicted={stepDataPredicted} />
+    </div>
+  )}
+</div>
+```
+
+- **Wrapper**: `.replay-step-item` holds the row plus its inline data and is what `stepRefs` points at, so playback auto-scroll keeps both in view
+- **Step row**: `role="button"`, `tabIndex={0}`, `aria-expanded`, and `aria-controls` set only while the region exists (a dangling id would be an invalid ARIA value)
+- **Rendering**: `StepDataContainer` (in `ReplayDataRenderer.tsx`) renders the token tree, unchanged
+- **Empty data**: a selected step without token data renders the "No token data available for this step" hint instead of the tree
+- **No sub-panels**: there is no separate step data, global tokens or template tokens section below the list, and the body is not vertically resizable
+- **Global and template tokens**: reachable only through the `[` token picker, whose `global` and `template` categories are built in `utils/tokenPickerData.ts` from the exported `transformGlobalToken` helper
+- **Accessibility**: scrollable regions carry `tabIndex={0}`, `role="region"` and an `aria-label` (required by the axe `scrollable-region-focusable` rule)
 
 ### Standalone Interface
 ```typescript
@@ -222,7 +245,6 @@ const ReplayPanel: React.FC = () => {
     <div data-testid="replay-panel">
       <ReplayControls />
       <ReplayStepList />
-      <ReplayDataDisplay />
     </div>
   );
 };
@@ -258,13 +280,15 @@ const ReplayStepList: React.FC = () => {
   return (
     <div className="replay-steps">
       {filteredSteps.map((step, index) => (
-        <div
-          key={index}
-          className={`step ${index === currentReplayStep ? 'active' : ''}`}
-          onClick={() => goToStep(index)}
-        >
-          <StepIcon type={step.type} />
-          <StepLabel step={step} />
+        <div key={index} className="replay-step-item">
+          <div
+            className={`step ${index === currentReplayStep ? 'active' : ''}`}
+            onClick={() => goToStep(index)}
+          >
+            <StepIcon type={step.type} />
+            <StepLabel step={step} />
+          </div>
+          {index === currentReplayStep && <StepDataContainer stepData={step.data} />}
         </div>
       ))}
     </div>
@@ -367,6 +391,16 @@ const Modals: React.FC<ModalsProps> = ({
   </>
 );
 ```
+
+### MetadataModal (MetadataModal.tsx)
+The model information dialog owns no field list of its own. The backend converts the model owner's Drupal metadata form (`ModelerBase::defaultModelConfigForm()`) to JSON and ships it as `drupalSettings.modeler.metadataForm`; `Flow.tsx` threads it through `Modals.tsx` into the dialog, which renders it with the same `ConfigurationForm` as any plugin configuration form. A field the owner hides with `#access => FALSE` is therefore neither rendered nor submitted, and a field it adds needs no frontend change.
+
+The dialog contributes exactly three things of its own:
+- **Chrome**: overlay, title, close button, focus trap, and the Cancel/Save footer. Save is hidden when the user may not edit metadata (`fieldsReadOnly`), which also disables every field.
+- **Permissions and lifecycle**: the `template` field is disabled without the "create template" permission, and `changelog` is dropped for a model that does not exist yet.
+- **Value translation**: `utils/metadataCodec.ts` converts between the stored metadata (arrays, a list of config actions) and the strings the form speaks (comma separated tags, one entry per line, a YAML document). An unparsable config actions document keeps the value the dialog opened with.
+
+The `model_id` field is Drupal's `machine_name` element: it mirrors the label until the user types an ID of their own, and is disabled for an existing model. Only a new model submits an `id`.
 
 ### ConfirmDialog Customization
 `ConfirmDialog` supports several optional props for reuse across different confirmation scenarios:
@@ -586,7 +620,7 @@ const SearchCombobox: React.FC = () => {
 ```
 components/
 ├── ReplayPanel.tsx          # Standalone replay interface (~603 lines, with test feature)
-├── ReplayDataRenderer.tsx   # Hierarchical token data display + global tokens (~373 lines, extracted)
+├── ReplayDataRenderer.tsx   # Hierarchical token data display + transformGlobalToken helper
 ├── PropertyPanel.tsx        # Properties with annotations, info popup, and resizable width
 ├── NodePropertiesPanel.tsx  # Single node: label, annotation, config (~91 lines)
 ├── EdgePropertiesPanel.tsx  # Single edge: label, annotation, config (~110 lines)
@@ -599,14 +633,15 @@ components/
 ├── PluginPanelContainer.tsx # Plugin panel container with resize/collapse
 ├── StartFlowFilter.tsx      # Multi-select dropdown to filter visible flows by start node
 ├── SearchBar.tsx            # Search functionality
-├── MetadataModal.tsx        # Model settings dialog
-├── ConfigurationForm.tsx    # Dynamic form rendering (~239 lines, refactored)
+├── MetadataModal.tsx        # Model information dialog (renders the backend metadata form)
+├── ConfigurationForm.tsx    # Dynamic form rendering (types in src/types/forms.ts)
 ├── ContentEditableField.tsx # Rich text input with token drag-and-drop & inline editing (~712 lines, extracted)
 ├── ConfirmDialog.tsx        # Customizable confirmation dialogs (button labels, danger variant, hide secondary)
 ├── DocumentationPopup.tsx   # External documentation viewer popup
 ├── DocumentationButton.tsx  # Reusable documentation link button
 ├── QuickAddButton.tsx       # Node hover button to add successor nodes (context-filtered, with type filter)
 ├── QuickAddConditionButton.tsx # Edge hover button to add conditions (context-filtered)
+├── QuickAddEdgeButton.tsx     # Edge hover button to add conditions or insert action/gateway nodes (context-filtered)
 ├── QuickAddEventButton.tsx  # Canvas button to add event/start nodes (context-filtered)
 ├── QuickAddPopup.tsx        # Shared popup with search, sections, and collapsible type-filter panel
 ├── PanelErrorBoundary.tsx   # Granular error boundary with auto-retry for panels
@@ -615,10 +650,10 @@ components/
 │   ├── StartNode.tsx        # Event/trigger nodes
 │   ├── GatewayNode.tsx      # Decision diamond nodes
 │   ├── SubprocessNode.tsx   # Subprocess nodes
-│   └── PlaceholderNode.tsx  # Temporary nodes for condition-first authoring
+│   ├── PlaceholderNode.tsx  # Temporary nodes for condition-first authoring
+│   └── ConditionNode.tsx    # Condition nodes (first-class nodes for conditions)
 └── edges/                   # Custom edge components
     ├── DefaultEdge.tsx      # Basic edges with control points and annotations
-    ├── ConditionEdge.tsx    # Edges with conditions and annotations
     └── EdgeOrderBadge.tsx   # Draggable edge order number badge
 ```
 
@@ -683,13 +718,22 @@ New messages always interrupt and show regardless of the current mode, restartin
 ## Quick-Add Component Behavior
 
 ### Context and Dependency Filtering
-All three quick-add components (`QuickAddButton`, `QuickAddConditionButton`, `QuickAddEventButton`) use the `useContextFilter` hook to filter their component lists.
+All four quick-add components (`QuickAddButton`, `QuickAddConditionButton`, `QuickAddEdgeButton`, `QuickAddEventButton`) use the `useContextFilter` hook to filter their component lists.
 
 ### Type Filter Panel
 `QuickAddButton` includes a collapsible **type filter** panel (powered by `QuickAddPopup`'s `typeFilters` config) that lets users narrow the component list by type (All / Actions / Conditions / Gateways). The filter is defined via `TypeFilterOption[]` and applied between the `componentFilter` and search/sort steps.
 
 ### Condition-First Authoring
 When a user selects a **condition** from the `QuickAddButton` popup, the `handleQuickAdd` callback in `Flow.tsx` routes to `useQuickAdd.addConditionWithPlaceholder()`, which creates a placeholder node + condition edge. The condition edge is auto-selected so the Property Panel opens on the condition for immediate configuration.
+
+### Edge Insertion
+When a user clicks the "+" button on a **default edge** (no condition), the `QuickAddEdgeButton` popup offers both conditions and actions/gateways. Selecting a condition attaches it to the edge via `handleAddCondition`. Selecting an action/gateway inserts a new node between the two connected nodes via `handleAddActionOnEdge`, splitting the edge into two.
+
+### Condition Edge Insertion
+**Condition edges** show two "+" buttons: one before and one after the condition card. Selecting an **action/gateway** inserts a new node, preserving the original condition on the appropriate side. Selecting a **condition** inserts a gateway node in a linear chain — the original condition stays on one side and the new condition goes on the other:
+
+- **"+" before condition**: `source --[new cond]--> gateway --[orig cond]--> target`
+- **"+" after condition**: `source --[orig cond]--> gateway --[new cond]--> target`
 
 ### Context and Dependency Filtering
 - When a context is selected, only plugins defined in the active context's component entries are shown
@@ -817,40 +861,37 @@ This atomic update ensures the canvas never shows an intermediate state where th
 - **Keyboard Shortcut**: Ctrl+F (Cmd+F on Mac) toggles search mode, overriding browser find
 - Implementation: `src/components/SearchBar.tsx`
 
-## Viewport Management (February 2026)
+## Viewport Management (April 2026)
+
+All programmatic viewport operations are managed by `useViewportActions`
+(`src/hooks/useViewportActions.ts`).  See `docs/viewport-management.md`
+for the comprehensive reference.
+
+### Key Behaviors
+- **Zoom preservation**: All pan operations preserve the current zoom
+  level.  Only `fitToNodes()` and `fitToNodePair()` change zoom.
+- **Off-screen check**: Node insertions use `panToNodeIfOffscreen()` —
+  the canvas only pans if the new node would be invisible.
+- **Accessibility**: Respects `prefers-reduced-motion` (instant
+  transitions when enabled).
 
 ### Smart Auto-Selection Positioning
-When a model is loaded with an element to be auto-selected, the viewport now intelligently positions based on node type:
+When a model is loaded with an element to be auto-selected:
 
-- **Event Nodes** (start, Events, Triggers categories):
-  - **Top-aligned**: Positioned 150px from top of viewport
-  - **Rationale**: Event nodes typically start workflows, so top alignment allows viewing the flow downward
-  
-- **Other Nodes** (Actions, Conditions, Gateways):
-  - **Center-aligned**: Standard center positioning with zoom
-  - **Rationale**: These nodes are often in the middle of workflows
+- **Event Nodes** (start nodes): Top-aligned via `topAlignNode()` —
+  positioned 150px from the top of the viewport so the user can see the
+  flow downward.
+- **Other Nodes**: Centered via `focusNode()` — panned to center
+  without changing zoom.
 
-### Viewport Effects Architecture
-- **Effects-based management**: Uses `useViewportEffects` hook for controlled viewport changes
-- **No race conditions**: Eliminates conflicts between automatic and manual navigation
-- **Smooth animations**: Configurable duration and zoom for viewport transitions
-- **Type-safe targets**: ViewportTarget type with 'center', 'fit', 'top-align', 'none' options
-
-### Implementation Details
+### Implementation
 ```typescript
-// Smart positioning based on node type
-const isEventNode = node.type === 'start' || 
-                   node.data?.category === 'Events' || 
-                   node.data?.category === 'Triggers';
-
-setViewportTarget({
-  type: isEventNode ? 'top-align' : 'center',
-  nodeId: node.id,
-  options: { zoom: 1.2, duration: 800 }
-});
+// In useModelDataLoader — queues for deferred execution
+const viewportKind = isStartNode ? 'topAlignNode' : 'focusNode';
+viewportActions.selectAndFocus(nodeToSelect, viewportKind);
 ```
 
-- Implementation: `src/hooks/useViewportEffects.ts`
+- Implementation: `src/hooks/useViewportActions.ts`
 
 ## FlowCanvas Prop Grouping (February 2026)
 
@@ -949,7 +990,8 @@ The ReplayPanel uses extracted hooks and shared components:
 
 **Shared Components:**
 - `ReplayDataRenderer` - Hierarchical token data display
-- `GlobalTokensContainer` - Transforms and renders global tokens from `drupalSettings.modeler.global_tokens`
+- `StepDataContainer` - Renders the step data tree shown inline under the selected step
+- `transformGlobalToken` - Normalizes Drupal token entries; consumed by `utils/tokenPickerData.ts` for the picker's `global` and `template` categories
 
 **Results:**
 - ReplayPanel: 854 → 603 lines (with test feature additions)

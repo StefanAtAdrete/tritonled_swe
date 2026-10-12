@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useErrorBoundary } from 'react-error-boundary';
 import { useParams } from 'react-router';
 import { Box, Spinner } from '@radix-ui/themes';
@@ -9,19 +9,31 @@ import twigToJSXComponentMap from '@/components/form/twig-to-jsx-component-map';
 import { FORM_TYPES } from '@/features/form/constants';
 import { selectFormValues } from '@/features/form/formStateSlice';
 import { setUpdatePreview } from '@/features/layout/layoutModelSlice';
-import { selectPageData, setPageData } from '@/features/pageData/pageDataSlice';
+import {
+  selectPageData,
+  selectPageDataOwner,
+  setPageData,
+} from '@/features/pageData/pageDataSlice';
 import { useDrupalBehaviors } from '@/hooks/useDrupalBehaviors';
+import { useEditorNavigation } from '@/hooks/useEditorNavigation';
 import hyperscriptify from '@/local_packages/hyperscriptify';
 import propsify from '@/local_packages/hyperscriptify/propsify/standard/index.js';
 import { useGetPageLayoutQuery } from '@/services/componentAndLayout';
 import { useGetPageDataFormQuery } from '@/services/pageDataForm';
+import {
+  PAGE_VARIANT_ENTITY_TYPE,
+  useGetDefaultPageVariantQuery,
+} from '@/services/pageVariants';
 import { AJAX_UPDATE_FORM_STATE_EVENT } from '@/types/Ajax';
 import parseHyperscriptifyTemplate from '@/utils/parse-hyperscriptify-template';
 
 import type { AjaxUpdateFormStateEvent } from '@/types/Ajax';
 
+import styles from '@/components/PageDataForm.module.css';
+
 const PageDataFormRenderer = () => {
   const pageData = useAppSelector(selectPageData);
+  const pageDataOwner = useAppSelector(selectPageDataOwner);
   const { showBoundary } = useErrorBoundary();
   const [jsxFormContent, setJsxFormContent] =
     useState<React.ReactElement | null>(null);
@@ -33,6 +45,7 @@ const PageDataFormRenderer = () => {
   const {
     currentData: formTemplate,
     error,
+    fulfilledTimeStamp,
     isFetching,
     refetch,
   } = useGetPageDataFormQuery(
@@ -43,10 +56,52 @@ const PageDataFormRenderer = () => {
   );
 
   const formRef = useRef<HTMLDivElement>(null);
+  const { navigateToEditor } = useEditorNavigation();
+  const { data: defaultVariant } = useGetDefaultPageVariantQuery();
+  const defaultVariantId = defaultVariant?.default_page_variant ?? null;
+  // The edit-template link is server-rendered Drupal markup, not a react
+  // router <Link>; intercept it so it navigates without a full page load.
+  const interceptEditTemplateLink = useCallback(
+    (event: React.MouseEvent) => {
+      const link = (event.target as HTMLElement).closest(
+        '[data-testid="canvas-page-template-edit"]',
+      );
+      if (!link) {
+        return;
+      }
+      // Edit the template currently chosen in the form — which may be an
+      // unsaved, pending selection — rather than the server-rendered href,
+      // which reflects the saved selection. An empty or "_none" value means
+      // "site default", which edits the configured default variant.
+      const select = link
+        .closest('[data-testid="canvas-page-data-form"]')
+        ?.querySelector<HTMLSelectElement>('select[name="page_variant"]');
+      let variantId: string | undefined;
+      if (select) {
+        const selected = select.value;
+        variantId =
+          !selected || selected === '_none'
+            ? (defaultVariantId ?? undefined)
+            : selected;
+      } else {
+        variantId = link
+          .getAttribute('href')
+          ?.split(`/editor/${PAGE_VARIANT_ENTITY_TYPE}/`)[1];
+      }
+      if (variantId) {
+        event.preventDefault();
+        navigateToEditor(PAGE_VARIANT_ENTITY_TYPE, variantId);
+      }
+    },
+    [navigateToEditor, defaultVariantId],
+  );
   const loading = isFetching || isFetchingLayout;
   useDrupalBehaviors(formRef, jsxFormContent, loading);
 
   const pageDataExists = !!Object.keys(pageData).length;
+  const pageDataIsCurrent =
+    pageDataOwner?.entityType === entityType &&
+    pageDataOwner?.entityId === entityId;
 
   useEffect(() => {
     if (error) {
@@ -61,12 +116,12 @@ const PageDataFormRenderer = () => {
   }, [refetch, entityId, entityType]);
 
   useEffect(() => {
-    // If the HTML for the form has not yet loaded OR the JSON for the page data
-    // has not, don't render the form.
+    // If the HTML for the form has not yet loaded OR the JSON for the current
+    // page data has not, don't render the form.
     // Were we pulling this data *directly* from an API, doing this would be
     // best accomplished by the isLoading property provided by RTK. This serves
     // the same purpose without adding complexity to our reducers.
-    if (!formTemplate || !pageDataExists) {
+    if (!formTemplate || !pageDataIsCurrent) {
       return;
     }
 
@@ -76,7 +131,12 @@ const PageDataFormRenderer = () => {
     }
 
     setJsxFormContent(
-      <div data-testid="canvas-page-data-form">
+      <div
+        key={`${entityType}:${entityId}:${fulfilledTimeStamp}`}
+        data-testid="canvas-page-data-form"
+        className={styles.pageDataForm}
+        onClick={interceptEditTemplateLink}
+      >
         {hyperscriptify(
           template,
           React.createElement,
@@ -86,7 +146,14 @@ const PageDataFormRenderer = () => {
         )}
       </div>,
     );
-  }, [formTemplate, pageDataExists]);
+  }, [
+    entityId,
+    entityType,
+    formTemplate,
+    fulfilledTimeStamp,
+    pageDataIsCurrent,
+    interceptEditTemplateLink,
+  ]);
 
   useEffect(() => {
     const ajaxUpdateFormStateListener: (
@@ -113,7 +180,7 @@ const PageDataFormRenderer = () => {
           // ClientDataToEntityConverter::setEntityFields() produces nested arrays
           // that break Select::valueCallback() with "Array to string conversion".
           // @see \Drupal\canvas\ClientDataToEntityConverter::setEntityFields()
-          // @see ui/src/components/form/InputBehaviorsEntityForm.tsx formStateToStore
+          // @see ui/src/components/form/react-hook-form/fields/PageDataFormField.tsx formStateToPageDataStore
           if (
             Array.isArray(value) &&
             // @todo replace this with a better solution in https://www.drupal.org/i/3587609.

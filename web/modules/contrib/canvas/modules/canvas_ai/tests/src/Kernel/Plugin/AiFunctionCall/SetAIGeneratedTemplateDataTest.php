@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Drupal\ai\Service\FunctionCalling\FunctionCallPluginManager;
-use Drupal\canvas\Entity\Component;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
-use Drupal\Tests\user\Traits\UserCreationTrait;
-use Drupal\Tests\canvas_ai\Traits\FunctionalCallTestTrait;
 use Drupal\canvas\ComponentSource\ComponentSourceManager;
+use Drupal\canvas\Entity\Component;
 use Drupal\canvas_ai\CanvasAiPermissions;
 use Drupal\canvas_ai\CanvasAiTempStore;
 use Drupal\canvas_ai\Plugin\AiFunctionCall\SetAIGeneratedTemplateData;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
+use Drupal\Tests\canvas\Traits\CreateTestJsComponentTrait;
+use Drupal\Tests\canvas_ai\Traits\FunctionalCallTestTrait;
+use Drupal\Tests\canvas_ai\Traits\ImageMediaPropTestTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Yaml\Yaml;
 
@@ -27,7 +31,9 @@ use Symfony\Component\Yaml\Yaml;
 #[Group('canvas_ai')]
 final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
 
+  use CreateTestJsComponentTrait;
   use FunctionalCallTestTrait;
+  use ImageMediaPropTestTrait;
   use UserCreationTrait;
 
   protected FunctionCallPluginManager $functionCallManager;
@@ -42,7 +48,8 @@ final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
    * {@inheritdoc}
    */
   protected static $modules = [
-    ...CanvasKernelTestBase::CANVAS_KERNEL_TEST_MINIMAL_MODULES,
+    ...self::CANVAS_KERNEL_TEST_MINIMAL_MODULES,
+    'field',
     'ai',
     'ai_agents',
     'canvas_ai',
@@ -57,6 +64,7 @@ final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
     $this->installEntitySchema('file');
     $this->installEntitySchema('path_alias');
     $this->installEntitySchema('user');
+    $this->setUpImageMediaType();
     $this->container->get(ComponentSourceManager::class)->generateComponents();
 
     $this->functionCallManager = $this->container->get('plugin.manager.ai.function_calls');
@@ -66,7 +74,7 @@ final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
     self::assertInstanceOf(AccountInterface::class, $unprivileged_user);
     $this->privilegedUser = $privileged_user;
     $this->unprivilegedUser = $unprivileged_user;
-    $this->container->get('config.factory')
+    $this->container->get(ConfigFactoryInterface::class)
       ->getEditable('system.theme')
       ->set('default', 'stark')
       ->save();
@@ -79,7 +87,7 @@ final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
    */
   #[DataProvider('templateDataToolDataProvider')]
   public function testSetTemplateDataTool(string $component_structure_yaml, array $current_layout, array $expected_output): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
 
     $layout_json = \json_encode($current_layout);
 
@@ -105,7 +113,7 @@ final class SetAIGeneratedTemplateDataTest extends CanvasKernelTestBase {
    * Tests validation errors.
    */
   public function testValidationError(): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
 
     $invalid_nested_yaml = <<<YAML
 content:
@@ -142,10 +150,50 @@ YAML;
   }
 
   /**
+   * Tests that a prop that does not exist on a component fails validation.
+   */
+  public function testValidationErrorForNonExistentProp(): void {
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
+
+    // Code components (JS source) resolve props the same way as SDCs, so an
+    // undefined prop must fail for both through the shared validator.
+    $this->createTestCodeComponent();
+    $bogus_prop_yaml = <<<YAML
+content:
+  - sdc.canvas_test_sdc.props-no-slots:
+      props:
+        heading: 'A valid heading'
+        nonexistent_prop: 'This prop does not exist'
+  - js.test-code-component:
+      props:
+        heading: 'A valid heading'
+        nonexistent_prop: 'This prop does not exist'
+YAML;
+
+    $mock_layout = [
+      "regions" => [
+        "content" => [
+          "nodePathPrefix" => [0],
+          "components" => [],
+        ],
+      ],
+    ];
+    $layout_json = \json_encode($mock_layout);
+
+    $this->mockTempStore->expects($this->once())
+      ->method('getData')
+      ->with(CanvasAiTempStore::CURRENT_LAYOUT_KEY)
+      ->willReturn($layout_json);
+
+    $result = $this->getTemplateToolOutput($bogus_prop_yaml);
+    $this->assertSame('Failed to save: Component validation errors: components.0.[sdc.canvas_test_sdc.props-no-slots].props.nonexistent_prop: Component `sdc.canvas_test_sdc.props-no-slots`: the `nonexistent_prop` prop is not defined. (code garbage) components.1.[js.test-code-component].props.nonexistent_prop: Component `js.test-code-component`: the `nonexistent_prop` prop is not defined. (code garbage)', self::normalizeErrorString($result));
+  }
+
+  /**
    * Tests invalid region error.
    */
   public function testInvalidRegionError(): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
 
     $invalid_region_yaml = <<<YAML
 invalid_region:
@@ -182,7 +230,7 @@ YAML;
    * Tests the tool output with components with required image prop.
    */
   public function testTemplateDataOutputWithComponentsWithRequiredImageProp(): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
 
     // If a component has an image prop and that prop is required, the component data passed to the tool must include the
     // exact default values for the image prop, which can be obtained from ContentTemplate::normalizeForClientSide(). Otherwise,
@@ -198,7 +246,7 @@ YAML;
         [
           'sdc.canvas_test_sdc.card' => [
             'props' => [
-              'title' => 'Test Card',
+              'heading' => 'Test Card',
               'content' => 'Test content',
               'loading' => 'lazy',
               'image' => $default_values,
@@ -241,7 +289,7 @@ YAML;
               'id' => 'sdc.canvas_test_sdc.card',
               'nodePath' => [0, 0],
               'fieldValues' => [
-                'title' => 'Test Card',
+                'heading' => 'Test Card',
                 'content' => 'Test content',
                 'loading' => 'lazy',
                 'image' => $default_values,
@@ -265,6 +313,50 @@ YAML;
 
     $result = $tool->getStructuredOutput();
     $this->assertEquals($expected_output, $result);
+  }
+
+  /**
+   * Tests a media item the current user is not allowed to view.
+   *
+   * An image prop is populated by a reference to a media item, and Canvas
+   * resolves that reference with the current user's access rights: an agent
+   * must not be able to put media on the page for a user who may not see it.
+   */
+  public function testTemplateDataWithInaccessibleMedia(): void {
+    $media = $this->createImageMedia();
+    $yaml = <<<YAML
+      content:
+        - sdc.canvas_test_sdc.image:
+            props:
+              image: {$media->id()}
+      YAML;
+
+    $layout_json = \json_encode([
+      'regions' => [
+        'content' => [
+          'nodePathPrefix' => [0],
+          'components' => [],
+        ],
+      ],
+    ]);
+    $this->mockTempStore->expects($this->exactly(2))
+      ->method('getData')
+      ->with(CanvasAiTempStore::CURRENT_LAYOUT_KEY)
+      ->willReturn($layout_json);
+
+    // The first account ::setUp() creates is user 1, which bypasses access
+    // checks: the very same media item raises no validation error for it.
+    $this->assertSame(1, (int) $this->privilegedUser->id());
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
+    $result = $this->getTemplateToolOutput($yaml);
+    $this->assertSame('Template data has been successfully set.', $result);
+
+    // User A may use Canvas AI, but may not view the media item.
+    $user_a = $this->createUserWithoutMediaAccess();
+    $this->assertFalse($media->access('view', $user_a));
+    $this->container->get(AccountProxyInterface::class)->setAccount($user_a);
+    $result = $this->getTemplateToolOutput($yaml);
+    $this->assertSame(\sprintf('Failed to save: %s', self::MEDIA_ACCESS_DENIED_MESSAGE), self::normalizeErrorString($result));
   }
 
   private function getTemplateToolOutput(string $yaml): string {

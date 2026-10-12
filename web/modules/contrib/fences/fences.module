@@ -198,14 +198,14 @@ function fences_field_formatter_settings_summary_alter(array &$summary, array $c
   if (count($fencesSettings) > 0) {
     $defaultSettings = FencesConstants::DEFAULT_THIRD_PARTY_SETTINGS;
     $summaryItems = [
-      'fences_field_tag' => t('Field tag: %field_tag', ['%field_tag' => $fencesSettings['fences_field_tag']]),
-      'fences_field_classes' => t('Field classes: %field_classes', ['%field_classes' => $fencesSettings['fences_field_classes']]),
-      'fences_field_items_wrapper_tag' => t('Field items wrapper tag: %field_items_wrapper_tag', ['%field_items_wrapper_tag' => $fencesSettings['fences_field_items_wrapper_tag']]),
-      'fences_field_items_wrapper_classes' => t('Field items wrapper classes: %field_items_wrapper_classes', ['%field_items_wrapper_classes' => $fencesSettings['fences_field_items_wrapper_classes']]),
-      'fences_field_item_tag' => t('Field item tag: %field_item_tag', ['%field_item_tag' => $fencesSettings['fences_field_item_tag']]),
-      'fences_field_item_classes' => t('Field item classes: %field_item_classes', ['%field_item_classes' => $fencesSettings['fences_field_item_classes']]),
-      'fences_label_tag' => t('Label tag: %label_tag', ['%label_tag' => $fencesSettings['fences_label_tag']]),
-      'fences_label_classes' => t('Label classes: %label_classes', ['%label_classes' => $fencesSettings['fences_label_classes']]),
+      'fences_field_tag' => t('Field tag: %field_tag', ['%field_tag' => $fencesSettings['fences_field_tag'] ?? '']),
+      'fences_field_classes' => t('Field classes: %field_classes', ['%field_classes' => $fencesSettings['fences_field_classes'] ?? '']),
+      'fences_field_items_wrapper_tag' => t('Field items wrapper tag: %field_items_wrapper_tag', ['%field_items_wrapper_tag' => $fencesSettings['fences_field_items_wrapper_tag'] ?? '']),
+      'fences_field_items_wrapper_classes' => t('Field items wrapper classes: %field_items_wrapper_classes', ['%field_items_wrapper_classes' => $fencesSettings['fences_field_items_wrapper_classes'] ?? '']),
+      'fences_field_item_tag' => t('Field item tag: %field_item_tag', ['%field_item_tag' => $fencesSettings['fences_field_item_tag'] ?? '']),
+      'fences_field_item_classes' => t('Field item classes: %field_item_classes', ['%field_item_classes' => $fencesSettings['fences_field_item_classes'] ?? '']),
+      'fences_label_tag' => t('Label tag: %label_tag', ['%label_tag' => $fencesSettings['fences_label_tag'] ?? '']),
+      'fences_label_classes' => t('Label classes: %label_classes', ['%label_classes' => $fencesSettings['fences_label_classes'] ?? '']),
     ];
     foreach ($fencesSettings as $setting => $value) {
       if ($value != $defaultSettings[$setting]) {

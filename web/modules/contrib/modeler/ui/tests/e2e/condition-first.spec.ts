@@ -1,8 +1,11 @@
 /**
  * E2E tests for condition-first authoring workflow.
  *
- * Tests the flow where a user selects a condition from a node's quick-add
- * popup, creating a placeholder node with the condition pre-attached.
+ * Conditions are first-class NODES now (issue #3589093).  Selecting a
+ * condition from a node's quick-add popup creates a condition NODE followed by
+ * a placeholder action node: `source -> conditionNode -> placeholder`.  The
+ * condition node is auto-selected so its configuration panel opens
+ * immediately, and the placeholder blocks saving until replaced.
  */
 
 import { test, expect } from '@playwright/test';
@@ -78,10 +81,11 @@ test.describe('Condition-First Authoring', () => {
     });
   });
 
-  test.describe('Creating Placeholder Nodes', () => {
-    test('should create a placeholder node when selecting a condition', async ({ page }) => {
+  test.describe('Creating Condition + Placeholder Nodes', () => {
+    test('should create a condition node and a placeholder node when selecting a condition', async ({ page }) => {
       const initialNodeCount = await modeler.getNodeCount();
       const initialEdgeCount = await modeler.getEdgeCount();
+      const initialConditionCount = await modeler.getConditionNodeCount();
 
       // Open quick-add popup on event node
       const node = modeler.getNode('event_1');
@@ -99,13 +103,18 @@ test.describe('Condition-First Authoring', () => {
       await firstCondition.click();
       await page.waitForTimeout(500);
 
-      // A new node (placeholder) and a new edge should have been created
+      // Condition-first authoring creates a condition NODE + a placeholder
+      // action node, wired source -> condition -> placeholder.  So TWO new
+      // nodes and TWO new edges are added (issue #3589093).
       const finalNodeCount = await modeler.getNodeCount();
       const finalEdgeCount = await modeler.getEdgeCount();
-      expect(finalNodeCount).toBe(initialNodeCount + 1);
-      expect(finalEdgeCount).toBe(initialEdgeCount + 1);
+      expect(finalNodeCount).toBe(initialNodeCount + 2);
+      expect(finalEdgeCount).toBe(initialEdgeCount + 2);
 
-      // The new node should be a placeholder
+      // One of the new nodes is a condition node card.
+      expect(await modeler.getConditionNodeCount()).toBe(initialConditionCount + 1);
+
+      // The other new node is a placeholder awaiting an action.
       const placeholderNode = page.locator('.placeholder-node');
       await expect(placeholderNode).toBeVisible();
     });

@@ -4,29 +4,33 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_oauth\Kernel;
 
+use Drupal\canvas\Entity\AssetLibrary;
+use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\Color;
+use Drupal\canvas\Entity\Component;
+use Drupal\canvas\Entity\Folder;
+use Drupal\canvas\Entity\JavaScriptComponent;
+use Drupal\canvas\Entity\Page;
+use Drupal\canvas\Entity\Pattern;
+use Drupal\consumers\Entity\Consumer;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Http\Exception\CacheableAccessDeniedHttpException;
 use Drupal\Core\Url;
+use Drupal\image\Entity\ImageStyle;
+use Drupal\simple_oauth\Entity\Oauth2Scope;
+use Drupal\simple_oauth\Exception\OAuthUnauthorizedHttpException;
+use Drupal\simple_oauth\Oauth2ScopeInterface;
 use Drupal\Tests\canvas\Kernel\Traits\MockFileUploadTrait;
 use Drupal\Tests\canvas\Kernel\Traits\PredictableImageStyleItokTestTrait;
 use Drupal\Tests\canvas\Kernel\Traits\RequestTrait;
 use Drupal\Tests\canvas\Traits\CreateTestJsComponentTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\simple_oauth\Kernel\AuthorizedRequestBase;
-use Drupal\image\Entity\ImageStyle;
-use Drupal\canvas\Entity\AssetLibrary;
-use Drupal\canvas\Entity\BrandKit;
-use Drupal\canvas\Entity\Component;
-use Drupal\canvas\Entity\JavaScriptComponent;
-use Drupal\canvas\Entity\Page;
-use Drupal\canvas\Entity\Pattern;
-use Drupal\consumers\Entity\Consumer;
-use Drupal\simple_oauth\Entity\Oauth2Scope;
-use Drupal\simple_oauth\Exception\OAuthUnauthorizedHttpException;
-use Drupal\simple_oauth\Oauth2ScopeInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -58,6 +62,14 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
   private string $testImagePath;
 
   /**
+   * The UUID of the test Color entity, which is also its entity ID.
+   *
+   * A fixed value so the static data providers can reference the entity that
+   * setUp() creates.
+   */
+  private const string COLOR_UUID = 'f8bd61eb-fd5c-411f-b3c8-1c8825e468d0';
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -81,6 +93,17 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
       'id' => BrandKit::GLOBAL_ID,
       'label' => 'Global brand kit',
       'fonts' => NULL,
+    ])->save();
+    Color::create([
+      'uuid' => self::COLOR_UUID,
+      'name' => 'Test red',
+      'cssVariable' => '--color-test-red',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [0.8, 0.0, 0.0],
+        'hex' => '#cc0000',
+      ],
+      'weight' => 0,
     ])->save();
     Pattern::create([
       'id' => 'test-pattern',
@@ -129,7 +152,7 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
     $this->mockFileSystemForUploads();
 
     $source = \dirname(__DIR__, 5) . '/tests/fixtures/images/gracie-big.jpg';
-    $temp_dir = $this->container->get('file_system')->getTempDirectory();
+    $temp_dir = $this->container->get(FileSystemInterface::class)->getTempDirectory();
     $this->testImagePath = $temp_dir . '/canvas-oauth-test-upload-' . \uniqid() . '.jpg';
     \copy($source, $this->testImagePath);
   }
@@ -153,10 +176,32 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
   public static function dataProviderRoutes(): array {
     return [
       'INDEX components' => ['canvas.api.config.list', ['canvas_config_entity_type_id' => Component::ENTITY_TYPE_ID], [], 'GET', []],
+      'INDEX folders' => ['canvas.api.config.list', ['canvas_config_entity_type_id' => Folder::ENTITY_TYPE_ID], [], 'GET', []],
       'INDEX js components' => ['canvas.api.config.list', ['canvas_config_entity_type_id' => JavaScriptComponent::ENTITY_TYPE_ID], [], 'GET', []],
       'GET js component' => ['canvas.api.config.get', ['canvas_config_entity_type_id' => JavaScriptComponent::ENTITY_TYPE_ID, 'canvas_config_entity' => 'test-code-component'], [], 'GET', []],
       'GET asset library' => ['canvas.api.config.get', ['canvas_config_entity_type_id' => AssetLibrary::ENTITY_TYPE_ID, 'canvas_config_entity' => AssetLibrary::GLOBAL_ID], [], 'GET', []],
       'GET brand kit' => ['canvas.api.config.get', ['canvas_config_entity_type_id' => BrandKit::ENTITY_TYPE_ID, 'canvas_config_entity' => BrandKit::GLOBAL_ID], [], 'GET', []],
+      'GET color' => ['canvas.api.config.get', ['canvas_config_entity_type_id' => Color::ENTITY_TYPE_ID, 'canvas_config_entity' => self::COLOR_UUID], [], 'GET', []],
+      'POST code component validation' => [
+        'canvas.api.code_component.validate',
+        [],
+        ['administer code components'],
+        'POST',
+        [
+          'machineName' => 'validated-code-component',
+          'name' => 'Validated code component',
+          'status' => TRUE,
+          'required' => [],
+          'props' => new \stdClass(),
+          'slots' => new \stdClass(),
+          'sourceCodeJs' => '// JS source',
+          'sourceCodeCss' => '/* CSS source */',
+          'compiledJs' => '// Compiled JS',
+          'compiledCss' => '/* Compiled CSS */',
+          'importedJsComponents' => [],
+          'dataDependencies' => new \stdClass(),
+        ],
+      ],
       'POST js component' => [
         'canvas.api.config.post',
         ['canvas_config_entity_type_id' => JavaScriptComponent::ENTITY_TYPE_ID],
@@ -201,6 +246,37 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
         ['administer brand kit'],
         'PATCH',
         ['label' => 'Global brand kit'],
+      ],
+      'PATCH color' => [
+        'canvas.api.config.patch',
+        ['canvas_config_entity_type_id' => Color::ENTITY_TYPE_ID, 'canvas_config_entity' => self::COLOR_UUID],
+        ['administer brand kit'],
+        'PATCH',
+        ['name' => 'Updated test red'],
+      ],
+      'POST color' => [
+        'canvas.api.config.post',
+        ['canvas_config_entity_type_id' => Color::ENTITY_TYPE_ID],
+        ['administer brand kit'],
+        'POST',
+        [
+          'name' => 'Test blue',
+          'cssVariable' => '--color-test-blue',
+          'value' => [
+            'colorSpace' => 'srgb',
+            'components' => [0.0, 0.0, 0.8],
+            'alpha' => NULL,
+            'hex' => '#0000cc',
+          ],
+          'weight' => 1,
+        ],
+      ],
+      'DELETE color' => [
+        'canvas.api.config.delete',
+        ['canvas_config_entity_type_id' => Color::ENTITY_TYPE_ID, 'canvas_config_entity' => self::COLOR_UUID],
+        ['administer brand kit'],
+        'DELETE',
+        [],
       ],
       'DELETE js component' => [
         'canvas.api.config.delete',
@@ -252,7 +328,37 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
         'DELETE',
         [],
       ],
+      'GET default page variant' => [
+        'canvas.api.settings.default_page_variant.get',
+        [],
+        ['administer page template'],
+        'GET',
+        [],
+      ],
+      'PATCH default page variant' => [
+        'canvas.api.settings.default_page_variant.set',
+        [],
+        ['administer page template'],
+        'PATCH',
+        ['default_page_variant' => NULL],
+      ],
     ];
+  }
+
+  /**
+   * Tests that an older CLI can authenticate before receiving the 410 response.
+   */
+  public function testPageRegionCompatibilityEndpointWithOauth(): void {
+    $access_token = $this->requestAccessToken(['administer page template']);
+    $request = $this->createRequest('canvas.api.config.page_region.gone.collection', [], 'GET', []);
+    $request->headers->set('Authorization', 'Bearer ' . $access_token);
+    $request->headers->set('X-Canvas-CLI', '1');
+
+    $response = $this->request($request);
+    self::assertSame(Response::HTTP_GONE, $response->getStatusCode());
+    self::assertSame([
+      'message' => 'Global regions were replaced by page templates. Upgrade @drupal-canvas/cli, or use --no-regions to continue without region synchronization.',
+    ], json_decode((string) $response->getContent(), TRUE, flags: \JSON_THROW_ON_ERROR));
   }
 
   /**
@@ -402,7 +508,7 @@ class CanvasOauthAuthenticationProviderHttpTest extends AuthorizedRequestBase {
     $request = Request::create(
       Url::fromRoute($route_name, $parameters)->toString(),
       $method,
-      content: json_encode($data) ?: NULL,
+      content: json_encode($data, flags: \JSON_THROW_ON_ERROR),
     );
     if (\in_array($method, ['POST', 'PATCH'], TRUE)) {
       $request->headers->set('Content-Type', 'application/json');

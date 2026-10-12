@@ -47,6 +47,11 @@ class ToolPluginDeriver extends DeriverBase implements ContainerDeriverInterface
         $definition['function_name'] = str_replace(':', '__', $definition['id']);
         $definition['description'] = $tool_definition->getDescription();
         $definition['context_definitions'] = $tool_definition->getInputDefinitions();
+        $provider = $tool_definition->getProvider();
+        if ($provider) {
+          $definition['module_dependencies'][] = $provider;
+        }
+        $definition['module_dependencies'] = array_values(array_unique($definition['module_dependencies'] ?? []));
         $definitions[$id] = $definition;
       }
       $this->derivatives = $definitions;

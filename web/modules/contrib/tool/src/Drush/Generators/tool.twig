@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\{{ machine_name }}\Plugin\tool\Tool;
+
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\tool\Attribute\Tool;
+use Drupal\tool\ExecutableResult;
+use Drupal\tool\Tool\ToolBase;
+use Drupal\tool\Tool\ToolOperation;
+use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\MapOutputDefinition;
+
+/**
+ * Plugin implementation of the {{ plugin_label }} tool.
+ */
+#[Tool(
+  id: '{{ plugin_id }}',
+  label: new TranslatableMarkup('{{ plugin_label }}'),
+  description: new TranslatableMarkup('{{ description }}'),
+  operation: ToolOperation::{{ operation }},
+  {% if destructive %}
+  destructive: TRUE,
+  {% endif %}
+  // @todo Replace this example input with the inputs your tool needs.
+  input_definitions: [
+    'example' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Example'),
+      description: new TranslatableMarkup('An example input value passed to the tool.'),
+      required: TRUE,
+    ),
+  ],
+  output_definitions: [
+    'result' => new MapOutputDefinition(
+      label: new TranslatableMarkup('Result'),
+      description: new TranslatableMarkup('Structured output for chaining.'),
+    ),
+  ],
+)]
+final class {{ class }} extends ToolBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function doExecute(array $values): ExecutableResult {
+    ['example' => $example] = $values;
+
+    try {
+      // @todo Implement the tool logic. The keys returned here must match the
+      //   output_definitions keys above or they are dropped.
+      return ExecutableResult::success(
+        new TranslatableMarkup('Acted on "@example".', ['@example' => $example]),
+        ['result' => ['example' => $example]],
+      );
+    }
+    catch (\Exception $e) {
+      return ExecutableResult::failure(
+        new TranslatableMarkup('Failed: @message', ['@message' => $e->getMessage()]),
+      );
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function checkAccess(array $values, AccountInterface $account, bool $return_as_object = FALSE): bool|AccessResultInterface {
+    // @todo Declare a permission in the Tool attribute and remove this override,
+    //   or implement the custom access check and remove the exception.
+    throw new \LogicException(sprintf(
+      'Access control for %s has not been defined. Define checkAccess() before using this tool.',
+      static::class,
+    ));
+  }
+
+}

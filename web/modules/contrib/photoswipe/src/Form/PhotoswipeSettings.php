@@ -2,14 +2,51 @@
 
 namespace Drupal\photoswipe\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Asset\LibraryDiscoveryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * {@inheritdoc}
  */
 class PhotoswipeSettings extends ConfigFormBase {
+
+  /**
+   * The library discovery service.
+   *
+   * @var \Drupal\Core\LibraryDiscovery\LibraryDiscoveryInterface
+   */
+  protected $libraryDiscovery;
+
+  /**
+   * Constructs a PhotoswipeSettings object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The factory for configuration objects.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typedConfigManager
+   *   The typed configuration manager.
+   * @param \Drupal\Core\LibraryDiscovery\LibraryDiscoveryInterface $libraryDiscovery
+   *   The library discovery service.
+   */
+  public function __construct(ConfigFactoryInterface $configFactory, TypedConfigManagerInterface $typedConfigManager, LibraryDiscoveryInterface $libraryDiscovery) {
+    parent::__construct($configFactory, $typedConfigManager);
+    $this->libraryDiscovery = $libraryDiscovery;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('config.typed'),
+      $container->get('library.discovery')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -430,7 +467,7 @@ class PhotoswipeSettings extends ConfigFormBase {
     parent::submitForm($form, $form_state);
 
     // CDN vs local is chosen in library_info_alter.
-    \Drupal::service('library.discovery')->clearCachedDefinitions();
+    $this->libraryDiscovery->clear();
   }
 
   /**

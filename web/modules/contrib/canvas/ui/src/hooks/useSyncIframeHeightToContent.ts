@@ -1,4 +1,32 @@
 import { useCallback, useLayoutEffect, useRef } from 'react';
+import {
+  collectElementsUnderRoots,
+  isVhMeasurementCandidate,
+  STABLE_HEIGHT_ATTRIBUTE,
+  StableHeightReader,
+} from '@drupal-canvas/height-reader';
+
+/** Multipliers large enough that component content is dominated by vh-driven height. */
+const MULTIPLIERS = [3, 8];
+
+function collectMutationRoots(mutations: MutationRecord[]): HTMLElement[] {
+  const roots: HTMLElement[] = [];
+  for (const m of mutations) {
+    if (m.type === 'attributes' && m.target.nodeType === Node.ELEMENT_NODE) {
+      roots.push(m.target as HTMLElement);
+      continue;
+    }
+    if (m.type !== 'childList') {
+      continue;
+    }
+    for (const n of Array.from(m.addedNodes)) {
+      if (n.nodeType === Node.ELEMENT_NODE) {
+        roots.push(n as HTMLElement);
+      }
+    }
+  }
+  return roots;
+}
 
 /**
  * This hook takes preview iFrame and ensures that the height of the iFrame html element matches the height of the
@@ -11,6 +39,12 @@ function useSyncIframeHeightToContent(
 ) {
   const mutationObserverRef = useRef<MutationObserver | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const isDetectingRef = useRef(false);
+  const reTagRafIdRef = useRef<number | null>(null);
+  const pendingMutationRecordsRef = useRef<MutationRecord[]>([]);
+  const previousHeightRef = useRef(height);
+  const selfTaggedElementsRef = useRef(new Set<HTMLElement>());
+  const heightReaderRef = useRef(new StableHeightReader());
 
   const resizeIframe = useCallback(() => {
     if (iframe && iframe.contentDocument) {
@@ -33,6 +67,205 @@ function useSyncIframeHeightToContent(
     }
   }, [iframe, height, previewContainer]);
 
+  const safeResizeIframe = useCallback(() => {
+    if (isDetectingRef.current) {
+      return;
+    }
+    resizeIframe();
+  }, [resizeIframe]);
+
+  const detectAndTagVhElements = useCallback(
+    async (mutationRoots?: HTMLElement[]) => {
+      if (isDetectingRef.current) {
+        return;
+      }
+      if (!iframe?.contentDocument) {
+        return;
+      }
+      const iframeHTML = iframe.contentDocument.documentElement;
+      const iframeWin = iframe.contentWindow;
+      const innerHeightAtRest = iframeWin?.innerHeight ?? height;
+      selfTaggedElementsRef.current.clear();
+
+      isDetectingRef.current = true;
+      try {
+        const result = await heightReaderRef.current.stabilize({
+          roots:
+            mutationRoots && mutationRoots.length > 0
+              ? mutationRoots
+              : [iframeHTML],
+          effectiveViewportHeight: innerHeightAtRest,
+          baseViewportHeight: height,
+          probeMultipliers: MULTIPLIERS,
+          shouldPinNewElements: () =>
+            document.querySelector('iframe[data-canvas-swap-active="true"]') !==
+            null,
+          probeController: {
+            setViewportHeight: (viewportHeight) => {
+              iframe.style.height = `${viewportHeight}px`;
+              iframe.style.overflow = 'visible';
+              void iframe.offsetHeight;
+            },
+            restoreViewportHeight: () => {
+              iframe.style.height = '';
+              iframe.style.overflow = '';
+              void iframe.offsetHeight;
+            },
+          },
+        });
+
+        selfTaggedElementsRef.current = result.pinnedElements;
+
+        if (result.didProbe) {
+          const previousRuns = iframe.dataset.canvasVhDetectionRuns;
+          iframe.dataset.canvasVhDetectionRuns = String(
+            (previousRuns ? parseInt(previousRuns, 10) : 0) + 1,
+          );
+        }
+      } finally {
+        isDetectingRef.current = false;
+      }
+
+      resizeIframe();
+    },
+    [iframe, height, resizeIframe],
+  );
+
+  const safeDetectAndTagVhElements = useCallback(() => {
+    if (isDetectingRef.current) {
+      return;
+    }
+    void detectAndTagVhElements();
+  }, [detectAndTagVhElements]);
+
+  const handleMutations = useCallback<MutationCallback>(
+    (mutations) => {
+      if (isDetectingRef.current) {
+        return;
+      }
+
+      const needsLayoutResize = mutations.some((m) => !isSelfTagMutation(m));
+
+      if (needsLayoutResize) {
+        safeResizeIframe();
+      }
+
+      const needsReTag = mutations.some((m) => {
+        const mutationInnerHeight =
+          iframe?.contentWindow?.innerHeight ?? height;
+        if (m.type === 'attributes') {
+          return needsAttributeReTag(m, mutationInnerHeight);
+        }
+        if (m.type !== 'childList') {
+          return false;
+        }
+        if ((m.target as Element).tagName === 'CANVAS-ISLAND') {
+          return true;
+        }
+        for (const n of Array.from(m.removedNodes)) {
+          if (
+            n.nodeType === Node.ELEMENT_NODE &&
+            (n as Element).hasAttribute(STABLE_HEIGHT_ATTRIBUTE)
+          ) {
+            return true;
+          }
+        }
+        for (const n of Array.from(m.addedNodes)) {
+          if (
+            n.nodeType === Node.ELEMENT_NODE &&
+            (n as Element).hasAttribute(STABLE_HEIGHT_ATTRIBUTE)
+          ) {
+            return true;
+          }
+          if (n.nodeType === Node.ELEMENT_NODE) {
+            const addedElements = collectElementsUnderRoots([n as HTMLElement]);
+            if (
+              addedElements.some((el) =>
+                isVhMeasurementCandidate(el, mutationInnerHeight),
+              )
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+
+      if (!needsReTag) {
+        return;
+      }
+
+      pendingMutationRecordsRef.current.push(...mutations);
+
+      if (reTagRafIdRef.current !== null) {
+        return;
+      }
+
+      reTagRafIdRef.current = window.requestAnimationFrame(() => {
+        reTagRafIdRef.current = null;
+        const merged = pendingMutationRecordsRef.current;
+        pendingMutationRecordsRef.current = [];
+        const roots = collectMutationRoots(merged);
+        void detectAndTagVhElements(roots.length > 0 ? roots : undefined);
+      });
+    },
+    [detectAndTagVhElements, height, iframe, safeResizeIframe],
+  );
+
+  function isSelfTagMutation(m: MutationRecord): boolean {
+    if (m.type !== 'attributes') {
+      return false;
+    }
+    if (
+      m.attributeName !== 'style' &&
+      m.attributeName !== STABLE_HEIGHT_ATTRIBUTE
+    ) {
+      return false;
+    }
+    const target = m.target as HTMLElement;
+    return (
+      selfTaggedElementsRef.current.has(target) &&
+      target.hasAttribute(STABLE_HEIGHT_ATTRIBUTE)
+    );
+  }
+
+  function needsAttributeReTag(
+    m: MutationRecord,
+    innerHeight: number,
+  ): boolean {
+    if (
+      m.attributeName !== 'class' &&
+      m.attributeName !== 'style' &&
+      m.attributeName !== STABLE_HEIGHT_ATTRIBUTE
+    ) {
+      return false;
+    }
+    const target = m.target as HTMLElement;
+    const taggedHeight = target.getAttribute(STABLE_HEIGHT_ATTRIBUTE);
+    if (selfTaggedElementsRef.current.has(target)) {
+      if (!taggedHeight) {
+        return true;
+      }
+      if (m.attributeName === 'style') {
+        const pixelHeight = `${taggedHeight}px`;
+        return (
+          target.style.height !== pixelHeight &&
+          target.style.maxHeight !== pixelHeight &&
+          target.style.minHeight !== pixelHeight
+        );
+      }
+      return m.attributeName === 'class';
+    }
+    return isVhMeasurementCandidate(target, innerHeight);
+  }
+
+  useLayoutEffect(() => {
+    if (previousHeightRef.current !== height) {
+      heightReaderRef.current.clear();
+      previousHeightRef.current = height;
+    }
+  }, [height]);
+
   useLayoutEffect(() => {
     if (iframe) {
       const handleLoad = () => {
@@ -41,89 +274,27 @@ function useSyncIframeHeightToContent(
         if (iframeContentDoc) {
           const iframeHTML = iframeContentDoc.documentElement;
 
-          // initially set the iFrame height to the height passed in to the hook
-          iframe.style.height = height + 'px';
+          // Initially set the iFrame height to the height passed in to the
+          // hook. A height of 0 (used by view modes whose height is driven
+          // entirely by their content) must clear the inline height instead:
+          // an inline `height: 0px` beats the stylesheet's `height: 100%` and
+          // collapses the iFrame, and nothing restores it when the vh probe in
+          // detectAndTagVhElements() does not run.
+          iframe.style.height = height > 0 ? `${height}px` : '';
           iframeHTML.style.overflow = 'hidden';
           // Set up a MutationObserver to watch for changes in the content of the iframe
-          mutationObserverRef.current = new MutationObserver(resizeIframe);
+          mutationObserverRef.current = new MutationObserver(handleMutations);
           mutationObserverRef.current.observe(iframeHTML, {
             attributes: true,
             childList: true,
             subtree: true,
           });
-          resizeObserverRef.current = new ResizeObserver(resizeIframe);
+          resizeObserverRef.current = new ResizeObserver(
+            safeDetectAndTagVhElements,
+          );
           resizeObserverRef.current.observe(iframeHTML);
 
-          // Apply a max-height to elements with vh units in their height - otherwise an infinite loop can occur where a component's
-          // height is based on the height of the iFrame and the iFrame's height is based on that component leading
-          // to an ever-increasing iFrame height!
-          const elements: NodeListOf<HTMLElement> =
-            iframeHTML.querySelectorAll('*');
-
-          const previewIframe = document.querySelector(
-            'iframe[data-canvas-swap-active="true"]',
-          ) as HTMLIFrameElement | null;
-          const multipliers = [1, 3, 8];
-          const heightRatios = new WeakMap<HTMLElement, number[]>();
-
-          // Set the iframe to multiple heights, then check every element to see
-          // if its height increases at the same ratio as the iframe. In those
-          // instances, the element height is likely styled with VH units, and
-          // will require special handling inside in the elements.forEach found
-          // after this block.
-          multipliers.forEach((multi) => {
-            iframe.style.height = height * multi + 'px';
-            iframe.style.overflow = 'visible';
-            // Force a synchronous parent-frame layout flush so the iframe's
-            // viewport height propagates before reading cross-frame clientHeight.
-            void iframe.offsetHeight;
-            elements.forEach((element) => {
-              const ratios: number[] = heightRatios.get(element) || [];
-              if (element.clientHeight > 10) {
-                ratios.push(Math.floor(element.clientHeight / multi));
-                heightRatios.set(element, ratios);
-              }
-            });
-          });
-          iframe.style.height = '';
-          iframe.style.overflow = '';
-
-          elements.forEach((element) => {
-            if (previewIframe) {
-              // These height ratios were determined in the prior forEach block,
-              // and are used to identify element heights with VH units.
-              const ratios: number[] = heightRatios.get(element) || [];
-
-              // If the element height consistently changed at the same ratio
-              // as the container iframe (all 3 numbers in ratios are the same),
-              // we can use the value in the ratios map to set min and max height
-              // and avoid infinitely growing vh elements. Min-height must be
-              // overridden too: `min-height: 100vh` (e.g. min-h-screen) would
-              // otherwise win over max-height when the viewport grows, per CSS
-              // used height rules.
-              if (
-                !['HTML', 'BODY'].includes(element.tagName) &&
-                ratios.length === multipliers.length &&
-                ratios.every((ratio) => ratio === ratios[0])
-              ) {
-                const maxHeight = ratios[0];
-                if (maxHeight) {
-                  const pixelHeight = `${maxHeight}px`;
-                  element.style.maxHeight = pixelHeight;
-                  element.style.minHeight = pixelHeight;
-                } else {
-                  element.style.maxHeight = '';
-                  element.style.minHeight = '';
-                }
-                element.setAttribute(
-                  'data-canvas-preview-max-height',
-                  `${maxHeight}`,
-                );
-              }
-            }
-          });
-
-          resizeIframe();
+          void detectAndTagVhElements();
         }
       };
 
@@ -139,9 +310,21 @@ function useSyncIframeHeightToContent(
         iframe.removeEventListener('load', handleLoad);
         mutationObserverRef.current?.disconnect();
         resizeObserverRef.current?.disconnect();
+        if (reTagRafIdRef.current !== null) {
+          window.cancelAnimationFrame(reTagRafIdRef.current);
+          reTagRafIdRef.current = null;
+        }
+        pendingMutationRecordsRef.current = [];
       };
     }
-  }, [iframe, height, resizeIframe]);
+  }, [
+    iframe,
+    height,
+    detectAndTagVhElements,
+    handleMutations,
+    safeDetectAndTagVhElements,
+    safeResizeIframe,
+  ]);
 }
 
 export default useSyncIframeHeightToContent;

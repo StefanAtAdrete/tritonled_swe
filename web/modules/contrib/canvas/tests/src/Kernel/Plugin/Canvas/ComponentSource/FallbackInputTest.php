@@ -4,29 +4,32 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource;
 
-use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Drupal\canvas\Plugin\Canvas\ComponentSource\Fallback;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\TestWith;
 use Drupal\canvas\ComponentSource\ComponentSourceManager;
-use Drupal\Core\File\FileExists;
-use Drupal\Core\StreamWrapper\PublicStream;
-use Drupal\Core\Url;
 use Drupal\canvas\Controller\ApiAutoSaveController;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Entity\Page;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\Fallback;
 use Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponent;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Extension\ThemeInstallerInterface;
+use Drupal\Core\File\FileExists;
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\StreamWrapper\PublicStream;
+use Drupal\Core\Url;
 use Drupal\file\Entity\File;
 use Drupal\media\Entity\Media;
 use Drupal\media\Entity\MediaType;
 use Drupal\Tests\canvas\Kernel\ApiLayoutControllerTestBase;
 use Drupal\Tests\canvas\Traits\CanvasFieldTrait;
+use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -79,8 +82,8 @@ final class FallbackInputTest extends ApiLayoutControllerTestBase {
   protected function setUp(): void {
     parent::setUp();
     // Install and configure the default theme.
-    $this->container->get('theme_installer')->install(['stark']);
-    $this->container->get('config.factory')->getEditable('system.theme')->set('default', 'stark')->save();
+    $this->container->get(ThemeInstallerInterface::class)->install(['stark']);
+    $this->container->get(ConfigFactoryInterface::class)->getEditable('system.theme')->set('default', 'stark')->save();
 
     // Add some entity-types required by the page entity.
     $this->installConfig(['canvas']);
@@ -128,7 +131,7 @@ final class FallbackInputTest extends ApiLayoutControllerTestBase {
     $component_to_recover_uuid = '5821b0f4-162b-4a39-88b6-157b39b9b4f6';
     $component_to_edit_uuid = '20de2945-f515-49b6-b986-407d973860b9';
     /** @var \Drupal\Core\File\FileSystemInterface $file_system */
-    $file_system = \Drupal::service('file_system');
+    $file_system = \Drupal::service(FileSystemInterface::class);
     $file_uri = 'public://image-2.jpg';
     if (!\file_exists($file_uri)) {
       $file_system->copy(\Drupal::root() . '/core/tests/fixtures/files/image-2.jpg', PublicStream::basePath(), FileExists::Replace);
@@ -237,7 +240,7 @@ final class FallbackInputTest extends ApiLayoutControllerTestBase {
       $auto_save_controller = $this->container->get(ApiAutoSaveController::class);
       $data = $auto_save_controller->get();
       self::assertEquals(Response::HTTP_OK, $data->getStatusCode());
-      $response_body = \json_decode($data->getContent() ?: '{}', TRUE);
+      $response_body = \json_decode((string) $data->getContent(), TRUE);
       $this->assertArrayHasKey('data', $response_body);
       $content = \json_encode($response_body['data'], JSON_THROW_ON_ERROR);
       $request = Request::create(

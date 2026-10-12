@@ -161,12 +161,14 @@ These columns always meet the following requirements
 1. every `component instance` is represented by a "uuid, component_id, component_version" triple, with:
   - the value for "component_id" being the ID of a `Component config entity` (NOT that of the underlying `component`)
   - the value for "component_version" being a version on the (versioned!) `Component config entity` (see `\Drupal\canvas\Entity\VersionedConfigEntityInterface::getVersions()`)
-  - the "uuid" being a randomly generated UUID
+  - the "uuid" being a randomly generated UUID in its lowercase canonical form; it must never be `a548b48d-58a8-4077-aa04-da9405a6f418` (compared case-insensitively): that UUID is reserved to represent the root of the component tree (see `\Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList::ROOT_UUID`)
 2. Any top-level items have NULL for both the `parent_uuid` and `slot`.
 3. Nested components must have a value for both the `parent_uuid` and `slot`.
     1. The `parent_uuid` must exist in a sibling field item in the `ComponentTreeItemList`.
     2. The `slot` must be present in the parent `component`'s slot definitions
     3. The `parent_uuid` must not be the same as the `uuid` - you cannot reference yourself as a parent
+    4. The `parent_uuid` must not be the reserved root UUID either: placement at the root of the tree is expressed by omitting both `parent_uuid` and `slot` (see requirement 2)
+    5. The chain of `parent_uuid` references must not form a cycle: no component instance can be an ancestor of itself
 4. Each `uuid` must be unique in the list of items
 5. The `delta` of each field item represents the order that components in the same level of the tree appear in.
 
@@ -202,7 +204,7 @@ Example: A simple tree showing a root item (`41595148-e5c1-4873-b373-be3ae6e2134
 [
   'uuid' => '41595148-e5c1-4873-b373-be3ae6e21340',
   'component_id' => 'sdc.canvas_test_sdc.props-slots',
-  'component_version' => '85a5c0c7dd53e0bb',
+  'component_version' => '0e79e884426a53ae',
   'inputs' => [
     'heading' => [
       'sourceType' => 'static:field_item:string',
@@ -214,7 +216,7 @@ Example: A simple tree showing a root item (`41595148-e5c1-4873-b373-be3ae6e2134
 [
   'uuid' => '3b305d86-86a7-4684-8664-7ef1fc2be070',
   'component_id' => 'sdc.canvas_test_sdc.props-no-slots',
-  'component_version' => 'b1e991f726a2a266',
+  'component_version' => 'd34b93534777207a',
   'parent_uuid' => '41595148-e5c1-4873-b373-be3ae6e21340',
   'slot' => 'the_body',
   'inputs' => [
@@ -255,7 +257,7 @@ optimize the stored data. For example:
 [
   'uuid' => '41595148-e5c1-4873-b373-be3ae6e21340',
   'component_id' => 'sdc.canvas_test_sdc.props-slots',
-  'component_version' => '85a5c0c7dd53e0bb',
+  'component_version' => '0e79e884426a53ae',
   'inputs' => [
     // Note how much simpler this is compared to the runtime representation above.
     'heading' => "Hello, world!",
@@ -264,7 +266,7 @@ optimize the stored data. For example:
 [
   'uuid' => '3b305d86-86a7-4684-8664-7ef1fc2be070',
   'component_id' => 'sdc.canvas_test_sdc.props-no-slots',
-  'component_version' => 'b1e991f726a2a266',
+  'component_version' => 'd34b93534777207a',
   'parent_uuid' => '41595148-e5c1-4873-b373-be3ae6e21340',
   'slot' => 'the_body',
   'inputs' => [
@@ -605,4 +607,4 @@ Unsafe changes (that prevent auto-update) include:
 - Changing prop shapes
 
 See
-- `\Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentInstanceUpdater::canUpdate`
+- `\Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentInstanceUpdater::canUpdate`

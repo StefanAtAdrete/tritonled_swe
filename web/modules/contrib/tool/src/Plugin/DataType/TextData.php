@@ -9,6 +9,10 @@ use Drupal\tool\TypedData\Type\TextInterface;
 
 /**
  * The text data type.
+ *
+ * The generic ID is deliberate (#3582963): "text" is a natural, core-aligned
+ * name for long-form string data, and other modules registering it (e.g. the
+ * typed_data contrib module) are expected to mean the same thing by it.
  */
 #[DataType(
   id: "text",

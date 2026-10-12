@@ -1,5 +1,19 @@
-import type { DrupalSettings } from './DrupalSettings';
+import type {
+  AiTool,
+  DrupalSettings,
+  HeadlessSettings,
+  Language,
+  PageExtension,
+} from './DrupalSettings';
 import type { FormatType } from './FormatType';
 import type { PropsValues } from './PropsValues';
 
-export type { PropsValues, FormatType, DrupalSettings };
+export type {
+  PropsValues,
+  FormatType,
+  DrupalSettings,
+  HeadlessSettings,
+  Language,
+  PageExtension,
+  AiTool,
+};

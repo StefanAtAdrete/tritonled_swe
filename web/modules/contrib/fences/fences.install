@@ -29,10 +29,10 @@ function fences_requirements($phase) {
   /** @var \Drupal\Core\Extension\ExtensionList $theme_extension_list */
   $theme_extension_list = \Drupal::service('extension.list.theme');
 
-  $themes = $all_themes = $theme_extension_list->getList();
+  $themes = $theme_extension_list->getList();
   foreach ($themes as $theme_name => $theme) {
     // Disregard core themes and disabled contrib themes.
-    if ($theme->origin == 'core' || !$theme->status) {
+    if (str_starts_with($theme->getPath(), 'core/') || !$theme->status) {
       unset($themes[$theme_name]);
     }
   }
@@ -48,7 +48,8 @@ function fences_requirements($phase) {
 
   $warning_list = [];
   foreach ($theme_machine_names as $theme_name) {
-    $templates = drupal_find_theme_templates(\Drupal::service('theme.registry')->get(), '.html.twig', $theme_extension_list->getPath($theme_name));
+    $registry = array_filter(\Drupal::service('theme.registry')->get(), fn($info) => isset($info['render element']) || isset($info['variables']));
+    $templates = drupal_find_theme_templates($registry, '.html.twig', $theme_extension_list->getPath($theme_name));
     foreach ($templates as $template_name => $template) {
       if ($template_name == 'field') {
         $warning_list[] = $theme_name;

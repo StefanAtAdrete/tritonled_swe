@@ -1,3 +1,4 @@
+import type { BrandKitColorEntry } from '@drupal-canvas/discovery';
 import type {
   AssetLibrary,
   CodeComponentSerialized as Component,
@@ -5,6 +6,7 @@ import type {
 } from '@drupal-canvas/ui/types/CodeComponent';
 
 export { AssetLibrary, Component, DataDependencies };
+export type { BrandKitColorEntry };
 
 /**
  * A server-side uploaded artifact reference tracked in the asset library manifest.
@@ -14,6 +16,10 @@ export interface UploadedArtifact {
   name: string;
   /** Opaque server-assigned file identifier. */
   uri: string;
+  /** Original relative disk path of the source file. */
+  path?: string;
+  /** Original source code of a module. */
+  source?: string;
 }
 
 /**
@@ -23,6 +29,17 @@ export interface BuildManifest {
   vendor: Record<string, string>;
   local: Record<string, string>;
   shared?: string[];
+  /**
+   * Original sources for local artifacts: relative disk path and, for text
+   * modules, the verbatim original source. Keyed by the same specifier used in
+   * `local`. Absent entries fall back to no path/source.
+   */
+  localSources?: Record<string, { path: string; source?: string }>;
+  /**
+   * Original sources of local modules bundled into other artifacts, kept so a
+   * pull can restore the editable file. No `uri`; never part of the import map.
+   */
+  bundledSources?: Array<{ path: string; source: string }>;
 }
 
 /**
@@ -34,7 +51,7 @@ export interface UploadedArtifactResult {
   url?: string;
 }
 
-/** Axis entry for variable fonts (Brand Kit schema). */
+/** Axis entry for variable fonts (brand kit schema). */
 export interface BrandKitFontAxis {
   tag: string;
   name?: string;
@@ -43,7 +60,7 @@ export interface BrandKitFontAxis {
   default?: number;
 }
 
-/** Font entry stored on Brand Kit (matches backend FontEntry). */
+/** Font entry stored on brand kit (matches backend FontEntry). */
 export interface BrandKitFontEntry {
   id: string;
   family: string;
@@ -58,9 +75,26 @@ export interface BrandKitFontEntryWithUrl extends BrandKitFontEntry {
   url: string;
 }
 
-/** Brand Kit config entity (subset used for font sync). */
+/** Payload accepted by the color create/update endpoints (no server id). */
+export type BrandKitColorPayload = Omit<BrandKitColorEntry, 'id' | 'weight'> &
+  Partial<Pick<BrandKitColorEntry, 'weight'>>;
+
+/** Brand kit config entity (subset used for font and color sync). */
 export interface BrandKit {
   id: string;
   label?: string;
   fonts?: BrandKitFontEntryWithUrl[] | null;
+  /** Derived from the site's color entities; only present when colors exist. */
+  colors?: BrandKitColorEntry[];
+}
+
+/** Color folder config entity as returned by the HTTP API (matches backend Folder). */
+export interface ColorFolderEntry {
+  /** Server-assigned id (the entity UUID). */
+  id: string;
+  name: string;
+  type: string;
+  weight: number;
+  /** Array of color UUIDs contained in this folder. */
+  items: string[];
 }

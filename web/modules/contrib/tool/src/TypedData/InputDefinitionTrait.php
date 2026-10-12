@@ -6,6 +6,7 @@ namespace Drupal\tool\TypedData;
  * Trait for input definitions.
  */
 trait InputDefinitionTrait {
+  use ExamplesTrait;
 
   /**
    * Determines whether the value is locked.

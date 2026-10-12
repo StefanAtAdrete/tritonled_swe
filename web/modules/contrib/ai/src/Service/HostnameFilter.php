@@ -249,8 +249,24 @@ class HostnameFilter {
 
     // Fetch from config.
     $config = $this->configFactory->get('ai.settings');
+    $allowed_domains = $config->get('allowed_hosts');
 
-    $this->allowedDomains = $config->get('allowed_hosts') ?? [];
+    if (is_string($allowed_domains)) {
+      $allowed_domains = [$allowed_domains];
+    }
+
+    if (!is_array($allowed_domains)) {
+      $this->allowedDomains = [];
+      return $this->allowedDomains;
+    }
+
+    $this->allowedDomains = array_values(array_filter(
+      array_map(
+        static fn($host): string => trim((string) $host),
+        $allowed_domains
+      ),
+      static fn(string $host): bool => $host !== ''
+    ));
 
     return $this->allowedDomains;
   }

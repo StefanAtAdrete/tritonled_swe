@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  authoredSpecToComponentTree,
-  pageToAuthoredSpec,
-  specToAuthoredElementMap,
-} from './pages';
+  authoredElementMapToComponentTree,
+  jsonRenderSpecToAuthoredElementMap,
+} from './authored-elements';
+import { pageToAuthoredSpec } from './pages';
 
+import type { ComponentMetadata } from '@drupal-canvas/discovery';
 import type {
   AuthoredSpecElementMap,
   canvasTreeToSpec,
 } from 'drupal-canvas/json-render-utils';
 import type { Page } from '../types/Page';
 
-describe('specToAuthoredElementMap', () => {
+describe('jsonRenderSpecToAuthoredElementMap', () => {
   it('strips the component-tree wrapper and merges children into slots.children', () => {
     const heroId = '11111111-1111-4111-8111-111111111111';
     const textId = '22222222-2222-4222-8222-222222222222';
@@ -45,7 +46,7 @@ describe('specToAuthoredElementMap', () => {
       },
     };
 
-    expect(specToAuthoredElementMap(spec)).toEqual({
+    expect(jsonRenderSpecToAuthoredElementMap(spec)).toEqual({
       [heroId]: {
         type: 'js.hero',
         props: { heading: 'Welcome' },
@@ -78,7 +79,7 @@ describe('specToAuthoredElementMap', () => {
       },
     };
 
-    expect(specToAuthoredElementMap(spec)).toEqual({
+    expect(jsonRenderSpecToAuthoredElementMap(spec)).toEqual({
       [spacerId]: {
         type: 'js.spacer',
         props: {},
@@ -87,7 +88,7 @@ describe('specToAuthoredElementMap', () => {
   });
 });
 
-describe('authoredSpecToComponentTree', () => {
+describe('authoredElementMapToComponentTree', () => {
   it('rebuilds parent and slot relationships from authored slots', () => {
     const heroId = '11111111-1111-4111-8111-111111111111';
     const textId = '22222222-2222-4222-8222-222222222222';
@@ -115,7 +116,7 @@ describe('authoredSpecToComponentTree', () => {
     };
 
     expect(
-      authoredSpecToComponentTree(
+      authoredElementMapToComponentTree(
         elements,
         new Map([
           ['js.hero', heroVersionId],
@@ -171,7 +172,7 @@ describe('authoredSpecToComponentTree', () => {
       },
     };
 
-    const tree = authoredSpecToComponentTree(elements);
+    const tree = authoredElementMapToComponentTree(elements);
     expect(tree).toHaveLength(2);
 
     const hero = tree.find((c) => c.component_id === 'js.hero')!;
@@ -197,7 +198,7 @@ describe('authoredSpecToComponentTree', () => {
       },
     };
 
-    expect(authoredSpecToComponentTree(elements)).toEqual([
+    expect(authoredElementMapToComponentTree(elements)).toEqual([
       {
         uuid: spacerId,
         component_id: 'js.spacer',
@@ -218,6 +219,7 @@ describe('pageToAuthoredSpec', () => {
       uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
       title: 'Empty Page',
       description: '',
+      pageVariant: null,
       status: true,
       path: '/empty',
       internalPath: '/page/1',
@@ -242,6 +244,7 @@ describe('pageToAuthoredSpec', () => {
       uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
       title: 'Test',
       description: '',
+      pageVariant: null,
       status: true,
       path: '/test',
       internalPath: '/page/1',
@@ -280,6 +283,7 @@ describe('pageToAuthoredSpec', () => {
       uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
       title: 'Test',
       description: '',
+      pageVariant: null,
       status: true,
       path: '/test',
       internalPath: '/page/1',
@@ -321,6 +325,7 @@ describe('pageToAuthoredSpec', () => {
       uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
       title: 'Home',
       description: 'Welcome to the homepage',
+      pageVariant: 'marketing',
       status: true,
       path: '/home',
       internalPath: '/page/1',
@@ -372,6 +377,7 @@ describe('pageToAuthoredSpec', () => {
       title: 'Home',
       path: '/home',
       description: 'Welcome to the homepage',
+      pageVariant: 'marketing',
       elements: {
         [heroUuid]: {
           slots: {
@@ -383,7 +389,7 @@ describe('pageToAuthoredSpec', () => {
     });
 
     expect(
-      authoredSpecToComponentTree(
+      authoredElementMapToComponentTree(
         result.elements,
         new Map([
           ['js.hero', 'v1'],
@@ -394,12 +400,130 @@ describe('pageToAuthoredSpec', () => {
     ).toEqual(page.components.map(({ inputs_resolved: _, ...rest }) => rest));
   });
 
+  it('collapses resolved color props using component metadata', () => {
+    const colorComponentMetadata: ComponentMetadata[] = [
+      {
+        name: 'Color Card',
+        machineName: 'color-card',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            brandColor: {
+              title: 'Brand Color',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+            hexColor: {
+              title: 'Hex Color',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+            fallbackColor: {
+              title: 'Fallback Color',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+            title: {
+              title: 'Title',
+              type: 'string',
+            },
+          },
+        },
+      },
+    ];
+
+    const page: Page = {
+      id: 1,
+      uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
+      title: 'Color Page',
+      description: '',
+      pageVariant: null,
+      status: true,
+      path: '/colors',
+      internalPath: '/page/1',
+      autoSaveLabel: null,
+      autoSavePath: null,
+      links: {},
+      components: [
+        {
+          uuid: 'color-node',
+          component_id: 'js.color-card',
+          component_version: 'v1',
+          parent_uuid: null,
+          slot: null,
+          inputs: {
+            brandColor: 'canvas-color:11111111-1111-4111-9111-111111111111',
+            hexColor: '#123456',
+            fallbackColor: '#777777',
+            title: 'Original title',
+          },
+          inputs_resolved: {
+            brandColor: {
+              value: {
+                colorSpace: 'srgb',
+                components: [0.8, 0, 0],
+                alpha: null,
+                hex: '#cc0000',
+              },
+              cssColorValue: 'rgb(204, 0, 0)',
+              cssVariable: '--brand-red',
+              colorName: 'Brand Red',
+            },
+            hexColor: {
+              value: {
+                colorSpace: 'srgb',
+                components: [0.07058823529411765, 0.20392156862745098, 0.3372],
+                alpha: null,
+                hex: '#123456',
+              },
+              cssColorValue: 'rgb(18, 52, 86)',
+              cssVariable: null,
+              colorName: null,
+            },
+            fallbackColor: {
+              value: {
+                colorSpace: 'srgb',
+                components: [0.125, 0.75, 0.5],
+                alpha: 0.5,
+                hex: '#12',
+              },
+              cssColorValue: 'rgba(32, 191, 128, 0.5)',
+              cssVariable: null,
+              colorName: null,
+            },
+            title: 'Server title',
+          },
+          label: null,
+        },
+      ],
+    };
+
+    const result = pageToAuthoredSpec(page, {
+      componentMetadata: colorComponentMetadata,
+    }) as {
+      elements: AuthoredSpecElementMap;
+    };
+
+    expect(result.elements['color-node']).toEqual({
+      type: 'js.color-card',
+      props: {
+        brandColor: 'canvas-color:brand-red',
+        hexColor: '#123456',
+        fallbackColor: 'rgba(32, 191, 128, 0.5)',
+        title: 'Server title',
+      },
+    });
+  });
+
   it('stores media provenance in _provenance when inputs_resolved contains resolved media data', () => {
     const page: Page = {
       id: 1,
       uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
       title: 'Gallery',
       description: '',
+      pageVariant: null,
       status: true,
       path: '/gallery',
       internalPath: '/page/1',
@@ -445,6 +569,57 @@ describe('pageToAuthoredSpec', () => {
           },
           _provenance: {
             image: {
+              target_id: 42,
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('stores content entity reference inputs instead of resolved preview payloads', () => {
+    const page: Page = {
+      id: 1,
+      uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
+      title: 'Article page',
+      description: '',
+      pageVariant: null,
+      status: true,
+      path: '/article-page',
+      internalPath: '/page/1',
+      autoSaveLabel: null,
+      autoSavePath: null,
+      links: {},
+      components: [
+        {
+          uuid: 'article-card-uuid',
+          component_id: 'js.article-card',
+          component_version: 'v1',
+          parent_uuid: null,
+          slot: null,
+          inputs: { article: { target_id: 42 } },
+          inputs_resolved: {
+            article: {
+              __type: 'article',
+              title: 'Example article',
+              path: '/example-article',
+            },
+          },
+          label: null,
+        },
+      ],
+    };
+
+    expect(pageToAuthoredSpec(page)).toEqual({
+      uuid: '27a539f5-2dd0-471a-a364-8fee7a024a73',
+      title: 'Article page',
+      path: '/article-page',
+      description: '',
+      elements: {
+        'article-card-uuid': {
+          type: 'js.article-card',
+          props: {
+            article: {
               target_id: 42,
             },
           },

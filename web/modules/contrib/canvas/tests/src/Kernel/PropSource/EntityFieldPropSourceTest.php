@@ -2,15 +2,10 @@
 
 declare(strict_types=1);
 
-// cspell:ignore Qqzr
-
 namespace Drupal\Tests\canvas\Kernel\PropSource;
 
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\Core\Http\Exception\CacheableAccessDeniedHttpException;
+// cspell:ignore Qqzr
+
 use Drupal\canvas\Plugin\Adapter\UnixTimestampToDateAdapter;
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
 use Drupal\canvas\PropExpressions\StructuredData\FieldObjectPropsExpression;
@@ -19,9 +14,22 @@ use Drupal\canvas\PropExpressions\StructuredData\ReferenceFieldPropExpression;
 use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
 use Drupal\canvas\PropSource\EntityFieldPropSource;
 use Drupal\canvas\PropSource\PropSource;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\content_translation\BundleTranslationSettingsInterface;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\Http\Exception\CacheableAccessDeniedHttpException;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Render\AttachmentsInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\file\Entity\File;
+use Drupal\filter\Entity\FilterFormat;
+use Drupal\media\Entity\Media;
 use Drupal\node\Entity\NodeType;
+use Drupal\text\TextProcessed;
 use Drupal\user\Entity\Role;
 use Drupal\user\Entity\User;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,10 +44,11 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('canvas')]
 #[Group('canvas_data_model')]
 #[Group('canvas_data_model__prop_expressions')]
+#[Group('#slow')]
 #[RunTestsInSeparateProcesses]
 class EntityFieldPropSourceTest extends PropSourceTestBase {
 
-  #[DataProvider('providerTest')]
+  #[DataProvider('provider')]
   public function test(
     array $permissions,
     string $expression,
@@ -53,7 +62,12 @@ class EntityFieldPropSourceTest extends PropSourceTestBase {
     ?array $expected_node_access_denied_message,
     array $expected_dependencies_expression_only,
     array $expected_dependencies_with_host_entity,
+    ?string $langcode,
   ): void {
+    if ($langcode !== NULL) {
+      $this->setupContentTranslation();
+      $this->switchContentLanguage($langcode);
+    }
     // Evaluating entity field props requires entity and field access of the
     // data being accessed.
 
@@ -242,6 +256,60 @@ class EntityFieldPropSourceTest extends PropSourceTestBase {
       default => throw new \LogicException(),
     };
     $this->assertSame($expected_dependencies_with_host_entity, $parsed->calculateDependencies($correct_host_entity));
+  }
+
+  /**
+   * Cross-product of providerTest() scenarios and langcodes.
+   *
+   * @see \Drupal\Tests\canvas\Kernel\PropSource\PropSourceTestBase::langcodes()
+   */
+  public static function provider(): \Generator {
+    $list_string_key = "simple: FieldPropExpression, but for a `list_string` field type's Canvas-specific computed `label` property";
+    foreach (self::providerTest() as $scenario_key => $scenario) {
+      // All scenarios must be tested in a monolingual context.
+      yield $scenario_key => [...$scenario, 'langcode' => NULL];
+
+      // For expressions that do not follow a reference, there's no point in
+      // generating multilingual scenarios: if there's no references being
+      // followed, there also cannot be any translation impact.
+      if (!\str_contains($scenario['expression'], '␜␜')) {
+        // The one exception to the above rule: the test scenario with the
+        // `list_string` field type, which has a very special way of generating
+        // labels, and hence a special multilingual impact worth testing.
+        if ($scenario_key !== $list_string_key) {
+          continue;
+        }
+      }
+
+      // In a multilingual context, loading the FieldStorageConfig entity via
+      // ConfigFactory triggers LanguageConfigFactoryOverride, which adds
+      // languages:language_interface to the bubbled cacheability. This happens
+      // in ListStringItemLabel::computeValue() via addCacheableDependency() on
+      // the field storage definition. On a monolingual site the override
+      // machinery is inactive, so the context is absent.
+      // @see \Drupal\canvas\Plugin\DataType\ListStringItemLabel::computeValue()
+      // @see \Drupal\language\Config\LanguageConfigFactoryOverride::getCacheableMetadata()
+      if ($scenario_key === $list_string_key) {
+        $evaluation = $scenario['expected_evaluation_with_node_host_entity'];
+        \assert($evaluation instanceof EvaluationResult);
+        $scenario['expected_evaluation_with_node_host_entity'] = new EvaluationResult(
+          $evaluation->value,
+          (new CacheableMetadata())
+            ->setCacheTags($evaluation->getCacheTags())
+            ->setCacheContexts([
+              ...$evaluation->getCacheContexts(),
+              'languages:' . LanguageInterface::TYPE_INTERFACE,
+            ])
+            ->setCacheMaxAge($evaluation->getCacheMaxAge()),
+        );
+      }
+      foreach (self::langcodes() as $langcode) {
+        yield "[$langcode] $scenario_key" => [
+          'langcode' => $langcode,
+          ...$scenario,
+        ];
+      }
+    }
   }
 
   public static function providerTest(): \Generator {
@@ -1032,6 +1100,355 @@ class EntityFieldPropSourceTest extends PropSourceTestBase {
       'expression' => "ℹ︎␜entity:user␝name␞␟value",
     ]);
     self::assertInstanceOf(EntityFieldPropSource::class, $prop_source);
+  }
+
+  /**
+   * Creates a node referencing a user that is then deleted.
+   *
+   * @return array{\Drupal\node\NodeInterface, int}
+   *   The node, and the deleted user's ID.
+   */
+  private function createNodeReferencingDeletedUser(): array {
+    $this->installEntitySchema('node');
+    $this->installEntitySchema('user');
+    NodeType::create(['type' => 'page', 'name' => 'Page'])->save();
+    FieldStorageConfig::create([
+      'field_name' => 'field_ref',
+      'entity_type' => 'node',
+      'type' => 'entity_reference',
+      'settings' => ['target_type' => 'user'],
+      'cardinality' => 1,
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'field_ref',
+      'entity_type' => 'node',
+      'bundle' => 'page',
+      'label' => 'Ref',
+      'settings' => ['handler' => 'default:user', 'handler_settings' => []],
+    ])->save();
+    $target_user = User::create(['name' => 'Soon deleted', 'status' => 1]);
+    $target_user->save();
+    $target_uid = (int) $target_user->id();
+    $node = $this->createNode(['type' => 'page', 'field_ref' => $target_uid]);
+    // Delete the target; the node still stores the ID.
+    $target_user->delete();
+    $this->setUpCurrentUser(permissions: ['access content', 'access user profiles']);
+    return [$node, $target_uid];
+  }
+
+  /**
+   * A required reference whose target is gone is treated as inaccessible.
+   *
+   * The `entity` property is not marked required by Typed Data, but its
+   * `target_id` is, so an empty reference is never legitimate. Prevents
+   * regressions of the access-denied inference for references.
+   */
+  public function testRequiredBrokenReferenceIsAccessDenied(): void {
+    [$node] = $this->createNodeReferencingDeletedUser();
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => 'ℹ︎␜entity:node:page␝field_ref␞␟entity␜␜entity:user␝name␞␟value',
+    ]);
+    $this->expectException(CacheableAccessDeniedHttpException::class);
+    $prop_source->evaluate($node, is_required: TRUE);
+  }
+
+  /**
+   * A broken reference (deleted target entity) contributes the target's tag.
+   *
+   * When a referenced entity is deleted, the field still stores its ID but
+   * EntityReference::getValue() returns NULL. The cached NULL result must
+   * carry the former target's cache tag so that a new entity written at the
+   * same ID correctly busts any cached output.
+   *
+   * @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator::doEvaluate()
+   */
+  public function testBrokenReferenceContributesCacheTag(): void {
+    [$node, $target_uid] = $this->createNodeReferencingDeletedUser();
+
+    $this->setUpCurrentUser(permissions: ['access content', 'access user profiles']);
+
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => 'ℹ︎␜entity:node:page␝field_ref␞␟entity␜␜entity:user␝name␞␟value',
+    ]);
+
+    $result = $prop_source->evaluate($node, is_required: FALSE);
+
+    // The referenced entity is gone; the result is NULL.
+    self::assertNull($result->value);
+
+    // The deleted entity's cache tag must be present so that if the entity is
+    // recreated (or otherwise written at that ID), the cached NULL invalidates.
+    self::assertContains('user:' . $target_uid, $result->getCacheTags());
+  }
+
+  /**
+   * The document `src` prop resolves a private:// file to its managed URL.
+   *
+   * The document shape's `src` maps to the File entity's computed `url`
+   * property, not the raw `uri`. A media type whose source field stores files
+   * in the private file system therefore resolves to the absolute
+   * `/system/files/` route, which satisfies the shape's `http`/`https`
+   * scheme requirement.
+   *
+   * @see \Drupal\canvas\JsonSchemaInterpreter\JsonSchemaObjectRef::Document
+   * @see \Drupal\file\Plugin\Field\FieldType\FileUriItem
+   */
+  public function testDocumentObjectResolvesPrivateFileUrl(): void {
+    $media_type = $this->createMediaType('file', ['id' => 'private_documents']);
+    $source_field_definition = $media_type->getSource()->getSourceFieldDefinition($media_type);
+    self::assertNotNull($source_field_definition);
+    $source_field_storage = $source_field_definition->getFieldStorageDefinition();
+    \assert($source_field_storage instanceof FieldStorageConfig);
+    $source_field_storage->setSetting('uri_scheme', 'private');
+    $source_field_storage->save();
+
+    $user = $this->setUpCurrentUser(permissions: ['access content', 'view media']);
+
+    // Kernel boots reset Settings; restore the private file path registered
+    // by VfsPublicStreamUrlTrait::setUpFilesystem() so the `private://`
+    // stream wrapper resolves.
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+
+    $file_system = \Drupal::service(FileSystemInterface::class);
+    \assert($file_system instanceof FileSystemInterface);
+    $directory = 'private://docs';
+    self::assertTrue($file_system->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS));
+    $file_contents = 'Not really a PDF.';
+    \file_put_contents('private://docs/press-kit.pdf', $file_contents);
+    $file = File::create([
+      'uid' => $user->id(),
+      'filename' => 'press-kit.pdf',
+      'uri' => 'private://docs/press-kit.pdf',
+      'filesize' => \strlen($file_contents),
+      'filemime' => 'application/pdf',
+    ]);
+    $file->setPermanent();
+    $file->save();
+
+    $media = Media::create([
+      'bundle' => 'private_documents',
+      'name' => 'Press kit',
+      $source_field_definition->getName() => ['target_id' => $file->id()],
+    ]);
+    $media->save();
+
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => \sprintf('ℹ︎␜entity:media:private_documents␝%s␞␟{src↝entity␜␜entity:file␝uri␞␟url,filename↝entity␜␜entity:file␝filename␞␟value,filesize↝entity␜␜entity:file␝filesize␞␟value,mimetype↝entity␜␜entity:file␝filemime␞␟value}', $source_field_definition->getName()),
+    ]);
+
+    $result = $prop_source->evaluate($media, is_required: TRUE);
+
+    self::assertIsArray($result->value);
+    self::assertIsString($result->value['src']);
+    // The raw `private://` URI resolves to the managed-files route, served
+    // over the site's HTTP(S) base URL — not to the raw stream URI.
+    self::assertStringEndsWith('/system/files/docs/press-kit.pdf', $result->value['src']);
+    self::assertSame('press-kit.pdf', $result->value['filename']);
+    self::assertEquals(\strlen($file_contents), $result->value['filesize']);
+    self::assertSame('application/pdf', $result->value['mimetype']);
+  }
+
+  /**
+   * A processed-text prop keeps the assets its text-format filters attach.
+   *
+   * @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator::doEvaluate()
+   * @see \Drupal\text\TextProcessed::getAttachments()
+   * @see \Drupal\filter_test\Plugin\Filter\FilterTestAssets
+   */
+  public function testProcessedTextKeepsFilterAttachments(): void {
+    // The test filter attaches the `filter/caption` library but leaves the text
+    // unchanged; it stands in for a filter that needs assets to render.
+    $this->enableModules(['filter_test']);
+    $this->installEntitySchema('node');
+
+    FilterFormat::create([
+      'format' => 'assets',
+      'name' => 'Assets',
+      'filters' => [
+        'filter_test_assets' => ['status' => TRUE],
+      ],
+    ])->save();
+
+    NodeType::create(['type' => 'page', 'name' => 'Page'])->save();
+    FieldStorageConfig::create([
+      'field_name' => 'field_formatted',
+      'entity_type' => 'node',
+      'type' => 'text_long',
+      'cardinality' => 1,
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'field_formatted',
+      'entity_type' => 'node',
+      'bundle' => 'page',
+      'label' => 'Formatted',
+    ])->save();
+
+    $node = $this->createNode([
+      'type' => 'page',
+      'field_formatted' => [
+        'value' => '<p>Hello, world</p>',
+        'format' => 'assets',
+      ],
+    ]);
+
+    $this->setUpCurrentUser(permissions: ['access content']);
+
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => 'ℹ︎␜entity:node:page␝field_formatted␞␟processed',
+    ]);
+    $result = $prop_source->evaluate($node, is_required: TRUE);
+
+    // Core >= 11.4.4 exposes a processed-text property's assets via
+    // AttachmentsInterface, so the filter's library survives evaluation. Older
+    // core does not expose them, so there is nothing for Canvas to carry.
+    // @see \Drupal\text\TextProcessed::getAttachments()
+    // @todo Unconditionally execute the if branch and delete the else branch once Canvas depends on Drupal 11.4.4
+    if (is_a(TextProcessed::class, AttachmentsInterface::class, TRUE)) {
+      self::assertArrayHasKey('library', $result->getAttachments());
+      self::assertContains('filter/caption', $result->getAttachments()['library']);
+    }
+    else {
+      self::assertSame([], $result->getAttachments());
+    }
+  }
+
+  /**
+   * Tests that an EntityFieldPropSource resolves references in the host language.
+   *
+   * Verifies that when a node's entity reference field points to a translated
+   * Media image entity, evaluating the prop expression via EntityFieldPropSource
+   * returns the alt text matching the host entity's own language. The host node
+   * is translated, and each case evaluates the node translation for $langcode;
+   * the referenced Media resolves in that same language.
+   *
+   * Also verifies language fallback: the node has a French translation but the
+   * Media does not, so the French case falls back to the default language.
+   *
+   * @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator::doEvaluate()
+   * @see \Drupal\canvas\PropExpressions\StructuredData\NegotiatedLanguage::matchEntity()
+   */
+  public function testTranslatedEntityReference(): void {
+    $this->setupContentTranslation();
+    $this->installEntitySchema('node');
+    NodeType::create(['type' => 'page', 'name' => 'page'])->save();
+    \Drupal::service(BundleTranslationSettingsInterface::class)
+      ->setEnabled('node', 'page', TRUE);
+    $this->createEntityReferenceField('node', 'page', 'field_hero_image', 'Hero Image', 'media',
+      selection_handler_settings: ['target_bundles' => ['image' => 'image']],
+    );
+
+    $this->setUpCurrentUser(permissions: ['access content', 'view media']);
+    $media = $this->createTranslatedMediaFixture();
+
+    $node = $this->createNode([
+      'type' => 'page',
+      'langcode' => 'en',
+      'field_hero_image' => ['target_id' => $media->id()],
+    ]);
+    $node->addTranslation('es', [
+      'title' => 'Spanish title',
+      'field_hero_image' => ['target_id' => $media->id()],
+    ]);
+    $node->addTranslation('fr', [
+      'title' => 'French title',
+      'field_hero_image' => ['target_id' => $media->id()],
+    ]);
+
+    // Expression: node:page → field_hero_image → entity → media:image →
+    // field_media_image → alt.
+    $expression = 'ℹ︎␜entity:node:page␝field_hero_image␞␟entity␜␜entity:media:image␝field_media_image␞␟alt';
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => $expression,
+    ]);
+
+    foreach (self::providerTranslatedReferencedMedia() as $scenario_name => ['langcode' => $langcode, 'expected_alt' => $expected_alt]) {
+      $host_entity = $node->getTranslation($langcode);
+      $result = $prop_source->evaluate(clone $host_entity, is_required: TRUE);
+      self::assertSame($expected_alt, $result->value, $scenario_name);
+      self::assertNotContains('languages:' . LanguageInterface::TYPE_CONTENT, $result->getCacheContexts(), $scenario_name);
+    }
+  }
+
+  /**
+   * @param string $svg
+   *   The contents of the SVG file the media item references.
+   * @param array{width?: int, height?: int} $expected_dimensions
+   *   The dimensions expected in the evaluated `image` object, if any.
+   */
+  #[DataProvider('providerSvgImageObject')]
+  public function testSvgImageObject(string $svg, array $expected_dimensions): void {
+    $this->setUpCurrentUser(permissions: ['access content', 'view media']);
+
+    $file_uri = 'public://canvas-test.svg';
+    \file_put_contents($file_uri, $svg);
+    $file = File::create([
+      'uri' => $file_uri,
+      'filemime' => 'image/svg+xml',
+      'status' => 1,
+    ]);
+    $file->save();
+    $media = Media::create([
+      'bundle' => 'image',
+      'name' => 'A test SVG',
+      'field_media_image' => [
+        [
+          'target_id' => $file->id(),
+          'alt' => 'A test SVG',
+        ],
+      ],
+    ]);
+    $media->save();
+
+    $prop_source = EntityFieldPropSource::parse([
+      'sourceType' => PropSource::EntityField->value,
+      'expression' => 'ℹ︎␜entity:media:image␝field_media_image␞␟{src↠src_with_alternate_widths,alt↠alt,width↠width,height↠height}',
+    ]);
+    $result = $prop_source->evaluate($media, is_required: TRUE);
+
+    self::assertSame([
+      // No derivative image can be generated for an SVG image, so no
+      // `alternateWidths` query parameter is present: just the original image.
+      // @see \Drupal\canvas\TypedData\ImageDerivativeWithParametrizedWidth::computeValue()
+      'src' => \base_path() . $this->siteDirectory . '/files/canvas-test.svg',
+      'alt' => 'A test SVG',
+    ] + $expected_dimensions, $result->value);
+
+    // The image style remains a cacheable dependency even though no derivative
+    // image is generated: enabling a toolkit that does support SVG must result
+    // in image candidates being generated after all.
+    self::assertEqualsCanonicalizing([
+      'config:image.style.canvas_parametrized_width',
+      'file:' . $file->id(),
+      'media:' . $media->id(),
+    ], $result->getCacheTags());
+  }
+
+  /**
+   * @return \Generator<string, array{string, array{width?: int, height?: int}}>
+   */
+  public static function providerSvgImageObject(): \Generator {
+    $svg_with_dimensions = \file_get_contents(__DIR__ . '/../../../fixtures/images/canvas-test.svg');
+    \assert(\is_string($svg_with_dimensions));
+    yield 'with width and height' => [
+      $svg_with_dimensions,
+      ['width' => 100, 'height' => 100],
+    ];
+    yield 'with only a viewBox' => [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>',
+      ['width' => 24, 'height' => 24],
+    ];
+    // An SVG image that conveys no intrinsic dimensions must result in `width`
+    // and `height` being absent, NOT in them being zero.
+    // @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator::omitEmptyObjectProps()
+    yield 'without dimensions' => [
+      '<svg xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"/></svg>',
+      [],
+    ];
   }
 
 }

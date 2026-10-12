@@ -16,6 +16,22 @@ class CanvasAiTempStore {
   public const CURRENT_LAYOUT_KEY = 'current_layout';
 
   /**
+   * Key prefix for the serialized agent state, keyed by job ID.
+   *
+   * Keeps the client-supplied job IDs in a key space of their own, so they
+   * cannot collide with the other keys in this collection.
+   */
+  private const AGENT_STATE_KEY_PREFIX = 'agent_state_';
+
+  /**
+   * Key prefix for the agent state a conversation resumes from.
+   *
+   * Keyed by the client-supplied conversation ID, in a key space of its own
+   * for the same reason as AGENT_STATE_KEY_PREFIX.
+   */
+  private const CONVERSATION_STATE_KEY_PREFIX = 'conversation_state_';
+
+  /**
    * The private tempstore object.
    *
    * @var \Drupal\Core\TempStore\PrivateTempStore
@@ -71,6 +87,107 @@ class CanvasAiTempStore {
    */
   public function deleteData(string $key): void {
     $this->tempStore->delete($key);
+  }
+
+  /**
+   * Gets the agent state a paused chat turn parked.
+   *
+   * @param string $job_id
+   *   The job ID identifying the chat turn.
+   *
+   * @return array{agent_id: string, state: array}|null
+   *   The ID of the agent that parked the state and the state as written by
+   *   its ::toArray(), or NULL when the turn is not paused.
+   */
+  public function getStoredAgentState(string $job_id): ?array {
+    $record = $this->tempStore->get(self::AGENT_STATE_KEY_PREFIX . $job_id);
+    if (!isset($record['agent_id'], $record['state'])) {
+      return NULL;
+    }
+    return ['agent_id' => $record['agent_id'], 'state' => $record['state']];
+  }
+
+  /**
+   * Stores the agent state of a paused chat turn.
+   *
+   * @param string $job_id
+   *   The job ID identifying the chat turn.
+   * @param string $agent_id
+   *   The ID of the agent that parked the state. Only that agent can resume
+   *   it: the state carries its chat history.
+   * @param array $state
+   *   The state, as returned by the agent's ::toArray().
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
+   */
+  public function setStoredAgentState(string $job_id, string $agent_id, array $state): void {
+    $this->tempStore->set(self::AGENT_STATE_KEY_PREFIX . $job_id, [
+      'agent_id' => $agent_id,
+      'state' => $state,
+    ]);
+  }
+
+  /**
+   * Removes the serialized agent state for a chat turn.
+   *
+   * @param string $job_id
+   *   The job ID identifying the chat turn.
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
+   */
+  public function deleteStoredAgentState(string $job_id): void {
+    $this->tempStore->delete(self::AGENT_STATE_KEY_PREFIX . $job_id);
+  }
+
+  /**
+   * Gets the agent state a conversation resumes its next turn from.
+   *
+   * @param string $conversation_id
+   *   The conversation ID identifying the chat session.
+   *
+   * @return array{agent_id: string, state: array}|null
+   *   The ID of the agent whose last turn ended the conversation and the state
+   *   as written by its ::toArray(), or NULL when the conversation has no turn
+   *   to resume from.
+   */
+  public function getStoredConversationState(string $conversation_id): ?array {
+    $record = $this->tempStore->get(self::CONVERSATION_STATE_KEY_PREFIX . $conversation_id);
+    if (!isset($record['agent_id'], $record['state'])) {
+      return NULL;
+    }
+    return ['agent_id' => $record['agent_id'], 'state' => $record['state']];
+  }
+
+  /**
+   * Stores the agent state a conversation resumes its next turn from.
+   *
+   * @param string $conversation_id
+   *   The conversation ID identifying the chat session.
+   * @param string $agent_id
+   *   The ID of the agent that ran the turn. Only that agent resumes the
+   *   state: the history describes work the others never did.
+   * @param array $state
+   *   The state, as returned by the agent's ::toArray().
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
+   */
+  public function setStoredConversationState(string $conversation_id, string $agent_id, array $state): void {
+    $this->tempStore->set(self::CONVERSATION_STATE_KEY_PREFIX . $conversation_id, [
+      'agent_id' => $agent_id,
+      'state' => $state,
+    ]);
+  }
+
+  /**
+   * Removes the agent state a conversation would resume from.
+   *
+   * @param string $conversation_id
+   *   The conversation ID identifying the chat session.
+   *
+   * @throws \Drupal\Core\TempStore\TempStoreException
+   */
+  public function deleteStoredConversationState(string $conversation_id): void {
+    $this->tempStore->delete(self::CONVERSATION_STATE_KEY_PREFIX . $conversation_id);
   }
 
 }

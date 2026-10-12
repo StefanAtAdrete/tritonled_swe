@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Config;
 
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
-use Drupal\Component\Utility\Crypt;
 use Drupal\canvas\Entity\AssetLibrary;
-
+use Drupal\Component\Utility\Crypt;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -51,6 +50,8 @@ class AssetLibraryValidationTest extends BetterConfigEntityValidationTestBase {
     'imports',
     'assets',
     'shared',
+    'bundledSources',
+    'packageJson',
   ];
 
   /**
@@ -145,6 +146,35 @@ class AssetLibraryValidationTest extends BetterConfigEntityValidationTestBase {
             [
               'name' => '@/shared/constants.js',
               'uri' => AssetLibrary::ARTIFACTS_DIRECTORY . 'shared/constants.js',
+            ],
+          ],
+        ],
+        [],
+      ],
+      'Valid: asset entries with flexible codebase path and source' => [
+        [
+          'id' => 'global',
+          'label' => 'Test',
+          'css' => NULL,
+          'js' => NULL,
+          'assets' => [
+            // Text module: path plus verbatim source.
+            [
+              'name' => '@/lib/helper',
+              'uri' => AssetLibrary::ARTIFACTS_DIRECTORY . 'lib/helper.js',
+              'path' => 'src/lib/helper.ts',
+              'source' => "export const x = 1;\n",
+            ],
+            // Binary asset: path only, no source.
+            [
+              'name' => '@/assets/poster.webp',
+              'uri' => AssetLibrary::ARTIFACTS_DIRECTORY . 'assets/poster.webp',
+              'path' => 'src/assets/poster.webp',
+            ],
+            // Legacy entry without path/source still validates.
+            [
+              'name' => '@/utils/helpers.js',
+              'uri' => AssetLibrary::ARTIFACTS_DIRECTORY . 'utils/helpers.js',
             ],
           ],
         ],

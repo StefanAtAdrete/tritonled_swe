@@ -30,7 +30,10 @@ import {
 } from '@/features/code-editor/component-data/FormElement';
 import FormPropTypeArray from '@/features/code-editor/component-data/forms/FormPropTypeArray';
 import FormPropTypeBoolean from '@/features/code-editor/component-data/forms/FormPropTypeBoolean';
+import FormPropTypeColor from '@/features/code-editor/component-data/forms/FormPropTypeColor';
+import FormPropTypeContentEntityReference from '@/features/code-editor/component-data/forms/FormPropTypeContentEntityReference';
 import FormPropTypeDate from '@/features/code-editor/component-data/forms/FormPropTypeDate';
+import FormPropTypeDocument from '@/features/code-editor/component-data/forms/FormPropTypeDocument';
 import FormPropTypeEnum from '@/features/code-editor/component-data/forms/FormPropTypeEnum';
 import FormPropTypeFormattedText from '@/features/code-editor/component-data/forms/FormPropTypeFormattedText';
 import FormPropTypeImage from '@/features/code-editor/component-data/forms/FormPropTypeImage';
@@ -49,6 +52,7 @@ import {
 
 import type {
   CodeComponentProp,
+  CodeComponentPropDocumentExample,
   CodeComponentPropImageExample,
   CodeComponentPropVideoExample,
   ValueMode,
@@ -127,10 +131,10 @@ export default function Props() {
     defaultValue: string | number = '',
     derivedType?: string | null,
   ) => {
-    // For complex object types (video, image), we need to preserve
+    // For complex object types (video, image, document), we need to preserve
     // existing objects or use an empty array.
     let newExample;
-    if (derivedType === 'video' || derivedType === 'image') {
+    if (['video', 'image', 'document'].includes(derivedType ?? '')) {
       const exampleArray = Array.isArray(currentExample) ? currentExample : [];
       newExample = exampleArray.slice(0, newCount);
     } else {
@@ -202,13 +206,21 @@ export default function Props() {
                   );
                   if (selectedPropType) {
                     const isRequired = required.includes(propName);
-                    const isImageOrVideo =
-                      value === 'image' || value === 'video';
-                    // Default examples for image and video are handled in their own components
-                    // regardless of required or not.
-                    // @see FormPropTypeImage and FormPropTypeVideo
+                    // Image, video, and document props set their default
+                    // example in their own form component regardless of
+                    // whether the prop is required.
+                    // @see FormPropTypeImage, FormPropTypeVideo, and FormPropTypeDocument
+                    const hasDedicatedExampleForm = [
+                      'image',
+                      'video',
+                      'document',
+                    ].includes(value);
+                    const isContentEntityReference =
+                      value === 'contentEntityReference';
                     const defaultExample =
-                      isRequired && !isImageOrVideo
+                      isRequired &&
+                      !hasDedicatedExampleForm &&
+                      !isContentEntityReference
                         ? DEFAULT_EXAMPLES[value]
                         : '';
                     dispatch(
@@ -225,6 +237,9 @@ export default function Props() {
                           // when switching away from that type.
                           contentMediaType: undefined,
                           'x-formatting-context': undefined,
+                          'x-allowed-entity-type-id': undefined,
+                          'x-allowed-bundle': undefined,
+                          entityFieldExpressions: undefined,
                           example: defaultExample,
                           allowMultiple: false,
                           items: undefined,
@@ -240,6 +255,9 @@ export default function Props() {
                         } as Partial<CodeComponentProp>,
                       }),
                     );
+                    if (isRequired && isContentEntityReference) {
+                      dispatch(toggleRequired({ propId: prop.id }));
+                    }
                   }
                 }}
                 // Disable changing type if component is exposed and prop existed when loaded.
@@ -257,22 +275,24 @@ export default function Props() {
             </FormElement>
           </Box>
 
-          <Flex direction="column" gap="2">
-            <Label htmlFor={`prop-required-${prop.id}`}>Required</Label>
-            <Switch
-              id={`prop-required-${prop.id}`}
-              checked={required.includes(propName)}
-              size="1"
-              mb="1"
-              onCheckedChange={() =>
-                dispatch(
-                  toggleRequired({
-                    propId: prop.id,
-                  }),
-                )
-              }
-            />
-          </Flex>
+          {prop.derivedType !== 'contentEntityReference' && (
+            <Flex direction="column" gap="2">
+              <Label htmlFor={`prop-required-${prop.id}`}>Required</Label>
+              <Switch
+                id={`prop-required-${prop.id}`}
+                checked={required.includes(propName)}
+                size="1"
+                mb="1"
+                onCheckedChange={() =>
+                  dispatch(
+                    toggleRequired({
+                      propId: prop.id,
+                    }),
+                  )
+                }
+              />
+            </Flex>
+          )}
         </Flex>
 
         {(() => {
@@ -354,6 +374,21 @@ export default function Props() {
                   limitedCount={prop.limitedCount}
                 />
               );
+            case 'document':
+              return (
+                <FormPropTypeDocument
+                  id={prop.id}
+                  example={
+                    prop.example as
+                      | CodeComponentPropDocumentExample
+                      | CodeComponentPropDocumentExample[]
+                  }
+                  required={required.includes(propName)}
+                  allowMultiple={prop.allowMultiple}
+                  valueMode={prop.valueMode}
+                  limitedCount={prop.limitedCount}
+                />
+              );
             case 'boolean':
               return (
                 <FormPropTypeBoolean
@@ -381,6 +416,28 @@ export default function Props() {
                   limitedCount={prop.limitedCount}
                 />
               );
+            case 'contentEntityReference':
+              return (
+                <FormPropTypeContentEntityReference
+                  id={prop.id}
+                  expressions={prop.entityFieldExpressions ?? []}
+                  targetEntityType={prop['x-allowed-entity-type-id'] ?? null}
+                  targetBundle={prop['x-allowed-bundle'] ?? null}
+                  isDisabled={disabledPropIds.has(prop.id)}
+                />
+              );
+            case 'color':
+              return (
+                <FormPropTypeColor
+                  id={prop.id}
+                  example={prop.example as string}
+                  required={required.includes(propName)}
+                  x-canvas-color-picker={
+                    prop['x-canvas-color-picker'] ?? 'kit-only'
+                  }
+                  x-canvas-color-folders={prop['x-canvas-color-folders']}
+                />
+              );
             case 'date':
               return (
                 <FormPropTypeDate
@@ -405,6 +462,7 @@ export default function Props() {
           'number',
           'image',
           'video',
+          'document',
           'date',
           'listText',
           'listInteger',
@@ -460,7 +518,7 @@ export default function Props() {
                       updates.valueMode = VALUE_MODE_UNLIMITED;
                       updates.limitedCount = 1;
                     } else if (prop.type === 'object') {
-                      // Convert to array type - for object types (image/video).
+                      // Convert to array type - for object types (image/video/document).
                       updates.type = 'array';
                       updates.items = {
                         type: 'object',
@@ -476,7 +534,8 @@ export default function Props() {
                       ) {
                         updates.example = [prop.example] as
                           | CodeComponentPropImageExample[]
-                          | CodeComponentPropVideoExample[];
+                          | CodeComponentPropVideoExample[]
+                          | CodeComponentPropDocumentExample[];
                       } else {
                         // Start with empty array - FormPropTypeImageArray will handle initialization
                         updates.example = [];
@@ -572,11 +631,13 @@ export default function Props() {
                       const count = Math.max(2, prop.limitedCount ?? 2);
                       updates.limitedCount = count;
 
-                      // For complex object types (video, image), we need to preserve
-                      // existing objects or use an empty array.
+                      // For complex object types (video, image, document),
+                      // we need to preserve existing objects or use an empty
+                      // array.
                       if (
-                        prop.derivedType === 'video' ||
-                        prop.derivedType === 'image'
+                        ['video', 'image', 'document'].includes(
+                          prop.derivedType ?? '',
+                        )
                       ) {
                         const exampleArray = Array.isArray(prop.example)
                           ? prop.example

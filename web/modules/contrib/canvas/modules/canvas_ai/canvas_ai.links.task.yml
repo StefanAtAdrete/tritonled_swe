@@ -8,9 +8,3 @@ canvas_ai.component_description_settings:
   route_name: canvas_ai.component_description_settings
   base_route: canvas_ai.setting
   weight: 10
-
-canvas_ai.theme_region_settings:
-  title: 'Page Region Descriptions'
-  route_name: canvas_ai.theme_region_settings
-  base_route: canvas_ai.setting
-  weight: 20

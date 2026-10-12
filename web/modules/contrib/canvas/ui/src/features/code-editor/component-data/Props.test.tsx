@@ -18,6 +18,7 @@ import { makeStore } from '@/app/store';
 import {
   initialState,
   selectCodeComponentProperty,
+  updateProp,
 } from '@/features/code-editor/codeEditorSlice';
 import { createDisplayArray } from '@/features/code-editor/utils/arrayPropUtils';
 import {
@@ -198,6 +199,74 @@ describe('props in code editor', () => {
         selectCodeComponentProperty('props')(store.getState())[0].example,
       ).toEqual('');
     });
+
+    it('clears required when changing type to content entity reference', async () => {
+      await addProp('Text', 'Author');
+      await userEvent.click(screen.getByRole('switch', { name: 'Required' }));
+      expect(selectCodeComponentProperty('required')(store.getState())).toEqual(
+        ['author'],
+      );
+
+      await userEvent.click(screen.getByRole('combobox', { name: 'Type' }));
+      await userEvent.click(
+        screen.getByRole('option', { name: 'Content entity reference' }),
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('switch', { name: 'Required' }),
+        ).not.toBeInTheDocument();
+      });
+      expect(selectCodeComponentProperty('required')(store.getState())).toEqual(
+        [],
+      );
+    });
+
+    it('shows the content entity reference type option', async () => {
+      await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+      await userEvent.click(screen.getByRole('combobox', { name: 'Type' }));
+
+      expect(screen.getByRole('option', { name: 'Text' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Content entity reference' }),
+      ).toBeInTheDocument();
+    });
+
+    it('clears content entity reference target data when changing type', async () => {
+      await addProp('Content entity reference', 'Author');
+      const propId = selectCodeComponentProperty('props')(store.getState())[0]
+        .id;
+      store.dispatch(
+        updateProp({
+          id: propId,
+          updates: {
+            'x-allowed-entity-type-id': 'node',
+            'x-allowed-bundle': 'article',
+            entityFieldExpressions: ['field_author.entity.name'],
+          },
+        }),
+      );
+
+      await userEvent.click(screen.getByRole('combobox', { name: 'Type' }));
+      await userEvent.click(screen.getByRole('option', { name: 'Text' }));
+
+      const prop = selectCodeComponentProperty('props')(store.getState())[0];
+      expect(prop['x-allowed-entity-type-id']).toBeUndefined();
+      expect(prop['x-allowed-bundle']).toBeUndefined();
+      expect(prop.entityFieldExpressions).toBeUndefined();
+
+      await userEvent.click(screen.getByRole('combobox', { name: 'Type' }));
+      await userEvent.click(
+        screen.getByRole('option', { name: 'Content entity reference' }),
+      );
+
+      const revertedProp = selectCodeComponentProperty('props')(
+        store.getState(),
+      )[0];
+      expect(revertedProp['x-allowed-entity-type-id']).toBeUndefined();
+      expect(revertedProp['x-allowed-bundle']).toBeUndefined();
+    });
+
     it('reorders props', async () => {
       await addProp('Text', 'Alpha');
       await addProp('Text', 'Beta');
@@ -904,6 +973,65 @@ describe('props in code editor', () => {
       });
     });
 
+    it('creates a new document prop', async () => {
+      await addProp('Document', 'Document');
+      await waitFor(() => {
+        expect(screen.getByLabelText('Example document')).toHaveTextContent(
+          'Sample document (PDF)',
+        );
+      });
+      await waitFor(() => {
+        const prop = selectCodeComponentProperty('props')(store.getState())[0];
+        expect(prop).toMatchObject({
+          type: 'object',
+          example: {
+            src: '/ui/assets/documents/sample.pdf',
+            filename: 'sample.pdf',
+            mimetype: 'application/pdf',
+          },
+          format: undefined,
+          $ref: 'json-schema-definitions://canvas.module/document',
+        });
+      });
+
+      // Selecting "None" clears the example.
+      await userEvent.click(
+        screen.getByRole('combobox', { name: 'Example document' }),
+      );
+      const noneOption = await screen.findByRole('option', {
+        name: '- None -',
+      });
+      await userEvent.click(noneOption);
+      await waitFor(() => {
+        const prop = selectCodeComponentProperty('props')(store.getState())[0];
+        expect(prop).toMatchObject({
+          type: 'object',
+          example: '',
+          format: undefined,
+          $ref: 'json-schema-definitions://canvas.module/document',
+        });
+      });
+
+      // Setting the prop as required restores the default example.
+      await userEvent.click(screen.getByLabelText('Required'));
+      expect(screen.getByLabelText('Example document')).toHaveTextContent(
+        'Sample document (PDF)',
+      );
+      await waitFor(() => {
+        const prop = selectCodeComponentProperty('props')(store.getState())[0];
+        expect(prop).toMatchObject({
+          type: 'object',
+          example: {
+            src: '/ui/assets/documents/sample.pdf',
+            filename: 'sample.pdf',
+            mimetype: 'application/pdf',
+          },
+          format: undefined,
+          $ref: 'json-schema-definitions://canvas.module/document',
+        });
+      });
+    });
+
     it('creates a new boolean prop', async () => {
       await addProp('Boolean', 'Is featured');
       await waitFor(() => {
@@ -1449,6 +1577,11 @@ describe('props in code editor', () => {
       {
         targetTypeName: 'Video',
         expectedDerivedType: 'video' as const,
+        expectedFormat: undefined,
+      },
+      {
+        targetTypeName: 'Document',
+        expectedDerivedType: 'document' as const,
         expectedFormat: undefined,
       },
       {
@@ -3285,6 +3418,27 @@ describe('props in code editor', () => {
       });
     });
 
+    it('enables multiple values for document prop', async () => {
+      await addProp('Document', 'DocumentLibrary');
+      const checkbox = await screen.findByRole('checkbox', {
+        name: 'Allow multiple values',
+      });
+      expect(checkbox).toBeInTheDocument();
+      fireEvent.click(checkbox);
+      await waitFor(() => {
+        const prop = selectCodeComponentProperty('props')(store.getState())[0];
+        expect(prop.allowMultiple).toBe(true);
+        expect(prop.type).toBe('array');
+        expect(prop.items).toEqual({
+          type: 'object',
+          $ref: 'json-schema-definitions://canvas.module/document',
+        });
+        expect(Array.isArray(prop.example)).toBe(true);
+        expect(prop.valueMode).toBe('unlimited');
+        expect(prop.limitedCount).toBe(1);
+      });
+    });
+
     it('adds multiple date values in unlimited mode', async () => {
       await addProp('Date and time', 'EventDates');
       const checkbox = await screen.findByRole('checkbox', {
@@ -3649,7 +3803,7 @@ describe('props in code editor', () => {
     );
   });
 
-  describe('serialization with invalid video/image arrays', () => {
+  describe('serialization with invalid object arrays', () => {
     it('utils.ts must handle empty strings in video array without crashing', () => {
       const videoPropsWithEmptyStrings = [
         {
@@ -3670,6 +3824,29 @@ describe('props in code editor', () => {
 
       expect(() =>
         serializeProps(videoPropsWithEmptyStrings as any),
+      ).not.toThrow();
+    });
+
+    it('utils.ts must handle empty strings in document array without crashing', () => {
+      const documentPropsWithEmptyStrings = [
+        {
+          id: 'test-document-prop',
+          name: 'Documents',
+          type: 'array',
+          items: {
+            type: 'object',
+            $ref: 'json-schema-definitions://canvas.module/document',
+          },
+          example: ['', ''],
+          derivedType: 'document',
+          allowMultiple: true,
+          valueMode: 'limited',
+          limitedCount: 2,
+        },
+      ];
+
+      expect(() =>
+        serializeProps(documentPropsWithEmptyStrings as any),
       ).not.toThrow();
     });
 

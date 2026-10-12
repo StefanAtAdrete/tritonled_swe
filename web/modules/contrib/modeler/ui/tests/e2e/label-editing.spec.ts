@@ -100,98 +100,74 @@ test.describe('Workflow Modeler - Label Editing', () => {
   });
 
   test.describe('Condition Label Editing', () => {
-    test('should display condition label input when edge with condition is selected', async ({ page }) => {
-      // First, add a condition to an edge using quick-add
-      // Click directly on the quick-add condition button (it's always present, just with low opacity)
-      const quickAddConditionBtn = page.locator('button[title="Add condition"]').first();
-      
-      // Force click since the button may have low opacity
-      await quickAddConditionBtn.click({ force: true });
-      
-      // Wait for popup
-      await page.waitForSelector('.quick-add-popup', { state: 'visible', timeout: 5000 });
-      
-      // Select a condition
-      const conditionItem = page.locator('.quick-add-component-item:has-text("Entity is New")');
-      await conditionItem.click();
-      
-      // Wait for popup to close and edge to be selected
-      await page.waitForSelector('.quick-add-popup', { state: 'hidden', timeout: 5000 });
-      await page.waitForTimeout(300);
-      
-      // The edge should now be selected and show condition label input
-      const conditionLabelInput = page.locator('#modeler-condition-label');
-      await expect(conditionLabelInput).toBeVisible();
+    // Conditions are first-class NODES now (issue #3589093).  Inserting a
+    // condition on an edge creates a condition NODE (the inserted node is
+    // auto-selected), and the condition's label is edited through the NODE
+    // properties panel (`#modeler-component-label`) — exactly like any other
+    // node.  There is no `#modeler-condition-label` edge field anymore.
+
+    /** Insert a condition node on edge_2 and return its selected label input. */
+    async function insertConditionOnEdge2(page: import('@playwright/test').Page) {
+      await modeler.openQuickAddConditionPopup('edge_2');
+      await modeler.selectQuickAddComponent('Entity is New');
+      await page.waitForTimeout(400);
+    }
+
+    test('should display the node label input when the inserted condition node is selected', async ({ page }) => {
+      await insertConditionOnEdge2(page);
+
+      // The newly inserted condition node is auto-selected, so the node
+      // properties panel shows its label input prefilled with the condition.
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
+      await expect(labelInput).toHaveValue('Entity is New');
+
+      // Two condition node cards are now rendered: the promoted condition from
+      // edge_1 (loaded on startup) plus the one we just inserted on edge_2.
+      expect(await modeler.getConditionNodeCount()).toBe(2);
     });
 
-    test('should update condition label on canvas when edited', async ({ page }) => {
-      // Add a condition to an edge using quick-add
-      const quickAddConditionBtn = page.locator('button[title="Add condition"]').first();
-      await quickAddConditionBtn.click({ force: true });
-      await page.waitForSelector('.quick-add-popup', { state: 'visible', timeout: 5000 });
-      
-      const conditionItem = page.locator('.quick-add-component-item:has-text("Entity is New")');
-      await conditionItem.click();
-      await page.waitForSelector('.quick-add-popup', { state: 'hidden', timeout: 5000 });
-      await page.waitForTimeout(300);
-      
-      // Find the condition label input
-      const conditionLabelInput = page.locator('#modeler-condition-label');
-      await expect(conditionLabelInput).toBeVisible();
-      
-      // Edit the condition label
-      await conditionLabelInput.clear();
-      await conditionLabelInput.fill('Is New Entity?');
-      await conditionLabelInput.blur();
-      
-      // Wait for debounce
+    test('should update condition node label on canvas when edited', async ({ page }) => {
+      await insertConditionOnEdge2(page);
+
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
+
+      // Edit the condition node's label via the node panel.
+      await labelInput.clear();
+      await labelInput.fill('Is New Entity?');
+      await labelInput.blur();
       await page.waitForTimeout(400);
-      
-      // Verify the label was saved by deselecting and reselecting
-      // Click elsewhere to deselect
-      await modeler.selectNode('event_1');
-      await page.waitForTimeout(200);
-      
-      // Reselect the edge (edge_2 — the one we added the condition to)
-      const edge = page.locator('.react-flow__edge[data-testid="rf__edge-edge_2"], .react-flow__edge[data-id="edge_2"]').first();
-      await edge.click({ force: true });
-      await page.waitForTimeout(200);
-      
-      // Verify the label persisted in the input
-      const conditionLabelInputAfter = page.locator('#modeler-condition-label');
-      await expect(conditionLabelInputAfter).toHaveValue('Is New Entity?');
+
+      // The condition node card on the canvas reflects the new label.  Target
+      // the selected (newly inserted) condition node specifically, since the
+      // promoted condition from edge_1 shares the same "Entity is New" label.
+      const conditionCard = modeler.getSelectedConditionNode();
+      await expect(conditionCard).toContainText('Is New Entity?');
     });
 
-    test('should persist condition label after deselecting and reselecting edge', async ({ page }) => {
-      // Add a condition to an edge (edge_2, the one without a condition)
-      const quickAddConditionBtn = page.locator('button[title="Add condition"]').first();
-      await quickAddConditionBtn.click({ force: true });
-      await page.waitForSelector('.quick-add-popup', { state: 'visible', timeout: 5000 });
-      
-      const conditionItem = page.locator('.quick-add-component-item:has-text("Entity is New")');
-      await conditionItem.click();
-      await page.waitForSelector('.quick-add-popup', { state: 'hidden', timeout: 5000 });
-      await page.waitForTimeout(300);
-      
-      // Edit the condition label
-      const conditionLabelInput = page.locator('#modeler-condition-label');
-      await conditionLabelInput.clear();
-      await conditionLabelInput.fill('Custom Condition Label');
-      await conditionLabelInput.blur();
+    test('should persist condition node label after deselecting and reselecting the node', async ({ page }) => {
+      await insertConditionOnEdge2(page);
+
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
+
+      await labelInput.clear();
+      await labelInput.fill('Custom Condition Label');
+      await labelInput.blur();
       await page.waitForTimeout(400);
-      
-      // Click elsewhere to deselect
-      await modeler.selectNode('event_1');
-      await page.waitForTimeout(200);
-      
-      // Reselect the edge (edge_2 — the one we modified)
-      const edge = page.locator('.react-flow__edge[data-testid="rf__edge-edge_2"], .react-flow__edge[data-id="edge_2"]').first();
-      await edge.click({ force: true });
-      await page.waitForTimeout(200);
-      
-      // Verify the label persisted
-      const conditionLabelInputAfter = page.locator('#modeler-condition-label');
-      await expect(conditionLabelInputAfter).toHaveValue('Custom Condition Label');
+
+      // Deselect by clicking empty canvas (top-right, away from the minimap).
+      await modeler.canvas.click({ position: { x: 600, y: 50 } });
+      await page.waitForTimeout(300);
+
+      // Reselect the condition node card and verify the label persisted.
+      // Target the renamed card by its text — the promoted condition from
+      // edge_1 still shows "Entity is New", so we must pick the one we edited.
+      await modeler.getConditionNodes().filter({ hasText: 'Custom Condition Label' }).first().click();
+      await page.waitForTimeout(300);
+      const labelInputAfter = modeler.getNodeLabelInput();
+      await expect(labelInputAfter).toHaveValue('Custom Condition Label');
     });
   });
 

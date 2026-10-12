@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Fences Preset form.
  */
-final class FencesPresetForm extends EntityForm implements ContainerInjectionInterface {
+class FencesPresetForm extends EntityForm implements ContainerInjectionInterface {
 
   /**
    * The tag manager.

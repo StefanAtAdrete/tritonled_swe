@@ -3,6 +3,8 @@ import type { Template } from './template.js';
 
 export type Context = {
   template: Template;
-  appName: string;
+  projectName: string;
+  interactive: boolean;
+  siteUrl?: string;
   selectedAgents?: AgentType[];
 };

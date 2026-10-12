@@ -17,6 +17,10 @@ import type { CanvasComponentTree } from './json-render-utils';
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+// Rendered elements are inspected structurally; React 19 types their props
+// as `unknown` by default.
+type TestElement = React.ReactElement<Record<string, any>>;
+
 describe('canvasTreeToSpec', () => {
   describe('single component without children', () => {
     it('should convert a basic component', () => {
@@ -659,8 +663,8 @@ describe('renderSpec', () => {
     );
     const result = renderSpec(spec, { Button });
 
-    expect((result as React.ReactElement).type).toBe(Button);
-    expect((result as React.ReactElement).props.label).toBe('Go');
+    expect((result as TestElement).type).toBe(Button);
+    expect((result as TestElement).props.label).toBe('Go');
   });
 
   it('should render a spec with children and slots', () => {
@@ -698,15 +702,13 @@ describe('renderSpec', () => {
     );
     const result = renderSpec(spec, { Layout, Text, Button });
 
-    expect((result as React.ReactElement).type).toBe(Layout);
-    expect((result as React.ReactElement).props.children[0].type).toBe(Text);
-    expect((result as React.ReactElement).props.children[0].props.content).toBe(
+    expect((result as TestElement).type).toBe(Layout);
+    expect((result as TestElement).props.children[0].type).toBe(Text);
+    expect((result as TestElement).props.children[0].props.content).toBe(
       'Hello',
     );
-    expect((result as React.ReactElement).props.footer[0].type).toBe(Button);
-    expect((result as React.ReactElement).props.footer[0].props.label).toBe(
-      'OK',
-    );
+    expect((result as TestElement).props.footer[0].type).toBe(Button);
+    expect((result as TestElement).props.footer[0].props.label).toBe('OK');
   });
 
   it('should return null for unknown component types', () => {
@@ -738,8 +740,7 @@ describe('renderSpec', () => {
       <button>{props.label as string}</button>
     );
     const result = renderSpec(spec, { Button });
-    const children = (result as React.ReactElement).props
-      .children as React.ReactElement[];
+    const children = (result as TestElement).props.children as TestElement[];
 
     expect(children).toHaveLength(2);
     expect(children[0].type).toBe(Button);
@@ -767,8 +768,8 @@ describe('renderSpec state resolving', () => {
     );
     const result = renderSpec(spec, { Heading });
 
-    expect((result as React.ReactElement).type).toBe(Heading);
-    expect((result as React.ReactElement).props.text).toBe('Hello from state');
+    expect((result as TestElement).type).toBe(Heading);
+    expect((result as TestElement).props.text).toBe('Hello from state');
   });
 
   it('should resolve $cond/$then/$else expressions', () => {
@@ -792,13 +793,13 @@ describe('renderSpec state resolving', () => {
     const Badge = (_props: Record<string, unknown>) => <span />;
     const resultActive = renderSpec(spec, { Badge });
 
-    expect((resultActive as React.ReactElement).type).toBe(Badge);
-    expect((resultActive as React.ReactElement).props.variant).toBe('success');
+    expect((resultActive as TestElement).type).toBe(Badge);
+    expect((resultActive as TestElement).props.variant).toBe('success');
 
     // With active = false, should resolve to $else.
     const specInactive: Spec = { ...spec, state: { active: false } };
     const resultInactive = renderSpec(specInactive, { Badge });
-    expect((resultInactive as React.ReactElement).props.variant).toBe('muted');
+    expect((resultInactive as TestElement).props.variant).toBe('muted');
   });
 
   it('should work unchanged for specs without state', () => {
@@ -817,8 +818,8 @@ describe('renderSpec state resolving', () => {
     );
     const result = renderSpec(spec, { Button });
 
-    expect((result as React.ReactElement).type).toBe(Button);
-    expect((result as React.ReactElement).props.label).toBe('Go');
+    expect((result as TestElement).type).toBe(Button);
+    expect((result as TestElement).props.label).toBe('Go');
   });
 });
 
@@ -869,8 +870,8 @@ describe('renderCanvasTree', () => {
     );
     const result = await renderCanvasTree(components, { Paragraph });
 
-    expect((result as React.ReactElement).type).toBe(Paragraph);
-    expect((result as React.ReactElement).props.text).toBe(
+    expect((result as TestElement).type).toBe(Paragraph);
+    expect((result as TestElement).props.text).toBe(
       '<p>Hello <em>world</em>.</p>',
     );
   });
@@ -904,8 +905,8 @@ describe('renderCanvasTree', () => {
     );
     const result = await renderCanvasTree(components, { Hero });
 
-    expect((result as React.ReactElement).type).toBe(Hero);
-    expect((result as React.ReactElement).props.image).toEqual({
+    expect((result as TestElement).type).toBe(Hero);
+    expect((result as TestElement).props.image).toEqual({
       src: 'https://example.com/hero.jpg',
       alt: 'Hero image',
       width: 1200,
@@ -961,9 +962,8 @@ describe('renderCanvasTree', () => {
     );
     const result = renderCanvasTree(components, { Wrapper, Text });
 
-    expect((result as React.ReactElement).type).toBe(Wrapper);
-    const children = (result as React.ReactElement).props
-      .children as React.ReactElement[];
+    expect((result as TestElement).type).toBe(Wrapper);
+    const children = (result as TestElement).props.children as TestElement[];
     expect(children).toHaveLength(1);
     expect(children[0].type).toBe(Text);
     expect(children[0].props.content).toBe('Hello');
@@ -1001,9 +1001,8 @@ describe('renderCanvasTree', () => {
     );
     const result = renderCanvasTree(components, { Layout, Heading });
 
-    expect((result as React.ReactElement).type).toBe(Layout);
-    const header = (result as React.ReactElement).props
-      .header as React.ReactElement[];
+    expect((result as TestElement).type).toBe(Layout);
+    const header = (result as TestElement).props.header as TestElement[];
     expect(header).toHaveLength(1);
     expect(header[0].type).toBe(Heading);
     expect(header[0].props.text).toBe('Title');
@@ -1036,8 +1035,8 @@ describe('renderCanvasTree', () => {
     );
     const result = renderCanvasTree(components, { Button });
 
-    const fragmentChildren = (result as React.ReactElement).props
-      .children as React.ReactElement[];
+    const fragmentChildren = (result as TestElement).props
+      .children as TestElement[];
     expect(fragmentChildren).toHaveLength(2);
     expect(fragmentChildren[0].type).toBe(Button);
     expect(fragmentChildren[0].props.label).toBe('A');
@@ -1136,7 +1135,10 @@ describe('defineComponentCatalog', () => {
     ];
 
     const catalog = defineComponentCatalog(metadata);
-    expect(catalog.componentNames).toEqual(['js.avatar']);
+    expect(catalog.componentNames).toEqual([
+      'js.avatar',
+      'canvas:component-tree',
+    ]);
 
     // Validate a spec with resolved image props passes.
     const spec = {
@@ -1160,6 +1162,112 @@ describe('defineComponentCatalog', () => {
     expect(catalog.validate(spec).success).toBe(true);
   });
 
+  it('should resolve the Canvas document $ref in metadata and validate document props', () => {
+    const metadata: ComponentMetadata[] = [
+      {
+        name: 'Download',
+        machineName: 'download',
+        status: true,
+        props: {
+          properties: {
+            file: {
+              title: 'File',
+              type: 'object',
+              $ref: 'json-schema-definitions://canvas.module/document',
+            },
+          },
+        },
+        required: ['file'],
+        slots: {},
+      },
+    ];
+
+    const catalog = defineComponentCatalog(metadata);
+    expect(catalog.componentNames).toEqual([
+      'js.download',
+      'canvas:component-tree',
+    ]);
+
+    const specWithFile = (file: Record<string, unknown>) => ({
+      root: 'dl',
+      elements: {
+        dl: {
+          type: 'js.download',
+          props: { file },
+          children: [],
+          slots: {},
+        },
+      },
+    });
+
+    // A reconciled document carries a site-relative `src`, which the
+    // `uri-reference` format must not reject.
+    expect(
+      catalog.validate(
+        specWithFile({
+          src: '/sites/default/files/report.pdf',
+          filename: 'report.pdf',
+          filesize: 25600,
+          mimetype: 'application/pdf',
+        }),
+      ).success,
+    ).toBe(true);
+
+    // `src` is the only required document property.
+    expect(
+      catalog.validate(specWithFile({ filename: 'report.pdf' })).success,
+    ).toBe(false);
+  });
+
+  it('should validate Canvas color props without recursive schema overflow', () => {
+    const metadata: ComponentMetadata[] = [
+      {
+        name: 'Color Chip',
+        machineName: 'color_chip',
+        status: true,
+        props: {
+          properties: {
+            color: {
+              title: 'Color',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+          },
+        },
+        required: ['color'],
+        slots: {},
+      },
+    ];
+
+    const catalog = defineComponentCatalog(metadata);
+
+    const validHexSpec = {
+      root: 'chip',
+      elements: {
+        chip: {
+          type: 'js.color_chip',
+          props: { color: '#687df7e3' },
+          children: [],
+          slots: {},
+        },
+      },
+    };
+    expect(catalog.validate(validHexSpec).success).toBe(true);
+
+    const validBrandKitRefSpec = {
+      root: 'chip',
+      elements: {
+        chip: {
+          type: 'js.color_chip',
+          props: { color: 'canvas-color:brand-blue' },
+          children: [],
+          slots: {},
+        },
+      },
+    };
+    expect(catalog.validate(validBrandKitRefSpec).success).toBe(true);
+  });
+
   it('should create a catalog from component metadata', () => {
     const metadata: ComponentMetadata[] = [
       {
@@ -1180,7 +1288,10 @@ describe('defineComponentCatalog', () => {
     const catalog = defineComponentCatalog(metadata);
 
     expect(catalog).toBeDefined();
-    expect(catalog.componentNames).toEqual(['js.button']);
+    expect(catalog.componentNames).toEqual([
+      'js.button',
+      'canvas:component-tree',
+    ]);
     expect(catalog.data.components['js.button']).toBeDefined();
   });
 
@@ -1226,7 +1337,10 @@ describe('defineComponentCatalog', () => {
 
     const catalog = defineComponentCatalog(metadata);
 
-    expect(catalog.componentNames).toEqual(['js.divider']);
+    expect(catalog.componentNames).toEqual([
+      'js.divider',
+      'canvas:component-tree',
+    ]);
     expect(catalog.data.components['js.divider'].slots).toEqual([]);
   });
 
@@ -1254,7 +1368,11 @@ describe('defineComponentCatalog', () => {
 
     const catalog = defineComponentCatalog(metadata);
 
-    expect(catalog.componentNames).toEqual(['js.button', 'js.text']);
+    expect(catalog.componentNames).toEqual([
+      'js.button',
+      'js.text',
+      'canvas:component-tree',
+    ]);
   });
 
   it('should produce a catalog that can generate a prompt', () => {

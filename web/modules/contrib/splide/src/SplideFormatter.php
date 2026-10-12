@@ -30,7 +30,7 @@ class SplideFormatter extends BlazyFormatter implements SplideFormatterInterface
    * {@inheritdoc}
    */
   public function preBuildElements(array &$build, $items, array $entities = []) {
-    $this->hashtag($build);
+    // @todo remove $this->hashtag($build);.
     $settings = &$build['#settings'];
 
     $this->verifySafely($settings);

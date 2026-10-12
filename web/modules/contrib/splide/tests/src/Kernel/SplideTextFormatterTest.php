@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\Tests\splide\Kernel;
 
 use Drupal\Core\Form\FormState;
 use Drupal\Tests\blazy\Kernel\BlazyKernelTestBase;
 use Drupal\Tests\splide\Traits\SplideKernelTrait;
 use Drupal\Tests\splide\Traits\SplideUnitTestTrait;
-use Drupal\blazy\Blazy;
+use Drupal\blazy\BlazyApi;
 
 /**
  * Tests the Splide field rendering using the text field type.
@@ -101,7 +103,7 @@ class SplideTextFormatterTest extends BlazyKernelTestBase {
     $render_empty = $this->splideManager->renderer()->renderRoot($build_empty[$this->testEmptyName]);
     $this->assertEmpty($render_empty);
 
-    $build['#settings'] = Blazy::init();
+    $build['#settings'] = BlazyApi::init();
     // @todo refine the parameters, but not crucial for now.
     /** @phpstan-ignore-next-line */
     $scopes = $this->formatterInstance->buildSettings($build, NULL);

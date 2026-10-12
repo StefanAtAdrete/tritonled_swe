@@ -6,8 +6,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { FiChevronDown, FiChevronRight, FiMoreVertical } from 'react-icons/fi';
-import { useFilterStore } from '../store/useFilterStore';
+import { FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { t } from '../utils/translation';
 
 const MAX_DEPTH = Infinity;
@@ -27,7 +26,6 @@ export const ReplayDataRenderer: React.FC<ReplayDataRendererProps> = ({
   data,
   basePath = '',
 }) => {
-  const setTokenDragging = useFilterStore(s => s.setTokenDragging);
   const [expandedSections, setExpandedSections] = useState(new Set<string>());
 
   const toggleSection = useCallback((sectionId: string) => {
@@ -146,18 +144,6 @@ export const ReplayDataRenderer: React.FC<ReplayDataRendererProps> = ({
     );
   };
 
-  // Handle drag start for tokens
-  const handleTokenDragStart = (e: React.DragEvent, tokenData: { label: string; token: string }) => {
-    e.dataTransfer.setData('text/plain', tokenData.token);
-    e.dataTransfer.setData('application/token', JSON.stringify(tokenData));
-    setTokenDragging(true);
-  };
-
-  // Handle drag end for tokens
-  const handleTokenDragEnd = useCallback(() => {
-    setTokenDragging(false);
-  }, [setTokenDragging]);
-
   // Render token data (normalized structure with label/token/value/data)
   const renderTokenData = (tokenData: any, path = '', depth = 0): React.ReactNode => {
     if (depth >= MAX_DEPTH) {
@@ -205,22 +191,8 @@ export const ReplayDataRenderer: React.FC<ReplayDataRendererProps> = ({
                   </button>
                 ) : (
                   <>
-                    {tokenData.token ? (
-                      <span className="token-drag-icon" aria-hidden="true"><FiMoreVertical /></span>
-                    ) : (
-                      <span className="token-label-spacer"></span>
-                    )}
-                    <span
-                      className={`token-label ${tokenData.token ? 'draggable' : ''}`}
-                      draggable={!!tokenData.token}
-                      onDragStart={(e) => {
-                        if (tokenData.token) {
-                          handleTokenDragStart(e, { label: tokenData.label, token: tokenData.token });
-                        }
-                      }}
-                      onDragEnd={handleTokenDragEnd}
-                      title={tokenData.token ? t('Drag to insert token: @token', { '@token': tokenData.token }) : ''}
-                    >
+                    <span className="token-label-spacer"></span>
+                    <span className="token-label">
                       {tokenData.label}
                     </span>
                     {tokenData.token && (
@@ -261,22 +233,8 @@ export const ReplayDataRenderer: React.FC<ReplayDataRendererProps> = ({
         <div className="token-item">
           <div className="token-header">
             <div className="token-label-group">
-              {tokenData.token ? (
-                <span className="token-drag-icon" aria-hidden="true"><FiMoreVertical /></span>
-              ) : (
-                <span className="token-label-spacer"></span>
-              )}
-              <span
-                className={`token-label ${tokenData.token ? 'draggable' : ''}`}
-                draggable={!!tokenData.token}
-                onDragStart={(e) => {
-                  if (tokenData.token) {
-                    handleTokenDragStart(e, { label: tokenData.label, token: tokenData.token });
-                  }
-                }}
-                onDragEnd={handleTokenDragEnd}
-                title={tokenData.token ? t('Drag to insert token: @token', { '@token': tokenData.token }) : ''}
-              >
+              <span className="token-label-spacer"></span>
+              <span className="token-label">
                 {tokenData.label}
               </span>
               {tokenData.token && (
@@ -301,19 +259,39 @@ export const ReplayDataRenderer: React.FC<ReplayDataRendererProps> = ({
 interface StepDataContainerProps {
   /** Step data object to render */
   stepData: Record<string, any>;
+  /**
+   * Whether this step data was PREDICTED from a replay-covered predecessor of
+   * the selected node (issue #3577207) rather than confirmed by a replay run.
+   * When `true`, a subtle "predicted" badge + tooltip is rendered on each
+   * top-level token. Defaults to `false` (confirmed; rendering unchanged).
+   */
+  predicted?: boolean;
 }
 
-export const StepDataContainer: React.FC<StepDataContainerProps> = ({ stepData }) => {
+export const StepDataContainer: React.FC<StepDataContainerProps> = ({ stepData, predicted = false }) => {
   return (
-    <div className="token-data-container">
+    // The container is a scrollable region (`overflow-y: auto`), so it must be
+    // keyboard-focusable to satisfy axe `scrollable-region-focusable` — a focused
+    // user can scroll it with the arrow keys. Labeled as a group for screen
+    // readers. Applies to BOTH confirmed and predicted rendering (shared root).
+    <div className="token-data-container" tabIndex={0} role="group" aria-label={t('Step data')}>
       {Object.entries(stepData).map(([key, value]) => {
         // If value doesn't have a label, add the key as the label
         const dataWithLabel = (value && typeof value === 'object' && 'label' in value)
           ? value
           : { label: key, ...(typeof value === 'object' && value !== null ? value : { value }) };
         return (
-          <div key={key}>
+          <div key={key} className={predicted ? 'token-data-entry token-data-entry--predicted' : 'token-data-entry'}>
             <ReplayDataRenderer data={dataWithLabel} basePath={`tokenData.${key}`} />
+            {predicted && (
+              <span
+                className="token-predicted-badge"
+                title={t('Predicted from the previous step; not yet confirmed by a test run.')}
+                aria-label={t('Predicted token')}
+              >
+                {t('Predicted')}
+              </span>
+            )}
           </div>
         );
       })}
@@ -327,10 +305,9 @@ export const StepDataContainer: React.FC<StepDataContainerProps> = ({ stepData }
  * Drupal sends: { name, description, dynamic, "raw token", token, value, children? }
  * Renderer expects: { label, token, value, data? }
  */
-function transformGlobalToken(entry: Record<string, any>): Record<string, any> {
+export function transformGlobalToken(entry: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {
     label: entry.name || entry.token || '',
-    // eslint-disable-next-line i18n/no-untranslated-strings -- property key, not user-facing
     token: entry['raw token'] || '',
   };
   if ('value' in entry) {
@@ -345,52 +322,5 @@ function transformGlobalToken(entry: Record<string, any>): Record<string, any> {
   }
   return result;
 }
-
-/**
- * Container component for rendering global tokens from drupalSettings.
- */
-interface GlobalTokensContainerProps {
-  /** Global tokens object from drupalSettings.modeler_api.global_tokens */
-  globalTokens: Record<string, any>;
-}
-
-export const GlobalTokensContainer: React.FC<GlobalTokensContainerProps> = ({ globalTokens }) => {
-  return (
-    <div className="token-data-container">
-      {Object.entries(globalTokens).map(([key, entry]) => {
-        const transformed = transformGlobalToken(entry as Record<string, any>);
-        return (
-          <div key={key}>
-            <ReplayDataRenderer data={transformed} basePath={`globalTokens.${key}`} />
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-/**
- * Container component for rendering template tokens from drupalSettings.
- * Uses the same GlobalToken structure and transformation as global tokens.
- */
-interface TemplateTokensContainerProps {
-  /** Template tokens object from drupalSettings.modeler_api.template_tokens */
-  templateTokens: Record<string, any>;
-}
-
-export const TemplateTokensContainer: React.FC<TemplateTokensContainerProps> = ({ templateTokens }) => {
-  return (
-    <div className="token-data-container">
-      {Object.entries(templateTokens).map(([key, entry]) => {
-        const transformed = transformGlobalToken(entry as Record<string, any>);
-        return (
-          <div key={key}>
-            <ReplayDataRenderer data={transformed} basePath={`templateTokens.${key}`} />
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 export default ReplayDataRenderer;

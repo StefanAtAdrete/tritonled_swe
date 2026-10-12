@@ -3,18 +3,30 @@ import os from 'os';
 import path from 'path';
 import yaml from 'js-yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { parse } from '@babel/parser';
+import * as p from '@clack/prompts';
 
 import { setConfig } from '../config';
+import { readValidatedComponentMetadata } from '../utils/component-metadata';
+import {
+  COMMAND_RESULT_REPORT_OPTIONS,
+  reportResults,
+} from '../utils/report-results';
 import {
   createAssetsPullTask,
+  createBrandKitPullTask,
   createComponentsPullTask,
-  createFontsPullTask,
   createPagesPullTask,
 } from './pull';
 
 import type { ApiService } from '../services/api';
 import type { Component } from '../types/Component';
 import type { Page, PageListItem } from '../types/Page';
+
+vi.mock('@clack/prompts', () => ({
+  log: { info: vi.fn(), warn: vi.fn(), message: vi.fn() },
+  note: vi.fn(),
+}));
 
 const mockComponent = (machineName: string): Component =>
   ({
@@ -47,7 +59,13 @@ describe('Pull Command', () => {
 
     it('should return empty summary when no components', async () => {
       const api = mockApiService({});
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
       expect(summaryLines).toEqual([]);
@@ -55,10 +73,16 @@ describe('Pull Command', () => {
 
     it('should show only new counts in summary when none exist locally', async () => {
       const api = mockApiService({ a: mockComponent('button') });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 1 component (1 new)']);
+      expect(summaryLines).toEqual(['Components: 1 pull (1 new)']);
     });
 
     it('should show both new and existing counts in summary', async () => {
@@ -81,10 +105,16 @@ describe('Pull Command', () => {
         b: mockComponent('card'),
         c: mockComponent('hero'),
       });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 3 components (2 new, 1 existing)']);
+      expect(summaryLines).toEqual(['Components: 3 pull (2 new, 1 existing)']);
     });
 
     it('should include local-only components in summary when remote is empty', async () => {
@@ -102,10 +132,16 @@ describe('Pull Command', () => {
       );
 
       const api = mockApiService({});
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines, localOnlyCount } = await task.prepare();
-      expect(summaryLines).toEqual(['- 1 component to delete (local-only)']);
+      expect(summaryLines).toEqual(['Components: 1 delete (local-only)']);
       expect(localOnlyCount).toBe(1);
     });
 
@@ -124,18 +160,30 @@ describe('Pull Command', () => {
       );
 
       const api = mockApiService({ a: mockComponent('button') });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
       expect(summaryLines).toEqual([
-        '- 1 component (1 new)',
-        '- 1 component to delete (local-only)',
+        'Components: 1 pull (1 new)',
+        'Components: 1 delete (local-only)',
       ]);
     });
 
     it('should write new component files on execute', async () => {
       const api = mockApiService({ a: mockComponent('my-button') });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute();
@@ -158,6 +206,208 @@ describe('Pull Command', () => {
       const parsed = yaml.load(ymlContent) as Record<string, unknown>;
       expect(parsed).toHaveProperty('name', 'my-button');
       expect(parsed).toHaveProperty('machineName', 'my-button');
+    });
+
+    it('should use JSX for a new component when all local components use JavaScript', async () => {
+      const existingDir = path.join(tmpDir, 'existing');
+      await fs.mkdir(existingDir, { recursive: true });
+      await fs.writeFile(
+        path.join(existingDir, 'component.yml'),
+        yaml.dump({ name: 'Existing', machineName: 'existing', status: true }),
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(existingDir, 'index.jsx'),
+        'export default function Existing() {}',
+        'utf-8',
+      );
+
+      const api = mockApiService({
+        a: {
+          ...mockComponent('my-button'),
+          sourceCodeJs: 'export default function MyButton() {}',
+        },
+      });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      await task.execute();
+
+      await expect(
+        fs.access(path.join(tmpDir, 'my-button', 'index.jsx')),
+      ).resolves.toBeUndefined();
+      await expect(
+        fs.access(path.join(tmpDir, 'my-button', 'index.tsx')),
+      ).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+
+    it('should use TSX for a new component when a local component uses TypeScript', async () => {
+      const existingDir = path.join(tmpDir, 'existing');
+      await fs.mkdir(existingDir, { recursive: true });
+      await fs.writeFile(
+        path.join(existingDir, 'component.yml'),
+        yaml.dump({ name: 'Existing', machineName: 'existing', status: true }),
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(existingDir, 'index.tsx'),
+        'export default function Existing() {}',
+        'utf-8',
+      );
+
+      const api = mockApiService({ a: mockComponent('my-button') });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      await task.execute();
+
+      await expect(
+        fs.access(path.join(tmpDir, 'my-button', 'index.tsx')),
+      ).resolves.toBeUndefined();
+      await expect(
+        fs.access(path.join(tmpDir, 'my-button', 'index.jsx')),
+      ).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+
+    it('should use TSX for a new component whose source requires TypeScript', async () => {
+      const sourceCodeJs = [
+        "import type { ComponentProps } from 'react';",
+        'interface ButtonProps extends ComponentProps<"button"> {}',
+        'export default function Button(props: ButtonProps) {',
+        '  return <button {...props} />;',
+        '}',
+      ].join('\n');
+      const component: Component = {
+        ...mockComponent('my-button'),
+        sourceCodeJs,
+      };
+      const api = mockApiService({ a: component });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].success).toBe(true);
+      expect(
+        await fs.readFile(path.join(tmpDir, 'my-button', 'index.tsx'), 'utf-8'),
+      ).toBe(sourceCodeJs);
+      await expect(
+        fs.access(path.join(tmpDir, 'my-button', 'index.jsx')),
+      ).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+
+    it('should write entity field data dependencies to component metadata', async () => {
+      const component: Component = {
+        ...mockComponent('article-card'),
+        dataDependencies: {
+          entityFields: {
+            article: ['entity:node:article.title.value'],
+          },
+        },
+      };
+      const api = mockApiService({ a: component });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      await task.execute();
+
+      const ymlContent = await fs.readFile(
+        path.join(tmpDir, 'article-card', 'component.yml'),
+        'utf-8',
+      );
+      const parsed = yaml.load(ymlContent) as Record<string, unknown>;
+      expect(parsed).toHaveProperty('dataDependencies', {
+        entityFields: {
+          article: ['entity:node:article.title.value'],
+        },
+      });
+    });
+
+    it('normalizes empty slots from the API to an authored mapping', async () => {
+      const component = {
+        ...mockComponent('empty-slots'),
+        slots: [],
+      } as unknown as Component;
+      const task = createComponentsPullTask(
+        mockApiService({ a: component }),
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      await task.execute();
+
+      const metadataPath = path.join(tmpDir, 'empty-slots', 'component.yml');
+      const metadata = await readValidatedComponentMetadata(metadataPath);
+      expect(metadata.slots).toEqual({});
+    });
+
+    it('writes metadata that validates without projected prop keys', async () => {
+      const component: Component = {
+        ...mockComponent('article-card'),
+        required: [],
+        props: {
+          article: {
+            title: 'Article',
+            type: 'object',
+            $ref: 'json-schema-definitions://canvas.module/content-entity-reference',
+            'x-allowed-entity-type-id': 'node',
+            'x-allowed-bundle': 'article',
+          },
+        },
+        dataDependencies: {
+          entityFields: {
+            article: ['entity:node:article.title.value'],
+          },
+        },
+      };
+      const task = createComponentsPullTask(
+        mockApiService({ a: component }),
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      await task.execute();
+
+      const metadataPath = path.join(tmpDir, 'article-card', 'component.yml');
+      const metadata = await readValidatedComponentMetadata(metadataPath);
+      expect(metadata.props.properties.article).not.toHaveProperty(
+        'x-allowed-entity-type-id',
+      );
+      expect(metadata.props.properties.article).not.toHaveProperty(
+        'x-allowed-bundle',
+      );
+      expect(metadata.dataDependencies).toEqual(component.dataDependencies);
     });
 
     it('should update existing component files in-place', async () => {
@@ -187,7 +437,13 @@ describe('Pull Command', () => {
       };
 
       const api = mockApiService({ a: component });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute();
@@ -209,6 +465,94 @@ describe('Pull Command', () => {
       expect(await fs.readFile(cssEntryPath, 'utf-8')).toBe(
         '.btn { color: blue; }',
       );
+    });
+
+    it('should migrate an existing JSX entry when pulled source requires TypeScript', async () => {
+      const componentDir = path.join(tmpDir, 'my-button');
+      await fs.mkdir(componentDir, { recursive: true });
+
+      const metadataPath = path.join(componentDir, 'component.yml');
+      const jsxEntryPath = path.join(componentDir, 'index.jsx');
+      const tsxEntryPath = path.join(componentDir, 'index.tsx');
+
+      await fs.writeFile(
+        metadataPath,
+        yaml.dump({ name: 'Old', machineName: 'my-button', status: true }),
+        'utf-8',
+      );
+      await fs.writeFile(jsxEntryPath, 'export default () => <button />;');
+
+      const sourceCodeJs = [
+        "import type { ComponentProps } from 'react';",
+        'interface ButtonProps extends ComponentProps<"button"> {}',
+        'export default function Button(props: ButtonProps) {',
+        '  return <button {...props} />;',
+        '}',
+      ].join('\n');
+      const component: Component = {
+        ...mockComponent('my-button'),
+        sourceCodeJs,
+      };
+
+      const api = mockApiService({ a: component });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].success).toBe(true);
+      expect(await fs.readFile(tsxEntryPath, 'utf-8')).toBe(sourceCodeJs);
+      await expect(fs.access(jsxEntryPath)).rejects.toMatchObject({
+        code: 'ENOENT',
+      });
+    });
+
+    it('should create a TSX entry for an existing component with no local entry', async () => {
+      const componentDir = path.join(tmpDir, 'my-button');
+      await fs.mkdir(componentDir, { recursive: true });
+      await fs.writeFile(
+        path.join(componentDir, 'component.yml'),
+        yaml.dump({ name: 'Old', machineName: 'my-button', status: true }),
+        'utf-8',
+      );
+
+      const sourceCodeJs = [
+        'type ButtonProps = { label: string };',
+        'export default function Button({ label }: ButtonProps) {',
+        '  return <button>{label}</button>;',
+        '}',
+      ].join('\n');
+      const component: Component = {
+        ...mockComponent('my-button'),
+        sourceCodeJs,
+      };
+      const api = mockApiService({ a: component });
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].success).toBe(true);
+      expect(
+        await fs.readFile(path.join(componentDir, 'index.tsx'), 'utf-8'),
+      ).toBe(sourceCodeJs);
+      await expect(
+        fs.access(path.join(componentDir, 'index.jsx')),
+      ).rejects.toMatchObject({ code: 'ENOENT' });
     });
 
     it('should create new CSS file when updating component that lacks local CSS', async () => {
@@ -235,7 +579,13 @@ describe('Pull Command', () => {
       };
 
       const api = mockApiService({ a: component });
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute();
@@ -266,7 +616,13 @@ describe('Pull Command', () => {
       );
 
       const api = mockApiService({ a: mockComponent('my-button') });
-      const task = createComponentsPullTask(api, tmpDir, true);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        true,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute();
@@ -296,7 +652,13 @@ describe('Pull Command', () => {
       );
 
       const api = mockApiService({});
-      const task = createComponentsPullTask(api, tmpDir, false);
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute({ deleteLocalOnly: true });
@@ -305,6 +667,705 @@ describe('Pull Command', () => {
       expect(results.results[0].success).toBe(true);
       expect(results.results[0].details?.[0].content).toBe('Deleted');
       await expect(fs.access(orphanDir)).rejects.toThrow();
+    });
+
+    describe('color example UUID→cssVarKey transform', () => {
+      const brandKitColorsRef = {
+        colors: [
+          {
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            name: 'Baguette Legs',
+            cssVariable: '--baguette-legs',
+            value: {
+              colorSpace: 'srgb' as const,
+              components: [0.41, 0.49, 0.97],
+              alpha: null,
+              hex: null,
+            },
+            weight: 0,
+          },
+        ],
+      };
+
+      function makeColorComponent(exampleValue: unknown): Component {
+        return {
+          ...mockComponent('color-test'),
+          props: {
+            backgroundColor: {
+              $ref: 'json-schema-definitions://canvas.module/color',
+              examples: [exampleValue],
+            },
+          },
+        } as unknown as Component;
+      }
+
+      it('transforms canvas-color:<uuid> to canvas-color:<cssVarKey> when UUID is found', async () => {
+        const component = makeColorComponent(
+          'canvas-color:a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        );
+        const api = mockApiService({ a: component });
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          brandKitColorsRef,
+          { folders: [] },
+        );
+
+        await task.prepare();
+        await task.execute();
+
+        const ymlContent = await fs.readFile(
+          path.join(tmpDir, 'color-test', 'component.yml'),
+          'utf-8',
+        );
+        const parsed = yaml.load(ymlContent) as Record<string, unknown>;
+        const props = parsed.props as {
+          properties: {
+            backgroundColor: { examples: unknown[] };
+          };
+        };
+        expect(props.properties.backgroundColor.examples[0]).toBe(
+          'canvas-color:baguette-legs',
+        );
+      });
+
+      it('leaves canvas-color:<uuid> unchanged when UUID is not in brand kit', async () => {
+        const unknownUuid = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+        const component = makeColorComponent(`canvas-color:${unknownUuid}`);
+        const api = mockApiService({ a: component });
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          {
+            colors: [],
+          },
+          {
+            folders: [],
+          },
+        );
+
+        await task.prepare();
+        await task.execute();
+
+        const ymlContent = await fs.readFile(
+          path.join(tmpDir, 'color-test', 'component.yml'),
+          'utf-8',
+        );
+        const parsed = yaml.load(ymlContent) as Record<string, unknown>;
+        const props = parsed.props as {
+          properties: {
+            backgroundColor: { examples: unknown[] };
+          };
+        };
+        expect(props.properties.backgroundColor.examples[0]).toBe(
+          `canvas-color:${unknownUuid}`,
+        );
+      });
+
+      it('leaves canvas-color:<cssVarKey> unchanged (already authored format)', async () => {
+        const component = makeColorComponent('canvas-color:baguette-legs');
+        const api = mockApiService({ a: component });
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          brandKitColorsRef,
+          { folders: [] },
+        );
+
+        await task.prepare();
+        await task.execute();
+
+        const ymlContent = await fs.readFile(
+          path.join(tmpDir, 'color-test', 'component.yml'),
+          'utf-8',
+        );
+        const parsed = yaml.load(ymlContent) as Record<string, unknown>;
+        const props = parsed.props as {
+          properties: {
+            backgroundColor: { examples: unknown[] };
+          };
+        };
+        expect(props.properties.backgroundColor.examples[0]).toBe(
+          'canvas-color:baguette-legs',
+        );
+      });
+
+      it('leaves free-pick CSS color strings unchanged', async () => {
+        const component = makeColorComponent('#687df7e3');
+        const api = mockApiService({ a: component });
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          brandKitColorsRef,
+          { folders: [] },
+        );
+
+        await task.prepare();
+        await task.execute();
+
+        const ymlContent = await fs.readFile(
+          path.join(tmpDir, 'color-test', 'component.yml'),
+          'utf-8',
+        );
+        const parsed = yaml.load(ymlContent) as Record<string, unknown>;
+        const props = parsed.props as {
+          properties: {
+            backgroundColor: { examples: unknown[] };
+          };
+        };
+        expect(props.properties.backgroundColor.examples[0]).toBe('#687df7e3');
+      });
+    });
+  });
+
+  describe('getter migration codemod', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pull-codemod-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+
+    const getterComponent = (machineName: string, source: string): Component =>
+      ({ ...mockComponent(machineName), sourceCodeJs: source }) as Component;
+
+    const safeSource = `import { getPageData } from 'drupal-canvas';
+
+export default function Title() {
+  const { pageTitle } = getPageData() ?? {};
+  return <h1>{pageTitle}</h1>;
+}
+`;
+    const unsafeSource = `import { getPageData } from 'drupal-canvas';
+
+export default function Crumbs({ show }) {
+  if (!show) {
+    return null;
+  }
+  const { breadcrumbs } = getPageData();
+  return <nav>{breadcrumbs.length}</nav>;
+}
+`;
+
+    it('reports nullable destructuring through pull without partially rewriting the file', async () => {
+      const source = `import { getPageData as read, getSiteData, JsonApiClient } from 'drupal-canvas';
+export default function Example() {
+  const site = getSiteData();
+  const { pageTitle: title = 'Unavailable' } = read();
+  const client = new JsonApiClient();
+  return title || site?.branding.siteName;
+}`;
+      const api = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('nullable', source),
+          b: getterComponent('guarded', safeSource),
+        }),
+      } as unknown as ApiService;
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+        { supported: true, reasons: [] },
+      );
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toContain(
+        'Components: 1 getter migration to context hooks',
+      );
+      const outcome = await task.execute();
+      expect(
+        await fs.readFile(path.join(tmpDir, 'nullable', 'index.tsx'), 'utf-8'),
+      ).toBe(source);
+      expect(
+        await fs.readFile(path.join(tmpDir, 'guarded', 'index.tsx'), 'utf-8'),
+      ).toContain('usePageContext() ?? {}');
+      const message = vi.mocked(p.log.message).mockClear();
+      reportResults(outcome.results, outcome.title, outcome.label, {
+        ...COMMAND_RESULT_REPORT_OPTIONS,
+        showTitle: false,
+      });
+      const report = message.mock.calls.map(([text]) => text).join('\n');
+      expect(report).toContain('Warnings');
+      expect(report).toContain('nullable');
+      expect(report).toContain(
+        'Not migrated: `read()` is destructured without a null guard',
+      );
+      expect(report).toContain('`usePageContext() ?? {}`');
+      expect(
+        report.match(/`new JsonApiClient\(\)` is not migrated automatically/g),
+      ).toHaveLength(1);
+      expect(outcome.notes).toContainEqual(
+        expect.stringContaining(
+          'Components with getter calls left unchanged: nullable',
+        ),
+      );
+    });
+
+    it('plans and applies conversions when both gates pass', async () => {
+      const api = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('title', safeSource),
+          b: getterComponent('crumbs', unsafeSource),
+          c: mockComponent('plain'),
+        }),
+      } as unknown as ApiService;
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+        {
+          supported: true,
+          reasons: [],
+        },
+      );
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual([
+        'Components: 3 pull (3 new)',
+        'Components: 1 getter migration to context hooks',
+        '  title: getPageData() → usePageContext()',
+      ]);
+
+      const outcome = await task.execute();
+      const written = await fs.readFile(
+        path.join(tmpDir, 'title', 'index.tsx'),
+        'utf-8',
+      );
+      expect(written).toContain(
+        "import { usePageContext } from 'drupal-canvas/react';",
+      );
+      expect(written).toContain(
+        'const { pageTitle } = usePageContext() ?? {};',
+      );
+      expect(
+        await fs.readFile(path.join(tmpDir, 'crumbs', 'index.tsx'), 'utf-8'),
+      ).toBe(unsafeSource);
+      expect(
+        outcome.results.find((r) => r.itemName === 'title')?.details,
+      ).toEqual([{ content: 'Migrated getPageData() → usePageContext()' }]);
+      expect(
+        outcome.results.find((r) => r.itemName === 'crumbs')?.warnings?.[0],
+      ).toContain(
+        'Not migrated: `getPageData()` is called after a possible early return',
+      );
+      expect(outcome.notes).toEqual([
+        expect.stringContaining(
+          'Components with getter calls left unchanged: crumbs',
+        ),
+        expect.stringContaining('Migration prompt for AI agents:'),
+        expect.stringContaining('nullable results'),
+      ]);
+    });
+
+    it.each([
+      "import { sortMenu, getPageData, getSiteData } from 'drupal-canvas/drupal-utils';",
+      "import { getPageData, getSiteData } from 'drupal-canvas'; import { usePageContext, useSiteContext } from 'drupal-canvas/react';",
+    ])(
+      'writes valid migrated source for adjacent trailing getters: %s',
+      async (imports) => {
+        const source = `${imports}
+export default function Header() {
+  const page = getPageData();
+  const site = getSiteData();
+  return <h1>{page.pageTitle}{site.branding.siteName}</h1>;
+}
+`;
+        const api = {
+          listComponents: vi.fn().mockResolvedValue({
+            a: getterComponent('header', source),
+          }),
+        } as unknown as ApiService;
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          { colors: [] },
+          { folders: [] },
+          { supported: true, reasons: [] },
+        );
+        await task.prepare();
+        await task.execute();
+        const written = await fs.readFile(
+          path.join(tmpDir, 'header', 'index.tsx'),
+          'utf-8',
+        );
+        expect(() =>
+          parse(written, {
+            sourceType: 'module',
+            plugins: ['jsx', 'typescript'],
+          }),
+        ).not.toThrow();
+        expect(written).toContain('const page = usePageContext();');
+        expect(written).toContain('const site = useSiteContext();');
+        expect(written).not.toMatch(/getPageData|getSiteData/);
+      },
+    );
+
+    it.each([
+      [
+        'mixed',
+        `import { getPageData, JsonApiClient } from 'drupal-canvas';
+const client = new JsonApiClient();
+export default function Header() {
+  const page = getPageData();
+  return <h1>{page.pageTitle}</h1>;
+}`,
+        true,
+      ],
+      [
+        'both-getters',
+        `import { getPageData, getSiteData, JsonApiClient } from 'drupal-canvas';
+const client = new JsonApiClient();
+export default function Header() {
+  const page = getPageData();
+  const site = getSiteData();
+  return <h1>{page?.pageTitle}{site?.branding.siteName}</h1>;
+}`,
+        true,
+      ],
+      [
+        'constructor-only',
+        `import { JsonApiClient } from 'drupal-canvas';
+export default function Header() {
+  const client = new JsonApiClient();
+  return <h1>Hello</h1>;
+}`,
+        false,
+      ],
+      [
+        'module-scope',
+        `import { JsonApiClient } from 'drupal-canvas';
+const client = new JsonApiClient();
+export default function Header() { return <h1>Hello</h1>; }`,
+        false,
+      ],
+      [
+        'unsafe-mixed',
+        `import { getPageData, JsonApiClient } from 'drupal-canvas';
+const client = new JsonApiClient();
+const page = getPageData();
+export default function Header() { return <h1>{page.pageTitle}</h1>; }`,
+        false,
+      ],
+    ] as const)(
+      'reports residual constructor migration for %s',
+      async (name, source, converted) => {
+        const api = {
+          listComponents: vi
+            .fn()
+            .mockResolvedValue({ a: getterComponent(name, source) }),
+        } as unknown as ApiService;
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          false,
+          { colors: [] },
+          { folders: [] },
+          { supported: true, reasons: [] },
+        );
+        await task.prepare();
+        const outcome = await task.execute();
+        const written = await fs.readFile(
+          path.join(tmpDir, name, 'index.tsx'),
+          'utf-8',
+        );
+        expect(written).toContain('const client = new JsonApiClient();');
+        if (converted) {
+          expect(written).toContain('const page = usePageContext();');
+        } else {
+          expect(written).toBe(source);
+        }
+        // Capture the actual terminal reporter with the same options as pull,
+        // rather than merely checking diagnostics in the codemod result.
+        const message = vi.mocked(p.log.message).mockClear();
+        reportResults(outcome.results, outcome.title, outcome.label, {
+          ...COMMAND_RESULT_REPORT_OPTIONS,
+          showTitle: false,
+        });
+        const report = message.mock.calls.map(([text]) => text).join('\n');
+        expect(report).toContain('Warnings');
+        expect(report).toContain(name);
+        expect(
+          report.match(
+            /`new JsonApiClient\(\)` is not migrated automatically/g,
+          ),
+        ).toHaveLength(1);
+        if (converted)
+          expect(report).toContain('Migrated getPageData() → usePageContext()');
+        if (name === 'unsafe-mixed') expect(report).toContain('module level');
+        expect(outcome.notes).toContain(
+          `Components still constructing \`new JsonApiClient()\`: ${name}`,
+        );
+        const getterNotes = outcome.notes?.filter((note) =>
+          note.startsWith('Components with getter calls left unchanged:'),
+        );
+        expect(getterNotes).toEqual(
+          name === 'unsafe-mixed'
+            ? [`Components with getter calls left unchanged: ${name}`]
+            : [],
+        );
+        const notes = outcome.notes?.join('\n');
+        expect(notes).not.toMatch(/getPageData|getSiteData/);
+        expect(notes).toContain('remain supported in Drupal and Workbench');
+        expect(notes).toContain('For headless use, migrate only the remaining');
+        if (name === 'both-getters') {
+          expect(written).toContain('const site = useSiteContext();');
+          expect(written).not.toMatch(/getPageData|getSiteData/);
+          expect(report).toContain('getSiteData() → useSiteContext()');
+        }
+        expect(
+          outcome.notes?.filter((note) =>
+            note.startsWith('Migration prompt for AI agents:'),
+          ),
+        ).toHaveLength(1);
+      },
+    );
+
+    it.each([
+      { supported: true, skipOverwrite: false },
+      { supported: false, skipOverwrite: false },
+      { supported: true, skipOverwrite: true },
+    ])(
+      'preserves colors and folders with migration gates %j',
+      async ({ supported, skipOverwrite }) => {
+        const colorId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+        const folderId = '88888888-8888-4888-8888-888888888888';
+        const component = getterComponent('title', safeSource);
+        component.props = {
+          backgroundColor: {
+            title: 'Background color',
+            type: 'string',
+            $ref: 'json-schema-definitions://canvas.module/color',
+            examples: [`canvas-color:${colorId}`],
+            'x-canvas-color-folders': [folderId],
+          },
+        };
+        const colorsRef: Parameters<typeof createComponentsPullTask>[3] = {
+          colors: [],
+        };
+        const foldersRef: Parameters<typeof createComponentsPullTask>[4] = {
+          folders: [],
+        };
+        const localSource = 'export default () => null;';
+        const localMetadata = yaml.dump({
+          name: 'title',
+          machineName: 'title',
+          status: true,
+        });
+        if (skipOverwrite) {
+          await fs.mkdir(path.join(tmpDir, 'title'));
+          await fs.writeFile(
+            path.join(tmpDir, 'title', 'component.yml'),
+            localMetadata,
+          );
+          await fs.writeFile(
+            path.join(tmpDir, 'title', 'index.jsx'),
+            localSource,
+          );
+        }
+        const api = {
+          listComponents: vi.fn().mockResolvedValue({
+            title: component,
+            fresh: { ...component, name: 'fresh', machineName: 'fresh' },
+          }),
+        } as unknown as ApiService;
+        const task = createComponentsPullTask(
+          api,
+          tmpDir,
+          skipOverwrite,
+          colorsRef,
+          foldersRef,
+          {
+            supported,
+            reasons: supported
+              ? []
+              : ['the site does not advertise context-hook support'],
+          },
+        );
+        const { summaryLines } = await task.prepare();
+        expect(
+          summaryLines.some((line) => line.includes('getter migration')),
+        ).toBe(supported);
+        await expect(fs.access(path.join(tmpDir, 'fresh'))).rejects.toThrow();
+        // The brand-kit prepare barrier populates these shared refs before execute.
+        colorsRef.colors = [
+          {
+            id: colorId,
+            name: 'Brand red',
+            cssVariable: '--brand-red',
+            weight: 0,
+            value: {
+              colorSpace: 'srgb',
+              components: [0.8, 0, 0],
+              alpha: null,
+              hex: null,
+            },
+          },
+        ];
+        foldersRef.folders = [
+          {
+            id: folderId,
+            name: 'Brand palette',
+            type: 'color',
+            weight: 0,
+            items: [colorId],
+          },
+        ];
+        await task.execute();
+        const freshDir = path.join(tmpDir, 'fresh');
+        const written = await fs.readFile(
+          path.join(freshDir, skipOverwrite ? 'index.jsx' : 'index.tsx'),
+          'utf-8',
+        );
+        expect(written).toBe(
+          supported
+            ? safeSource
+                .replaceAll('getPageData', 'usePageContext')
+                .replace("'drupal-canvas'", "'drupal-canvas/react'")
+            : safeSource,
+        );
+        const metadata = await fs.readFile(
+          path.join(freshDir, 'component.yml'),
+          'utf-8',
+        );
+        expect(metadata).toContain('canvas-color:brand-red');
+        expect(metadata).toContain(`${folderId} # Brand palette`);
+        if (skipOverwrite) {
+          expect(
+            await fs.readFile(path.join(tmpDir, 'title', 'index.jsx'), 'utf-8'),
+          ).toBe(localSource);
+          expect(
+            await fs.readFile(
+              path.join(tmpDir, 'title', 'component.yml'),
+              'utf-8',
+            ),
+          ).toBe(localMetadata);
+        }
+      },
+    );
+
+    it('converts nothing further on a second pull', async () => {
+      const api = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('title', safeSource),
+        }),
+      } as unknown as ApiService;
+      const first = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+        {
+          supported: true,
+          reasons: [],
+        },
+      );
+      await first.prepare();
+      await first.execute();
+      const migrated = await fs.readFile(
+        path.join(tmpDir, 'title', 'index.tsx'),
+        'utf-8',
+      );
+
+      const secondApi = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('title', migrated),
+        }),
+      } as unknown as ApiService;
+      const second = createComponentsPullTask(
+        secondApi,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+        {
+          supported: true,
+          reasons: [],
+        },
+      );
+      const { summaryLines } = await second.prepare();
+      expect(summaryLines).toEqual(['Components: 1 pull (1 existing)']);
+      const outcome = await second.execute();
+      expect(outcome.notes).toBeUndefined();
+      expect(
+        await fs.readFile(path.join(tmpDir, 'title', 'index.tsx'), 'utf-8'),
+      ).toBe(migrated);
+    });
+
+    it('keeps sources unchanged and reports the limitation when a gate fails', async () => {
+      const api = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('title', safeSource),
+        }),
+      } as unknown as ApiService;
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+        {
+          supported: false,
+          reasons: ['the site does not advertise context-hook support'],
+        },
+      );
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['Components: 1 pull (1 new)']);
+      const outcome = await task.execute();
+      expect(
+        await fs.readFile(path.join(tmpDir, 'title', 'index.tsx'), 'utf-8'),
+      ).toBe(safeSource);
+      expect(outcome.notes?.[0]).toContain('left unchanged');
+      expect(outcome.notes?.[1]).toContain('does not advertise');
+      expect(outcome.notes?.[2]).toContain('Migration prompt for AI agents:');
+    });
+
+    it('never touches files protected by skipOverwrite', async () => {
+      const dir = path.join(tmpDir, 'title');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        path.join(dir, 'component.yml'),
+        yaml.dump({ name: 'title', machineName: 'title', status: true }),
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(dir, 'index.jsx'),
+        'export default () => null;',
+        'utf-8',
+      );
+      const api = {
+        listComponents: vi.fn().mockResolvedValue({
+          a: getterComponent('title', safeSource),
+        }),
+      } as unknown as ApiService;
+      const task = createComponentsPullTask(
+        api,
+        tmpDir,
+        true,
+        { colors: [] },
+        { folders: [] },
+        {
+          supported: true,
+          reasons: [],
+        },
+      );
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['Components: 1 pull (1 existing)']);
+      await task.execute();
+      expect(await fs.readFile(path.join(dir, 'index.jsx'), 'utf-8')).toBe(
+        'export default () => null;',
+      );
     });
   });
 
@@ -321,33 +1382,58 @@ describe('Pull Command', () => {
       await fs.rm(tmpDir, { recursive: true, force: true });
     });
 
-    function mockApiService(css: string): ApiService {
+    function mockApiService(
+      css: string,
+      packageJson?: string,
+      assets?: unknown[],
+      downloadFile?: ReturnType<typeof vi.fn>,
+      bundledSources?: unknown[],
+    ): ApiService {
       return {
-        getGlobalAssetLibrary: vi
-          .fn()
-          .mockResolvedValue({ css: { original: css } }),
+        getGlobalAssetLibrary: vi.fn().mockResolvedValue({
+          css: { original: css },
+          packageJson,
+          assets,
+          bundledSources,
+        }),
+        downloadFile:
+          downloadFile ??
+          vi.fn().mockResolvedValue(Buffer.from([0x00, 0x01, 0x02])),
       } as unknown as ApiService;
     }
 
     it('should include global CSS in summary', async () => {
       const api = mockApiService('body {}');
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- global CSS']);
+      expect(summaryLines).toEqual(['Assets: global CSS pull']);
     });
 
     it('should return empty summary when no global CSS', async () => {
       const api = mockApiService('');
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       const { summaryLines } = await task.prepare();
       expect(summaryLines).toEqual([]);
     });
 
+    it('should return no asset results when no global CSS is planned', async () => {
+      const api = mockApiService('');
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.title).toBe('Pulled assets');
+      expect(results.label).toBe('Asset');
+      expect(results.results).toEqual([]);
+      await expect(fs.access(globalCssPath)).rejects.toThrow();
+    });
+
     it('should write global.css file', async () => {
       const api = mockApiService('body { margin: 0; }');
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -363,7 +1449,7 @@ describe('Pull Command', () => {
 
     it('should prepend @import tailwindcss when remote CSS omits it', async () => {
       const api = mockApiService('@layer theme {\n  :root { --x: 1; }\n}');
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       await task.prepare();
       await task.execute();
@@ -378,7 +1464,7 @@ describe('Pull Command', () => {
       const remote =
         "@import 'tailwindcss';\n@layer base {\n  body { margin: 0; }\n}";
       const api = mockApiService(remote);
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       await task.prepare();
       await task.execute();
@@ -389,7 +1475,7 @@ describe('Pull Command', () => {
     it('should not duplicate @import when remote uses double-quoted tailwindcss', async () => {
       const remote = '@import "tailwindcss";\n.foo { color: red; }';
       const api = mockApiService(remote);
-      const task = createAssetsPullTask(api, globalCssPath, false);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
 
       await task.prepare();
       await task.execute();
@@ -401,7 +1487,7 @@ describe('Pull Command', () => {
       await fs.writeFile(globalCssPath, 'old css', 'utf-8');
 
       const api = mockApiService('new css');
-      const task = createAssetsPullTask(api, globalCssPath, true);
+      const task = createAssetsPullTask(api, globalCssPath, true, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -413,6 +1499,389 @@ describe('Pull Command', () => {
       // File should NOT be updated.
       const cssContent = await fs.readFile(globalCssPath, 'utf-8');
       expect(cssContent).toBe('old css');
+    });
+
+    it('should write package.json to project root when present', async () => {
+      const packageJson = '{\n  "name": "my-project"\n}\n';
+      const api = mockApiService('body {}', packageJson);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['Assets: global CSS, package.json pull']);
+
+      const results = await task.execute();
+      const packageJsonResult = results.results.find(
+        (r) => r.itemName === 'package.json',
+      );
+      expect(packageJsonResult?.success).toBe(true);
+
+      const written = await fs.readFile(
+        path.join(tmpDir, 'package.json'),
+        'utf-8',
+      );
+      expect(written).toBe(packageJson);
+    });
+
+    it('should write package.json even when no global CSS exists', async () => {
+      const packageJson = '{ "name": "css-less" }';
+      const api = mockApiService('', packageJson);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['Assets: package.json pull']);
+
+      const results = await task.execute();
+      expect(results.results).toHaveLength(1);
+      expect(results.results[0].itemName).toBe('package.json');
+      expect(results.results[0].success).toBe(true);
+      expect(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      ).toBe(packageJson);
+    });
+
+    it('should merge missing dependencies into an existing package.json', async () => {
+      const local = `${JSON.stringify(
+        {
+          name: 'my-project',
+          version: '1.2.3',
+          scripts: { dev: 'next dev' },
+          dependencies: { react: '^18.0.0' },
+          devDependencies: { typescript: '^5.0.0' },
+        },
+        null,
+        2,
+      )}\n`;
+      await fs.writeFile(path.join(tmpDir, 'package.json'), local, 'utf-8');
+      const pulled = JSON.stringify({
+        name: 'remote-name',
+        version: '9.9.9',
+        scripts: { dev: 'vite' },
+        dependencies: {
+          react: '^19.0.0',
+          typescript: '^4.0.0',
+          'class-variance-authority': '^0.7.1',
+        },
+      });
+      const api = mockApiService('', pulled);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const written = JSON.parse(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      );
+      // Missing dependency added to `dependencies`.
+      expect(written.dependencies['class-variance-authority']).toBe('^0.7.1');
+      // Existing dependency keeps its local version (add-only).
+      expect(written.dependencies.react).toBe('^18.0.0');
+      // Dependency present only in local devDependencies is not added or moved.
+      expect(written.dependencies.typescript).toBeUndefined();
+      expect(written.devDependencies.typescript).toBe('^5.0.0');
+      // Project-owned fields are preserved.
+      expect(written.name).toBe('my-project');
+      expect(written.version).toBe('1.2.3');
+      expect(written.scripts.dev).toBe('next dev');
+
+      // The added dependency is reported as its own `Dependency` item.
+      const addedResult = results.results.find(
+        (r) => r.itemName === 'class-variance-authority',
+      );
+      expect(addedResult?.itemType).toBe('Dependency');
+      expect(addedResult?.success).toBe(true);
+      expect(addedResult?.details?.[0].content).toBe('Added');
+      // Only the missing dependency is reported, not existing ones.
+      expect(
+        results.results.filter((r) => r.itemType === 'Dependency'),
+      ).toHaveLength(1);
+      expect(results.notes?.some((n) => n.includes('npm install'))).toBe(true);
+    });
+
+    it('should leave a dependency in peerDependencies untouched', async () => {
+      const local = `${JSON.stringify(
+        {
+          name: 'lib',
+          peerDependencies: { react: '^18.0.0' },
+        },
+        null,
+        2,
+      )}\n`;
+      await fs.writeFile(path.join(tmpDir, 'package.json'), local, 'utf-8');
+      const api = mockApiService(
+        '',
+        JSON.stringify({ dependencies: { react: '^19.0.0' } }),
+      );
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const written = JSON.parse(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      );
+      expect(written.dependencies).toBeUndefined();
+      expect(written.peerDependencies.react).toBe('^18.0.0');
+      const packageJsonResult = results.results.find(
+        (r) => r.itemName === 'package.json',
+      );
+      expect(packageJsonResult?.details?.[0].content).toBe('No changes');
+    });
+
+    it('should not modify package.json or emit a reminder when nothing is added', async () => {
+      const local = `${JSON.stringify(
+        { name: 'p', dependencies: { react: '^18.0.0' } },
+        null,
+        2,
+      )}\n`;
+      await fs.writeFile(path.join(tmpDir, 'package.json'), local, 'utf-8');
+      const api = mockApiService(
+        '',
+        JSON.stringify({ dependencies: { react: '^19.0.0' } }),
+      );
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      // File is byte-identical (no rewrite).
+      expect(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      ).toBe(local);
+      expect(results.notes?.some((n) => n.includes('npm install'))).toBeFalsy();
+    });
+
+    it('should fail the package.json item when the local file is not valid JSON', async () => {
+      const invalid = '{ "name": "p", }';
+      await fs.writeFile(path.join(tmpDir, 'package.json'), invalid, 'utf-8');
+      const api = mockApiService(
+        '',
+        JSON.stringify({ dependencies: { react: '^19.0.0' } }),
+      );
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const packageJsonResult = results.results.find(
+        (r) => r.itemName === 'package.json',
+      );
+      expect(packageJsonResult?.success).toBe(false);
+      expect(packageJsonResult?.details?.[0].content).toContain(
+        'Could not merge dependencies',
+      );
+      // Local file left untouched.
+      expect(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      ).toBe(invalid);
+    });
+
+    it('should skip writing package.json with skipOverwrite when it already exists', async () => {
+      await fs.writeFile(
+        path.join(tmpDir, 'package.json'),
+        '{ "name": "old" }',
+        'utf-8',
+      );
+      const api = mockApiService('', '{ "name": "new" }');
+      const task = createAssetsPullTask(api, globalCssPath, true, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.results[0].itemName).toBe('package.json');
+      expect(results.results[0].details?.[0].content).toContain('Skipped');
+      expect(
+        await fs.readFile(path.join(tmpDir, 'package.json'), 'utf-8'),
+      ).toBe('{ "name": "old" }');
+    });
+
+    it('should summarize codebase files with a path', async () => {
+      const api = mockApiService('', undefined, [
+        {
+          name: '@/lib/foo',
+          uri: 'public://x',
+          path: 'src/lib/foo.ts',
+          source: 'export const x = 1;\n',
+        },
+        {
+          name: '@/assets/p.webp',
+          uri: 'public://p',
+          path: 'src/assets/p.webp',
+          url: 'http://h/p',
+        },
+        // Legacy/vendor entry without a path is ignored.
+        { name: 'lodash', uri: 'public://l' },
+      ]);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['Assets: 2 local imports pull']);
+    });
+
+    it('should write a text module from source, not download it', async () => {
+      const downloadFile = vi.fn();
+      const source = 'export const cn = () => "";\n';
+      const api = mockApiService(
+        '',
+        undefined,
+        [
+          {
+            name: '@/lib/utils',
+            uri: 'public://u',
+            path: 'src/lib/utils.ts',
+            source,
+          },
+        ],
+        downloadFile,
+      );
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const result = results.results.find(
+        (r) => r.itemName === 'src/lib/utils.ts',
+      );
+      expect(result?.success).toBe(true);
+      expect(downloadFile).not.toHaveBeenCalled();
+      expect(
+        await fs.readFile(path.join(tmpDir, 'src/lib/utils.ts'), 'utf-8'),
+      ).toBe(source);
+    });
+
+    it('should download a binary asset and write the bytes', async () => {
+      const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+      const downloadFile = vi.fn().mockResolvedValue(bytes);
+      const api = mockApiService(
+        '',
+        undefined,
+        [
+          {
+            name: '@/assets/p.png',
+            uri: 'public://p',
+            path: 'src/assets/p.png',
+            url: 'http://h/p.png',
+          },
+        ],
+        downloadFile,
+      );
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const result = results.results.find(
+        (r) => r.itemName === 'src/assets/p.png',
+      );
+      expect(result?.success).toBe(true);
+      expect(downloadFile).toHaveBeenCalledWith('http://h/p.png');
+      expect(await fs.readFile(path.join(tmpDir, 'src/assets/p.png'))).toEqual(
+        bytes,
+      );
+    });
+
+    it('should skip an existing flexible file with skipOverwrite', async () => {
+      await fs.mkdir(path.join(tmpDir, 'src/lib'), { recursive: true });
+      await fs.writeFile(path.join(tmpDir, 'src/lib/utils.ts'), 'old', 'utf-8');
+      const api = mockApiService('', undefined, [
+        {
+          name: '@/lib/utils',
+          uri: 'public://u',
+          path: 'src/lib/utils.ts',
+          source: 'new',
+        },
+      ]);
+      const task = createAssetsPullTask(api, globalCssPath, true, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const result = results.results.find(
+        (r) => r.itemName === 'src/lib/utils.ts',
+      );
+      expect(result?.details?.[0].content).toContain('Skipped');
+      expect(
+        await fs.readFile(path.join(tmpDir, 'src/lib/utils.ts'), 'utf-8'),
+      ).toBe('old');
+    });
+
+    it('should reject a flexible file that escapes the project root', async () => {
+      const api = mockApiService('', undefined, [
+        {
+          name: '@/evil',
+          uri: 'public://e',
+          path: '../escape.ts',
+          source: 'x',
+        },
+      ]);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      await task.prepare();
+      const results = await task.execute();
+
+      const result = results.results.find((r) => r.itemName === '../escape.ts');
+      expect(result?.success).toBe(false);
+      expect(result?.details?.[0].content).toContain(
+        'outside the project root',
+      );
+    });
+
+    it('should reject asset paths redirected outside through a symlink', async () => {
+      const outsideDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), 'pull-assets-outside-test-'),
+      );
+      try {
+        await fs.symlink(outsideDir, path.join(tmpDir, 'linked'));
+        const api = mockApiService(
+          '',
+          undefined,
+          [
+            {
+              name: '@/linked/asset.ts',
+              uri: 'public://asset',
+              path: 'linked/asset.ts',
+              source: 'asset',
+            },
+          ],
+          undefined,
+          [
+            {
+              path: 'linked/helper.ts',
+              source: 'helper',
+            },
+          ],
+        );
+        const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+        await task.prepare();
+        const results = await task.execute();
+
+        expect(results.results).toHaveLength(2);
+        expect(results.results.every((result) => !result.success)).toBe(true);
+        for (const result of results.results) {
+          expect(result.details?.[0].content).toContain(
+            'outside the project root through a symbolic link',
+          );
+        }
+        await expect(
+          fs.access(path.join(outsideDir, 'asset.ts')),
+        ).rejects.toThrow();
+        await expect(
+          fs.access(path.join(outsideDir, 'helper.ts')),
+        ).rejects.toThrow();
+      } finally {
+        await fs.rm(outsideDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should complete cleanly when no flexible files exist server-side', async () => {
+      const api = mockApiService('', undefined, []);
+      const task = createAssetsPullTask(api, globalCssPath, false, tmpDir);
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual([]);
+
+      const results = await task.execute();
+      expect(results.results).toEqual([]);
     });
   });
 
@@ -453,6 +1922,7 @@ describe('Pull Command', () => {
       components: Page['components'] = [],
     ): Page => ({
       ...mockPageListItem(id, uuid, title, pagePath),
+      pageVariant: null,
       components,
     });
 
@@ -469,9 +1939,41 @@ describe('Pull Command', () => {
       } as unknown as ApiService;
     }
 
+    async function writeColorComponentMetadataFile(): Promise<void> {
+      const componentDir = path.join(tmpDir, 'color-card');
+      await fs.mkdir(componentDir, { recursive: true });
+      await fs.writeFile(
+        path.join(componentDir, 'index.tsx'),
+        'export default function ColorCard() { return null; }\n',
+        'utf-8',
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'component.yml'),
+        [
+          'name: Color Card',
+          'machineName: color-card',
+          'status: true',
+          'required: []',
+          'props:',
+          '  properties:',
+          '    accent:',
+          '      title: Accent',
+          '      type: string',
+          '      $ref: json-schema-definitions://canvas.module/color',
+          '    free:',
+          '      title: Free',
+          '      type: string',
+          '      $ref: json-schema-definitions://canvas.module/color',
+          'slots: {}',
+          'dataDependencies: {}',
+        ].join('\n'),
+        'utf-8',
+      );
+    }
+
     it('should return empty summary when no pages', async () => {
       const api = mockApiService({});
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       const { summaryLines } = await task.prepare();
       expect(summaryLines).toEqual([]);
@@ -486,10 +1988,10 @@ describe('Pull Command', () => {
           '/about',
         ),
       });
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 1 page (1 new)']);
+      expect(summaryLines).toEqual(['Pages: 1 pull (1 new)']);
     });
 
     it('should show both new and existing counts in summary', async () => {
@@ -517,13 +2019,14 @@ describe('Pull Command', () => {
           '/contact',
         ),
       });
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 2 pages (1 new, 1 existing)']);
+      expect(summaryLines).toEqual(['Pages: 2 pull (1 new, 1 existing)']);
     });
 
     it('should write new page files on execute', async () => {
+      await writeColorComponentMetadataFile();
       const detail = mockPage(
         1,
         '27a539f5-2dd0-471a-a364-8fee7a024a73',
@@ -532,12 +2035,44 @@ describe('Pull Command', () => {
         [
           {
             uuid: 'hero-uuid',
-            component_id: 'js.hero',
+            component_id: 'js.color-card',
             component_version: 'v1',
             parent_uuid: null,
             slot: null,
-            inputs: { heading: 'About Us' },
-            inputs_resolved: { heading: 'About Us' },
+            inputs: {
+              accent: 'canvas-color:88888888-8888-4888-8888-888888888888',
+              free: '#687df7e3',
+            },
+            inputs_resolved: {
+              accent: {
+                value: {
+                  colorSpace: 'srgb',
+                  components: [
+                    0.40784313725490196, 0.49019607843137253,
+                    0.9686274509803922,
+                  ],
+                  alpha: 0.8901960784313725,
+                  hex: '#687df7',
+                },
+                cssColorValue: 'rgba(104, 125, 247, 0.89)',
+                cssVariable: '--baguette-legs',
+                colorName: 'Baguette Legs',
+              },
+              free: {
+                value: {
+                  colorSpace: 'srgb',
+                  components: [
+                    0.40784313725490196, 0.49019607843137253,
+                    0.9686274509803922,
+                  ],
+                  alpha: 0.8901960784313725,
+                  hex: '#687df7',
+                },
+                cssColorValue: 'rgba(104, 125, 247, 0.89)',
+                cssVariable: null,
+                colorName: null,
+              },
+            },
             label: null,
           },
         ],
@@ -554,7 +2089,7 @@ describe('Pull Command', () => {
         },
         { 1: detail },
       );
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -569,8 +2104,11 @@ describe('Pull Command', () => {
       const content = JSON.parse(await fs.readFile(filePath, 'utf-8'));
       expect(content.title).toBe('About');
       expect(content.elements['hero-uuid']).toEqual({
-        type: 'js.hero',
-        props: { heading: 'About Us' },
+        type: 'js.color-card',
+        props: {
+          accent: 'canvas-color:baguette-legs',
+          free: '#687df7e3',
+        },
       });
     });
 
@@ -593,7 +2131,7 @@ describe('Pull Command', () => {
         },
         { 1: detail },
       );
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -637,7 +2175,7 @@ describe('Pull Command', () => {
         },
         { 1: detail },
       );
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -684,7 +2222,7 @@ describe('Pull Command', () => {
         },
         { 1: detail },
       );
-      const task = createPagesPullTask(api, tmpDir, false);
+      const task = createPagesPullTask(api, tmpDir, false, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -717,7 +2255,7 @@ describe('Pull Command', () => {
           '/about',
         ),
       });
-      const task = createPagesPullTask(api, tmpDir, true);
+      const task = createPagesPullTask(api, tmpDir, true, tmpDir);
 
       await task.prepare();
       const results = await task.execute();
@@ -751,10 +2289,10 @@ describe('Pull Command', () => {
           '/about',
         ),
       });
-      const task = createPagesPullTask(api, tmpDir, true);
+      const task = createPagesPullTask(api, tmpDir, true, tmpDir);
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 1 page (1 existing)']);
+      expect(summaryLines).toEqual(['Pages: 1 pull (1 existing)']);
 
       const results = await task.execute();
 
@@ -787,10 +2325,10 @@ describe('Pull Command', () => {
           '/',
         ),
       });
-      const task = createPagesPullTask(api, tmpDir, true);
+      const task = createPagesPullTask(api, tmpDir, true, tmpDir);
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toEqual(['- 1 page (1 existing)']);
+      expect(summaryLines).toEqual(['Pages: 1 pull (1 existing)']);
 
       const results = await task.execute();
 
@@ -806,7 +2344,7 @@ describe('Pull Command', () => {
     });
   });
 
-  describe('createFontsPullTask', () => {
+  describe('createBrandKitPullTask', () => {
     let tmpDir: string;
 
     beforeEach(async () => {
@@ -839,6 +2377,7 @@ describe('Pull Command', () => {
             url: f.url ?? `/sites/default/files/font-${i}.woff2`,
           })),
         }),
+        getFolders: vi.fn().mockResolvedValue([]),
         downloadFile: vi.fn().mockResolvedValue(Buffer.from([0x00, 0x01])),
       } as unknown as ApiService;
     }
@@ -847,17 +2386,27 @@ describe('Pull Command', () => {
       const api = mockApiService([
         { family: 'Inter', weight: '400', style: 'normal' },
       ]);
-      const task = createFontsPullTask(api, tmpDir);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
-      expect(summaryLines).toHaveLength(1);
-      expect(summaryLines[0]).toContain('font variant');
-      expect(summaryLines[0]).toContain('1 new');
+      expect(summaryLines).toEqual(['brand kit: 1 font variant pull (1 new)']);
     });
 
-    it('should return empty summary when no fonts on Brand Kit', async () => {
+    it('should return empty summary when no fonts on brand kit', async () => {
       const api = mockApiService([]);
-      const task = createFontsPullTask(api, tmpDir);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       const { summaryLines } = await task.prepare();
       expect(summaryLines).toEqual([]);
@@ -867,13 +2416,19 @@ describe('Pull Command', () => {
       const api = mockApiService([
         { family: 'My Font', weight: '400', style: 'normal' },
       ]);
-      const task = createFontsPullTask(api, tmpDir);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
 
       await task.prepare();
       const results = await task.execute();
 
-      expect(results.title).toBe('Pulled fonts');
-      expect(results.label).toBe('Font variant');
+      expect(results.title).toBe('Pulled brand kit');
+      expect(results.label).toBe('Item');
       expect(results.results.length).toBeGreaterThanOrEqual(1);
       expect(results.results[0].success).toBe(true);
       expect(results.results[0].itemName).toContain('My Font');
@@ -890,6 +2445,130 @@ describe('Pull Command', () => {
       const fontsDir = path.join(tmpDir, 'fonts');
       const files = await fs.readdir(fontsDir);
       expect(files.length).toBe(1);
+    });
+
+    function mockApiServiceWithColors(
+      colors: Array<{
+        id: string;
+        name: string;
+        cssVariable: string;
+        value: {
+          colorSpace: 'srgb' | 'hsl';
+          components: number[];
+          alpha?: number | null;
+          hex?: string | null;
+        };
+        weight: number;
+      }>,
+    ): ApiService {
+      return {
+        getBrandKit: vi.fn().mockResolvedValue({
+          id: 'global',
+          fonts: [],
+          colors,
+        }),
+        getFolders: vi.fn().mockResolvedValue([]),
+        downloadFile: vi.fn(),
+      } as unknown as ApiService;
+    }
+
+    it('should include colors in the summary', async () => {
+      const api = mockApiServiceWithColors([
+        {
+          id: 'uuid-1',
+          name: 'Brand Red',
+          cssVariable: '--brand-red',
+          value: {
+            colorSpace: 'srgb',
+            components: [0.8, 0, 0],
+            alpha: null,
+            hex: '#cc0000',
+          },
+          weight: 0,
+        },
+      ]);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['brand kit colors: 1 color pull (1 new)']);
+    });
+
+    it('should write pulled colors to canvas.brand-kit.json on execute', async () => {
+      const api = mockApiServiceWithColors([
+        {
+          id: 'uuid-1',
+          name: 'Brand Red',
+          cssVariable: '--brand-red',
+          value: {
+            colorSpace: 'srgb',
+            components: [204 / 255, 0, 0],
+            alpha: null,
+            hex: '#cc0000',
+          },
+          weight: 0,
+        },
+      ]);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      await task.prepare();
+      const results = await task.execute();
+
+      expect(results.results).toEqual([
+        {
+          itemName: 'Brand Red (--brand-red)',
+          success: true,
+          details: [{ content: 'Added' }],
+        },
+      ]);
+
+      const raw = await fs.readFile(
+        path.join(tmpDir, 'canvas.brand-kit.json'),
+        'utf-8',
+      );
+      expect(JSON.parse(raw)).toEqual({
+        $schema:
+          'https://unpkg.com/@drupal-canvas/workbench/dist/client/src/lib/schemas/brand-kit.schema.json',
+        colors: { 'brand-red': '#cc0000' },
+      });
+    });
+
+    it('should keep local-only colors and report them as notes', async () => {
+      await fs.writeFile(
+        path.join(tmpDir, 'canvas.brand-kit.json'),
+        `${JSON.stringify({ colors: { local: '#123456' } }, null, 2)}\n`,
+        'utf-8',
+      );
+      const api = mockApiServiceWithColors([]);
+      const task = createBrandKitPullTask(
+        api,
+        tmpDir,
+        false,
+        { colors: [] },
+        { folders: [] },
+      );
+
+      const { summaryLines } = await task.prepare();
+      expect(summaryLines).toEqual(['brand kit colors: 0 pull (1 local-only)']);
+      const results = await task.execute();
+
+      expect(results.notes?.[0]).toContain('Local (--local)');
+      const raw = await fs.readFile(
+        path.join(tmpDir, 'canvas.brand-kit.json'),
+        'utf-8',
+      );
+      expect(JSON.parse(raw).colors).toEqual({ local: '#123456' });
     });
   });
 });

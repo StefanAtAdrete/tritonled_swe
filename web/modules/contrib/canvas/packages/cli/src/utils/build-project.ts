@@ -21,7 +21,7 @@ import {
   createComponentPayload,
   readComponentMetadata,
 } from './process-component-files';
-import { validateComponent } from './validate';
+import { validateComponents } from './validate';
 
 import type {
   DiscoveredComponent,
@@ -51,7 +51,7 @@ export interface CanvasProjectBuildResult {
   artifactCount: number;
   vendorImportCount: number;
   localImportCount: number;
-  tailwindResult: Result | null;
+  tailwindResult: Result;
 }
 
 export interface CanvasProjectBuildOptions {
@@ -61,9 +61,10 @@ export interface CanvasProjectBuildOptions {
   outputDir: string;
   discoveryResult: DiscoveryResult;
   cleanOutputDir?: boolean;
-  buildTailwind?: boolean;
   requireJsEntries?: boolean;
-  useLocalGlobalCss?: boolean;
+  // When the Canvas Headless SDK is installed, every component is pushed as an
+  // external component (metadata only): the SDK-powered app renders them.
+  headlessSdkDetected?: boolean;
 }
 
 function getOutputBaseName(component: DiscoveredComponent): string {
@@ -130,13 +131,6 @@ async function prepareComponentBuild(options: {
   };
   const outputBaseName = getOutputBaseName(component);
   const distDir = path.join(outputDir, 'components', component.name);
-
-  const validationResult = await validateComponent(
-    path.dirname(component.metadataPath),
-  );
-  if (!validationResult.success) {
-    return { result: validationResult };
-  }
 
   try {
     await fs.mkdir(distDir, { recursive: true });
@@ -268,12 +262,14 @@ async function buildComponentPayload(options: {
     metadata,
     machineName,
     componentName: options.component.name,
-    sourceCodeJs: options.sourceCodeJs,
-    compiledJs,
-    sourceCodeCss: options.sourceCodeCss,
-    compiledCss: options.compiledCss,
-    importedJsComponents: options.importedJsComponents,
     dataDependencies: options.dataDependencies,
+    code: {
+      sourceCodeJs: options.sourceCodeJs,
+      compiledJs,
+      sourceCodeCss: options.sourceCodeCss,
+      compiledCss: options.compiledCss,
+      importedJsComponents: options.importedJsComponents,
+    },
   });
 }
 
@@ -283,6 +279,24 @@ function emptyVendorResult(): CanvasVendorArtifactBuildResult {
     bundledPackages: [],
     sharedChunks: [],
   };
+}
+
+function emptyBuildManifest(): Manifest {
+  return {
+    vendor: {},
+    local: {},
+    shared: [],
+  };
+}
+
+async function validateComponentsForBuild(
+  discoveryResult: DiscoveryResult,
+  externalComponents: boolean,
+): Promise<Result[]> {
+  const { results } = await validateComponents(discoveryResult, {
+    externalComponents,
+  });
+  return results.filter((result) => !result.success);
 }
 
 export async function buildCanvasProject(
@@ -299,14 +313,79 @@ export async function buildCanvasProject(
     await fs.rm(outputDir, { recursive: true, force: true });
   }
 
-  const globalSourceCodeCss = await getGlobalCss(
-    options.useLocalGlobalCss ?? true,
+  const validationFailures = await validateComponentsForBuild(
+    options.discoveryResult,
+    options.headlessSdkDetected ?? false,
   );
+  if (validationFailures.length > 0) {
+    const manifestPath = path.join(outputDir, 'canvas-manifest.json');
+    return {
+      discoveryResult: options.discoveryResult,
+      componentResults: validationFailures,
+      builtComponents: [],
+      manifest: emptyBuildManifest(),
+      manifestPath,
+      artifactCount: 0,
+      vendorImportCount: 0,
+      localImportCount: 0,
+      tailwindResult: {
+        itemName: 'Global CSS',
+        itemType: 'Asset',
+        success: true,
+      },
+    };
+  }
+
+  const globalSourceCodeCss = await getGlobalCss();
   const dependencyMetadata = createCanvasDependencyMetadata();
   const componentResults: Result[] = [];
   const builtComponents: BuiltComponent[] = [];
 
   for (const component of options.discoveryResult.components) {
+    // When the Canvas Headless SDK is installed, components are pushed as
+    // metadata only: no JavaScript is built or uploaded.
+    const isExternal = options.headlessSdkDetected === true;
+
+    if (isExternal) {
+      const result: Result = {
+        itemName: component.name,
+        success: true,
+        details: [],
+      };
+      try {
+        const metadata = await readComponentMetadata(component.metadataPath);
+        if (!metadata) {
+          throw new Error(`Invalid metadata file for ${component.name}.`);
+        }
+        const machineName =
+          metadata.machineName ||
+          component.name.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+        const componentPayload = createComponentPayload({
+          metadata,
+          machineName,
+          componentName: component.name,
+          dataDependencies: {},
+          type: 'external',
+        });
+        builtComponents.push({
+          machineName: componentPayload.machineName,
+          componentName: component.name,
+          componentPayload,
+          importedJsComponents: [],
+        });
+      } catch (error) {
+        result.success = false;
+        result.details = [
+          {
+            heading: 'Error while preparing external component',
+            content: error instanceof Error ? error.message : String(error),
+          },
+        ];
+      }
+      componentResults.push(result);
+      continue;
+    }
+
     const prepared = await prepareComponentBuild({
       component,
       outputDir,
@@ -400,6 +479,8 @@ export async function buildCanvasProject(
     outputDir,
     vendorImportMap: vendorResult.importMap,
     localImportMap: localResult.localImportMap,
+    localSources: localResult.localSources,
+    bundledSources: localResult.bundledSources,
     sharedChunks: [...vendorResult.sharedChunks, ...localResult.sharedChunks],
   });
   if (!manifestResult.success) {
@@ -407,14 +488,10 @@ export async function buildCanvasProject(
   }
   const { manifest, manifestPath } = manifestResult;
 
-  let tailwindResult: Result | null = null;
-  if (options.buildTailwind) {
-    tailwindResult = await buildTailwindForComponents(
-      options.discoveryResult.components,
-      options.useLocalGlobalCss ?? true,
-      outputDir,
-    );
-  }
+  const tailwindResult = await buildTailwindForComponents(
+    options.discoveryResult.components,
+    outputDir,
+  );
 
   return {
     discoveryResult: options.discoveryResult,

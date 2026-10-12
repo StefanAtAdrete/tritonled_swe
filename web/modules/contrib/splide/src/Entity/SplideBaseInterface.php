@@ -36,7 +36,7 @@ interface SplideBaseInterface extends ConfigEntityInterface {
   /**
    * Sets the array of splide settings.
    *
-   * @param array $settings
+   * @param array<string, mixed> $settings
    *   The new array of settings.
    *
    * @return $this

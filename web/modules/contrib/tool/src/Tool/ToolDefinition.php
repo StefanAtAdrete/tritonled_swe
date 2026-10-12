@@ -4,9 +4,14 @@ namespace Drupal\tool\Tool;
 
 use Drupal\Component\Plugin\Definition\DerivablePluginDefinitionInterface;
 use Drupal\Component\Plugin\Definition\PluginDefinition;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\tool\TypedData\InputDefinitionInterface;
 use Drupal\Core\Plugin\Context\ContextDefinitionInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\TypedData\ListDataDefinition;
+use Drupal\tool\TypedData\InputDefinitionInterface;
+use Drupal\tool\TypedData\ListInputDefinition;
+use Drupal\tool\TypedData\ListOutputDefinition;
+use Drupal\tool\TypedData\OutputDefinition;
+use Drupal\tool\TypedData\OutputDefinitionInterface;
 use Drupal\Component\Plugin\Exception\ContextException;
 use Drupal\tool\TypedInputsDefinitionInterface;
 use Drupal\tool\TypedOutputsDefinitionInterface;
@@ -39,7 +44,7 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
   /**
    * The output definitions for this plugin definition.
    *
-   * @var \Drupal\Core\Plugin\Context\ContextDefinitionInterface[]
+   * @var \Drupal\tool\TypedData\OutputDefinitionInterface[]
    */
   protected array $outputDefinitions = [];
 
@@ -49,6 +54,15 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
    * @var array<string, string|false>
    */
   protected array $forms = [];
+
+  /**
+   * The permission an account must hold to run the tool, if any.
+   *
+   * A string in the syntax of a route's _permission requirement.
+   *
+   * @var string|null
+   */
+  protected ?string $permission = NULL;
 
   /**
    * Whether the tool is destructive and requires confirmation.
@@ -79,6 +93,17 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
   protected string|null $deriver;
 
   /**
+   * The icon reference for this tool, if any.
+   *
+   * A core Icon API full icon ID in the form "pack_id:icon_id". Stored
+   * as-is; consumers resolve it through the icon pack manager where
+   * available and treat an unresolvable reference as no icon.
+   *
+   * @var string|null
+   */
+  protected ?string $icon = NULL;
+
+  /**
    * Constructs a new tool definition object.
    *
    * @param array $definition
@@ -97,6 +122,10 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
 
     if (isset($definition['output_definitions'])) {
       foreach ($definition['output_definitions'] as $name => $output_definition) {
+        if (($output_definition instanceof ContextDefinitionInterface || $output_definition instanceof InputDefinitionInterface) && !$output_definition instanceof OutputDefinitionInterface) {
+          @trigger_error(sprintf("Declaring the '%s' output with %s is deprecated in tool:1.0.0-beta9 and is removed from tool:1.0.0-rc1. Use an OutputDefinitionInterface class instead. See https://git.drupalcode.org/project/tool/-/work_items/3583050", $name, $output_definition::class), E_USER_DEPRECATED);
+          $output_definition = OutputDefinition::fromContextDefinition($output_definition, $name);
+        }
         $this->addOutputDefinition($name, $output_definition);
       }
       unset($definition['output_definitions']);
@@ -122,7 +151,9 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
    *   The value for that property, or NULL if the property does not exist.
    */
   public function get(string $property): mixed {
-    return $this?->{$property} ?? NULL;
+    // isset() semantics: declared-but-uninitialized typed properties (e.g. a
+    // definition without a 'deriver') must return NULL, not throw.
+    return $this->{$property} ?? NULL;
   }
 
   /**
@@ -174,8 +205,15 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
 
   /**
    * {@inheritdoc}
+   *
+   * A definition declared with multiple: TRUE is converted to the list it
+   * means, with a deprecation (#3583049).
    */
   public function addInputDefinition(string $name, InputDefinitionInterface $definition): static {
+    if ($definition->isMultiple() && !$definition instanceof ListDataDefinition) {
+      @trigger_error(sprintf("Declaring the '%s' input with multiple: TRUE is deprecated in tool:1.0.0-beta10 and is removed from tool:1.0.0-rc1. Declare a ListInputDefinition instead. See https://git.drupalcode.org/project/tool/-/work_items/3583049", $name), E_USER_DEPRECATED);
+      $definition = ListInputDefinition::fromMultiple($definition);
+    }
     $this->inputDefinitions[$name] = $definition;
     return $this;
   }
@@ -205,7 +243,7 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
   /**
    * {@inheritdoc}
    */
-  public function getOutputDefinition(string $name): ContextDefinitionInterface {
+  public function getOutputDefinition(string $name): OutputDefinitionInterface {
     if ($this->hasOutputDefinition($name)) {
       return $this->outputDefinitions[$name];
     }
@@ -214,8 +252,15 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
 
   /**
    * {@inheritdoc}
+   *
+   * A definition declared with multiple: TRUE is converted to the list it
+   * means, with a deprecation (#3583049).
    */
-  public function addOutputDefinition(string $name, ContextDefinitionInterface $definition): static {
+  public function addOutputDefinition(string $name, OutputDefinitionInterface $definition): static {
+    if ($definition->isMultiple() && !$definition instanceof ListDataDefinition) {
+      @trigger_error(sprintf("Declaring the '%s' output with multiple: TRUE is deprecated in tool:1.0.0-beta10 and is removed from tool:1.0.0-rc1. Declare a ListOutputDefinition instead. See https://git.drupalcode.org/project/tool/-/work_items/3583049", $name), E_USER_DEPRECATED);
+      $definition = ListOutputDefinition::fromMultiple($definition);
+    }
     $this->outputDefinitions[$name] = $definition;
     return $this;
   }
@@ -272,6 +317,17 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
   public function setDescription(TranslatableMarkup $description): static {
     $this->description = $description;
     return $this;
+  }
+
+  /**
+   * Gets the icon reference for this tool.
+   *
+   * @return string|null
+   *   The core Icon API full icon ID ("pack_id:icon_id"), or NULL when the
+   *   tool declares no icon.
+   */
+  public function getIcon(): ?string {
+    return $this->icon;
   }
 
   /**
@@ -348,6 +404,32 @@ class ToolDefinition extends PluginDefinition implements DerivablePluginDefiniti
    */
   public function removeForm(string $name): static {
     unset($this->forms[$name]);
+    return $this;
+  }
+
+  /**
+   * Gets the permission an account must hold to run this tool.
+   *
+   * @return string|null
+   *   The permission, in the syntax of a route's _permission requirement, or
+   *   NULL when the tool declares no permission gate.
+   */
+  public function getPermission(): ?string {
+    return $this->permission === '' ? NULL : $this->permission;
+  }
+
+  /**
+   * Sets the permission an account must hold to run this tool.
+   *
+   * @param string|null $permission
+   *   The permission, in the syntax of a route's _permission requirement, or
+   *   NULL to declare no permission gate. An empty string means no permission
+   *   gate and is stored as NULL.
+   *
+   * @return $this
+   */
+  public function setPermission(?string $permission): static {
+    $this->permission = $permission === '' ? NULL : $permission;
     return $this;
   }
 

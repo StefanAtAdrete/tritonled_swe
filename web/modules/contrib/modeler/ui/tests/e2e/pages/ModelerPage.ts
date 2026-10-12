@@ -35,11 +35,16 @@ export class ModelerPage {
   constructor(page: Page) {
     this.page = page;
 
-    // Main layout - use actual CSS classes from the app
+    // Main layout - use actual CSS classes from the app.
+    // NOTE (unified panel, issue project/modeler#3576269): the standalone
+    // replay column was merged into the single right-hand panel. Replay /
+    // "Review flow" content now renders INSIDE `.workflow-property-panel`
+    // when the panel is in Review mode, so `replayPanel` points at the same
+    // unified panel as `propertyPanel`.
     this.canvas = page.locator('.react-flow');
     this.propertyPanel = page.locator('.workflow-property-panel');
     this.toolbar = page.locator('.workflow-toolbar');
-    this.replayPanel = page.locator('.replay-panel');
+    this.replayPanel = page.locator('.workflow-property-panel');
 
     // Main toolbar buttons
     this.saveButton = page.locator('button[title="Save Model"]');
@@ -103,6 +108,22 @@ export class ModelerPage {
   async selectNode(nodeId: string) {
     const node = this.getNode(nodeId);
     await node.click();
+  }
+
+  /**
+   * Select an edge on the canvas.
+   *
+   * Conditions are first-class nodes now (issue #3589093), so every rendered
+   * edge is a plain default edge — there is no condition card overlay to click
+   * through.  This still dispatches a click directly on the SVG edge wrapper so
+   * the event reliably reaches ReactFlow's handler regardless of the small
+   * quick-add affordance rendered at the edge midpoint.
+   */
+  async selectEdge(edgeId: string) {
+    const edgeGroup = this.page.locator(
+      `.react-flow__edge[data-testid="rf__edge-${edgeId}"], .react-flow__edge[data-id="${edgeId}"]`,
+    ).first();
+    await edgeGroup.dispatchEvent('click');
   }
 
   /**
@@ -243,6 +264,55 @@ export class ModelerPage {
   }
 
   /**
+   * Start a NEW edge from a source node's output handle and DROP it on the
+   * BODY (center) of the destination node — NOT on its target handle (issue
+   * #3585553 follow-on UX). React Flow's `onConnect` fires only on a handle
+   * drop; this exercises the `onConnectEnd` node-body fallback. Performs a real
+   * mouse drag (down on the source handle, move to the destination node center,
+   * up) so the live connection-line preview and `onConnectEnd` both fire.
+   */
+  async dragNewEdgeToNodeBody(sourceNodeId: string, destinationNodeId: string) {
+    const sourceNode = this.getNode(sourceNodeId);
+    // Output handle is rendered at the bottom of each node (Position.Bottom).
+    const sourceHandle = sourceNode.locator('.react-flow__handle-bottom').first();
+    await sourceHandle.waitFor({ state: 'visible', timeout: 5000 });
+    const handleBox = await sourceHandle.boundingBox();
+    if (!handleBox) throw new Error(`Source handle for node ${sourceNodeId} not found`);
+
+    const dest = this.getNode(destinationNodeId);
+    const destBox = await dest.boundingBox();
+    if (!destBox) throw new Error(`Destination node ${destinationNodeId} not found`);
+
+    await this.page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await this.page.mouse.down();
+    // Move to the node CENTER (its body), away from the target handle, in
+    // steps so React Flow registers an active connection drag.
+    await this.page.mouse.move(destBox.x + destBox.width / 2, destBox.y + destBox.height / 2, { steps: 10 });
+    await this.page.mouse.up();
+  }
+
+  /**
+   * Start a NEW edge from a source node's output handle and DROP it on empty
+   * canvas (should create nothing). Used as the [C2] negative test.
+   */
+  async dragNewEdgeToEmptyCanvas(sourceNodeId: string) {
+    const sourceNode = this.getNode(sourceNodeId);
+    const sourceHandle = sourceNode.locator('.react-flow__handle-bottom').first();
+    await sourceHandle.waitFor({ state: 'visible', timeout: 5000 });
+    const handleBox = await sourceHandle.boundingBox();
+    if (!handleBox) throw new Error(`Source handle for node ${sourceNodeId} not found`);
+
+    const canvasBox = await this.canvas.boundingBox();
+    if (!canvasBox) throw new Error('Canvas not found');
+
+    await this.page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await this.page.mouse.down();
+    // Drop in the bottom-right corner — clear of every node.
+    await this.page.mouse.move(canvasBox.x + canvasBox.width - 10, canvasBox.y + canvasBox.height - 10, { steps: 10 });
+    await this.page.mouse.up();
+  }
+
+  /**
    * Drag a node to a new position.
    */
   async moveNode(nodeId: string, deltaX: number, deltaY: number) {
@@ -254,6 +324,163 @@ export class ModelerPage {
     await this.page.mouse.down();
     await this.page.mouse.move(box.x + box.width / 2 + deltaX, box.y + box.height / 2 + deltaY);
     await this.page.mouse.up();
+  }
+
+  /**
+   * Drag a selected edge's SOURCE or TARGET endpoint grip onto another node
+   * (per-handle endpoint reconnection — issue #3585553).
+   *
+   * The grip (`.edge-endpoint-grip--source` / `--target`) is only rendered
+   * after the edge is selected and the endpoint is eligible, so this selects
+   * the edge first, then performs a real mouse drag from the grip center to
+   * the center of the destination node. Dropping over a node triggers the
+   * `elementFromPoint` hit-test in useEndpointDrag.
+   */
+  async reconnectEdgeEndpoint(
+    edgeId: string,
+    endpoint: 'source' | 'target',
+    destinationNodeId: string,
+  ) {
+    await this.selectEdge(edgeId);
+    const grip = this.page.locator(`.edge-endpoint-grip--${endpoint}`).first();
+    await grip.waitFor({ state: 'visible', timeout: 5000 });
+
+    const gripBox = await grip.boundingBox();
+    if (!gripBox) throw new Error(`Endpoint grip (${endpoint}) for edge ${edgeId} not found`);
+
+    const dest = this.getNode(destinationNodeId);
+    const destBox = await dest.boundingBox();
+    if (!destBox) throw new Error(`Destination node ${destinationNodeId} not found`);
+
+    await this.page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+    await this.page.mouse.down();
+    // Intermediate move so the gesture registers as a drag.
+    await this.page.mouse.move(destBox.x + destBox.width / 2, destBox.y + destBox.height / 2, { steps: 8 });
+    await this.page.mouse.up();
+  }
+
+  /**
+   * Select multiple edges. The first is a plain click; subsequent edges are
+   * shift-clicks so React Flow accumulates them into the multi-selection.
+   * Uses a dispatched MouseEvent (with shiftKey) because the small quick-add
+   * affordance over the edge midpoint makes real positional clicks flaky.
+   */
+  async selectMultipleEdges(edgeIds: string[]) {
+    for (let i = 0; i < edgeIds.length; i++) {
+      const edgeGroup = this.page.locator(
+        `.react-flow__edge[data-testid="rf__edge-${edgeIds[i]}"], .react-flow__edge[data-id="${edgeIds[i]}"]`,
+      ).first();
+      // React Flow decides multi-select from the LIVE keyboard state
+      // (multiSelectionKeyCode="Shift"), not from a synthetic event's shiftKey.
+      // Hold Shift down for every edge after the first so the dispatched click
+      // accumulates into the selection instead of replacing it.
+      if (i === 0) {
+        await edgeGroup.dispatchEvent('click');
+      } else {
+        await this.page.keyboard.down('Shift');
+        await edgeGroup.dispatchEvent('click', { shiftKey: true });
+        await this.page.keyboard.up('Shift');
+      }
+    }
+  }
+
+  /**
+   * Drag a SPECIFIC already-selected edge's endpoint grip onto another node,
+   * WITHOUT re-selecting (so a pre-established multi-selection is preserved).
+   * Targets the grip by its `data-edge-id` so the correct edge's grip is used
+   * even when several edges are selected.
+   */
+  async dragSelectedEdgeEndpoint(
+    edgeId: string,
+    endpoint: 'source' | 'target',
+    destinationNodeId: string,
+  ) {
+    const grip = this.page
+      .locator(`.edge-endpoint-grip--${endpoint}[data-edge-id="${edgeId}"]`)
+      .first();
+    await grip.waitFor({ state: 'visible', timeout: 5000 });
+    const gripBox = await grip.boundingBox();
+    if (!gripBox) throw new Error(`Endpoint grip (${endpoint}) for edge ${edgeId} not found`);
+
+    const dest = this.getNode(destinationNodeId);
+    const destBox = await dest.boundingBox();
+    if (!destBox) throw new Error(`Destination node ${destinationNodeId} not found`);
+
+    await this.page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+    await this.page.mouse.down();
+    await this.page.mouse.move(destBox.x + destBox.width / 2, destBox.y + destBox.height / 2, { steps: 8 });
+    await this.page.mouse.up();
+  }
+
+  /**
+   * Begin dragging an endpoint grip and PAUSE mid-drag (mouse still down) over
+   * the destination node, without releasing. Lets a test assert the live
+   * reconnect preview line (issue #3585553) while the drag is in progress.
+   * Call `endDrag()` afterward to release the mouse.
+   */
+  async startEndpointDrag(
+    edgeId: string,
+    endpoint: 'source' | 'target',
+    destinationNodeId: string,
+  ) {
+    await this.selectEdge(edgeId);
+    const grip = this.page.locator(`.edge-endpoint-grip--${endpoint}`).first();
+    await grip.waitFor({ state: 'visible', timeout: 5000 });
+    const gripBox = await grip.boundingBox();
+    if (!gripBox) throw new Error(`Endpoint grip (${endpoint}) for edge ${edgeId} not found`);
+
+    const dest = this.getNode(destinationNodeId);
+    const destBox = await dest.boundingBox();
+    if (!destBox) throw new Error(`Destination node ${destinationNodeId} not found`);
+
+    await this.page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+    await this.page.mouse.down();
+    await this.page.mouse.move(destBox.x + destBox.width / 2, destBox.y + destBox.height / 2, { steps: 8 });
+    // Intentionally NOT releasing — the caller asserts the preview, then ends.
+  }
+
+  /** Release the mouse to finish a paused drag started by startEndpointDrag(). */
+  async endDrag() {
+    await this.page.mouse.up();
+  }
+
+  /** Locator for the live reconnect preview line drawn during an endpoint drag. */
+  get reconnectPreview(): Locator {
+    return this.page.locator('.edge-reconnect-preview');
+  }
+
+  /**
+   * Drag a selected edge's endpoint grip onto empty canvas (should snap back).
+   * Drops at an offset that is guaranteed to be outside every node.
+   */
+  async dragEndpointToEmptyCanvas(edgeId: string, endpoint: 'source' | 'target') {
+    await this.selectEdge(edgeId);
+    const grip = this.page.locator(`.edge-endpoint-grip--${endpoint}`).first();
+    await grip.waitFor({ state: 'visible', timeout: 5000 });
+    const gripBox = await grip.boundingBox();
+    if (!gripBox) throw new Error(`Endpoint grip (${endpoint}) for edge ${edgeId} not found`);
+
+    const canvasBox = await this.canvas.boundingBox();
+    if (!canvasBox) throw new Error('Canvas not found');
+
+    await this.page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+    await this.page.mouse.down();
+    // Drop near the bottom-right corner of the canvas — clear of all nodes.
+    await this.page.mouse.move(canvasBox.x + canvasBox.width - 10, canvasBox.y + canvasBox.height - 10, { steps: 8 });
+    await this.page.mouse.up();
+  }
+
+  /**
+   * Trigger a save and return the parsed POST payload sent to the backend.
+   * Used to assert top-level edge source/target after a reconnection.
+   */
+  async saveAndGetPayload(): Promise<Record<string, unknown>> {
+    const saveRequestPromise = this.page.waitForRequest(
+      (request) => request.url().includes('modeler-api/model') && request.method() === 'POST',
+    );
+    await this.saveButton.click();
+    const saveRequest = await saveRequestPromise;
+    return JSON.parse(saveRequest.postData() || '{}');
   }
 
   /**
@@ -307,19 +534,53 @@ export class ModelerPage {
   }
 
   /**
-   * Click the "Load replay data" button in the property panel header.
-   * This triggers a fetch to the replay_url endpoint.
+   * Enter Review view for the selected event node (revised entry, issue
+   * project/modeler#3576269). Clicking "Review flow" auto-starts the live
+   * listener AND loads historical replay data, so this is the single entry
+   * point — there is no separate "Load replay data" button anymore.
    */
   async loadReplayData() {
-    const replayBtn = this.propertyPanel.locator('button[aria-label="Load replay data"]');
-    await replayBtn.click();
+    await this.enterReviewMode();
   }
 
   /**
-   * Get the replay load button in the property panel header.
+   * The "Review flow" (go-to-replay) button shown in the Properties header.
+   * Its filled-button class is distinct from the review-mode text-style
+   * "Back" control.
+   */
+  getReviewModeButton(): Locator {
+    return this.propertyPanel.locator('.header-review-btn[aria-label="Review flow"]');
+  }
+
+  /**
+   * The review-mode text-style back control (left arrow + "Back") - since
+   * #3589103 the only control in the Review header. Clicking it returns to
+   * Properties.
+   */
+  getBackToPropertiesButton(): Locator {
+    return this.propertyPanel.locator('.panel-header-back[aria-label="Back to properties"]');
+  }
+
+  /**
+   * Backward-compatible alias. The old "Load replay data" refresh button was
+   * replaced by the "Review flow" entry button; existing specs that referenced
+   * the load button now resolve to it.
    */
   getReplayLoadButton(): Locator {
-    return this.propertyPanel.locator('button[aria-label="Load replay data"]');
+    return this.getReviewModeButton();
+  }
+
+  /**
+   * Enter the Review view by clicking the header "Review flow" button. Doing so
+   * starts (or, if a session is active, resumes) the Replay view. Best-effort:
+   * only clicks when the button is present (an event node is selected and review
+   * is available, or a session is already active).
+   */
+  async enterReviewMode() {
+    const reviewBtn = this.getReviewModeButton();
+    if (await reviewBtn.count() === 0) return;
+    await reviewBtn.click();
+    await this.page.waitForTimeout(200);
   }
 
   /**
@@ -339,10 +600,25 @@ export class ModelerPage {
   }
 
   /**
-   * Get replay entry items in the dropdown.
+   * Get the DATA replay entry items in the dropdown (one per execution).
+   *
+   * Unified panel (#3576269): the dropdown now has a persistent "listen" item
+   * (`.replay-listen-item`) at the top which ALSO carries the `.replay-entry-item`
+   * class. That item is the Test affordance, not an execution entry, so it is
+   * excluded here — callers count/index real executions only. Use
+   * `getReplayListenItem()` / `getTestButton()` for the listen item.
    */
   getReplayEntryItems(): Locator {
-    return this.replayPanel.locator('.replay-entry-item');
+    return this.replayPanel.locator('.replay-entry-item:not(.replay-listen-item)');
+  }
+
+  /**
+   * Get the persistent "listen for the event" item at the top of the dropdown.
+   * Alias of getTestButton() for readability at call sites concerned with the
+   * dropdown structure rather than the Test semantics.
+   */
+  getReplayListenItem(): Locator {
+    return this.replayPanel.locator('.replay-listen-item');
   }
 
   /**
@@ -426,21 +702,72 @@ export class ModelerPage {
     return classList?.includes('replay-highlighted') ?? false;
   }
 
-  // ============== Test Button Methods ==============
+  // ============== Test Affordance Methods ==============
+  //
+  // Unified-panel refactor (issue project/modeler#3576269): the standalone
+  // "Execution Replay" header bar — and with it the dedicated `.header-test-btn`
+  // — was REMOVED. There is NO standalone Test button at page load anymore.
+  // A test run is now initiated implicitly from WITHIN the Review flow: the user
+  // enters Review mode (the "Review flow" header button) and picks the
+  // persistent "Listen to event to happen" item at the top of the execution
+  // replay dropdown (`.replay-listen-item`). Selecting it fires `onStartTest`
+  // in Flow.tsx, which starts the single live listener. The waiting/spinner
+  // state then renders as `.replay-test-waiting`.
+  //
+  // The "Test affordance" therefore = the listen item inside the entry dropdown,
+  // and it is GATED behind the same capability/permission as the Review button
+  // (no review capability ⇒ no Review button ⇒ no way to reach the listen item).
 
   /**
-   * Get the Test button in the replay panel header.
+   * The Test affordance in the unified panel: the persistent "listen" item at
+   * the top of the execution-replay dropdown. Reaching it requires being in
+   * Review mode (open the entry dropdown first via `openReplayEntryDropdown()`).
+   *
+   * Returns a locator for the listen item. It only exists in the DOM while the
+   * entry dropdown is open AND review capability is present.
    */
   getTestButton(): Locator {
-    return this.replayPanel.locator('.header-test-btn');
+    return this.replayPanel.locator('.replay-listen-item');
   }
 
   /**
-   * Click the Test button to initiate a test run.
+   * Whether the Test affordance is reachable at all: i.e. the "Review flow"
+   * button is present (capability + permission), which is the single gate that
+   * controls access to the listen-to-test item. When this is false, there is no
+   * way for the user to start a test — the security contract for `test`/`replay`
+   * permission denial.
    */
-  async startTest() {
-    const testBtn = this.getTestButton();
-    await testBtn.click();
+  getTestAffordanceGate(): Locator {
+    return this.getReviewModeButton();
+  }
+
+  /**
+   * Start a test run via the unified flow. Selects the (single) event node so
+   * the "Review flow" affordance appears, then enters Review mode. When a
+   * test_url is configured, entering Review for an event AUTO-STARTS the single
+   * live listener (Flow.enterReviewForNode → startTest) and auto-selects the
+   * "listen" item, so the waiting state appears without any further click.
+   * Best-effort: only proceeds when the Review affordance is present.
+   *
+   * @param eventNodeId The event node to review (defaults to the standard
+   *   single event node in the mock model).
+   */
+  async startTest(eventNodeId = 'event_1') {
+    await this.selectNode(eventNodeId);
+    await this.page.waitForTimeout(300);
+    const gate = this.getReviewModeButton();
+    if (await gate.count() === 0) return;
+    await this.enterReviewMode();
+  }
+
+  /**
+   * Re-arm the listener from WITHIN Review mode by explicitly selecting the
+   * persistent "listen" item in the open execution-replay dropdown. Assumes the
+   * panel is already in Review mode.
+   */
+  async startTestViaListenItem() {
+    await this.openReplayEntryDropdown();
+    await this.getTestButton().click();
   }
 
   /**
@@ -490,14 +817,18 @@ export class ModelerPage {
   }
 
   /**
-   * Get the quick-add condition button for an edge.
-   * Note: The button is rendered via EdgeLabelRenderer portal, positioned at edge center.
-   * The button has title="Add condition".
+   * Get the quick-add edge button for a specific edge.
+   *
+   * Every edge is a plain default edge now (issue #3589093); the button is
+   * rendered by QuickAddEdgeButton inside DefaultEdge's EdgeLabelRenderer
+   * portal, positioned at the edge midpoint.  Selecting a condition from its
+   * popup INSERTS a condition node on the edge; selecting an action/gateway
+   * inserts that node instead.  The button keeps the historical CSS class
+   * "quick-add-condition-button" and carries a data-edge-id attribute.
    */
   getQuickAddConditionButton(edgeId: string): Locator {
-    // The quick-add-condition-button is rendered in EdgeLabelRenderer, which is a portal
-    // It's positioned at the edge center. Use button title to find it.
-    return this.page.locator('button[title="Add condition"]').first();
+    // Use data-edge-id to target the specific edge's button.
+    return this.page.locator(`.quick-add-condition-button[data-edge-id="${edgeId}"]`).first();
   }
 
   /**
@@ -594,17 +925,54 @@ export class ModelerPage {
   }
 
   /**
-   * Get a form field inside the metadata modal by its id attribute.
+   * Get a control inside the metadata modal by its form key.
+   *
+   * Native controls (select, machine name, the YAML editor's textarea) carry
+   * the `config-field-KEY` id. The text widgets are contenteditable divs,
+   * which a `<label for>` can never reach, so they are named by their label
+   * through aria-labelledby instead.
    */
-  getMetadataField(fieldId: string): Locator {
-    return this.getMetadataModal().locator(`#${fieldId}`);
+  getMetadataField(fieldKey: string): Locator {
+    return this.getMetadataModal().locator(
+      `#config-field-${fieldKey}, [aria-labelledby="config-field-${fieldKey}-label"]`,
+    );
   }
 
   /**
-   * Get the template checkbox in the metadata modal.
+   * Whether a metadata control can be edited.
+   *
+   * The two widget kinds say so differently: a contenteditable div flips its
+   * `contenteditable` attribute, a native control gets `disabled`.
+   */
+  async isMetadataFieldEditable(fieldKey: string): Promise<boolean> {
+    const field = this.getMetadataField(fieldKey);
+    const contentEditable = await field.getAttribute('contenteditable');
+    if (contentEditable !== null) {
+      return contentEditable === 'true';
+    }
+    return await field.isEnabled();
+  }
+
+  /**
+   * Expand a collapsed group (`details`) in the metadata modal by its title.
+   */
+  async expandMetadataGroup(title: string): Promise<void> {
+    const details = this.getMetadataModal().locator(`details:has(> summary:text-is("${title}"))`);
+    await details.waitFor({ state: 'visible', timeout: 2000 });
+    if (await details.evaluate((el) => el.hasAttribute('open'))) {
+      return;
+    }
+    await details.locator('summary').first().click();
+    await details.locator('.form-group-body').first().waitFor({ state: 'visible', timeout: 2000 });
+  }
+
+  /**
+   * Get the template checkbox in the metadata modal, by its label.
    */
   getTemplateCheckbox(): Locator {
-    return this.getMetadataModal().locator('input[type="checkbox"]').nth(1);
+    return this.getMetadataModal()
+      .locator('label.checkbox-wrapper', { hasText: 'Template' })
+      .locator('input[type="checkbox"]');
   }
 
   /**
@@ -719,5 +1087,90 @@ export class ModelerPage {
     const cancelBtn = this.page.locator('.export-dialog-footer .btn-secondary');
     await cancelBtn.click();
     await this.page.waitForSelector('.export-dialog', { state: 'hidden', timeout: 5000 });
+  }
+
+  // ============== Condition Node Methods ==============
+  //
+  // Conditions are first-class nodes now (issue #3589093): a condition is a
+  // ReactFlow node (type 'condition', data.__isConditionNode === true,
+  // componentType 5) rendered by ConditionNode.tsx as a card with the class
+  // `.condition-node`.  These helpers target conditions as nodes.
+
+  /**
+   * Get all condition node cards on the canvas (`.condition-node`).
+   */
+  getConditionNodes(): Locator {
+    return this.page.locator('.react-flow__node .condition-node');
+  }
+
+  /**
+   * Get the currently selected condition node card on the canvas.
+   *
+   * React Flow adds the `.selected` class to the `.react-flow__node` wrapper
+   * for a node whose `selected` flag is true.  Inserting a condition on an edge
+   * auto-selects the newly created condition node (see `handleAddCondition`),
+   * so this targets that freshly inserted node specifically — distinct from any
+   * pre-existing (e.g. promoted) condition node that shares the same label.
+   */
+  getSelectedConditionNode(): Locator {
+    return this.page.locator('.react-flow__node.selected .condition-node');
+  }
+
+  /**
+   * Get the React Flow node wrapper for a specific condition node id.
+   * The condition node id scheme is `cond__<originalEdgeId>` for a
+   * non-grouped condition and `cond__shared__<conditionId>__<target>` for a
+   * reused (grouped) condition — see utils/modelUtils.ts.
+   */
+  getConditionNode(nodeId: string): Locator {
+    return this.getNode(nodeId);
+  }
+
+  /**
+   * Count the condition node cards currently rendered on the canvas.
+   */
+  async getConditionNodeCount(): Promise<number> {
+    return await this.getConditionNodes().count();
+  }
+
+  /**
+   * Whether a given node is a condition node (renders a `.condition-node` card).
+   */
+  async isConditionNode(nodeId: string): Promise<boolean> {
+    return await this.getNode(nodeId).locator('.condition-node').count() > 0;
+  }
+
+  /**
+   * Select a condition node by id (opens the node properties panel).
+   */
+  async selectConditionNode(nodeId: string) {
+    await this.getNode(nodeId).click();
+  }
+
+  /**
+   * Whether a node's source handle is rendered in the disabled state
+   * (class `node-handle--disabled`).  Used to assert the condition
+   * 1-outbound rule (issue #3589093).
+   */
+  async isNodeSourceHandleDisabled(nodeId: string): Promise<boolean> {
+    return await this.getNode(nodeId).locator('.node-handle--disabled').count() > 0;
+  }
+
+  /**
+   * Read the native `title` tooltip from a node's disabled source handle.
+   * Returns null when the handle has no title.
+   */
+  async getNodeSourceHandleTitle(nodeId: string): Promise<string | null> {
+    const handle = this.getNode(nodeId).locator('.node-handle--disabled').first();
+    if (await handle.count() === 0) return null;
+    return await handle.getAttribute('title');
+  }
+
+  /**
+   * Get the node label input in the property panel (used to edit a selected
+   * node's label — including a condition node's label, issue #3589093).
+   */
+  getNodeLabelInput(): Locator {
+    return this.propertyPanel.locator('#modeler-component-label');
   }
 }

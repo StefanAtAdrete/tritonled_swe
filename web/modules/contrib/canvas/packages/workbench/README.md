@@ -2,11 +2,11 @@
 
 Canvas Workbench is a local preview and development app for Drupal Canvas Code
 Components, inspired by Storybook. It scans your project, lists discovered
-components, pages, and content templates, and renders previews in an isolated
-frame.
+components, pages, content templates, and page templates, and renders previews
+in an isolated frame.
 
 Workbench has no required configuration. If your project uses the default Canvas
-layout, you can run it from your project root:
+paths, you can run it from your project root:
 
 ```bash
 npx @drupal-canvas/workbench@latest
@@ -29,6 +29,12 @@ npx canvas-workbench
 The `canvas-workbench` binary starts the packaged Workbench Vite runtime in your
 current working directory.
 
+On startup, Workbench scans its client modules and your configured
+`componentDir` for dependencies before the first preview. Libraries such as SWR
+are optimized when your components import them; projects that do not use them
+need not install them. Workbench continues to supply its own shared React
+runtime.
+
 ## Configuration
 
 Workbench can run without a `canvas.config.json` file, but it is useful to add
@@ -40,27 +46,46 @@ need:
 
 ```json
 {
-  "componentDir": "./src/components",
-  "pagesDir": "./pages",
-  "contentTemplatesDir": "./content-templates",
+  "componentDir": "src/components",
+  "pagesDir": "pages",
+  "contentTemplatesDir": "content-templates",
+  "pageTemplatesDir": "page-templates",
   "aliasBaseDir": "src",
-  "globalCssPath": "./src/components/global.css"
+  "globalCssPath": "src/global.css"
 }
 ```
 
 Workbench reads these options:
 
-| Property              | Default                         | Used for                                                                                                                          |
-| --------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `componentDir`        | `"src/components"`              | Root directory Workbench scans for `component.yml`, `*.component.yml`, source files, and mocks. It must be inside `aliasBaseDir`. |
-| `pagesDir`            | `"./pages"`                     | Directory Workbench scans for page specs such as `pages/home.json`.                                                               |
-| `contentTemplatesDir` | `"./content-templates"`         | Directory Workbench scans for content template specs such as `content-templates/node.article.full.json`.                          |
-| `aliasBaseDir`        | `"src"`                         | Base directory for resolving `@/` imports inside component source files.                                                          |
-| `globalCssPath`       | `"./src/components/global.css"` | Global CSS entrypoint loaded into the preview iframe. This is where Workbench picks up shared styles and Tailwind setup.          |
+| Property              | Default               | Used for                                                                                                                          |
+| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `componentDir`        | `"src/components"`    | Root directory Workbench scans for `component.yml`, `*.component.yml`, source files, and mocks. It must be inside `aliasBaseDir`. |
+| `pagesDir`            | `"pages"`             | Directory Workbench scans for page specs such as `pages/home.json`.                                                               |
+| `contentTemplatesDir` | `"content-templates"` | Directory Workbench scans for content template specs such as `content-templates/node.article.full.json`.                          |
+| `pageTemplatesDir`    | `"page-templates"`    | Directory Workbench scans for page template specs such as `page-templates/marketing.json`.                                        |
+| `aliasBaseDir`        | `"src"`               | Base directory for resolving `@/` imports inside component source files.                                                          |
+| `globalCssPath`       | `"src/global.css"`    | Global CSS entrypoint loaded into the preview iframe. This is where Workbench picks up shared styles and Tailwind setup.          |
 
-If `canvas.config.json` is not present, Workbench uses those defaults.
-`outputDir` is part of the wider Canvas config surface, but Workbench does not
-use it.
+If `canvas.config.json` is not present, Workbench uses those defaults. For
+existing projects, if `globalCssPath` is not set and `src/global.css` is
+missing, Workbench temporarily falls back to `src/components/global.css` when
+that file exists. Move the file to `src/global.css`, or set `globalCssPath`
+explicitly to keep the legacy location. `outputDir` is part of the wider Canvas
+config surface, but Workbench does not use it.
+
+## Page and site context
+
+Both preview paths — the interactive preview and `preview-build` output — render
+components inside the `drupal-canvas` context providers, so `usePageContext()`,
+`useSiteContext()`, and `useJsonApiClient()` work without component changes.
+Page context uses the Workbench defaults (`pageTitle: ''`, `breadcrumbs: []`,
+`mainEntity: null`); site context and the JSON:API client come from the site
+data the Vite integration loads once from `/canvas/api/v0/site-data`
+(`CANVAS_SITE_URL`), with the same fallbacks as before. The legacy
+`getPageData()`, `getSiteData()`, and `new JsonApiClient()` APIs keep working
+through `drupalSettings` in both paths, resolved from the same snapshot as the
+hooks: discovered site data first, then the static `CANVAS_SITE_URL` and
+`CANVAS_JSONAPI_PREFIX` settings, then the preview origin.
 
 ## Preview build command
 
@@ -92,6 +117,9 @@ For page targets, output writes:
 
 - `page-default.html`
 - `manifest.json`
+
+Page artifacts use the page's `pageVariant`, or the local page template marked
+with `"default": true`, and render the page at `marker.page_content`.
 
 `manifest.json` is target-specific:
 
@@ -133,9 +161,15 @@ For end-user guidance, see:
 - The packaged client is served from packaged source files through the Workbench
   Vite runtime, not from a standalone production-built browser bundle.
 - The packaged runtime exposes `/__canvas/discovery` and
-  `/__canvas/preview-manifest`, serves the shell on `/component/...` and
-  `/page/...`, and watches the host project for file changes. Source-only edits
-  update the preview via Vite HMR without remounting the iframe.
+  `/__canvas/preview-manifest`, serves the shell on `/component/...`,
+  `/page/...`, and `/page-template/...`, and watches the host project for file
+  changes. Source-only edits update the preview via Vite HMR without remounting
+  the iframe; in-place edits to component metadata, mocks, and page specs
+  refresh the mounted iframe with the fresh data, so component state survives
+  while props and mock data update. The iframe is remounted when the discovery
+  structure changes (a component, page, or template added or removed) and when
+  one of those files, a mock file included, is added or removed rather than
+  edited in place.
 
 ## Strict preview MVP contract
 
@@ -157,10 +191,10 @@ Workbench does not ingest arbitrary host Vite config/plugins automatically.
 - Supported module resolution via `@drupal-canvas/vite-compat` — see
   `[packages/vite-compat/README.md](../vite-compat/README.md)`
 - Tailwind entrypoint: Workbench loads the host's global CSS (default
-  `src/components/global.css`, configurable via `globalCssPath` in
-  `canvas.config.json`) through a virtual Vite CSS module that imports the host
-  CSS and includes explicit host `@source` scanning so Tailwind processing is
-  applied in Workbench context.
+  `src/global.css`, configurable via `globalCssPath` in `canvas.config.json`)
+  through a virtual Vite CSS module that imports the host CSS and includes
+  explicit host `@source` scanning so Tailwind processing is applied in
+  Workbench context.
 
 ## Current architecture decision
 

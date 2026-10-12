@@ -83,6 +83,7 @@ export function CanvasComponentsMixin<
      * @param identifier An object with either an 'id' (sdc.canvas_test_sdc.card) or 'name' (Hero) property to identify the component.
      * @param options Optional parameters:
      * - hasInputs: If true, waits for the component inputs form to be visible. (default: true)
+     * - waitForVisible: If true, waits for a visible preview overlay. (default: true)
      *
      * Example usage:
      *   await canvasEditor.addComponent({ name: 'Card' }, { waitForNetworkResponses: true });
@@ -95,7 +96,7 @@ export function CanvasComponentsMixin<
       } = { waitForVisible: true },
     ) {
       const { id, name } = identifier;
-      const { hasInputs = true } = options;
+      const { hasInputs = true, waitForVisible = true } = options;
 
       let selector, previewSelector;
 
@@ -125,16 +126,22 @@ export function CanvasComponentsMixin<
         .locator(selector);
 
       const existingInstances = this.page.locator(previewSelector);
-      const initialCount = await existingInstances.count();
+      const initialCount = waitForVisible
+        ? await existingInstances.count()
+        : undefined;
       await componentLocator.hover();
       await componentLocator.getByLabel('Open contextual menu').click();
-      await this.page.getByText('Insert').click();
+      const insertItem = this.page.getByRole('menuitem', { name: 'Insert' });
+      await expect(insertItem).toBeVisible();
+      await insertItem.click();
+      // The modal menu closing confirms the item's click handler ran (a click
+      // landing during a re-render can be swallowed, leaving the menu open).
+      await expect(insertItem).toBeHidden();
 
-      await expect(this.page.locator(previewSelector)).toHaveCount(
-        initialCount + 1,
-      );
-
-      if (options?.waitForVisible) {
+      if (waitForVisible && initialCount !== undefined) {
+        await expect(this.page.locator(previewSelector)).toHaveCount(
+          initialCount + 1,
+        );
         const updatedInstances = this.page.locator(previewSelector);
         const updatedCount = await updatedInstances.count();
         for (let i = 0; i < updatedCount; i++) {
@@ -262,26 +269,35 @@ export function CanvasComponentsMixin<
       const labelLocator = `[data-testid="canvas-contextual-panel"] [data-drupal-selector="component-instance-form"] .field--name-${propName.toLowerCase()} label`;
 
       switch (propType) {
-        case 'file':
+        case 'file': {
+          const fileInput = this.page.locator(`${inputLocator}[type="file"]`);
           // For a moment there's 2 file choosers whilst the elements are processed.
-          await expect(
-            this.page.locator(`${inputLocator}[type="file"]`),
-          ).toHaveCount(1);
-          await expect(
-            this.page.locator(`${inputLocator}[type="file"]`),
-          ).toBeVisible();
-          await this.page
-            .locator(`${inputLocator}[type="file"]`)
-            .setInputFiles(
-              nodePath.join(
-                nodePath.dirname(fileURLToPath(import.meta.url)),
-                propValue,
-              ),
-            );
+          await expect(fileInput).toHaveCount(1);
+          await expect(fileInput).toBeVisible();
+          // Wait until Drupal's fileAutoUpload behavior has attached its change
+          // listener to the input (marked with data-once="auto-file-upload").
+          // Setting the file before then fires no upload AJAX, so the "remove"
+          // button never appears and the test times out (flaky failure).
+          await expect(fileInput).toHaveAttribute(
+            'data-once',
+            /(^|\s)auto-file-upload(\s|$)/,
+          );
+          await fileInput.setInputFiles(
+            nodePath.join(
+              nodePath.dirname(fileURLToPath(import.meta.url)),
+              propValue,
+            ),
+          );
           await expect(
             this.page.getByRole('button', { name: 'remove' }),
           ).toBeVisible();
           break;
+        }
+        case 'select': {
+          const selectLocator = `[data-testid="canvas-contextual-panel"] [data-drupal-selector="component-instance-form"] .field--name-${propName.toLowerCase()} select`;
+          await this.page.locator(selectLocator).selectOption(propValue);
+          break;
+        }
         default:
           await this.page.locator(inputLocator).fill(propValue);
           // Click the label as autocomplete/link fields will not update until the
@@ -575,10 +591,22 @@ export function CanvasComponentsMixin<
       });
     }
 
-    async clickPreviewComponent(componentId: string) {
-      const component = this.page.locator(
-        `#canvasPreviewOverlay [data-canvas-component-id="${componentId}"]`,
-      );
+    /**
+     * Selects a component instance in the preview.
+     *
+     * Pass options.index to pick one of several instances of the same
+     * component, in preview order.
+     */
+    async clickPreviewComponent(
+      componentId: string,
+      options: { index?: number } = {},
+    ) {
+      const { index = 0 } = options;
+      const component = this.page
+        .locator(
+          `#canvasPreviewOverlay [data-canvas-component-id="${componentId}"]`,
+        )
+        .nth(index);
 
       // Directly trigger click events via JavaScript because of webkit
       await component.evaluate((el) => {

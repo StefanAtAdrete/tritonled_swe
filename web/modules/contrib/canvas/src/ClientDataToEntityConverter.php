@@ -4,27 +4,29 @@ declare(strict_types=1);
 
 namespace Drupal\canvas;
 
-use Drupal\Component\Render\PlainTextOutput;
-use Drupal\Component\Utility\NestedArray;
 use Drupal\canvas\AutoSave\AutoSaveManager;
-use Drupal\Core\Render\Element;
+use Drupal\canvas\ContentTranslation\SymmetricalTranslationSynchronizationTrait;
+use Drupal\canvas\Controller\ClientServerConversionTrait;
+use Drupal\canvas\Controller\EntityFormTrait;
+use Drupal\canvas\Entity\EntityConstraintViolationList;
+use Drupal\canvas\Exception\ConstraintViolationException;
 use Drupal\canvas\Form\ClientFormSubmissionHelper;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
+use Drupal\canvas\Storage\ComponentTreeLoader;
+use Drupal\Component\Render\PlainTextOutput;
 use Drupal\Component\Utility\Crypt;
+use Drupal\Component\Utility\NestedArray;
+use Drupal\content_translation\FieldTranslationSynchronizerInterface;
 use Drupal\Core\Access\AccessException;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Entity\EntityChangedInterface;
-use Drupal\Core\Form\FormCacheInterface;
-use Drupal\canvas\Controller\EntityFormTrait;
-use Drupal\canvas\Entity\EntityConstraintViolationList;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormBuilderInterface;
+use Drupal\Core\Form\FormCacheInterface;
 use Drupal\Core\Form\FormState;
-use Drupal\canvas\Controller\ClientServerConversionTrait;
-use Drupal\canvas\Exception\ConstraintViolationException;
-use Drupal\canvas\Storage\ComponentTreeLoader;
+use Drupal\Core\Render\Element;
 use Drupal\file\Plugin\Field\FieldType\FileItem;
 use GuzzleHttp\Psr7\Query;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -34,6 +36,7 @@ class ClientDataToEntityConverter {
 
   use ClientServerConversionTrait;
   use EntityFormTrait;
+  use SymmetricalTranslationSynchronizationTrait;
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -42,9 +45,27 @@ class ClientDataToEntityConverter {
     private readonly CsrfTokenGenerator $csrfTokenGenerator,
     private readonly ComponentTreeLoader $componentTreeLoader,
     private readonly AutoSaveManager $autoSaveManager,
+    // The synchronizer belongs to content_translation, an optional dependency,
+    // so it is NULL when that module is not installed.
+    // @see \Drupal\canvas\CanvasServiceProvider
+    private readonly ?FieldTranslationSynchronizerInterface $translationSynchronizer = NULL,
   ) {}
 
   /**
+   * Applies client data onto the given entity, for auto-save — NOT for saving.
+   *
+   * When the entity has multiple translations, non-translatable component
+   * inputs are synchronized in place across its translations (see below). The
+   * converted entity must therefore NOT be saved via ::save():
+   * content_translation's presave hook would synchronize a second time, and
+   * FieldTranslationSynchronizer::synchronizeItems() is not idempotent after a
+   * structural (insert/reorder) edit — the second pass re-maps the already-
+   * synchronized translations and corrupts their inputs. Auto-saving is safe:
+   * the auto-save entry only captures the edited translation, so the in-place
+   * synchronization of sibling translations is never persisted.
+   *
+   * @see \Drupal\canvas\Controller\ApiAutoSaveController::getConflictAwareContentEntityViolations()
+   *
    * @todo remove the validate flag in https://www.drupal.org/i/3505018.
    */
   public function convert(array $client_data, FieldableEntityInterface $entity, bool $validate = TRUE): void {
@@ -66,6 +87,16 @@ class ClientDataToEntityConverter {
       // @todo Remove iterator_to_array() after https://www.drupal.org/project/drupal/issues/3497677
       throw new ConstraintViolationException(new EntityConstraintViolationList($entity, iterator_to_array($e->getConstraintViolationList())));
     }
+
+    // Converge stale sibling translations' non-translatable component inputs
+    // before either validation below runs, mirroring what content_translation's
+    // presave hook does on save. Otherwise
+    // ComponentTreeSymmetricalTranslationConstraint records a violation —
+    // persisted via AutoSaveManager::saveEntityFormViolations() and re-attached
+    // at publish — for a transient state the save path converges anyway.
+    // @see \Drupal\canvas\Controller\ApiAutoSaveController::getConflictAwareContentEntityViolations()
+    // @see \Drupal\canvas\ContentTranslation\SymmetricalTranslationSynchronizationTrait
+    self::synchronizeTranslations($this->translationSynchronizer, $entity);
 
     // The current user may not have access any other fields on the entity or
     // this function may have been called to only update the layout.
@@ -170,6 +201,39 @@ class ClientDataToEntityConverter {
     // Create a form state from the received entity fields.
     $form_state = new FormState();
     $form_state->set('entity', $entity);
+
+    // 'Peek' at the form to identify controls that need special handling.
+    $peek_form_object = $this->entityTypeManager->getFormObject($entity->getEntityTypeId(), 'default');
+    $peek_form_state = $this->buildFormState($peek_form_object, $entity, 'default')
+      // Don't fetch any form values from the request
+      ->setUserInput([])
+      // Don't process any input or interfere with form caches.
+      ->setProcessInput(FALSE)
+      // Don't perform any submission logic.
+      ->setProgrammed(FALSE);
+    $peek_form = $this->formBuilder->buildForm($peek_form_object, $peek_form_state);
+
+    // Selects with Drupal's `_none` option use it as their empty value. Convert
+    // their NULL values before `http_build_query()`, which would otherwise omit
+    // them.
+    $empty_option_selects = self::spotElementsByType(
+      $peek_form,
+      'select',
+      static fn (array $element): bool => \is_array($element['#options'] ?? NULL) && \array_key_exists('_none', $element['#options']),
+    );
+    foreach (\array_intersect_key($entity_form_fields, \array_flip($empty_option_selects)) as $name => $value) {
+      if ($value === NULL) {
+        // An explicit empty value supersedes stale flattened values for the
+        // same field, regardless of their order in the request.
+        foreach (\array_keys($entity_form_fields) as $submitted_name) {
+          if (\is_string($submitted_name) && \str_starts_with($submitted_name, $name . '[')) {
+            unset($entity_form_fields[$submitted_name]);
+          }
+        }
+        $entity_form_fields[$name] = '_none';
+      }
+    }
+
     // Expand form values from their respective element name, e.g.
     // ['title[0][value]' => 'Node title'] becomes
     // ['title' => ['value' => 'Node title']].
@@ -260,18 +324,6 @@ class ClientDataToEntityConverter {
         $this->formBuilder->setCache($ajax_form_build_id, $ajax_submitted_form, $form_state);
       }
     }
-
-    // 'Peek' at the form to work out any form fields that are booleans or
-    // buttons.
-    $peek_form_object = $this->entityTypeManager->getFormObject($entity->getEntityTypeId(), 'default');
-    $peek_form_state = $this->buildFormState($peek_form_object, $entity, 'default')
-      // Don't fetch any form values from the request
-      ->setUserInput([])
-      // Don't process any input or interfere with form caches.
-      ->setProcessInput(FALSE)
-      // Don't perform any submission logic.
-      ->setProgrammed(FALSE);
-    $peek_form = $this->formBuilder->buildForm($peek_form_object, $peek_form_state);
 
     $buttons = array_merge(self::spotElementsByType($peek_form, 'button'), self::spotElementsByType($peek_form, 'submit'));
     $entity_form_fields = array_diff_key($entity_form_fields, \array_flip($buttons));
@@ -422,13 +474,13 @@ class ClientDataToEntityConverter {
     return $values;
   }
 
-  private static function spotElementsByType(array $form, string $type): array {
+  private static function spotElementsByType(array $form, string $type, ?\Closure $filter = NULL): array {
     $elements = [];
     foreach (Element::children($form) as $child) {
       $element = $form[$child];
-      $elements = \array_merge($elements, self::spotElementsByType($element, $type));
+      $elements = \array_merge($elements, self::spotElementsByType($element, $type, $filter));
 
-      if (($element['#type'] ?? NULL) === $type && \array_key_exists('#name', $element)) {
+      if (($element['#type'] ?? NULL) === $type && \array_key_exists('#name', $element) && ($filter === NULL || $filter($element))) {
         $elements[] = $element['#name'];
       }
     }

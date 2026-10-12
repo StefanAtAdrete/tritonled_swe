@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import ReplayPanel from '../ReplayPanel';
+import { LISTEN_ITEM_INDEX } from '../../hooks/useReplayLoader';
 
 const mockUseReplayPlayback = jest.fn(() => ({
   isPlaying: false,
@@ -20,12 +21,10 @@ jest.mock('react-icons/fi', () => ({
   FiSkipBack: () => <span data-testid="fi-skip-back" />,
   FiSkipForward: () => <span data-testid="fi-skip-forward" />,
   FiActivity: () => <span data-testid="fi-activity" />,
-  FiDatabase: () => <span data-testid="fi-database" />,
   FiChevronLeft: () => <span data-testid="fi-chevron-left" />,
   FiChevronRight: () => <span data-testid="fi-chevron-right" />,
   FiCopy: () => <span data-testid="fi-copy" />,
   FiZap: () => <span data-testid="fi-zap" />,
-  FiInfo: () => <span data-testid="fi-info" />,
   FiChevronDown: () => <span data-testid="fi-chevron-down" />,
   FiClock: () => <span data-testid="fi-clock" />,
   FiUser: () => <span data-testid="fi-user" />,
@@ -33,7 +32,6 @@ jest.mock('react-icons/fi', () => ({
   FiLink: () => <span data-testid="fi-link" />,
   FiRefreshCw: () => <span data-testid="fi-refresh-cw" />,
   FiXCircle: () => <span data-testid="fi-x-circle" />,
-  FiFileText: () => <span data-testid="fi-file-text" />,
 }));
 
 const mockToggleReplayPanelCollapse = jest.fn();
@@ -72,9 +70,7 @@ jest.mock('../../hooks/usePanelResize', () => ({
 }));
 
 jest.mock('../ReplayDataRenderer', () => ({
-  StepDataContainer: ({ stepData: _stepData }: any) => <div data-testid="step-data-container" />,
-  GlobalTokensContainer: ({ globalTokens: _globalTokens }: any) => <div data-testid="global-tokens-container" />,
-  TemplateTokensContainer: ({ templateTokens: _templateTokens }: any) => <div data-testid="template-tokens-container" />,
+  StepDataContainer: (_props: { stepData: Record<string, unknown>; predicted?: boolean }) => <div data-testid="step-data-container" />,
 }));
 
 jest.mock('../InfoPopup', () => {
@@ -97,6 +93,13 @@ describe('ReplayPanel', () => {
     { type: 'action', id: 'a1', data: { token: 'val' } },
   ];
 
+  // A single data entry, selected by default, so the steps body renders. After
+  // Rework H the step body shows only when a DATA entry (index >= 0) is selected
+  // (the listen item is index -2, "no entry" is -1).
+  const mockEntries = [
+    { model_id: 'm1', component_id: 'e1', history: mockReplayData, timestamp: '2024-01-01T00:00:00Z', user: 'tester', ip: '127.0.0.1', url: '/' },
+  ];
+
   const defaultProps = {
     replayData: mockReplayData as any,
     isReplayMode: true,
@@ -106,6 +109,8 @@ describe('ReplayPanel', () => {
     currentStep: -1,
     edges: [],
     nodes: [],
+    replayEntries: mockEntries as any,
+    selectedEntryIndex: 0,
   };
 
   beforeEach(() => {
@@ -134,54 +139,39 @@ describe('ReplayPanel', () => {
   });
 
   describe('empty data', () => {
-    it('should show empty message when replay data is empty', () => {
+    it('should show the empty message when replay data is empty', () => {
       render(<ReplayPanel {...defaultProps} replayData={[]} />);
-      expect(screen.getByText('No execution data available')).toBeTruthy();
+      expect(screen.getByText('No execution data yet')).toBeTruthy();
     });
 
-    it('should show empty message when replay data is null', () => {
+    it('should show the empty message when replay data is null', () => {
       render(<ReplayPanel {...defaultProps} replayData={null} />);
-      expect(screen.getByText('No execution data available')).toBeTruthy();
+      expect(screen.getByText('No execution data yet')).toBeTruthy();
     });
 
-    it('should render the empty state header', () => {
+    it('should show concise auto-capture guidance in the empty state', () => {
       render(<ReplayPanel {...defaultProps} replayData={[]} />);
-      expect(screen.getByText('Execution Replay')).toBeTruthy();
+      expect(screen.getByText('Trigger the event on your site and its execution will appear here automatically.')).toBeTruthy();
     });
 
-    it('should show fallback message when no URLs are available', () => {
+    it('should NOT render the removed "Execution Replay" header bar', () => {
       render(<ReplayPanel {...defaultProps} replayData={[]} />);
-      expect(screen.getByText('Run your workflow to generate execution data')).toBeTruthy();
+      expect(screen.queryByText('Execution Replay')).toBeNull();
     });
 
-    it('should show replay URL message when hasReplayUrl is true', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} hasReplayUrl />);
-      expect(screen.getByText('Select an event and use the reload button in the property panel to load past execution data.')).toBeTruthy();
-      expect(screen.queryByText('Run your workflow to generate execution data')).toBeNull();
-    });
-
-    it('should show test message with event selection when hasTestUrl but no event selected', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} hasTestUrl />);
-      expect(screen.getByText('Select an event and click Test to execute the workflow and capture the results.')).toBeTruthy();
-    });
-
-    it('should show test message without event selection when event is auto-detected', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} hasTestUrl selectedStartNodeId="event-1" />);
-      expect(screen.getByText('Click Test to execute the workflow and capture the results.')).toBeTruthy();
-    });
-
-    it('should show both messages with separator when both URLs available', () => {
+    it('should NOT render the removed stale reload / Test guidance', () => {
       render(<ReplayPanel {...defaultProps} replayData={[]} hasReplayUrl hasTestUrl selectedStartNodeId="event-1" />);
-      expect(screen.getByText('Select an event and use the reload button in the property panel to load past execution data.')).toBeTruthy();
-      expect(screen.getByText('- or -')).toBeTruthy();
-      expect(screen.getByText('Click Test to execute the workflow and capture the results.')).toBeTruthy();
+      expect(screen.queryByText(/reload button in the property panel/)).toBeNull();
+      expect(screen.queryByText('- or -')).toBeNull();
+      expect(screen.queryByText(/click Test/i)).toBeNull();
     });
   });
 
   describe('with replay data', () => {
-    it('should render step count', () => {
+    it('should NOT render the removed "Execution Replay" header or step count', () => {
       render(<ReplayPanel {...defaultProps} />);
-      expect(screen.getByText('(2 steps)')).toBeTruthy();
+      expect(screen.queryByText('Execution Replay')).toBeNull();
+      expect(screen.queryByText('(2 steps)')).toBeNull();
     });
 
     it('should render playback controls', () => {
@@ -229,25 +219,35 @@ describe('ReplayPanel', () => {
     });
   });
 
-  describe('step data', () => {
-    it('should show select prompt when no step active', () => {
-      render(<ReplayPanel {...defaultProps} />);
-      expect(screen.getByText('Select a step to view its data')).toBeTruthy();
-    });
-
-    it('should show StepDataContainer when data exists', () => {
+  describe('inline step data', () => {
+    it('should render the selected step data inline inside the step list', () => {
       render(<ReplayPanel {...defaultProps} currentStep={1} stepData={{ token: 'val' }} />);
-      expect(screen.getByTestId('step-data-container')).toBeTruthy();
+      const inline = document.querySelector('.replay-steps .replay-step-data');
+      expect(inline).toBeTruthy();
+      expect(inline!.querySelector('[data-testid="step-data-container"]')).toBeTruthy();
     });
 
-    it('should show token drag hint when step data exists', () => {
+    it('should render the inline block under the SELECTED step row only', () => {
       render(<ReplayPanel {...defaultProps} currentStep={1} stepData={{ token: 'val' }} />);
-      expect(screen.getByText('Drag tokens into configuration fields to insert them.')).toBeTruthy();
+      const items = document.querySelectorAll('.replay-steps .replay-step-item');
+      expect(items).toHaveLength(2);
+      expect(items[0].querySelector('.replay-step-data')).toBeNull();
+      expect(items[1].querySelector('.replay-step-data')).toBeTruthy();
     });
 
-    it('should not show token drag hint when no step data', () => {
-      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{}} />);
-      expect(screen.queryByText('Drag tokens into configuration fields to insert them.')).toBeNull();
+    it('should expose the inline block as a labeled region the selected row controls', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{ token: 'val' }} />);
+      const region = screen.getByRole('region', { name: 'Step data' });
+      const row = screen.getByText('Step 0').closest('.replay-step')!;
+      expect(row).toHaveAttribute('aria-expanded', 'true');
+      expect(row).toHaveAttribute('aria-controls', region.id);
+    });
+
+    it('should not mark an unselected step row as expanded', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={1} stepData={{ token: 'val' }} />);
+      const row = screen.getByText('Step 0').closest('.replay-step')!;
+      expect(row).toHaveAttribute('aria-expanded', 'false');
+      expect(row).not.toHaveAttribute('aria-controls');
     });
 
     it('should show no data message when step selected but stepData is empty', () => {
@@ -259,41 +259,37 @@ describe('ReplayPanel', () => {
       render(<ReplayPanel {...defaultProps} currentStep={0} stepData={null} />);
       expect(screen.getByText('No token data available for this step')).toBeTruthy();
     });
+
+    it('should render no inline block at all while no step is selected', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={-1} stepData={{ token: 'val' }} />);
+      expect(document.querySelector('.replay-step-data')).toBeNull();
+    });
+
+    it('should NOT render a step count on a step row', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{ token: 'val' }} />);
+      const row = screen.getByText('Step 0').closest('.replay-step')!;
+      expect(row.querySelector('.token-count')).toBeNull();
+      expect(row.textContent).not.toMatch(/\(\d+\)/);
+    });
+
+    it('should NOT render the removed "Step Data" section header', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{ token: 'val' }} />);
+      expect(screen.queryByText('Step Data')).toBeNull();
+      expect(document.querySelector('.step-data-section')).toBeNull();
+    });
+
+    it('should NOT render draggable section separators any more', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{ token: 'val' }} />);
+      expect(document.querySelector('.section-separator')).toBeNull();
+      expect(document.querySelector('.resizable-sections')).toBeNull();
+    });
   });
 
-  describe('metadata info button', () => {
-    it('should render info button when stepInfo provided', () => {
-      render(<ReplayPanel {...defaultProps} stepInfo={{ type: 'action', id: 'a1' }} />);
-      expect(screen.getByTitle('Show metadata')).toBeTruthy();
-    });
-
-    it('should show info popup with metadata when info button clicked', () => {
+  describe('metadata info button (removed)', () => {
+    it('should NOT render the metadata info button or popup, even with stepInfo', () => {
       render(<ReplayPanel {...defaultProps} stepInfo={{ type: 'action', id: 'a1', conditionId: 'c1', exception: { message: 'Err' } }} />);
-      fireEvent.click(screen.getByTitle('Show metadata'));
-      expect(screen.getByTestId('info-popup')).toBeTruthy();
-      expect(screen.getByText('a1')).toBeTruthy();
-      expect(screen.getByText('c1')).toBeTruthy();
-      expect(screen.getByText('Err')).toBeTruthy();
-    });
-
-    it('should not render info button when no stepInfo', () => {
-      render(<ReplayPanel {...defaultProps} />);
       expect(screen.queryByTitle('Show metadata')).toBeNull();
-    });
-
-    it('should toggle info popup off when clicked again', () => {
-      render(<ReplayPanel {...defaultProps} stepInfo={{ type: 'action', id: 'a1' }} />);
-      const btn = screen.getByTitle('Show metadata');
-      fireEvent.click(btn);
-      expect(screen.getByTestId('info-popup')).toBeTruthy();
-      fireEvent.click(btn);
       expect(screen.queryByTestId('info-popup')).toBeNull();
-    });
-
-    it('should include successorId in info items when present', () => {
-      render(<ReplayPanel {...defaultProps} stepInfo={{ type: 'action', id: 'a1', successorId: 'succ_1' }} />);
-      fireEvent.click(screen.getByTitle('Show metadata'));
-      expect(screen.getByText('succ_1')).toBeTruthy();
     });
   });
 
@@ -303,13 +299,13 @@ describe('ReplayPanel', () => {
       expect(screen.getByTitle('Copy all data')).toBeTruthy();
     });
 
-    it('should render copy button when stepInfo is provided', () => {
-      render(<ReplayPanel {...defaultProps} stepInfo={{ type: 'action' }} />);
+    it('should render copy button when only stepInfo is provided for the selected step', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepInfo={{ type: 'action' }} />);
       expect(screen.getByTitle('Copy all data')).toBeTruthy();
     });
 
     it('should not render copy button when neither stepData nor stepInfo', () => {
-      render(<ReplayPanel {...defaultProps} />);
+      render(<ReplayPanel {...defaultProps} currentStep={0} />);
       expect(screen.queryByTitle('Copy all data')).toBeNull();
     });
 
@@ -440,14 +436,51 @@ describe('ReplayPanel', () => {
 
     const mockOnSelectReplayEntry = jest.fn();
 
-    it('should not render entry selector when no entries', () => {
-      render(<ReplayPanel {...defaultProps} replayEntries={[]} />);
-      expect(document.querySelector('.replay-entry-selector')).toBeNull();
+    it('should ALWAYS render the entry selector in review, even with no data entries (Rework H)', () => {
+      render(<ReplayPanel {...defaultProps} replayEntries={[]} selectedEntryIndex={-1} />);
+      expect(document.querySelector('.replay-entry-selector')).toBeTruthy();
     });
 
-    it('should not render entry selector when no callback', () => {
-      render(<ReplayPanel {...defaultProps} replayEntries={mockEntries} />);
-      expect(document.querySelector('.replay-entry-selector')).toBeNull();
+    it('should render the entry selector even without an onSelectReplayEntry callback (listen item present)', () => {
+      render(<ReplayPanel {...defaultProps} replayEntries={mockEntries} selectedEntryIndex={0} />);
+      expect(document.querySelector('.replay-entry-selector')).toBeTruthy();
+    });
+
+    it('should render the persistent listen item at the TOP of the dropdown', () => {
+      render(
+        <ReplayPanel
+          {...defaultProps}
+          replayEntries={mockEntries}
+          selectedEntryIndex={0}
+          onSelectReplayEntry={mockOnSelectReplayEntry}
+        />
+      );
+      fireEvent.click(screen.getByLabelText('Select execution replay'));
+      const listbox = screen.getByRole('listbox');
+      const options = listbox.querySelectorAll('[role="option"]');
+      // listen item + 2 data entries
+      expect(options).toHaveLength(3);
+      expect(options[0].className).toContain('replay-listen-item');
+      expect(options[0].textContent).toContain('Listen to event to happen');
+    });
+
+    it('should call onSelectListenItem when the listen item is selected', () => {
+      const onSelectListenItem = jest.fn();
+      render(
+        <ReplayPanel
+          {...defaultProps}
+          replayEntries={mockEntries}
+          selectedEntryIndex={0}
+          onSelectReplayEntry={mockOnSelectReplayEntry}
+          onSelectListenItem={onSelectListenItem}
+        />
+      );
+      fireEvent.click(screen.getByLabelText('Select execution replay'));
+      const listbox = screen.getByRole('listbox');
+      const listenOption = listbox.querySelector('.replay-listen-item') as HTMLElement;
+      fireEvent.click(listenOption);
+      expect(onSelectListenItem).toHaveBeenCalledTimes(1);
+      expect(mockOnSelectReplayEntry).not.toHaveBeenCalled();
     });
 
     it('should render entry selector with entries and callback', () => {
@@ -516,7 +549,8 @@ describe('ReplayPanel', () => {
       fireEvent.click(screen.getByLabelText('Select execution replay'));
       const listbox = screen.getByRole('listbox');
       const options = listbox.querySelectorAll('[role="option"]');
-      expect(options).toHaveLength(2);
+      // listen item + 2 data entries
+      expect(options).toHaveLength(3);
     });
 
     it('should mark the selected entry with aria-selected', () => {
@@ -530,11 +564,13 @@ describe('ReplayPanel', () => {
       );
       fireEvent.click(screen.getByLabelText('Select execution replay'));
       const options = screen.getAllByRole('option');
-      expect(options[0]).toHaveAttribute('aria-selected', 'true');
-      expect(options[1]).toHaveAttribute('aria-selected', 'false');
+      // options[0] is the listen item (not selected); data entries follow.
+      expect(options[0]).toHaveAttribute('aria-selected', 'false');
+      expect(options[1]).toHaveAttribute('aria-selected', 'true');
+      expect(options[2]).toHaveAttribute('aria-selected', 'false');
     });
 
-    it('should call onSelectReplayEntry when an entry is clicked', () => {
+    it('should call onSelectReplayEntry when a data entry is clicked', () => {
       render(
         <ReplayPanel
           {...defaultProps}
@@ -545,7 +581,8 @@ describe('ReplayPanel', () => {
       );
       fireEvent.click(screen.getByLabelText('Select execution replay'));
       const options = screen.getAllByRole('option');
-      fireEvent.click(options[1]);
+      // options[2] is the SECOND data entry (index 1); options[0] is listen.
+      fireEvent.click(options[2]);
       expect(mockOnSelectReplayEntry).toHaveBeenCalledWith(1);
     });
 
@@ -560,7 +597,7 @@ describe('ReplayPanel', () => {
       );
       fireEvent.click(screen.getByLabelText('Select execution replay'));
       const options = screen.getAllByRole('option');
-      fireEvent.keyDown(options[1], { key: 'Enter' });
+      fireEvent.keyDown(options[2], { key: 'Enter' });
       expect(mockOnSelectReplayEntry).toHaveBeenCalledWith(1);
     });
 
@@ -575,7 +612,7 @@ describe('ReplayPanel', () => {
       );
       fireEvent.click(screen.getByLabelText('Select execution replay'));
       const options = screen.getAllByRole('option');
-      fireEvent.keyDown(options[1], { key: ' ' });
+      fireEvent.keyDown(options[2], { key: ' ' });
       expect(mockOnSelectReplayEntry).toHaveBeenCalledWith(1);
     });
 
@@ -637,7 +674,7 @@ describe('ReplayPanel', () => {
       expect(screen.getByText('/node/1')).toBeTruthy();
     });
 
-    it('should not render entry selector with only one entry', () => {
+    it('should still render the entry selector with only one data entry (listen item is always present)', () => {
       const singleEntry = [mockEntries[0]];
       render(
         <ReplayPanel
@@ -647,7 +684,7 @@ describe('ReplayPanel', () => {
           onSelectReplayEntry={mockOnSelectReplayEntry}
         />
       );
-      expect(document.querySelector('.replay-entry-selector')).toBeNull();
+      expect(document.querySelector('.replay-entry-selector')).toBeTruthy();
     });
 
     it('should handle user as object without uid', () => {
@@ -806,216 +843,116 @@ describe('ReplayPanel', () => {
     });
   });
 
-  describe('test button', () => {
-    it('should show Test button when event selected and hasTestUrl', () => {
-      render(<ReplayPanel {...defaultProps} hasTestUrl selectedStartNodeId="event-1" />);
-      expect(screen.getByTitle('Test this event')).toBeTruthy();
-    });
-
-    it('should not show Test button when no event selected', () => {
-      render(<ReplayPanel {...defaultProps} hasTestUrl />);
+  describe('Test button (removed — listener auto-starts on review entry)', () => {
+    it('should NOT render the Test button in the active replay view', () => {
+      render(<ReplayPanel {...defaultProps} hasTestUrl selectedStartNodeId="event-1" onStartTest={jest.fn()} />);
       expect(screen.queryByTitle('Test this event')).toBeNull();
     });
 
-    it('should not show Test button when no hasTestUrl', () => {
-      render(<ReplayPanel {...defaultProps} selectedStartNodeId="event-1" />);
-      expect(screen.queryByTitle('Test this event')).toBeNull();
-    });
-
-    it('should not show Test button when test is running', () => {
-      render(<ReplayPanel {...defaultProps} hasTestUrl selectedStartNodeId="event-1" isTestRunning />);
-      expect(screen.queryByTitle('Test this event')).toBeNull();
-    });
-
-    it('should not show Test button when test is initiating', () => {
-      render(<ReplayPanel {...defaultProps} hasTestUrl selectedStartNodeId="event-1" isTestInitiating />);
-      expect(screen.queryByTitle('Test this event')).toBeNull();
-    });
-
-    it('should call onStartTest with event ID when clicked', () => {
-      const onStartTest = jest.fn();
-      render(<ReplayPanel {...defaultProps} hasTestUrl selectedStartNodeId="event-1" onStartTest={onStartTest} />);
-      fireEvent.click(screen.getByTitle('Test this event'));
-      expect(onStartTest).toHaveBeenCalledWith('event-1');
-    });
-
-    it('should show Test button in empty state when event selected and hasTestUrl', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} hasTestUrl selectedStartNodeId="event-1" />);
-      expect(screen.getByTitle('Test this event')).toBeTruthy();
-    });
-
-    it('should not show Test button in empty state when no hasTestUrl', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} selectedStartNodeId="event-1" />);
+    it('should NOT render the Test button in the empty state', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} hasTestUrl selectedStartNodeId="event-1" onStartTest={jest.fn()} />);
       expect(screen.queryByTitle('Test this event')).toBeNull();
     });
   });
 
   describe('test waiting state', () => {
-    it('should show waiting state when test is running', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestRunning />);
+    // After Rework H the waiting body is driven by the LISTEN item being
+    // selected (selectedEntryIndex === LISTEN_ITEM_INDEX), not by isTestRunning.
+    it('should show waiting state when the listen item is selected', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} />);
       expect(screen.getByText('Waiting for test execution...')).toBeTruthy();
     });
 
-    it('should show initiating state when test is initiating', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestInitiating />);
+    it('should show initiating heading when the listen item is selected and test is initiating', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} isTestInitiating />);
       expect(screen.getByText('Starting test...')).toBeTruthy();
     });
 
-    it('should show instructional text during test', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestRunning />);
+    it('should show instructional text in the waiting body', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} />);
       expect(screen.getByText('Trigger the selected event on your Drupal site so that the workflow gets executed and the results are captured.')).toBeTruthy();
     });
 
-    it('should show cancel button when test is running', () => {
+    it('should show the cancel button in the waiting body', () => {
       const onCancelTest = jest.fn();
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestRunning onCancelTest={onCancelTest} />);
-      const cancelBtn = screen.getByLabelText('Cancel test');
-      expect(cancelBtn).toBeTruthy();
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} onCancelTest={onCancelTest} />);
+      expect(screen.getByLabelText('Cancel test')).toBeTruthy();
     });
 
-    it('should call onCancelTest when cancel button is clicked', () => {
+    it('should call onCancelTest when the cancel button is clicked', () => {
       const onCancelTest = jest.fn();
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestRunning onCancelTest={onCancelTest} />);
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} onCancelTest={onCancelTest} />);
       fireEvent.click(screen.getByLabelText('Cancel test'));
       expect(onCancelTest).toHaveBeenCalled();
     });
 
-    it('should not show cancel button when test is only initiating', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTestInitiating onCancelTest={jest.fn()} />);
-      expect(screen.queryByLabelText('Cancel test')).toBeNull();
+    it('should NOT show the waiting body when a data entry is selected', () => {
+      render(<ReplayPanel {...defaultProps} selectedEntryIndex={0} />);
+      expect(screen.queryByText('Waiting for test execution...')).toBeNull();
     });
 
-    it('should hide playback controls when test is running', () => {
-      render(<ReplayPanel {...defaultProps} isTestRunning />);
+    it('should show the backend message in the empty body when not listening with no entries', () => {
+      render(
+        <ReplayPanel
+          {...defaultProps}
+          replayData={[]}
+          replayEntries={[]}
+          selectedEntryIndex={-1}
+          backendMessage="No replay data available for this event."
+        />
+      );
+      expect(screen.getByText('No replay data available for this event.')).toBeTruthy();
+      // The generic empty notice is replaced by the backend message.
+      expect(screen.queryByText('No execution data yet')).toBeNull();
+    });
+
+    it('should hide playback controls when the listen item is selected (waiting body)', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} replayEntries={[]} selectedEntryIndex={LISTEN_ITEM_INDEX} />);
       expect(screen.queryByTitle('Previous Step')).toBeNull();
       expect(screen.queryByTitle('Play')).toBeNull();
     });
   });
 
-  describe('global tokens', () => {
-    const sampleGlobalTokens = {
-      '[site:name]': {
-        name: 'Site name',
-        'raw token': '[site:name]',
-        token: 'name',
-        value: 'My Site',
-      },
-      '[current-date:custom:?]': {
-        name: 'Custom format',
-        'raw token': '[current-date:custom:?]',
-        token: 'custom:?',
-        value: '2026-02-13',
-      },
-    } as any;
+  // The global and template token trees were removed from the review panel
+  // (issue project/modeler#3589103); those tokens are reachable only through
+  // the `[` token picker now.
+  describe('token sections (removed)', () => {
+    const settingsHolder = window as unknown as {
+      drupalSettings?: {
+        modeler_api?: {
+          global_tokens?: Record<string, unknown>;
+          template_tokens?: Record<string, unknown>;
+        };
+      };
+    };
 
-    it('should render Global Tokens section in empty state when globalTokens provided', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} globalTokens={sampleGlobalTokens} />);
-      expect(screen.getByText('Global Tokens')).toBeTruthy();
-      expect(screen.getByTestId('global-tokens-container')).toBeTruthy();
-    });
-
-    it('should render Global Tokens section in replay state when globalTokens provided', () => {
-      render(<ReplayPanel {...defaultProps} globalTokens={sampleGlobalTokens} />);
-      expect(screen.getByText('Global Tokens')).toBeTruthy();
-      expect(screen.getByTestId('global-tokens-container')).toBeTruthy();
-    });
-
-    it('should not render Global Tokens section when globalTokens is undefined', () => {
-      render(<ReplayPanel {...defaultProps} />);
-      expect(screen.queryByText('Global Tokens')).toBeNull();
-      expect(screen.queryByTestId('global-tokens-container')).toBeNull();
-    });
-
-    it('should not render Global Tokens section when globalTokens is empty', () => {
-      render(<ReplayPanel {...defaultProps} globalTokens={{} as any} />);
-      expect(screen.queryByText('Global Tokens')).toBeNull();
-      expect(screen.queryByTestId('global-tokens-container')).toBeNull();
-    });
-
-    it('should show drag hint in global tokens section', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} globalTokens={sampleGlobalTokens} />);
-      expect(screen.getByText('Drag tokens into configuration fields to insert them.')).toBeTruthy();
-    });
-
-    it('should render Global Tokens section with global-tokens-section class', () => {
-      render(<ReplayPanel {...defaultProps} globalTokens={sampleGlobalTokens} />);
-      const section = document.querySelector('.global-tokens-section');
-      expect(section).toBeTruthy();
-    });
-  });
-
-  describe('template tokens', () => {
-    const sampleTemplateTokens = {
-      '[template:author]': {
-        name: 'Author',
-        'raw token': '[template:author]',
-        token: 'author',
-        value: 'Jane Doe',
-      },
-      '[template:version]': {
-        name: 'Version',
-        'raw token': '[template:version]',
-        token: 'version',
-        value: '1.0.0',
-      },
-    } as any;
-
-    it('should render Template Tokens section in empty state when isTemplate and templateTokens provided', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTemplate templateTokens={sampleTemplateTokens} />);
-      expect(screen.getByText('Template Tokens')).toBeTruthy();
-      expect(screen.getByTestId('template-tokens-container')).toBeTruthy();
-    });
-
-    it('should render Template Tokens section in replay state when isTemplate and templateTokens provided', () => {
-      render(<ReplayPanel {...defaultProps} isTemplate templateTokens={sampleTemplateTokens} />);
-      expect(screen.getByText('Template Tokens')).toBeTruthy();
-      expect(screen.getByTestId('template-tokens-container')).toBeTruthy();
-    });
-
-    it('should not render Template Tokens section when isTemplate is false', () => {
-      render(<ReplayPanel {...defaultProps} isTemplate={false} templateTokens={sampleTemplateTokens} />);
-      expect(screen.queryByText('Template Tokens')).toBeNull();
-      expect(screen.queryByTestId('template-tokens-container')).toBeNull();
-    });
-
-    it('should not render Template Tokens section when isTemplate is true but templateTokens is undefined', () => {
-      render(<ReplayPanel {...defaultProps} isTemplate />);
-      expect(screen.queryByText('Template Tokens')).toBeNull();
-      expect(screen.queryByTestId('template-tokens-container')).toBeNull();
-    });
-
-    it('should not render Template Tokens section when isTemplate is true but templateTokens is empty', () => {
-      render(<ReplayPanel {...defaultProps} isTemplate templateTokens={{} as any} />);
-      expect(screen.queryByText('Template Tokens')).toBeNull();
-      expect(screen.queryByTestId('template-tokens-container')).toBeNull();
-    });
-
-    it('should render Template Tokens section with template-tokens-section class', () => {
-      render(<ReplayPanel {...defaultProps} isTemplate templateTokens={sampleTemplateTokens} />);
-      const section = document.querySelector('.template-tokens-section');
-      expect(section).toBeTruthy();
-    });
-
-    it('should show drag hint in template tokens section', () => {
-      render(<ReplayPanel {...defaultProps} replayData={[]} isTemplate templateTokens={sampleTemplateTokens} />);
-      const hints = screen.getAllByText('Drag tokens into configuration fields to insert them.');
-      expect(hints.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('should render both Global and Template Tokens sections when both are available', () => {
-      const sampleGlobalTokens = {
-        '[site:name]': {
-          name: 'Site name',
-          'raw token': '[site:name]',
-          token: 'name',
-          value: 'My Site',
+    beforeEach(() => {
+      settingsHolder.drupalSettings = {
+        modeler_api: {
+          global_tokens: {
+            '[site:name]': { name: 'Site name', 'raw token': '[site:name]', token: 'name', value: 'My Site' },
+          },
+          template_tokens: {
+            '[template:author]': { name: 'Author', 'raw token': '[template:author]', token: 'author', value: 'Jane Doe' },
+          },
         },
-      } as any;
-      render(<ReplayPanel {...defaultProps} globalTokens={sampleGlobalTokens} isTemplate templateTokens={sampleTemplateTokens} />);
-      expect(screen.getByText('Global Tokens')).toBeTruthy();
-      expect(screen.getByText('Template Tokens')).toBeTruthy();
-      expect(screen.getByTestId('global-tokens-container')).toBeTruthy();
-      expect(screen.getByTestId('template-tokens-container')).toBeTruthy();
+      };
+    });
+
+    afterEach(() => {
+      delete settingsHolder.drupalSettings;
+    });
+
+    it('should render no token sections in the steps view even when tokens are configured', () => {
+      render(<ReplayPanel {...defaultProps} currentStep={0} stepData={{ token: 'val' }} />);
+      expect(screen.queryByText('Global Tokens')).toBeNull();
+      expect(screen.queryByText('Template Tokens')).toBeNull();
+    });
+
+    it('should render no token sections in the empty state even when tokens are configured', () => {
+      render(<ReplayPanel {...defaultProps} replayData={[]} />);
+      expect(screen.queryByText('Global Tokens')).toBeNull();
+      expect(screen.queryByText('Template Tokens')).toBeNull();
     });
   });
 });

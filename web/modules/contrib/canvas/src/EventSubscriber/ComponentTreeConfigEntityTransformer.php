@@ -87,10 +87,12 @@ final readonly class ComponentTreeConfigEntityTransformer implements EventSubscr
       // builder was resolving a merge conflict between exported config).
       // In other words: simulate `orderby: key` for this `type: sequence`, but
       // that cannot be specified in config schema, since to ensure
-      // translatability, the sequence keys must be stable.
-      // @see \Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemListInstantiatorTrait::generateComponentTreeKeys()
+      // translatability, the sequence keys must be stable. A natural-order sort
+      // keeps whole-number segments in numeric order (`10` after `9`, not
+      // before `2`), including the ':'-separated position deltas within a slot.
+      // @see self::computeExportSequenceKeys()
       // @see \Drupal\Core\Config\StorableConfigBase::castValue()
-      \ksort($raw['component_tree']);
+      \uksort($raw['component_tree'], \strnatcmp(...));
       // Second, strip the position encoding, because the position has been
       // recovered. This leaves just UUIDs as keys, which is how translation
       // configuration can reliably target component instances, even if they are
@@ -102,7 +104,7 @@ final readonly class ComponentTreeConfigEntityTransformer implements EventSubscr
           // - `0:4f785025-9bd9-4752-9dd6-068b957b03ee` → `4f785025-9bd9-4752-9dd6-068b957b03ee`
           // - `0:the_body:0:the_body:0:b7e2cf39-d62f-4ee8-99b2-27a89f1ac196` → `b7e2cf39-d62f-4ee8-99b2-27a89f1ac196`
           // @phpcs:enable
-          fn (string $sequence_key): string  => \array_reverse(explode(':', $sequence_key))[0],
+          fn (int|string $sequence_key): string  => \array_reverse(explode(':', (string) $sequence_key))[0],
           \array_keys($raw['component_tree']),
         ),
         \array_values($raw['component_tree']),
@@ -263,8 +265,10 @@ final readonly class ComponentTreeConfigEntityTransformer implements EventSubscr
       unset($keyed_tree[$key]);
     }
 
-    // Order the items by the key.
-    \ksort($keyed_tree);
+    // Order the items by the key using a natural-order sort so that a tree
+    // with 10 or more instances at a level keeps its order (e.g. `10` must sort
+    // after `9`, not before `2`).
+    \uksort($keyed_tree, \strnatcmp(...));
     /** @var ComponentTreeItemKeyedSequence */
     return $keyed_tree;
   }

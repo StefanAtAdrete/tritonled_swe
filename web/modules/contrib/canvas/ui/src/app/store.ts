@@ -13,11 +13,14 @@ import {
   layoutModelReducer,
   setInitialized,
   setInitialLayoutModel,
+  setTranslations,
   setUpdatePreview,
 } from '@/features/layout/layoutModelSlice';
 import { notificationsSlice } from '@/features/notifications/notificationsSlice';
 import {
+  pageDataOwnerReducer,
   pageDataReducer,
+  resetPageData,
   setInitialPageData,
 } from '@/features/pageData/pageDataSlice';
 import { previewSlice } from '@/features/pagePreview/previewSlice';
@@ -37,9 +40,13 @@ import { brandKitApi } from '@/services/brandKit';
 import { componentAndLayoutApi } from '@/services/componentAndLayout';
 import { componentInstanceFormApi } from '@/services/componentInstanceForm';
 import { contentApi } from '@/services/content';
+import { contentEntityReferenceApi } from '@/services/contentEntityReferenceApi';
 import { extensionsApi } from '@/services/extensions';
+import { headlessComponentSyncApi } from '@/services/headlessComponentSync';
+import { headlessFrontendsApi } from '@/services/headlessFrontends';
 import { notificationsApi } from '@/services/notificationsApi';
 import { pageDataFormApi } from '@/services/pageDataForm';
+import { pageVariantsApi } from '@/services/pageVariants';
 import { patternApi } from '@/services/patterns';
 import { pendingChangesApi } from '@/services/pendingChangesApi';
 import { personalizationApi } from '@/services/personalization';
@@ -114,6 +121,7 @@ const rootReducer = combineSlices(
           return (
             Object.keys(present.model).length > 0 &&
             action.type !== setInitialLayoutModel.type &&
+            action.type !== setTranslations.type &&
             action.type !== setUpdatePreview.type
           );
         },
@@ -132,16 +140,21 @@ const rootReducer = combineSlices(
           const { present } = previousHistory;
           return (
             Object.keys(present).length > 0 &&
-            action.type !== setInitialPageData.type
+            action.type !== setInitialPageData.type &&
+            action.type !== resetPageData.type
           );
         },
       }),
       'pageData',
     ),
+    pageDataOwner: pageDataOwnerReducer,
   },
   patternApi,
+  pageVariantsApi,
   assetLibraryApi,
   brandKitApi,
+  headlessComponentSyncApi,
+  headlessFrontendsApi,
   personalizationApi,
   componentAndLayoutApi,
   previewApi,
@@ -160,6 +173,7 @@ const rootReducer = combineSlices(
   pendingChangesApi,
   publishReviewSlice,
   contentApi,
+  contentEntityReferenceApi,
   codeEditorSlice,
   previewSlice,
   queryErrorSlice,
@@ -197,12 +211,13 @@ const undoRedoActionIdMiddleware: Middleware<{}, RootState> =
     if (
       type === setUpdatePreview.type ||
       type === setInitialLayoutModel.type ||
+      type === setTranslations.type ||
       type === setInitialPageData.type ||
+      type === resetPageData.type ||
       type === setInitialized.type
     ) {
-      // Ignore initial actions that set the state of the model or page data
-      // from the return of API responses. The user should not be able to undo
-      // or redo these actions.
+      // Ignore actions that initialize or reset editor state outside user
+      // edits. They should not appear in the user-facing undo/redo history.
       return next(action);
     }
     const [slice] = type.split('/');
@@ -236,8 +251,11 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
     middleware: (getDefaultMiddleware) => {
       return getDefaultMiddleware().concat(
         patternApi.middleware,
+        pageVariantsApi.middleware,
         assetLibraryApi.middleware,
         brandKitApi.middleware,
+        headlessComponentSyncApi.middleware,
+        headlessFrontendsApi.middleware,
         personalizationApi.middleware,
         componentAndLayoutApi.middleware,
         previewApi.middleware,
@@ -248,6 +266,7 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
         undoRedoActionIdMiddleware,
         pendingChangesApi.middleware,
         contentApi.middleware,
+        contentEntityReferenceApi.middleware,
         rtkQueryErrorHandler, // Add the error handling middleware
       );
     },

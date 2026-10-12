@@ -38,12 +38,30 @@ final class Tool extends Plugin {
    * @param array|null $input_definition_refiners
    *   (optional) Input definition refiners configuration for dynamic input
    *    refinement.
-   * @param \Drupal\Core\Plugin\Context\ContextDefinitionInterface[] $output_definitions
-   *   (optional) Leave empty, will be auto filled by $input_definitions.
+   * @param \Drupal\tool\TypedData\OutputDefinitionInterface[] $output_definitions
+   *   (optional) An array of output definitions describing what the tool
+   *   returns, keyed by output name.
    * @param class-string|null $deriver
    *   (optional) The deriver class.
    * @param array<string, string|false> $forms
    *   (optional) An array of form class names or FALSE, keyed by a string.
+   * @param string|null $icon
+   *   (optional) An icon representing the tool, as a core Icon API full icon
+   *   ID in the form "pack_id:icon_id". The reference is stored as-is:
+   *   consumers resolve it through the icon pack manager where available
+   *   (Drupal 11.1+) and must treat an unresolvable reference as no icon.
+   *   Derivers may set the "icon" definition property per derivative.
+   * @param string|null $permission
+   *   (optional) The permission an account must hold to run the tool, in the
+   *   syntax of a route's _permission requirement: names joined with "," are
+   *   all required, and of names joined with "+" any one is enough. The two
+   *   operators cannot be combined in one string: a part still holding a "+"
+   *   after the split on "," names a permission that does not exist, which
+   *   denies every ordinary account. A tool using ToolBase's default
+   *   checkAccess() needs only this declaration to define its access rule;
+   *   overrides can impose additional restrictions. NULL or an empty string
+   *   means no declared permission, so the tool must override checkAccess()
+   *   to grant access. Input validation still applies in either case.
    */
   public function __construct(
     public readonly string $id,
@@ -56,6 +74,8 @@ final class Tool extends Plugin {
     public readonly ?array $output_definitions = [],
     public readonly ?string $deriver = NULL,
     public readonly ?array $forms = [],
+    public readonly ?string $icon = NULL,
+    public readonly ?string $permission = NULL,
   ) {}
 
   /**

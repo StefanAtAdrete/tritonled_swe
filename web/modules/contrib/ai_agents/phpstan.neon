@@ -28,3 +28,10 @@ parameters:
       reportUnmatched: false
     - message: '#Attribute class PHPUnit\\Framework\\Attributes\\.* does not exist#'
       reportUnmatched: false
+    # Our own usage will be there for 1.x.
+    - message: '#^Call to method (.*) of deprecated class Drupal\\ai_agents\\PluginBase\\AiAgentBase#'
+      reportUnmatched: false
+    - message: '#^Access to property (.*) of deprecated class Drupal\\ai_agents\\PluginBase\\AiAgentBase#'
+      reportUnmatched: false
+    - message: '#^Class (.*) extends deprecated class Drupal\\ai_agents\\PluginBase\\AiAgentBase#'
+      reportUnmatched: false

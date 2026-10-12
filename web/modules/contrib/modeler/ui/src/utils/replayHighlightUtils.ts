@@ -8,7 +8,7 @@
  */
 
 import { Node, Edge } from 'reactflow';
-import { ReplayStep, isNodeExecutionStep, isSuccessorStep, isAccessDeniedStep, isExceptionStep, isAddSuccessorStep, isConditionStep } from './replayStepUtils';
+import { ReplayStep, isNodeExecutionStep, isSuccessorStep, isAccessDeniedStep, isExceptionStep, isConditionStep, findConditionNodeForStep } from './replayStepUtils';
 
 // ============ Clear Highlights ============
 
@@ -117,6 +117,16 @@ export function highlightNodesForStep(
 ): Node[] {
   const cleared = clearNodeHighlights(nodes);
 
+  // For condition steps, highlight the condition NODE (issue #3589093).
+  // Conditions used to be edges; they are nodes now, so this is where the
+  // condition highlight lives.  The shared findConditionNodeForStep() helper
+  // resolves via the ECA condition config id, then the legacy plugin id.
+  if (isConditionStep(step)) {
+    const conditionNode = findConditionNodeForStep(cleared, step);
+    if (!conditionNode) return cleared;
+    return applyNodeHighlight(cleared, conditionNode.id, false);
+  }
+
   if (!step.id) return cleared;
 
   // For node execution steps (started, execute, access denied, exception)
@@ -133,44 +143,17 @@ export function highlightNodesForStep(
 }
 
 /**
- * Find the edge to highlight for a condition step.
- * Returns the edge ID if found, null otherwise.
- */
-function findEdgeForConditionStep(
-  edges: Edge[],
-  step: ReplayStep
-): string | null {
-  if (!isConditionStep(step)) return null;
-
-  // Priority 1: Find edge that has this condition node attached
-  const edgeByCondition = edges.find(e => e.data?.condition === step.conditionId);
-  if (edgeByCondition) return edgeByCondition.id;
-
-  // Priority 2: Find by source/target relationship with condition
-  if (step.id && step.successorId) {
-    const edgeBySourceTarget = edges.find(e =>
-      e.source === step.id && e.target === step.successorId && e.data?.condition
-    );
-    if (edgeBySourceTarget) return edgeBySourceTarget.id;
-  }
-
-  return null;
-}
-
-/**
  * Apply full replay step highlighting to edges.
- * Clears existing highlights and applies new ones based on the step.
+ *
+ * Conditions are nodes now (issue #3589093), so condition steps no longer
+ * highlight an edge — that work has moved to {@link highlightNodesForStep}.
+ * This function is retained because non-condition steps may still rely on
+ * edge clearing, and to keep a stable API for callers; for condition steps
+ * it simply clears edge highlights (a no-op beyond clearing).
  */
 export function highlightEdgesForStep(
   edges: Edge[],
-  step: ReplayStep
+  _step: ReplayStep
 ): Edge[] {
-  const cleared = clearEdgeHighlights(edges);
-
-  if (!isConditionStep(step)) return cleared;
-
-  const edgeId = findEdgeForConditionStep(edges, step);
-  if (!edgeId) return cleared;
-
-  return applyEdgeHighlight(cleared, edgeId, isAddSuccessorStep(step));
+  return clearEdgeHighlights(edges);
 }

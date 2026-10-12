@@ -4,39 +4,40 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Controller;
 
+use Drupal\canvas\AutoSave\AutoSaveManager;
+use Drupal\canvas\CanvasUriDefinitions;
+use Drupal\canvas\Entity\Page;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\canvas\Resource\CanvasResourceLink;
+use Drupal\canvas\Resource\CanvasResourceLinkCollection;
+use Drupal\canvas\Resource\OffsetPage;
 use Drupal\canvas\Utility\HomePageHelper;
+use Drupal\Component\Transliteration\TransliterationInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface;
 use Drupal\Core\Entity\EntityReferenceSelection\SelectionPluginManagerInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\Http\Exception\CacheableAccessDeniedHttpException;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Component\Transliteration\TransliterationInterface;
 use Drupal\Core\Render\RenderContext;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
-use Drupal\canvas\AutoSave\AutoSaveManager;
-use Drupal\canvas\Entity\Page;
-use Drupal\canvas\Resource\OffsetPage;
-use Drupal\canvas\Resource\CanvasResourceLink;
-use Drupal\canvas\Resource\CanvasResourceLinkCollection;
-use Drupal\canvas\CanvasUriDefinitions;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -89,18 +90,6 @@ final class ApiContentControllers extends ApiControllerBase {
   }
 
   public function patch(Request $request, ContentEntityInterface $canvas_page): JsonResponse {
-    // If there's any auto-saved data, we throw a conflict error.
-    $autoSaved = $this->autoSaveManager->getAutoSaveEntity($canvas_page);
-    if (!$autoSaved->isEmpty()) {
-      throw new ConflictHttpException(
-        \sprintf(
-          '%s with ID %s has existing auto-saved data. Please use the Canvas UI to publish or discard it before pushing.',
-          (string) $canvas_page->getEntityType()->getLabel(),
-          $canvas_page->id(),
-        )
-      );
-    }
-
     // Get the request body content
     $content = $request->getContent();
     $body = \json_decode($content, TRUE);
@@ -123,7 +112,11 @@ final class ApiContentControllers extends ApiControllerBase {
       $body['path'] = ['alias' => $body['path'], 'pid' => $existing_pid];
     }
 
-    foreach (['title', 'status', 'path', 'components', 'description'] as $field_name) {
+    if (\array_key_exists('pageVariant', $body)) {
+      $body['page_variant'] = $body['pageVariant'] !== '' ? $body['pageVariant'] : NULL;
+    }
+
+    foreach (['title', 'status', 'path', 'components', 'description', 'page_variant'] as $field_name) {
       if (!\array_key_exists($field_name, $body)) {
         continue;
       }
@@ -148,6 +141,76 @@ final class ApiContentControllers extends ApiControllerBase {
     $data = $this->normalizeWithMetadataAndComponents($canvas_page, new CacheableMetadata());
 
     return new JsonResponse($data, Response::HTTP_OK);
+  }
+
+  /**
+   * Updates the primary langcode of a never-published draft.
+   *
+   * This is restricted to never-published drafts.
+   *
+   * Because the auto-save key relies on the langcode, this change must be
+   * written directly to the stored entity rather than the auto-save entry.
+   * Any existing auto-save data is then migrated to the new langcode key
+   * to preserve unsaved edits and prevent conflict errors.
+   *
+   * @see \Drupal\canvas\AutoSave\AutoSaveManager::entityIsConsideredNew()
+   * @see \Drupal\canvas\AutoSave\AutoSaveManager::migrateLangcode()
+   */
+  public function patchLangcode(Request $request, ContentEntityInterface $canvas_page): JsonResponse {
+    \assert($canvas_page instanceof Page);
+
+    if (!AutoSaveManager::entityIsConsideredNew($canvas_page)) {
+      return self::createJsonApiStyleErrorResponse(
+        'Language can only be changed on a draft page that has never been published.',
+        (string) $canvas_page->id(),
+        Response::HTTP_UNPROCESSABLE_ENTITY,
+      );
+    }
+    // Before its first publish all edits to a draft live in its auto-save
+    // entry, so a draft with stored translations is not a supported state, and
+    // changing the primary langcode could collide with one of them.
+    if (\count($canvas_page->getTranslationLanguages()) > 1) {
+      return self::createJsonApiStyleErrorResponse(
+        'Language cannot be changed on a page that already has translations.',
+        (string) $canvas_page->id(),
+        Response::HTTP_UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    $body = \json_decode($request->getContent(), TRUE);
+    $new_langcode = $body['langcode'] ?? NULL;
+
+    if (!\is_string($new_langcode) || $new_langcode === '') {
+      return self::createJsonApiStyleErrorResponse(
+        'Missing or invalid langcode.',
+        'langcode',
+        Response::HTTP_BAD_REQUEST,
+      );
+    }
+
+    $languages = $this->languageManager->getLanguages();
+    if (!isset($languages[$new_langcode])) {
+      return self::createJsonApiStyleErrorResponse(
+        \sprintf('Unknown language: %s.', $new_langcode),
+        'langcode',
+        Response::HTTP_BAD_REQUEST,
+      );
+    }
+
+    $old_langcode = $canvas_page->language()->getId();
+    if ($old_langcode === $new_langcode) {
+      return new JsonResponse(['langcode' => $new_langcode], Response::HTTP_OK);
+    }
+
+    $canvas_page->set('langcode', $new_langcode);
+    if ($validation_errors_response = self::createJsonResponseFromViolationSets($canvas_page->get('langcode')->validate())) {
+      return $validation_errors_response;
+    }
+    $canvas_page->save();
+
+    $this->autoSaveManager->migrateLangcode($canvas_page, $old_langcode);
+
+    return new JsonResponse(['langcode' => $new_langcode], Response::HTTP_OK);
   }
 
   public function post(Request $request, string $entity_type): JsonResponse {
@@ -181,12 +244,14 @@ final class ApiContentControllers extends ApiControllerBase {
       //   creating duplicated aliases.
       $requestPath = $body['path'] ?? NULL;
       $requestDescription = $body['description'] ?? NULL;
+      $requestPageVariant = $body['pageVariant'] ?? NULL;
       $values = [
         'title' => $requestBodyTitle,
         'status' => $requestStatus,
         'components' => $requestComponents,
         'path' => $requestPath,
         'description' => $requestDescription,
+        'page_variant' => $requestPageVariant,
       ];
       if (isset($body['uuid'])) {
         $values['uuid'] = $body['uuid'];
@@ -466,6 +531,15 @@ final class ApiContentControllers extends ApiControllerBase {
       $url_cacheability->addCacheableDependency($field_access);
     }
 
+    if ($content_entity->hasField('page_variant')) {
+      $field_access = $content_entity->get('page_variant')->access('view', return_as_object: TRUE);
+      if (!$field_access->isForbidden()) {
+        $page_variant = $content_entity->get('page_variant')->getString();
+        $data['pageVariant'] = $page_variant !== '' ? $page_variant : NULL;
+      }
+      $url_cacheability->addCacheableDependency($field_access);
+    }
+
     // Move links last for legibility.
     if (isset($data['links'])) {
       $links = $data['links'];
@@ -504,6 +578,15 @@ final class ApiContentControllers extends ApiControllerBase {
         // Ensure `inputs` is not a JSON string, but a structured value,
         // so API consumers receive a proper object rather than a JSON string.
         $values['inputs'] = $item->getInputs();
+        // Resolve color props to rich objects for client-side rendering.
+        $component = $item->getComponent();
+        $source = $component?->getComponentSource();
+        if ($source instanceof JsonSchemaPropsComponentSourceBase) {
+          $explicit_input = $source->getResolvedExplicitInput($item->getUuid(), $item);
+          $prop_schemas = $source->getMetadata()->schema['properties'] ?? [];
+          [$values['inputs_resolved'], $color_cacheability] = $source->getResolvedPropsAndBubbleableMetadata($explicit_input, $prop_schemas);
+          $url_cacheability->addCacheableDependency($color_cacheability);
+        }
         $components[] = $values;
       }
       $field_access = $content_entity->get($field_name)->access('view', return_as_object: TRUE);
@@ -562,7 +645,7 @@ final class ApiContentControllers extends ApiControllerBase {
    */
   private function getMatchingAutoSavedEntityIds(string $entity_type_id, string $search, RefinableCacheableDependencyInterface $cacheability): array {
     $cacheability->addCacheTags([AutoSaveManager::CACHE_TAG]);
-    $auto_saved_entities_of_type = \array_filter($this->autoSaveManager->getAllAutoSaveList(TRUE), static fn (array $entry): bool => $entry['entity_type'] === $entity_type_id);
+    $auto_saved_entities_of_type = \array_filter($this->autoSaveManager->getAllAutoSaveList(with_entities: TRUE, with_conflicts: FALSE), static fn (array $entry): bool => $entry['entity_type'] === $entity_type_id);
 
     // Transliterate the search term using the negotiated content language.
     $cacheability->addCacheContexts(['languages:' . LanguageInterface::TYPE_CONTENT]);

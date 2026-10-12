@@ -2,7 +2,10 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
-import { resolveCanvasConfig } from '@drupal-canvas/discovery';
+import {
+  BRAND_KIT_CONFIG_FILENAME,
+  resolveCanvasConfig,
+} from '@drupal-canvas/discovery';
 import { validateCanvasImportRoots } from '@drupal-canvas/vite-compat';
 
 export interface WorkbenchPathsOptions {
@@ -20,6 +23,7 @@ export interface WorkbenchPaths {
   hostProjectRoot: string;
   packageRoot: string;
   pagesDiscoveryRoot: string;
+  pageTemplatesDiscoveryRoot: string;
   runningInsideWorkbenchPackage: boolean;
   watchRoots: string[];
   workbenchSourceRoot: string;
@@ -46,7 +50,14 @@ export function resolveWorkbenchPaths(
   const geistMonoPackageRoot = path.dirname(
     require.resolve('@fontsource-variable/geist-mono/package.json'),
   );
-  const canvasConfig = resolveCanvasConfig({ hostRoot: hostProjectRoot });
+  const canvasConfigWarnings: string[] = [];
+  const canvasConfig = resolveCanvasConfig({
+    hostRoot: hostProjectRoot,
+    onWarning: (warning) => canvasConfigWarnings.push(warning.message),
+  });
+  for (const warning of canvasConfigWarnings) {
+    console.warn(`[workbench] ${warning}`);
+  }
   validateCanvasImportRoots({
     hostRoot: hostProjectRoot,
     aliasBaseDir: canvasConfig.aliasBaseDir,
@@ -64,11 +75,17 @@ export function resolveWorkbenchPaths(
     hostProjectRoot,
     canvasConfig.contentTemplatesDir,
   );
+  const pageTemplatesDiscoveryRoot = path.resolve(
+    hostProjectRoot,
+    canvasConfig.pageTemplatesDir,
+  );
   const watchRoots = [
     ...new Set([
       componentDiscoveryRoot,
       pagesDiscoveryRoot,
       contentTemplatesDiscoveryRoot,
+      pageTemplatesDiscoveryRoot,
+      path.join(hostProjectRoot, BRAND_KIT_CONFIG_FILENAME),
     ]),
   ];
 
@@ -94,6 +111,7 @@ export function resolveWorkbenchPaths(
     hostProjectRoot,
     packageRoot,
     pagesDiscoveryRoot,
+    pageTemplatesDiscoveryRoot,
     runningInsideWorkbenchPackage,
     watchRoots,
     workbenchSourceRoot,

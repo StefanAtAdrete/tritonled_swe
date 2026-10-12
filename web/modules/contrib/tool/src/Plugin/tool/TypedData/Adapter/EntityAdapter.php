@@ -215,7 +215,7 @@ final class EntityAdapter extends TypedDataAdapterBase implements ContainerFacto
     // If it's an array with entity_type_id and entity_id, load the entity.
     if (is_array($config_value) && isset($config_value['entity_type_id'], $config_value['entity_id'])) {
       $entity = $this->entityTypeManager->getStorage($config_value['entity_type_id'])->load($config_value['entity_id']);
-      $data->setValue($entity ?? NULL);
+      $data->setValue($entity);
       return;
     }
 

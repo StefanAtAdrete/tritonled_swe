@@ -4,38 +4,40 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\DisplayVariant;
 
-use Drupal\Core\Block\MessagesBlockPluginInterface;
-use Drupal\Core\Block\TitleBlockPluginInterface;
-use Drupal\Core\Display\Attribute\PageDisplayVariant;
-use Drupal\Core\Display\PageVariantInterface;
-use Drupal\Core\Display\VariantBase;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\canvas\AutoSave\AutoSaveManager;
 use Drupal\canvas\Entity\AssetLibrary;
 use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\ComponentTreeConfigEntityBase;
+use Drupal\canvas\Entity\ComponentTreeEntityInterface;
 use Drupal\canvas\Entity\PageRegion;
+use Drupal\canvas\Entity\PageVariant;
+use Drupal\canvas\PageVariantResolver;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\Marker;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
+use Drupal\Core\Block\MessagesBlockPluginInterface;
+use Drupal\Core\Block\TitleBlockPluginInterface;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Display\Attribute\PageDisplayVariant;
+use Drupal\Core\Display\PageVariantInterface;
+use Drupal\Core\Display\VariantBase;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Provides a page display variant decorating the main content with components.
+ * Provides a page display variant that renders Canvas page chrome.
  *
- * Uses the theme's `page.html.twig` and populates each region in that Twig
- * template with a Drupal Canvas component tree, which are defined in the
- * Drupal Canvas PageRegion config entities for that theme's regions.
+ * The page variant's component tree replaces the active theme's
+ * `page.html.twig`. Its "Page content" marker is replaced with the result of
+ * the matched route's controller.
+ * If the component tree does not contain a messages block, status messages are
+ * prepended to the rendered page body.
+ * When no page variant resolves, legacy global regions render for backward
+ * compatibility until their migration creates a default page variant.
  *
- * The `content` region is a special case: it is the only theme region required
- * to exist. To keep the Drupal Canvas UX simple and consistent, it:
- * - is not possible to customize what appears in the `content `region: it is
- *   always, and only, the main content. This guarantees that the result of the
- *   matched route's controller is always available when Canvas renders the
- *   page.
- * - falls back to displaying the "messages" in the `content` region, if and
- *   only if it does not appear in any other region. (Because that can also be
- *   essential information.)
- *
- * @see \Drupal\system\Controller\SystemController::themesPage()
- * @see \Drupal\Core\Block\MainContentBlockPluginInterface
  * @see \Drupal\canvas\EventSubscriber\PageVariantSelectorSubscriber::onSelectPageDisplayVariant()
  * @see ::MAIN_CONTENT_REGION
  *
@@ -52,7 +54,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @see docs/components.md
  * @see \Drupal\Core\Render\Element\Page
- * @see \Drupal\canvas\Entity\PageRegion
  * @see \Drupal\Core\Block\MainContentBlockPluginInterface
  * @see \Drupal\Core\Block\TitleBlockPluginInterface
  * @see \Drupal\Core\Block\MessagesBlockPluginInterface
@@ -75,9 +76,14 @@ final class CanvasPageVariant extends VariantBase implements PageVariantInterfac
   public const string PREVIEW_KEY = 'preview';
 
   /**
-   * The (machine) name of the only theme region required to exist.
+   * The plugin configuration key whose value is the page variant id to render.
    *
-   * See detailed analysis in the class-level documentation.
+   * When omitted, the display variant renders legacy global regions.
+   */
+  public const string VARIANT_ID_KEY = 'page_variant';
+
+  /**
+   * The (machine) name of the only theme region required to exist.
    *
    * @see \Drupal\system\Controller\SystemController::themesPage()
    */
@@ -97,7 +103,7 @@ final class CanvasPageVariant extends VariantBase implements PageVariantInterfac
    */
   private $title = '';
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, private readonly AutoSaveManager $autoSaveManager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, private readonly AutoSaveManager $autoSaveManager, private readonly PageVariantResolver $pageVariantResolver, private readonly ConfigFactoryInterface $configFactory, private readonly LanguageManagerInterface $languageManager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
@@ -107,7 +113,30 @@ final class CanvasPageVariant extends VariantBase implements PageVariantInterfac
       $plugin_id,
       $plugin_definition,
       $container->get(AutoSaveManager::class),
+      $container->get(PageVariantResolver::class),
+      $container->get(ConfigFactoryInterface::class),
+      $container->get(LanguageManagerInterface::class),
     );
+  }
+
+  /**
+   * Returns the component tree to render for a preview of this entity.
+   *
+   * In preview, the entity may be an auto-save draft, which is always base
+   * (untranslated) data: drafts are stored outside the config system, so the
+   * language's LanguageConfigOverride is never applied to them. When
+   * previewing in a language that has a translation override, merge it in, so
+   * the preview chrome matches what the front end serves for that language.
+   */
+  private function getPreviewComponentTree(ComponentTreeConfigEntityBase $entity): ComponentTreeItemList {
+    // ::getTranslationLanguages() already excludes the site default language
+    // and any language without a stored override, so membership alone decides
+    // whether an override applies.
+    $langcode = $this->languageManager->getCurrentLanguage()->getId();
+    if (\array_key_exists($langcode, $entity->getTranslationLanguages(include_default: FALSE))) {
+      return $entity->getTranslatedComponentTree($langcode);
+    }
+    return $entity->getComponentTree();
   }
 
   /**
@@ -130,76 +159,129 @@ final class CanvasPageVariant extends VariantBase implements PageVariantInterfac
    * {@inheritdoc}
    */
   public function build() {
-    $build = [];
     \assert(\is_bool($this->configuration[self::PREVIEW_KEY]) || \is_null($this->configuration[self::PREVIEW_KEY]));
     $is_preview = $this->configuration[self::PREVIEW_KEY] === TRUE;
+
+    $variant_id = $this->configuration[self::VARIANT_ID_KEY] ?? NULL;
+    if ($variant_id === NULL) {
+      $build = $this->buildLegacyPageRegions($is_preview);
+    }
+    else {
+      \assert(\is_string($variant_id));
+      $build = $this->buildPageVariant($variant_id, $is_preview);
+    }
 
     $build['#attached']['library'][] = 'canvas/asset_library.' . AssetLibrary::GLOBAL_ID .
       ($is_preview ? '.draft' : '');
     $build['#attached']['library'][] = 'canvas/brand_kit.' . BrandKit::GLOBAL_ID .
       ($is_preview ? '.draft' : '');
+    // Both rendering paths depend on the site default selection. A change to
+    // it must invalidate the cached page.
+    // @see \Drupal\canvas\PageVariantResolver
+    $cacheability = CacheableMetadata::createFromObject($this->configFactory->get('canvas.settings'));
+    if ($is_preview) {
+      // A preview renders the negotiated language's translation override, so
+      // its output varies by interface language. The override itself needs no
+      // cache tag of its own: it shares the base config object's tag, already
+      // present via the rendered entity's cacheability.
+      // @see \Drupal\language\Config\LanguageConfigOverride::save()
+      // @see self::getPreviewComponentTree()
+      $cacheability->addCacheContexts(['languages:' . LanguageInterface::TYPE_INTERFACE]);
+    }
+    $cacheability->applyTo($build);
 
-    $regions = PageRegion::loadForActiveTheme();
-    if (empty($regions)) {
-      throw new \LogicException('This page display variant needs Drupal Canvas PageRegion config entities.');
+    return $build;
+  }
+
+  /**
+   * Builds a page variant's component tree.
+   */
+  private function buildPageVariant(string $variant_id, bool $is_preview): array {
+    $variant = PageVariant::load($variant_id);
+    if (!$variant instanceof PageVariant) {
+      throw new \LogicException(\sprintf('The "%s" page variant does not exist.', $variant_id));
     }
 
-    \assert(!empty($this->title));
+    if ($is_preview) {
+      $variant = $this->pageVariantResolver->resolvePreviewVariant($variant);
+    }
+
     \assert(!empty($this->mainContent));
 
     // Track whether a block showing the messages is displayed.
     $messages_block_displayed = FALSE;
 
+    $content = self::renderComponentTree(
+      $is_preview ? $this->getPreviewComponentTree($variant) : $variant->getComponentTree(),
+      $variant,
+      $is_preview,
+      $messages_block_displayed,
+      $this->mainContent,
+      $this->title,
+    );
+
+    // If no block displays status messages, still render them, above the page.
+    if (!$messages_block_displayed) {
+      $content = [
+        'messages' => [
+          '#weight' => -1000,
+          '#type' => 'status_messages',
+          '#include_fallback' => TRUE,
+        ],
+        'content' => $content,
+      ];
+    }
+
+    // The variant tree is the whole page body: render it through the bare page
+    // template, replacing the theme's page.html.twig.
+    // @see \Drupal\canvas\Hook\ModuleHooks::theme()
+    $build = [
+      '#theme' => 'canvas_page_variant',
+      '#content' => $content,
+    ];
+    CacheableMetadata::createFromObject($variant)
+      ->applyTo($build);
+
+    return $build;
+  }
+
+  /**
+   * Builds legacy global regions for backward compatibility.
+   */
+  private function buildLegacyPageRegions(bool $is_preview): array {
+    $build = [];
+
+    $regions = PageRegion::loadForActiveTheme();
+    if ($regions === []) {
+      throw new \LogicException('The active theme has no enabled PageRegion entities.');
+    }
+
+    \assert(!empty($this->title));
+    \assert(!empty($this->mainContent));
+
+    $messages_block_displayed = FALSE;
     foreach ($regions as $region) {
-      // If we are in preview mode replace the region with the auto-saved
-      // version if any.
       if ($is_preview) {
         $autoSaveData = $this->autoSaveManager->getAutoSaveEntity($region);
-        if (!$autoSaveData->isEmpty()) {
-          \assert($autoSaveData->entity instanceof PageRegion);
+        if (!$autoSaveData->isEmpty() && $autoSaveData->entity instanceof PageRegion) {
           $violations = $autoSaveData->entity->getTypedData()->validate();
           if (\count($violations) === 0) {
-            // The auto-save entry is valid, so use it instead.
             $region = $autoSaveData->entity;
           }
         }
       }
 
-      $component_tree = $region->getComponentTree();
-
-      // Render the component tree in a PHP fiber to allow injecting page-level
-      // information (title, which originates from the matched route's
-      // controller) into special Canvas Components.
-      // @see \Drupal\Core\Display\PageVariantInterface
-      // @see \Drupal\Core\Block\TitleBlockPluginInterface
-      // @see \Drupal\canvas\ComponentSource\ComponentSourceInterface::renderComponent()
-      // @see \Drupal\block\Plugin\DisplayVariant\BlockPageVariant::build()
-      $fiber = new \Fiber(fn() => $component_tree->toRenderable($region, $is_preview));
-      $component_instance = $fiber->start();
-      while ($fiber->isSuspended()) {
-        $component_instance = match (TRUE) {
-          // Page-level information: the title.
-          $component_instance instanceof TitleBlockPluginInterface => (function () use ($component_instance, $fiber) {
-            $component_instance->setTitle($this->title);
-            return $fiber->resume();
-          })(),
-          $component_instance instanceof MessagesBlockPluginInterface => (function () use ($fiber, &$messages_block_displayed) {
-            $messages_block_displayed = TRUE;
-            return $fiber->resume();
-          })(),
-          // If fiber was suspended in some other context (e.g. while loading
-          // entities) resume it to continue component tree rendering.
-          default => $fiber->resume(),
-        };
-      }
-      \assert($fiber->isTerminated());
-      $build[$region->get('region')] = $fiber->getReturn();
+      $build[$region->get('region')] = self::renderComponentTree(
+        $is_preview ? $this->getPreviewComponentTree($region) : $region->getComponentTree(),
+        $region,
+        $is_preview,
+        $messages_block_displayed,
+        $this->mainContent,
+        $this->title,
+      );
     }
 
-    // Now render the special "content" region.
-    // @see ::MAIN_CONTENT_REGION
     $build[self::MAIN_CONTENT_REGION]['system_main'] = $this->mainContent;
-    // If no block displays status messages, still render them.
     if (!$messages_block_displayed) {
       $build[self::MAIN_CONTENT_REGION]['messages'] = [
         '#weight' => -1000,
@@ -209,6 +291,44 @@ final class CanvasPageVariant extends VariantBase implements PageVariantInterfac
     }
 
     return $build;
+  }
+
+  /**
+   * Renders a component tree with page-level values injected through a fiber.
+   *
+   * The preview flag is passed to the component tree so component sources can
+   * render their auto-saved drafts. Title and messages blocks receive their
+   * page-level data. The "Page content" marker is replaced with the route's
+   * main content.
+   *
+   * @see \Drupal\Core\Display\PageVariantInterface
+   * @see \Drupal\canvas\ComponentSource\ComponentSourceInterface::renderComponent()
+   * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsComponent::renderComponent()
+   * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker::renderComponent()
+   */
+  public static function renderComponentTree(ComponentTreeItemList $component_tree, ComponentTreeEntityInterface $entity, bool $is_preview, bool &$messages_block_displayed, array $main_content, mixed $title): array {
+    $fiber = new \Fiber(fn() => $component_tree->toRenderable($entity, $is_preview));
+    $component_instance = $fiber->start();
+    while ($fiber->isSuspended()) {
+      $component_instance = match (TRUE) {
+        // Page-level information.
+        $component_instance instanceof TitleBlockPluginInterface => (function () use ($component_instance, $fiber, $title) {
+          $component_instance->setTitle($title);
+          return $fiber->resume();
+        })(),
+        $component_instance instanceof MessagesBlockPluginInterface => (function () use ($fiber, &$messages_block_displayed) {
+          $messages_block_displayed = TRUE;
+          return $fiber->resume();
+        })(),
+        // The "Page content" marker: inject the route's main content in place.
+        $component_instance instanceof Marker => $fiber->resume($main_content),
+        // If the fiber was suspended in some other context (e.g. while loading
+        // entities) resume it to continue component tree rendering.
+        default => $fiber->resume(),
+      };
+    }
+    \assert($fiber->isTerminated());
+    return $fiber->getReturn();
   }
 
 }

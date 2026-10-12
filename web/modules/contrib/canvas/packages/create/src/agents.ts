@@ -1,8 +1,8 @@
-import chalk from 'chalk';
 import * as p from '@clack/prompts';
 
 import { parseAgentSelection } from './lib/agent-selection.js';
 import { setupAgentSkills } from './lib/agent-skills-setup.js';
+import { printCommandIntro } from './lib/command-intro.js';
 
 import type { Command } from 'commander';
 
@@ -17,7 +17,7 @@ export function agentsCommand(program: Command): void {
       'comma-separated list of additional agents to support, or "none" to skip compatibility symlinks',
     )
     .action(async (agentsArg: string | undefined) => {
-      p.intro(chalk.bold('Drupal Canvas Create - agents setup'));
+      printCommandIntro('create agents');
 
       try {
         const selectedAgents = parseAgentSelection(agentsArg, 'agents');
@@ -27,7 +27,7 @@ export function agentsCommand(program: Command): void {
           interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
         });
 
-        p.outro('🤖 Done.');
+        p.outro('Agent compatibility setup complete.');
       } catch (error) {
         if (error instanceof Error) {
           p.log.error(`Error: ${error.message}`);

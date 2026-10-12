@@ -2,15 +2,19 @@
 
 namespace Drupal\canvas_ai\Plugin\AiFunctionCall;
 
-use Drupal\Core\Plugin\Context\ContextDefinition;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\ai\Attribute\FunctionCall;
 use Drupal\ai\Base\FunctionCallBase;
 use Drupal\ai\Service\FunctionCalling\ExecutableFunctionCallInterface;
 use Drupal\ai_agents\PluginInterfaces\AiAgentContextInterface;
+use Drupal\Core\Plugin\Context\ContextDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Plugin implementation of edit field content function.
+ *
+ * This tool will soon be replaced by set_page_value once it is wired.
+ *
+ * @see \Drupal\canvas_ai\Plugin\AiFunctionCall\SetPageValue
  */
 #[FunctionCall(
   id: 'ai_agent:edit_field_content',

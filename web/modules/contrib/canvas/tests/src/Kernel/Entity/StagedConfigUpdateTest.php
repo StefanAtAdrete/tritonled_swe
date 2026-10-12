@@ -4,30 +4,29 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Entity;
 
+use Drupal\canvas\AutoSave\AutoSaveManager;
+use Drupal\canvas\Entity\StagedConfigUpdate;
+use Drupal\canvas\EntityHandlers\StagedConfigUpdateStorage;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Core\DependencyInjection\ServiceModifierInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Recipe\InvalidConfigException;
-use Drupal\canvas\AutoSave\AutoSaveManager;
-use Drupal\canvas\Entity\StagedConfigUpdate;
-use Drupal\canvas\EntityHandlers\StagedConfigUpdateStorage;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 #[Group('canvas')]
 #[CoversClass(StagedConfigUpdate::class)]
 #[CoversClass(StagedConfigUpdateStorage::class)]
 #[RunTestsInSeparateProcesses]
-final class StagedConfigUpdateTest extends CanvasKernelTestBase implements ServiceModifierInterface {
+final class StagedConfigUpdateTest extends CanvasKernelTestBase {
 
   use UserCreationTrait;
 
@@ -41,37 +40,6 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
   protected bool $usesSuperUserAccessPolicy = FALSE;
 
   private bool $markSystemSiteFullyValidated = FALSE;
-
-  /**
-   * {@inheritdoc}
-   *
-   * Allow marking `system.site` as FullyValidatable for this test.
-   *
-   * @see testSavingWhichLeadsToInvalidSchema()
-   * @see makeSystemSiteValidated()
-   *
-   * @todo Remove this alter hook once Drupal 11.3 is the minimum supported version, as kernel tests implementing hooks is only supported in Drupal 11.3 and later.
-   */
-  public function alter(ContainerBuilder $container): void {
-    if (version_compare(\Drupal::VERSION, '11.3', '>=')) {
-      return;
-    }
-    $container->register(self::class)
-      ->setClass(self::class)
-      ->addTag('kernel.event_listener', [
-        'event' => 'drupal_hook.config_schema_info_alter',
-        'method' => 'makeSystemSiteValidated',
-        'priority' => 0,
-      ]);
-    $container->set(self::class, $this);
-
-    $map = $container->getParameter('hook_implementations_map');
-    self::assertIsArray($map);
-    $map['config_schema_info_alter'][StagedConfigUpdateTest::class] = [
-      'makeSystemSiteValidated' => 'canvas',
-    ];
-    $container->setParameter('hook_implementations_map', $map);
-  }
 
   /**
    * Used to mark `system.site` as FullyValidatable.
@@ -90,7 +58,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
     $auto_save_manager = $this->container->get(AutoSaveManager::class);
     self::assertInstanceOf(AutoSaveManager::class, $auto_save_manager);
 
-    $storage = $this->container->get('entity_type.manager')
+    $storage = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID);
     $sut = $storage->create([
       'id' => 'test_staged_config_update',
@@ -116,11 +84,11 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
       ],
     ], $sut->getActions());
 
-    self::assertCount(0, $auto_save_manager->getAllAutoSaveList());
+    self::assertCount(0, $auto_save_manager->getAllAutoSaveList(with_entities: FALSE, with_conflicts: FALSE));
     self::assertNull($storage->load($sut->id()));
 
     $sut->save();
-    self::assertCount(1, $auto_save_manager->getAllAutoSaveList());
+    self::assertCount(1, $auto_save_manager->getAllAutoSaveList(with_entities: FALSE, with_conflicts: FALSE));
 
     $sut->set('label', 'Test Update Modified');
     $sut->save();
@@ -129,7 +97,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
     self::assertEquals($sut, $loaded);
 
     $sut->delete();
-    self::assertCount(0, $auto_save_manager->getAllAutoSaveList());
+    self::assertCount(0, $auto_save_manager->getAllAutoSaveList(with_entities: FALSE, with_conflicts: FALSE));
   }
 
   public function testCreateFromClientSide(): void {
@@ -157,7 +125,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
   }
 
   public function testNormalizeForClientSide(): void {
-    $sut = $this->container->get('entity_type.manager')
+    $sut = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID)
       ->create([
         'id' => 'test_staged_config_update',
@@ -185,7 +153,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
   }
 
   public function testUpdateFromClientSide(): void {
-    $sut = $this->container->get('entity_type.manager')
+    $sut = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID)
       ->create([
         'id' => 'test_staged_config_update',
@@ -280,7 +248,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
   public function testSavingUpdatesConfig(): void {
     $this->assertSiteConfig([]);
 
-    $sut = $this->container->get('entity_type.manager')
+    $sut = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID)
       ->create([
         'id' => 'canvas_change_site_name',
@@ -332,10 +300,10 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
     // added by ::makeSystemSiteValidated() takes effect. The schema may have
     // been cached during setUp() (e.g., BlockManagerDecorator triggers
     // component generation which loads schema) before this flag was set.
-    $this->container->get('config.typed')->clearCachedDefinitions();
+    $this->container->get(TypedConfigManagerInterface::class)->clearCachedDefinitions();
     $this->assertSiteConfig([]);
 
-    $sut = $this->container->get('entity_type.manager')
+    $sut = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID)
       ->create([
         'id' => 'canvas_change_site_email',
@@ -374,7 +342,7 @@ final class StagedConfigUpdateTest extends CanvasKernelTestBase implements Servi
   }
 
   public function testCacheability(): void {
-    $sut = $this->container->get('entity_type.manager')
+    $sut = $this->container->get(EntityTypeManagerInterface::class)
       ->getStorage(StagedConfigUpdate::ENTITY_TYPE_ID)
       ->create([
         'id' => 'canvas_change_site_name',

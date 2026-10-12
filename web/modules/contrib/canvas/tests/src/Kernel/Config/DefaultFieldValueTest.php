@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-// cspell:ignore elink estring
-
 namespace Drupal\Tests\canvas\Kernel\Config;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
+// cspell:ignore elink estring
+
 use Drupal\canvas\InvalidComponentInputsPropSourceException;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
 use Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator;
 use Drupal\Core\Config\Schema\SchemaIncompleteException;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
-use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
 use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
-
+use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 #[CoversClass(ValidComponentTreeItemConstraintValidator::class)]
@@ -55,7 +55,9 @@ class DefaultFieldValueTest extends CanvasKernelTestBase {
     array_push(
       $test_cases['invalid UUID, missing component_id key'],
       SchemaIncompleteException::class,
-      'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] The array must contain a &quot;component_id&quot; key.',
+      version_compare(\Drupal::VERSION, '11.4', '>=')
+        ? 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] &#039;component_id&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 1 [default_value.0] &#039;component_version&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 2 [default_value.0] &#039;inputs&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 3 [default_value.0] The array must contain a &quot;component_id&quot; key., 4 [default_value.0] The array must contain an &quot;inputs&quot; key., 5 [default_value.0.uuid] This is not a valid UUID., 6 [default_value.0.component_id] This field is missing., 7 [default_value.0.component_version] This field is missing.'
+        : 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] The array must contain a &quot;component_id&quot; key.',
     );
     array_push(
       $test_cases['prop source type disallowed in this component tree: EntityFieldPropSource'],
@@ -76,7 +78,9 @@ class DefaultFieldValueTest extends CanvasKernelTestBase {
     array_push(
       $test_cases['missing inputs key'],
       SchemaIncompleteException::class,
-      'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] The array must contain an &quot;inputs&quot; key.',
+      version_compare(\Drupal::VERSION, '11.4', '>=')
+        ? 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] &#039;inputs&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 1 [default_value.0] The array must contain an &quot;inputs&quot; key., 2 [default_value.1] &#039;inputs&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 3 [default_value.1] The array must contain an &quot;inputs&quot; key., 4 [default_value.2] &#039;inputs&#039; is a required key because field_type is component_tree (see config schema type field.value.component_tree)., 5 [default_value.2] The array must contain an &quot;inputs&quot; key.'
+        : 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0] The array must contain an &quot;inputs&quot; key.',
     );
     // If entity field prop sources are used the validation cannot be performed
     // for the default value.
@@ -85,10 +89,17 @@ class DefaultFieldValueTest extends CanvasKernelTestBase {
       SchemaIncompleteException::class,
       'Schema errors for field.field.node.article.field_canvas_test with the following errors: field.field.node.article.field_canvas_test:default_value.0.inputs.heading missing schema, field.field.node.article.field_canvas_test:default_value.1.inputs.heading missing schema, 0 [default_value.0.component_id] The &#039;canvas.component.sdc.sdc_test.missing&#039; config does not exist., 1 [default_value.1.component_id] The &#039;canvas.component.sdc.sdc_test.missing-also&#039; config does not exist., 2 [default_value.0] The &#039;entity-field&#039; prop source type must be absent., 3 [default_value.0.inputs.heading] &#039;heading&#039; is not a supported key., 4 [default_value.1] The &#039;entity-field&#039; prop source type must be absent., 5 [default_value.1.inputs.heading] &#039;heading&#039; is not a supported key., 6 [default_value.2] The &#039;entity-field&#039; prop source type must be absent.',
     );
+    // Note: `heading-2`/`heading-1` are populated by an (entity-field) dynamic
+    // prop source, so the generated config schema accepts them with a
+    // `type: ignore` entry — only `validateComponentInput()` still flags them
+    // as not defined by the referenced component version.
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentInstanceInputsConfigSchemaGenerator::refineForInstance()
     array_push(
       $test_cases['inputs invalid, using entity field prop sources'],
       SchemaIncompleteException::class,
-      'Schema errors for field.field.node.article.field_canvas_test with the following errors: field.field.node.article.field_canvas_test:default_value.0.inputs.heading-2 missing schema, field.field.node.article.field_canvas_test:default_value.1.inputs.heading-1 missing schema, 0 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading-2] Component `9145b0da-85a1-4ee7-ad1d-b1b63614aed6`: the `heading-2` prop is not defined., 1 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading] The property heading is required., 2 [default_value.0] The &#039;entity-field&#039; prop source type must be absent., 3 [default_value.0.inputs.heading-2] &#039;heading-2&#039; is not a supported key., 4 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading-1] Component `dab1145b-c5d5-4779-9be8-0a41c2d8ed29`: the `heading-1` prop is not defined., 5 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading] The property heading is required., 6 [default_value.1] The &#039;entity-field&#039; prop source type must be absent., 7 [default_value.1.inputs.heading-1] &#039;heading-1&#039; is not a supported key., 8 [default_value.2] The &#039;entity-field&#039; prop source type must be absent.',
+      version_compare(\Drupal::VERSION, '11.4', '>=')
+        ? 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading-2] Component `9145b0da-85a1-4ee7-ad1d-b1b63614aed6`: the `heading-2` prop is not defined., 1 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading] The property heading is required., 2 [default_value.0] The &#039;entity-field&#039; prop source type must be absent., 3 [default_value.0.inputs] &#039;heading&#039; is a required key., 4 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading-1] Component `dab1145b-c5d5-4779-9be8-0a41c2d8ed29`: the `heading-1` prop is not defined., 5 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading] The property heading is required., 6 [default_value.1] The &#039;entity-field&#039; prop source type must be absent., 7 [default_value.1.inputs] &#039;heading&#039; is a required key., 8 [default_value.2] The &#039;entity-field&#039; prop source type must be absent.'
+        : 'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading-2] Component `9145b0da-85a1-4ee7-ad1d-b1b63614aed6`: the `heading-2` prop is not defined., 1 [default_value.0.inputs.9145b0da-85a1-4ee7-ad1d-b1b63614aed6.heading] The property heading is required., 2 [default_value.0] The &#039;entity-field&#039; prop source type must be absent., 3 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading-1] Component `dab1145b-c5d5-4779-9be8-0a41c2d8ed29`: the `heading-1` prop is not defined., 4 [default_value.1.inputs.dab1145b-c5d5-4779-9be8-0a41c2d8ed29.heading] The property heading is required., 5 [default_value.1] The &#039;entity-field&#039; prop source type must be absent., 6 [default_value.2] The &#039;entity-field&#039; prop source type must be absent.',
     );
     array_push(
       $test_cases['missing components, using only static prop sources'],
@@ -98,7 +109,7 @@ class DefaultFieldValueTest extends CanvasKernelTestBase {
     array_push(
       $test_cases['non unique uuids'],
       SchemaIncompleteException::class,
-      'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value] Not all component instance UUIDs in this component tree are unique.'
+      'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0.uuid] Invalid component tree item with UUID &lt;em class=&quot;placeholder&quot;&gt;09de669f-b85b-40ef-9c01-b27f1b089020&lt;/em&gt;. This UUID is used by &lt;em class=&quot;placeholder&quot;&gt;2&lt;/em&gt; component instances in this component tree; each component instance must have a unique UUID., 1 [default_value.2.uuid] Invalid component tree item with UUID &lt;em class=&quot;placeholder&quot;&gt;09de669f-b85b-40ef-9c01-b27f1b089020&lt;/em&gt;. This UUID is used by &lt;em class=&quot;placeholder&quot;&gt;2&lt;/em&gt; component instances in this component tree; each component instance must have a unique UUID.'
     );
     array_push(
       $test_cases['invalid parent'],
@@ -110,6 +121,11 @@ class DefaultFieldValueTest extends CanvasKernelTestBase {
       $test_cases['invalid slot'],
       SchemaIncompleteException::class,
       'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.1.slot] Invalid component subtree. This component subtree contains an invalid slot name for component &lt;em class=&quot;placeholder&quot;&gt;sdc.canvas_test_sdc.props-slots&lt;/em&gt;: &lt;em class=&quot;placeholder&quot;&gt;banana&lt;/em&gt;. Valid slot names are: &lt;em class=&quot;placeholder&quot;&gt;the_body, the_footer, the_colophon&lt;/em&gt;.'
+    );
+    array_push(
+      $test_cases['reserved root UUID'],
+      SchemaIncompleteException::class,
+      'Schema errors for field.field.node.article.field_canvas_test with the following errors: 0 [default_value.0.uuid] Invalid component tree item with UUID &lt;em class=&quot;placeholder&quot;&gt;' . ComponentTreeItemList::ROOT_UUID . '&lt;/em&gt;. This UUID is reserved to represent the root of the component tree, and must never be used by a component instance., 1 [default_value.1.parent_uuid] Invalid component tree item with UUID &lt;em class=&quot;placeholder&quot;&gt;e303dd88-9409-4dc7-8a8b-a31602884a94&lt;/em&gt; references the reserved root UUID as its parent. Component instances at the root of the tree must omit parent_uuid and slot.'
     );
     return $test_cases;
   }

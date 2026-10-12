@@ -29,3 +29,11 @@ entity.fences_preset.delete_form:
     _title: 'Delete a Fences Preset'
   requirements:
     _permission: 'administer fences_preset'
+
+entity.fences_preset.duplicate_form:
+  path: '/admin/config/user-interface/fences/presets/{fences_preset}/duplicate'
+  defaults:
+    _entity_form: 'fences_preset.duplicate'
+    _title: 'Duplicate a Fences Preset'
+  requirements:
+    _permission: 'administer fences_preset'

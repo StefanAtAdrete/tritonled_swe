@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\EntityHandlers;
 
+use Drupal\canvas\Entity\CanvasAssetInterface;
 use Drupal\Core\Config\Entity\ConfigEntityStorage;
 use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\canvas\Entity\CanvasAssetInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -50,7 +50,7 @@ class CanvasAssetStorage extends ConfigEntityStorage implements EntityHandlerInt
    *
    * Does NOT handle asset library updates.
    *
-   * @see \canvas_library_info_builds()
+   * @see \Drupal\canvas\Hook\LibraryHooks::libraryInfoBuild()
    * @see \Drupal\canvas\Entity\AssetLibrary::postSave()
    * @see \Drupal\canvas\Entity\JavaScriptComponent::postSave()
    */

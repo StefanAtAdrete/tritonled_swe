@@ -35,5 +35,16 @@ function splide_requirements($phase) {
  * Implements hook_uninstall().
  */
 function splide_uninstall() {
-  blazy_filter_cleanup('splide');
+  $module = 'splide';
+  if (method_exists(blazy(), 'filterCleanup')) {
+    blazy()->filterCleanup($module);
+  }
+  // @todo remove post Blazy 3.0.18.
+  else {
+    $deprecated = 'blazy_filter_cleanup';
+    /** @phpstan-ignore-next-line */
+    if (is_callable($deprecated)) {
+      $deprecated($module);
+    }
+  }
 }

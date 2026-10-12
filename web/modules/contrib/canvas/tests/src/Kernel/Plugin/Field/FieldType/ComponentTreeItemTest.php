@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Plugin\Field\FieldType;
 
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Drupal\canvas\PropSource\PropSource;
-use Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator;
-use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Entity\JavaScriptComponent;
@@ -16,6 +11,10 @@ use Drupal\canvas\Entity\VersionedConfigEntityBase;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemListInstantiatorTrait;
+use Drupal\canvas\Plugin\Validation\Constraint\ValidComponentTreeItemConstraintValidator;
+use Drupal\canvas\PropSource\PropSource;
+use Drupal\Core\Extension\ModuleInstallerInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
@@ -25,7 +24,9 @@ use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\canvas\Traits\SingleDirectoryComponentTreeTestTrait;
 use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 #[CoversClass(ComponentTreeItem::class)]
@@ -78,7 +79,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
     self::assertCount(1, $component->getVersions());
     $settings = $component->getSettings();
     $settings['prop_field_definitions']['heading']['default_value'][0]['value'] = 'Updated example value 👋';
-    $component->createVersion('bcf3fbf52a2b169b')
+    $component->createVersion('0b4234d27d7aac43')
       ->setSettings($settings)
       ->save();
     self::assertEntityIsValid($component);
@@ -224,8 +225,8 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
     $this->assertCount(2, $item_list);
     $violations = $item_list->validate();
     $this->assertSame([
-      '0.component_version' => "'lol' is not a version that exists on component config entity 'sdc.canvas_test_sdc.props-slots'. Available versions: '85a5c0c7dd53e0bb'.",
-      '1.component_version' => "'active' is not a version that exists on component config entity 'sdc.canvas_test_sdc.props-no-slots'. Available versions: 'b1e991f726a2a266'.",
+      '0.component_version' => "'lol' is not a version that exists on component config entity 'sdc.canvas_test_sdc.props-slots'. Available versions: '0e79e884426a53ae'.",
+      '1.component_version' => "'active' is not a version that exists on component config entity 'sdc.canvas_test_sdc.props-no-slots'. Available versions: 'd34b93534777207a'.",
     ], self::violationsToArray($violations));
   }
 
@@ -507,7 +508,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
     ];
 
     $test_cases['inputs invalid, using only static inputs with a StaticPropSource deviating from that defined in the referenced Component entity version'][] = [
-      \sprintf('field_canvas_test.0.inputs.%s', self::UUID_DYNAMIC_STATIC_CARD_2) => 'Using a static prop source that deviates from the configuration for Component <em class="placeholder">sdc.canvas_test_sdc.props-no-slots</em> at version <em class="placeholder">b1e991f726a2a266</em>.',
+      \sprintf('field_canvas_test.0.inputs.%s', self::UUID_DYNAMIC_STATIC_CARD_2) => 'Using a static prop source that deviates from the configuration for Component <em class="placeholder">sdc.canvas_test_sdc.props-no-slots</em> at version <em class="placeholder">d34b93534777207a</em>.',
     ];
     $test_cases['missing inputs key'][] = [
       \sprintf('field_canvas_test.0.inputs.%s', self::UUID_DYNAMIC_STATIC_CARD_2) => 'The required properties are missing.',
@@ -515,13 +516,18 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
       \sprintf('field_canvas_test.2.inputs.%s', self::UUID_DYNAMIC_STATIC_CARD_4) => 'The required properties are missing.',
     ];
     $test_cases['non unique uuids'][] = [
-      'field_canvas_test' => 'Not all component instance UUIDs in this component tree are unique.',
+      'field_canvas_test.0.uuid' => 'Invalid component tree item with UUID <em class="placeholder">09de669f-b85b-40ef-9c01-b27f1b089020</em>. This UUID is used by <em class="placeholder">2</em> component instances in this component tree; each component instance must have a unique UUID.',
+      'field_canvas_test.2.uuid' => 'Invalid component tree item with UUID <em class="placeholder">09de669f-b85b-40ef-9c01-b27f1b089020</em>. This UUID is used by <em class="placeholder">2</em> component instances in this component tree; each component instance must have a unique UUID.',
     ];
     $test_cases['invalid parent'][] = [
       'field_canvas_test.1.parent_uuid' => 'Invalid component tree item with UUID <em class="placeholder">e303dd88-9409-4dc7-8a8b-a31602884a94</em> references an invalid parent <em class="placeholder">6381352f-5b0a-4ca1-960d-a5505b37b27c</em>.',
     ];
     $test_cases['invalid slot'][] = [
       'field_canvas_test.1.slot' => 'Invalid component subtree. This component subtree contains an invalid slot name for component <em class="placeholder">sdc.canvas_test_sdc.props-slots</em>: <em class="placeholder">banana</em>. Valid slot names are: <em class="placeholder">the_body, the_footer, the_colophon</em>.',
+    ];
+    $test_cases['reserved root UUID'][] = [
+      'field_canvas_test.0.uuid' => 'Invalid component tree item with UUID <em class="placeholder">' . ComponentTreeItemList::ROOT_UUID . '</em>. This UUID is reserved to represent the root of the component tree, and must never be used by a component instance.',
+      'field_canvas_test.1.parent_uuid' => 'Invalid component tree item with UUID <em class="placeholder">e303dd88-9409-4dc7-8a8b-a31602884a94</em> references the reserved root UUID as its parent. Component instances at the root of the tree must omit parent_uuid and slot.',
     ];
     foreach ($test_cases as &$test_case) {
       $test_case[2] ??= [];
@@ -538,7 +544,7 @@ class ComponentTreeItemTest extends CanvasKernelTestBase {
   public function testInvalidField(array $field_values, array $expected_violations, array $permissions): void {
     $this->installEntitySchema('path_alias');
     $this->setUpCurrentUser(permissions: $permissions);
-    $this->container->get('module_installer')->install(['canvas_test_config_node_article']);
+    $this->container->get(ModuleInstallerInterface::class)->install(['canvas_test_config_node_article']);
     $node = Node::create([
       'title' => 'Test node',
       'type' => 'article',

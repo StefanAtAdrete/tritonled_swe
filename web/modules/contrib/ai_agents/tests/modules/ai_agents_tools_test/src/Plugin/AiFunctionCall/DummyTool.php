@@ -31,7 +31,7 @@ class DummyTool extends FunctionCallBase implements ExecutableFunctionCallInterf
   /**
    * {@inheritdoc}
    */
-  public function execute() {
+  public function execute(?object $object = NULL) {
     $input = $this->getContextValue('input');
     $this->setOutput($input);
   }

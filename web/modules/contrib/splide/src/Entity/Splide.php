@@ -2,6 +2,7 @@
 
 namespace Drupal\splide\Entity;
 
+use Drupal\blazy\Utility\Type;
 use Drupal\Component\Serialization\Json;
 
 /**
@@ -272,13 +273,15 @@ class Splide extends SplideBase implements SplideInterface {
     // @todo recheck other stupid numbers.
     foreach (self::getNumerics() as $key => $default) {
       if (isset($config[$key])) {
-        $type = gettype($config[$key]);
-        $float = (is_string($config[$key]) && strpos($config[$key], ".") !== FALSE);
+        $value = $config[$key] ?? $default;
+        $type = gettype($value);
+        $float = (is_string($value) && strpos($value, ".") !== FALSE);
+
         if ($float || $type == 'double' || $type == 'float') {
-          $config[$key] = (float) $config[$key];
+          $config[$key] = Type::normalizeFloat($value) ?? 0.0;
         }
-        elseif (is_numeric($config[$key])) {
-          $config[$key] = (int) $config[$key];
+        elseif (is_numeric($value) && is_string($value)) {
+          $config[$key] = (int) $value;
         }
       }
     }

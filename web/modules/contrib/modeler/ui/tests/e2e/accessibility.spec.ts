@@ -94,10 +94,10 @@ test.describe('Accessibility', () => {
       const modal = page.locator('[role="dialog"]');
       await expect(modal).toBeVisible({ timeout: 2000 });
 
-      // Wait for auto-focus to place focus inside the dialog before tabbing.
-      // The MetadataModal uses a 50ms setTimeout to focus the label input,
-      // and the useFocusTrap hook registers its Tab-wrapping handler in a
-      // useEffect.  Without this wait, Tab presses can escape the dialog.
+      // Wait for focus to land inside the dialog before tabbing: MetadataModal
+      // focuses the first field and the useFocusTrap hook registers its
+      // Tab-wrapping handler in an effect. Without this wait, Tab presses can
+      // escape the dialog.
       await expect(async () => {
         const focusInDialog = await page.evaluate(() => {
           const dialog = document.querySelector('[role="dialog"]');
@@ -234,6 +234,25 @@ test.describe('Accessibility', () => {
       const nodes = page.locator('.react-flow__node');
       const count = await nodes.count();
       expect(count).toBeGreaterThan(0);
+    });
+
+    test('should expose an accessible condition node and panel after selection', async ({ page }) => {
+      // Conditions are first-class NODES now (issue #3589093).  Verify the
+      // promoted condition node is selectable and exposes accessible names.
+      const conditionNode = modeler.getConditionNode('cond__edge_1');
+      await expect(conditionNode).toBeVisible();
+
+      // The condition card's delete button must have an accessible name.
+      const deleteButton = conditionNode.locator('.node-footer-delete');
+      await expect(deleteButton).toHaveAttribute('aria-label', /.+/);
+
+      // Selecting the condition node opens the node properties panel with an
+      // accessible, labeled input.
+      await modeler.selectConditionNode('cond__edge_1');
+      await page.waitForTimeout(300);
+      await expect(modeler.propertyPanel).toBeVisible();
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
     });
 
     test('should announce search results to screen readers', async ({ page }) => {

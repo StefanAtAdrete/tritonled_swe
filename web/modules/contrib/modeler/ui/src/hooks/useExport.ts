@@ -333,7 +333,18 @@ export function useExport({
             exportData.components = usedComponents;
           }
 
-          const json = JSON.stringify(exportData, null, 2);
+          // The metadata form travels with the export so the standalone
+          // viewer can render the model information dialog without a backend.
+          const metadataForm = settings.modeler?.metadataForm;
+          if (metadataForm) {
+            exportData.metadataForm = metadataForm;
+          }
+
+          // Export compact JSON. The exported model — including any replay
+          // data — only has technical consumers, so indentation is pure
+          // overhead that can roughly double the file size. Humans who want
+          // to inspect an export can prettify it with jq or any JSON tool.
+          const json = JSON.stringify(exportData);
           const filename = `${data.id || 'model'}.json`;
           downloadFile(json, filename, 'application/json');
           announce?.(t('JSON exported successfully'));

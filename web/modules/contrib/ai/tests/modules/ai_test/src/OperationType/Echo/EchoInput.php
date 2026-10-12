@@ -5,12 +5,12 @@ namespace Drupal\ai_test\OperationType\Echo;
 use Drupal\ai\Entity\AiGuardrailModeEnum;
 use Drupal\ai\Guardrail\AiGuardrailSetInterface;
 use Drupal\ai\Guardrail\Result\GuardrailResultInterface;
-use Drupal\ai\OperationType\InputInterface;
+use Drupal\ai\OperationType\InputBase;
 
 /**
  * Input object for echo operations.
  */
-class EchoInput implements InputInterface {
+class EchoInput extends InputBase {
 
   /**
    * The constructor.
@@ -45,6 +45,34 @@ class EchoInput implements InputInterface {
    * {@inheritdoc}
    */
   public function setDebugDataValue(string $key, $value): void {
+    // Do nothing.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAllRequestMetadata(): array {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setAllRequestMetadata(array $metadata): void {
+    // Do nothing.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRequestMetadataValue(string $key): mixed {
+    return NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRequestMetadataValue(string $key, mixed $value): void {
     // Do nothing.
   }
 

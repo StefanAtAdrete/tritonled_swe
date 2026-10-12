@@ -65,7 +65,8 @@ const derivedPropTypes = [
     type: 'image' as const,
     displayName: 'Image',
     derive: (prop: CodeComponentPropSerialized) =>
-      prop.type === 'object' && prop.$ref?.includes('image'),
+      prop.type === 'object' &&
+      prop.$ref === 'json-schema-definitions://canvas.module/image',
     init: {
       type: 'object',
       $ref: 'json-schema-definitions://canvas.module/image',
@@ -81,13 +82,30 @@ const derivedPropTypes = [
     type: 'video' as const,
     displayName: 'Video',
     derive: (prop: CodeComponentPropSerialized) =>
-      prop.type === 'object' && prop.$ref?.includes('video'),
+      prop.type === 'object' &&
+      prop.$ref === 'json-schema-definitions://canvas.module/video',
     init: {
       type: 'object',
       $ref: 'json-schema-definitions://canvas.module/video',
       example: {
         src: '/ui/assets/videos/mountain_wide.mp4',
         poster: 'https://placehold.co/1920x1080.png?text=Widescreen',
+      },
+    },
+  },
+  {
+    type: 'document' as const,
+    displayName: 'Document',
+    derive: (prop: CodeComponentPropSerialized) =>
+      prop.type === 'object' &&
+      prop.$ref === 'json-schema-definitions://canvas.module/document',
+    init: {
+      type: 'object',
+      $ref: 'json-schema-definitions://canvas.module/document',
+      example: {
+        src: '/ui/assets/documents/sample.pdf',
+        filename: 'sample.pdf',
+        mimetype: 'application/pdf',
       },
     },
   },
@@ -147,6 +165,30 @@ const derivedPropTypes = [
     init: {
       type: 'integer',
       enum: [],
+    },
+  },
+  {
+    type: 'contentEntityReference' as const,
+    displayName: 'Content entity reference',
+    derive: (prop: CodeComponentPropSerialized) =>
+      prop.type === 'object' &&
+      prop.$ref ===
+        'json-schema-definitions://canvas.module/content-entity-reference',
+    init: {
+      type: 'object',
+      $ref: 'json-schema-definitions://canvas.module/content-entity-reference',
+    },
+  },
+  {
+    type: 'color' as const,
+    displayName: 'Color',
+    derive: (prop: CodeComponentPropSerialized) =>
+      prop.type === 'string' &&
+      prop.$ref === 'json-schema-definitions://canvas.module/color',
+    init: {
+      type: 'string',
+      $ref: 'json-schema-definitions://canvas.module/color',
+      example: '#ff0000ff',
     },
   },
 ];

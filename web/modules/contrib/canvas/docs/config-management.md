@@ -141,7 +141,8 @@ These config entities are therefore the foundations that enable Canvas to work r
   `settings` — see [`Canvas Data model`, section 3.1.2.a](./data-model#3.1.2.a))
 - dependency-checking (this config entity's dependencies on other modules, as well as other config entities depending on
   this config entity, but also ensuring the necessary code is present, such as `field type` and `field widget` plugins)
-- exporting, importing, synchronizing from one environment or site to another
+- exporting, importing, synchronizing from one environment or site to another (shipping them in an extension's
+  `config` directory is another matter — see [`Canvas Recipes` doc](recipes.md))
 - validating: the ability to be 100% confident that all dependencies are satisfied, and all criteria are still met (see
   [`Canvas Components` doc, section 3.1.1](components.md#3.1.1)).
 
@@ -326,3 +327,24 @@ See:
 
 Only one brand kit exists: the global one, created by default on config install. It stores font entries and loads them using
 CSS on the frontend of the site as well as the Canvas preview.
+
+### 3.9 `StagedLanguageConfigOverride` config entity
+
+See:
+- `\Drupal\canvas\Entity\StagedLanguageConfigOverride`
+
+A `StagedLanguageConfigOverride` config entity represents a language configuration override that is not immediately applied,
+but staged until published. It maps to Drupal core's `LanguageConfigOverride` (the per-language sparse override stored by
+`\Drupal\language\Config\LanguageConfigFactoryOverride`), but lives in auto-save storage until explicitly published. Like
+`StagedConfigUpdate`, it is never exported to the active configuration store. See
+`\Drupal\canvas\EntityHandlers\StagedLanguageConfigOverrideStorage` for the implementation that uses `AutoSaveManager` as
+the storage backend.
+
+The entity ID is `{langcode}.{config_name}` — mirroring the key used by the language config override storage — so mapping
+between the staged and live representations is trivial.
+
+`StagedLanguageConfigOverride` entities are created automatically during component tree reconciliation: when
+`ComponentSourceManager::updateComponentInstances()` updates a config entity's component tree, the field list implementation
+in `ComponentTreeItemList::reconcileTranslationsWithUpdatedItems()` stages an in-memory override for each language that had a
+prior translation, pruning keys for deleted props. Those staged overrides are persisted to auto-save when the config entity is
+saved.

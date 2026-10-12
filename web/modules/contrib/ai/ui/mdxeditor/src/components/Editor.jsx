@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BlockTypeSelect,
   CreateLink,
@@ -15,6 +15,7 @@ import {
   quotePlugin,
   tablePlugin,
   thematicBreakPlugin,
+  markdownShortcutPlugin,
   diffSourcePlugin,
   DiffSourceToggleWrapper,
   UndoRedo,
@@ -40,6 +41,9 @@ function getTypeaheadConfigs(variables) {
     return {
       type: variable.name,
       trigger: variable.trigger,
+      // Kept on the descriptor so TypeaheadEditor can look up the help text of
+      // an already inserted element for its hover tooltip.
+      values: variable.values,
       Editor: TypeaheadEditor,
       searchCallback: async (query) => {
         return variable.values.filter((token) =>
@@ -59,9 +63,16 @@ function Editor({
   initialValue,
   onChange,
   variables = [],
+  onRef,
 }) {
   const editorRef = useRef(null);
   const [markdown, setMarkdown] = useState(initialValue);
+
+  useEffect(() => {
+    if (onRef && editorRef.current) {
+      onRef(editorRef.current);
+    }
+  }, [onRef]);
   const isDarkMode = document.documentElement.classList.contains('gin--dark-mode');
 
   function handleChange(value) {
@@ -87,6 +98,7 @@ function Editor({
         markdown={markdown}
         onChange={handleChange}
         className={isDarkMode ? 'dark' : ''}
+        contentEditableClassName="mdxeditor-root-editable"
         plugins={[
           headingsPlugin(),
           listsPlugin(),
@@ -99,6 +111,7 @@ function Editor({
           thematicBreakPlugin(),
           linkDialogPlugin(),
           tablePlugin(),
+          markdownShortcutPlugin(),
           codeBlockPlugin({ defaultCodeBlockLanguage: "javascript" }),
           codeMirrorPlugin({
             codeBlockLanguages: {
@@ -118,6 +131,7 @@ function Editor({
               sql: "SQL",
               markdown: "Markdown",
               md: "Markdown",
+              yaml: "YAML",
               "": "Plain Text",
             },
           }),

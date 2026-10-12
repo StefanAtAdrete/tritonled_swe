@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\Config;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas\Entity\EntityConstraintViolationList;
 use Drupal\canvas\Entity\JavaScriptComponent;
 use Drupal\canvas\Exception\ConstraintViolationException;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests Drupal\canvas\Entity\JavaScriptComponent.
@@ -96,6 +96,7 @@ class JavascriptComponentTest extends CanvasKernelTestBase {
       'dataDependencies' => [],
     ];
     $js_component = JavaScriptComponent::createFromClientSide($client_data);
+    $this->assertFalse($js_component->hasFallbackImplementation());
     $this->assertSame(SAVED_NEW, $js_component->save());
     $this->assertCount(0, $js_component->getDependencies());
     $this->assertSame([
@@ -170,6 +171,141 @@ class JavascriptComponentTest extends CanvasKernelTestBase {
     $this->assertSame([
       'config:canvas.js_component.test',
     ], $js_component->getCacheTags());
+  }
+
+  /**
+   * Tests the client-side representation of an external component.
+   *
+   * @legacy-covers ::createFromClientSide
+   * @legacy-covers ::updateFromClientSide
+   * @legacy-covers ::normalizeForClientSide
+   */
+  public function testExternalComponent(): void {
+    $client_data = [
+      'machineName' => 'external_test',
+      'name' => 'External test',
+      'status' => TRUE,
+      'type' => 'external',
+      'required' => [],
+      'props' => [],
+      'slots' => [],
+      'dataDependencies' => [],
+    ];
+    $component = JavaScriptComponent::createFromClientSide($client_data);
+
+    self::assertTrue($component->isExternal());
+    self::assertSame('external', $component->getComponentType());
+    self::assertNull($component->get('js'));
+    self::assertNull($component->get('css'));
+    self::assertEntityIsValid($component);
+
+    $representation = $component->normalizeForClientSide();
+    self::assertNull($representation->preview);
+    self::assertSame('external', $representation->values['type']);
+    self::assertArrayNotHasKey('sourceCodeJs', $representation->values);
+    self::assertArrayNotHasKey('sourceCodeCss', $representation->values);
+    self::assertArrayNotHasKey('compiledJs', $representation->values);
+    self::assertArrayNotHasKey('compiledCss', $representation->values);
+
+    $js = [
+      'original' => 'export default function ExternalTest() {}',
+      'compiled' => 'export default function ExternalTest() {}',
+    ];
+    $css = [
+      'original' => '.external-test { display: block; }',
+      'compiled' => '.external-test{display:block}',
+    ];
+    $component->set('js', $js);
+    $component->set('css', $css);
+    $dependency = JavaScriptComponent::create([
+      'machineName' => 'external_dependency',
+      'name' => 'External dependency',
+      'status' => TRUE,
+      'required' => [],
+      'props' => [],
+      'slots' => [],
+      'js' => ['original' => '', 'compiled' => ''],
+      'css' => ['original' => '', 'compiled' => ''],
+      'dataDependencies' => [],
+    ]);
+    $dependency->save();
+    $component->set('dependencies', [
+      'enforced' => [
+        'config' => [$dependency->getConfigDependencyName()],
+      ],
+    ]);
+    self::assertTrue($component->hasFallbackImplementation());
+    self::assertEntityIsValid($component);
+    self::assertSame($js, $component->toArray()['js']);
+    self::assertSame($css, $component->toArray()['css']);
+
+    // Metadata-only client updates must not discard a retained implementation.
+    $component->updateFromClientSide($client_data);
+    self::assertSame($js, $component->get('js'));
+    self::assertSame($css, $component->get('css'));
+    self::assertContains($dependency->getConfigDependencyName(), $component->getDependencies()['config']);
+    $representation = $component->normalizeForClientSide();
+    self::assertArrayNotHasKey('sourceCodeJs', $representation->values);
+    self::assertArrayNotHasKey('sourceCodeCss', $representation->values);
+
+    $this->expectException(ConstraintViolationException::class);
+    $this->expectExceptionMessage('External code components cannot contain JavaScript or CSS.');
+    $component->updateFromClientSide([
+      ...$client_data,
+      'sourceCodeJs' => 'export default function ExternalTest() {}',
+    ]);
+  }
+
+  /**
+   * Tests that the client side may change a component's name, status, and type.
+   *
+   * These changes are accepted so that tools such as the CLI can reconcile
+   * components with a decoupled application: an external component's name and
+   * status may change, and a react component may be converted to external.
+   *
+   * @legacy-covers ::updateFromClientSide
+   */
+  public function testClientSideMayChangeComponentIdentity(): void {
+    // The external application's name and status are no longer locked.
+    $external_data = [
+      'machineName' => 'external_mutable',
+      'name' => 'External mutable',
+      'status' => TRUE,
+      'type' => 'external',
+      'required' => [],
+      'props' => [],
+      'slots' => [],
+      'dataDependencies' => [],
+    ];
+    $component = JavaScriptComponent::createFromClientSide($external_data);
+    $component->save();
+    $component->updateFromClientSide([
+      ...$external_data,
+      'name' => 'Renamed',
+      'status' => FALSE,
+    ]);
+    self::assertSame('Renamed', $component->label());
+    self::assertFalse($component->status());
+
+    // A react component may be converted to an external component.
+    $react_component = JavaScriptComponent::createFromClientSide([
+      'machineName' => 'react_mutable',
+      'name' => 'React mutable',
+      'status' => TRUE,
+      'required' => [],
+      'props' => [],
+      'slots' => [],
+      'sourceCodeJs' => 'console.log("hey");',
+      'sourceCodeCss' => '.big { font-size: 3rem; }',
+      'compiledJs' => 'console.log("hey");',
+      'compiledCss' => '.big{font-size:3rem;}',
+      'importedJsComponents' => [],
+      'dataDependencies' => [],
+    ]);
+    $react_component->save();
+    $react_component->updateFromClientSide(['type' => 'external']);
+    self::assertSame('external', $react_component->getComponentType());
+    self::assertTrue($react_component->isExternal());
   }
 
 }

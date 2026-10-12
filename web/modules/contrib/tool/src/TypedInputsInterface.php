@@ -3,8 +3,7 @@
 namespace Drupal\tool;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
-use Drupal\Core\Plugin\Context\ContextInterface;
-use Drupal\tool\Exception\InputException;
+use Drupal\Core\TypedData\TypedDataInterface;
 use Drupal\tool\TypedData\InputDefinitionInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -49,10 +48,13 @@ interface TypedInputsInterface extends ConfigurableInterface {
    * @param string $name
    *   The name of the input definition.
    *
-   * @return \Drupal\tool\TypedData\InputDefinitionInterface|InputException
-   *   The input definition object or an InputException if not found.
+   * @return \Drupal\tool\TypedData\InputDefinitionInterface
+   *   The input definition object.
+   *
+   * @throws \Drupal\tool\Exception\InputException
+   *   When no input definition with the given name exists.
    */
-  public function getInputDefinition(string $name): InputDefinitionInterface|InputException;
+  public function getInputDefinition(string $name): InputDefinitionInterface;
 
   /**
    * Gets the executable values for the inputs.
@@ -77,23 +79,6 @@ interface TypedInputsInterface extends ConfigurableInterface {
    *   The executable value.
    */
   public function getExecutableValue(string $name, bool $skip_validation = FALSE): mixed;
-
-  /**
-   * Prepares a value for execution based on its input definition.
-   *
-   * @param string $name
-   *   The name of the input.
-   * @param \Drupal\tool\TypedData\InputDefinitionInterface $definition
-   *   The input definition.
-   * @param mixed $value
-   *   The value to prepare.
-   * @param string $source
-   *   The source of the value.
-   *
-   * @return mixed
-   *   The prepared executable value.
-   */
-  public function prepareExecutableValue(string $name, InputDefinitionInterface $definition, mixed $value, string $source): mixed;
 
   /**
    * Gets the configuration for the typed inputs.
@@ -123,36 +108,74 @@ interface TypedInputsInterface extends ConfigurableInterface {
   public function defaultConfiguration(): array;
 
   /**
-   * Gets all input contexts.
+   * Gets an explicitly configured value.
    *
-   * @return \Drupal\Core\Plugin\Context\ContextInterface[]
-   *   An array of input contexts keyed by their names.
-   */
-  public function getInputs(): array;
-
-  /**
-   * Gets a specific input context by name.
+   * Raw accessor: reports only explicitly configured values. Unset keys
+   * return NULL — use getConfiguration() for the complete snapshot with
+   * definition defaults applied, or getExecutableValue() for the full
+   * input > configuration > default resolution chain.
    *
    * @param string $name
-   *   The name of the input context.
+   *   The name of the configuration value.
+   * @param bool $return_typed_data
+   *   TRUE to return the stored typed data, FALSE (default) to return the
+   *   plain value.
    *
-   * @return \Drupal\Core\Plugin\Context\ContextInterface
-   *   The input context object.
+   * @return mixed
+   *   The configuration value, or NULL if not set.
    */
-  public function getInput(string $name): ContextInterface;
+  public function getConfigurationValue(string $name, bool $return_typed_data = FALSE): mixed;
 
   /**
-   * Sets the context for a specific input by name.
+   * Sets a configuration value.
    *
    * @param string $name
-   *   The name of the context.
-   * @param \Drupal\Core\Plugin\Context\ContextInterface $input
-   *   The context object to set.
+   *   The name of the configuration value.
+   * @param mixed $value
+   *   The value to set for the configuration.
+   * @param bool $skip_validation
+   *   Whether to skip validation for this value.
    *
    * @return $this
    *   The current instance for method chaining.
+   *
+   * @throws \Drupal\tool\Exception\InputException
+   *   If validation fails for the provided value.
    */
-  public function setInput(string $name, ContextInterface $input): static;
+  public function setConfigurationValue(string $name, mixed $value, bool $skip_validation = FALSE): static;
+
+  /**
+   * Checks if a configuration value has been explicitly set.
+   *
+   * @param string $name
+   *   The name of the configuration value to check.
+   *
+   * @return bool
+   *   TRUE if the configuration value is explicitly set, FALSE otherwise.
+   */
+  public function hasConfigurationValue(string $name): bool;
+
+  /**
+   * Gets the typed data holding a specific input's value.
+   *
+   * @param string $name
+   *   The name of the input.
+   *
+   * @return \Drupal\Core\TypedData\TypedDataInterface
+   *   Fresh typed data carrying the input's resolved value: the stored
+   *   value, or the definition default when none is stored. A detached
+   *   wrapper, not a deep copy: replacing its value does not change the
+   *   input - use setInputValue() for that - but an object value (an entity,
+   *   for example) is the shared instance, so mutations to it remain
+   *   visible through the tool. A resolved NULL reads back as the data
+   *   type's empty shape (an empty array for maps and lists); getInputValue()
+   *   is the value-level truth. A list-definition value comes back with
+   *   untyped items - the effective rebuild keeps core's default item
+   *   definition, while a multiple definition's items keep their data
+   *   type - and validateInputs() checks each item declared as an
+   *   input definition.
+   */
+  public function getInputData(string $name): TypedDataInterface;
 
   /**
    * Checks if a specific input has a value set.
@@ -196,6 +219,21 @@ interface TypedInputsInterface extends ConfigurableInterface {
    *   An array of input values keyed by their names.
    */
   public function getInputValues(): array;
+
+  /**
+   * Validates resolved executable input values without triggering execution.
+   *
+   * Call before access() or execute() to obtain detailed violation messages
+   * suitable for caller self-correction. Locked inputs use their definition
+   * default; other values resolve from explicit input, configuration, then the
+   * definition default. An empty required context without a default is returned
+   * as a named constraint violation. An empty context with a default resolves
+   * to that default. Unexpected resolution exceptions are not suppressed.
+   *
+   * @return \Symfony\Component\Validator\ConstraintViolationListInterface
+   *   The constraint violations, if any.
+   */
+  public function validateInputs(): ConstraintViolationListInterface;
 
   /**
    * Validate the provided input values.

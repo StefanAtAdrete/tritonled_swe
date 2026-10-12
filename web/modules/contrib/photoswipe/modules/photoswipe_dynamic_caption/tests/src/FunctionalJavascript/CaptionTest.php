@@ -162,7 +162,7 @@ class CaptionTest extends PhotoswipeJsTestBase {
     // Configure the entity reference field display to use photoswipe formatter
     // with caption from referenced media entity field.
     /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $display_repository */
-    $display_repository = \Drupal::service('entity_display.repository');
+    $display_repository = $this->container->get('entity_display.repository');
     $display_repository->getViewDisplay('node', 'article')
       ->setComponent('field_media_reference', [
         'type' => 'photoswipe_field_formatter',
@@ -264,7 +264,7 @@ class CaptionTest extends PhotoswipeJsTestBase {
       ->set('allowHtmlCaptions', TRUE)
       ->save();
     $this->downloadDomPurify();
-    \Drupal::service('library.discovery')->clearCachedDefinitions();
+    \Drupal::service('library.discovery')->clear();
 
     // With DOMPurify, HTML is sanitized and rendered.
     $this->drupalGet('/node/' . $node->id());

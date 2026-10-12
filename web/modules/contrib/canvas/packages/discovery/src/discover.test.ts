@@ -64,6 +64,47 @@ describe('discoverCanvasProject', () => {
     expect(result.pages[0].slug).toBe('home');
   });
 
+  it('discovers page templates matching `{id}.json`, sourcing the variant machine name from filename only', async () => {
+    const root = await makeTempDir();
+    tempDirs.push(root);
+
+    await writeFile(
+      path.join(root, 'page-templates/marketing.json'),
+      JSON.stringify({ label: 'Marketing', elements: {} }),
+    );
+    await writeFile(
+      path.join(root, 'page-templates/docs.json'),
+      JSON.stringify({ label: 'Docs', elements: {} }),
+    );
+    await writeFile(
+      path.join(root, 'page-templates/theme_stark.json'),
+      JSON.stringify({ label: 'Stark theme', elements: {} }),
+    );
+    // Nested file — should be ignored.
+    await writeFile(
+      path.join(root, 'page-templates/nested/ignored.json'),
+      '{}',
+    );
+    // Not a machine name — should be ignored.
+    await writeFile(path.join(root, 'page-templates/Not-Valid.json'), '{}');
+
+    const result = await discoverCanvasProject({ componentRoot: root });
+
+    expect(result.pageTemplates.map((t) => t.id)).toEqual([
+      'docs',
+      'marketing',
+      'theme_stark',
+    ]);
+    const marketing = result.pageTemplates.find((t) => t.id === 'marketing');
+    expect(marketing).toMatchObject({
+      id: 'marketing',
+      label: 'Marketing',
+      status: null,
+      isDefault: false,
+      relativePath: 'page-templates/marketing.json',
+    });
+  });
+
   it('supports a dedicated pagesRoot outside the component scan root', async () => {
     const root = await makeTempDir();
     tempDirs.push(root);
@@ -165,6 +206,37 @@ describe('discoverCanvasProject', () => {
     expect(
       result.warnings.some((warning) => warning.code === 'missing_js_entry'),
     ).toBe(true);
+  });
+
+  it('keeps entry-less components when requireJsEntry is false', async () => {
+    const root = await makeTempDir();
+    tempDirs.push(root);
+
+    // A framework single-file component (.vue) the build pipeline cannot
+    // compile. It is dropped by default but kept when the caller pushes
+    // metadata only.
+    await writeFile(path.join(root, 'src/card/component.yml'), 'name: Card');
+    await writeFile(
+      path.join(root, 'src/card/index.vue'),
+      '<template><div /></template>',
+    );
+
+    const dropped = await discoverCanvasProject({ componentRoot: root });
+    expect(dropped.components).toHaveLength(0);
+    expect(
+      dropped.warnings.some((warning) => warning.code === 'missing_js_entry'),
+    ).toBe(true);
+
+    const kept = await discoverCanvasProject({
+      componentRoot: root,
+      requireJsEntry: false,
+    });
+    expect(kept.components).toHaveLength(1);
+    expect(kept.components[0].name).toBe('card');
+    expect(kept.components[0].jsEntryPath).toBeNull();
+    expect(
+      kept.warnings.some((warning) => warning.code === 'missing_js_entry'),
+    ).toBe(false);
   });
 
   it('keeps components when CSS is missing', async () => {
@@ -313,13 +385,13 @@ describe('discoverCanvasProject', () => {
 
     await writeFile(
       path.join(root, 'src/card/component.yml'),
-      'machineName: shared-name',
+      ['name: Card', 'machineName: shared-name'].join('\n'),
     );
     await writeFile(path.join(root, 'src/card/index.ts'), 'export default {};');
 
     await writeFile(
       path.join(root, 'src/button/component.yml'),
-      'machineName: shared-name',
+      ['name: Button', 'machineName: shared-name'].join('\n'),
     );
     await writeFile(
       path.join(root, 'src/button/index.ts'),

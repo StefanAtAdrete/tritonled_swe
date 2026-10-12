@@ -23,6 +23,13 @@ const componentCardDir = resolve(process.cwd(), 'src/components/card');
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(() => true),
   readFileSync: vi.fn((filePath) => {
+    // Only the headless project declares the Canvas Headless SDK.
+    if (filePath === '/headless/package.json') {
+      return JSON.stringify({
+        dependencies: { '@drupal-canvas/headless-next': '^0.1.0' },
+      });
+    }
+
     if (filePath === '/custom/canvas.config.json') {
       return JSON.stringify({
         aliasBaseDir: 'src',
@@ -81,6 +88,17 @@ testRunner.run('component-imports rule', rule, {
       name: 'should pass when a flat named component imports another flat named component entrypoint',
       code: `
         import Heading from '@/components/heading';
+        const Button = ({ title }) => {
+          return <button>{title} <Heading text={title} /></button>;
+        };
+        export default Button;
+      `,
+      filename: resolve(process.cwd(), 'src/components/button.tsx'),
+    },
+    {
+      name: 'should pass when a flat named component imports another flat named component entrypoint with an extension',
+      code: `
+        import Heading from '@/components/heading.tsx';
         const Button = ({ title }) => {
           return <button>{title} <Heading text={title} /></button>;
         };
@@ -508,5 +526,40 @@ customComponentDirTestRunner.run(
         ],
       },
     ],
+  },
+);
+
+// The rule does not apply when the Canvas Headless SDK is installed: the
+// headless app owns its own module graph and bundler.
+cwd.mockReturnValue('/headless');
+const headlessTestRunner = new RuleTester({
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    parserOptions: {
+      ecmaFeatures: {
+        jsx: true,
+      },
+    },
+  },
+});
+
+headlessTestRunner.run(
+  'component-imports rule ignored when headless SDK detected',
+  rule,
+  {
+    valid: [
+      {
+        name: 'should pass when a component uses a relative module import',
+        code: `
+        import { helper } from './helper';
+        export default ({ title }) => {
+          return <button>{helper(title)}</button>;
+        };
+      `,
+        filename: '/headless/components/button/index.jsx',
+      },
+    ],
+    invalid: [],
   },
 );

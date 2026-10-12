@@ -14,12 +14,6 @@ ai_agents.ai_agent.*:
   type: config_entity
   label: AI Agent
   mapping:
-    third_party_settings:
-      requiredKey: false
-      type: sequence
-      label: 'Third party settings'
-      sequence:
-        type: model_settings.third_party.[%key]
     id:
       type: string
       label: ID
@@ -100,15 +94,20 @@ ai_agents.ai_agent.*:
     structured_output_enabled:
       type: boolean
       label: Structured Output Enabled
-      description: 'Whether structured output is enabled for the AI agent. If this is set to true, the AI agent will format its responses according to the provided structured output schema.'
+      description: 'Whether structured output is enabled for the AI agent. If this is set to true, the AI agent will format its responses according to the provided structured output schema. Note: Certain AI providers (Mistral, Claude) cannot combine structured output with tool calling. Use sparingly and avoid when tools are required.'
       default: false
     structured_output_schema:
       type: string
       label: Structured Output Schema
-      description: 'The schema that defines the structured output format for the AI agent. This schema guides how the AI agent should format its responses when structured output is enabled. It should be in JSON Schema format.'
+      description: 'The schema that defines the structured output format for the AI agent. This schema guides how the AI agent should format its responses when structured output is enabled. It should be in JSON Schema format. Note: Some providers cannot use structured output with tool calling simultaneously.'
       default: ''
     hostname_filter_disabled:
       type: boolean
       label: Hostname Filter Disabled
       description: 'Whether to disable hostname whitelisting for the AI agent. If this is set to true, the AI agent will not filter tool usage based on hostnames. This can be useful for agents that need to access a wide range of tools without restrictions.'
       default: false
+    guardrail_set:
+      type: string
+      label: Guardrail Set
+      description: 'The guardrail set that the AI agent should use. This is the machine name of the guardrail set that the AI agent should use to filter its responses. If left empty, no guardrails will be applied.'
+      default: ''

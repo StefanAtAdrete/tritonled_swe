@@ -22,3 +22,12 @@ export function pageSlugFromTopLevelSpecPath(filePath: string): string | null {
 
   return base.slice(0, -'.json'.length);
 }
+
+/**
+ * Whether `filePath` is a top-level Canvas page template spec
+ * (e.g. `page-templates/marketing.json`).
+ */
+export function isTopLevelPageTemplateSpecPath(filePath: string): boolean {
+  const normalizedPath = filePath.replaceAll('\\', '/');
+  return /(^|\/)page-templates\/[^/]+\.json$/.test(normalizedPath);
+}

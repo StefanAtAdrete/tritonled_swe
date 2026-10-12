@@ -1,0 +1,15 @@
+tool:
+  label: 'Tool'
+  description: 'Icons for tool operations, used as fallbacks when a tool declares no icon of its own.'
+  extractor: svg
+  config:
+    sources:
+      - icons/operation-*.svg
+  settings:
+    size:
+      title: 'Size'
+      description: 'Set a size for this icon.'
+      type: integer
+      default: 24
+  template: >-
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{{ size|default(24) }}" height="{{ size|default(24) }}" aria-hidden="true">{{ content }}</svg>

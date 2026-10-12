@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\PropExpressions\StructuredData;
 
+use Drupal\canvas\Utility\TypedDataHelper;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
+use Drupal\Core\Entity\TranslatableInterface;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Http\Exception\CacheableAccessDeniedHttpException;
+use Drupal\Core\Render\AttachmentsInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\TypedData\DataReferenceDefinitionInterface;
 use Drupal\Core\TypedData\DataReferenceInterface;
 use Drupal\Core\TypedData\PrimitiveInterface;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeFieldItemList;
@@ -36,6 +42,24 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
  */
 final class Evaluator {
 
+  /**
+   * Omits the object props that evaluated to NULL, retaining cacheability.
+   *
+   * An optional field property without a value must be absent from the
+   * evaluated object: `null` does not validate against the prop shape's type.
+   * For example: an SVG image has neither a `width` nor a `height`.
+   *
+   * @param array<string, \Drupal\canvas\PropExpressions\StructuredData\EvaluationResult> $object_props
+   *   The evaluated object props, keyed by object property name.
+   */
+  private static function omitEmptyObjectProps(array $object_props): EvaluationResult {
+    // Hoisting merges the cacheability and attachments of every object prop,
+    // including the ones omitted below.
+    $all = new EvaluationResult($object_props);
+    \assert(\is_array($all->value));
+    return new EvaluationResult(\array_filter($all->value, static fn (mixed $value): bool => $value !== NULL), $all, $all->attachments);
+  }
+
   private static function permanentCacheabilityUnlessSpecified(mixed $value): CacheableDependencyInterface {
     if ($value instanceof CacheableDependencyInterface) {
       return $value;
@@ -48,8 +72,87 @@ final class Evaluator {
     return new CacheableMetadata();
   }
 
-  public static function evaluate(null|EntityInterface|FieldItemInterface|FieldItemListInterface $entity_or_field, StructuredDataPropExpressionInterface $expr, bool $is_required): EvaluationResult {
-    $result = self::doEvaluate($entity_or_field, $expr, $is_required);
+  /**
+   * Resolves an entity to its translation if available.
+   *
+   * @param \Drupal\Core\Entity\FieldableEntityInterface $entity
+   *   The entity to resolve.
+   * @param \Drupal\canvas\PropExpressions\StructuredData\NegotiatedLanguage $language
+   *   The language code to resolve to.
+   *
+   * @return \Drupal\Core\Entity\FieldableEntityInterface
+   *   The translated entity if available, otherwise the original entity.
+   *
+   * @throws \LogicException
+   *   When requesting a translation for a locked language, like `und` etc. This
+   *   should be impossible, but err on the side of caution.
+   *
+   * @see \Drupal\Core\Language\LanguageInterface::LANGCODE_NOT_SPECIFIED
+   * @see \Drupal\Core\Language\LanguageInterface::LANGCODE_NOT_APPLICABLE
+   * @see \Drupal\Core\Language\LanguageInterface::LANGCODE_DEFAULT
+   * @see \Drupal\Core\Language\LanguageInterface::LANGCODE_SITE_DEFAULT
+   * @see \Drupal\Core\Language\LanguageInterface::LANGCODE_SYSTEM
+   * @see self::resolveTranslationForReference()
+   */
+  private static function resolveTranslation(FieldableEntityInterface $entity, NegotiatedLanguage $language): FieldableEntityInterface {
+    if ($language->language->isLocked()) {
+      // TRICKY: the ::isTranslatable() check is only necessary to allow e.g.
+      // prop expressions pointing to a non-translatable entity type (e.g. File)
+      // to not require a language to be specified.
+      // @todo Remove this early return in https://git.drupalcode.org/project/canvas/-/work_items/3571785
+      if ($entity instanceof TranslatableInterface && !$entity->isTranslatable()) {
+        // @phpcs:ignore Drupal.Semantics.FunctionTriggerError.TriggerErrorTextLayoutRelaxed
+        @trigger_error(\sprintf('Requested the %s translation for a %s entity object in the %s language.', $language->language->getId(), $entity->getEntityTypeId(), $entity->language()->getId()), E_USER_DEPRECATED);
+        return $entity;
+      }
+      throw new \LogicException('Entities cannot have a translation for a locked language.');
+    }
+    // TRICKY: EntityRepositoryInterface::getTranslationFromContext() claims to
+    // return either an entity object or NULL if the translation is "missing,
+    // forbidden or unavailable", but the implementation actually guarantees an
+    // entity object is returned *or* throws an \InvalidArgumentException.
+    return \Drupal::service(EntityRepositoryInterface::class)
+      // TRICKY: ::getTranslationFromContext() would add the necessary cache
+      // context only if the entity actually has a translation. Canvas always
+      // adds the necessary cache context, as soon as there's >=2 languages on
+      // this site.
+      ->getTranslationFromContext($entity, $language->language->getId())
+      ->addCacheableDependency($language);
+  }
+
+  /**
+   * Resolves a reference's target entity to the negotiated reading language.
+   *
+   * Unlike ::resolveTranslation(), which assumes a real (non-locked) language,
+   * this tolerates what a resolved content-entity-reference target can present:
+   * a locked language (e.g. a language-neutral host) or a non-translatable
+   * entity are read as-is rather than resolved. This is needed because a
+   * resolved reference (a FieldPropExpression ending in `entity`) yields the
+   * entity in its own default language, so without resolving it its fields
+   * (and those of any entities it references in turn) would be read in that
+   * default language instead of the negotiated one.
+   *
+   * @param \Drupal\Core\Entity\FieldableEntityInterface $entity
+   *   The resolved reference target to read in $language.
+   * @param \Drupal\canvas\PropExpressions\StructuredData\NegotiatedLanguage $language
+   *   The negotiated reading language.
+   *
+   * @return \Drupal\Core\Entity\FieldableEntityInterface
+   *   The entity's translation in $language, or the entity itself when it
+   *   cannot be resolved to one.
+   *
+   * @see self::resolveTranslation()
+   * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsComponent::buildReferencePayload()
+   */
+  public static function resolveTranslationForReference(FieldableEntityInterface $entity, NegotiatedLanguage $language): FieldableEntityInterface {
+    if ($language->language->isLocked() || !($entity instanceof TranslatableInterface && $entity->isTranslatable())) {
+      return $entity;
+    }
+    return self::resolveTranslation($entity, $language);
+  }
+
+  public static function evaluate(null|EntityInterface|FieldItemInterface|FieldItemListInterface $entity_or_field, StructuredDataPropExpressionInterface $expr, bool $is_required, NegotiatedLanguage $language): EvaluationResult {
+    $result = self::doEvaluate($entity_or_field, $expr, $is_required, $language);
     // Compensate for DateTimeItemInterface::DATETIME_STORAGE_FORMAT not
     // including the trailing `Z`. In theory, this should always use an adapter.
     // But is the storage and complexity overhead of doing that worth that
@@ -81,7 +184,7 @@ final class Evaluator {
     );
   }
 
-  private static function doEvaluate(null|EntityInterface|FieldItemInterface|FieldItemListInterface $entity_or_field, StructuredDataPropExpressionInterface $expr, bool $is_required): EvaluationResult {
+  private static function doEvaluate(null|EntityInterface|FieldItemInterface|FieldItemListInterface $entity_or_field, StructuredDataPropExpressionInterface $expr, bool $is_required, NegotiatedLanguage $language): EvaluationResult {
     $permanent_cacheability = new CacheableMetadata();
     // Evaluating an expression when the evaluation context is NULL is
     // impossible.
@@ -112,10 +215,16 @@ final class Evaluator {
     // @see \Drupal\canvas\PropSource\StaticPropSource::evaluate()
     if ($entity_or_field instanceof FieldItemListInterface) {
       return new EvaluationResult(
-        \array_map(
-          fn (FieldItemInterface $item) => self::evaluate($item, $expr, $is_required),
-          iterator_to_array($entity_or_field),
-        ),
+        // Omit empty items (the Canvas UI auto-saves values still being typed)
+        // and reindex: a `type: array` prop shape must not be handed gaps.
+        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::validateComponentInput()
+        \array_values(\array_filter(
+          \array_map(
+            fn (FieldItemInterface $item) => self::evaluate($item, $expr, $is_required, $language),
+            iterator_to_array($entity_or_field),
+          ),
+          static fn (EvaluationResult $result): bool => $result->value !== NULL,
+        )),
         $permanent_cacheability
       );
     }
@@ -126,22 +235,36 @@ final class Evaluator {
       $result = match ($expr::class) {
         FieldTypePropExpression::class => (function () use ($field, $expr) {
           $prop = $field->get($expr->propName);
-          $prop_value = $prop instanceof PrimitiveInterface
+          $raw_prop_value = $prop->getValue();
+          // ⚠️ Do not cast NULL: every primitive data type casts it to its own
+          // zero value (`0`, `''`, `FALSE`), which would turn "this optional
+          // field property has no value" into a false value. For example: an
+          // SVG image has no `width` nor `height`.
+          // @see \Drupal\Core\TypedData\Plugin\DataType\IntegerData::getCastedValue()
+          $prop_value = $prop instanceof PrimitiveInterface && $raw_prop_value !== NULL
             ? $prop->getCastedValue()
-            : $prop->getValue();
+            : $raw_prop_value;
           return new EvaluationResult(
             $prop_value,
             // Use the cacheability carried by the field property (common for
             // computed field properties), otherwise assume permanent
             // cacheability.
-            self::permanentCacheabilityUnlessSpecified($prop->getValue())
+            // ⚠️ Prefer the field property over the value it computed: a
+            // computed field property that computes NULL still has (and must
+            // bubble) cacheability. For example: an SVG image gets no
+            // derivative image URL, yet that must be recomputed when the image
+            // style changes.
+            // @see \Drupal\canvas\Plugin\DataType\ComputedDataTypeWithCacheabilityTrait
+            self::permanentCacheabilityUnlessSpecified($prop instanceof CacheableDependencyInterface ? $prop : $prop->getValue()),
+            // Keep the assets the property needs to render.
+            $prop instanceof AttachmentsInterface ? $prop->getAttachments() : [],
           );
         })(),
-        FieldTypeObjectPropsExpression::class => \array_map(
-          fn ((ScalarPropExpressionInterface&FieldTypeBasedPropExpressionInterface)|(ReferencePropExpressionInterface&FieldTypeBasedPropExpressionInterface) $sub_expr) => self::evaluate($field, $sub_expr, $is_required),
+        FieldTypeObjectPropsExpression::class => self::omitEmptyObjectProps(\array_map(
+          fn ((ScalarPropExpressionInterface&FieldTypeBasedPropExpressionInterface)|(ReferencePropExpressionInterface&FieldTypeBasedPropExpressionInterface) $sub_expr) => self::evaluate($field, $sub_expr, $is_required, $language),
           $expr->getObjectExpressions(),
-        ),
-        ReferenceFieldTypePropExpression::class => (function () use ($field, $expr, $is_required) {
+        )),
+        ReferenceFieldTypePropExpression::class => (function () use ($field, $expr, $is_required, $language) {
           $reference_property = $field->get($expr->referencer->propName);
           \assert($reference_property instanceof DataReferenceInterface);
           \assert($reference_property instanceof EntityReference);
@@ -157,6 +280,14 @@ final class Evaluator {
             return NULL;
           }
 
+          // Optional expression with no branch for this bundle: omit it.
+          if (self::shouldOmitUnmatchedBundle($expr, $referenced_entity, $is_required)) {
+            return NULL;
+          }
+
+          // Resolve the referenced entity to its translation if available.
+          $referenced_entity = self::resolveTranslation($referenced_entity, $language);
+
           $referenced_expression = $expr->getTargetExpression(
             $expr->targetsMultipleBundles() ? $referenced_entity : NULL
           );
@@ -164,6 +295,7 @@ final class Evaluator {
             $referenced_entity,
             $referenced_expression,
             $is_required,
+            $language,
           );
         })(),
         default => throw new \LogicException('Unhandled expression type. ' . (string) $expr),
@@ -210,18 +342,27 @@ final class Evaluator {
       $field_access = self::validateAccess($field_item_list, $expr);
 
       $result = match ($expr::class) {
-        FieldPropExpression::class => (function () use ($expr, $field_item_list, $is_required, $cardinality) {
+        FieldPropExpression::class => (function () use ($expr, $field_item_list, $field_definition, $is_required, $cardinality) {
           $result = [];
           $raw_result = [];
           $result_cacheability = new CacheableMetadata();
+          $result_attachments = [];
           foreach ($field_item_list as $delta => $field_item) {
             if ($expr->delta === NULL || $expr->delta === $delta) {
               $prop = $field_item->get($expr->getFieldPropertyName());
               if ($prop instanceof CacheableDependencyInterface) {
                 $result_cacheability->addCacheableDependency($prop);
               }
+              // Keep the assets the property needs to render.
+              if ($prop instanceof AttachmentsInterface) {
+                $result_attachments = BubbleableMetadata::mergeAttachments($result_attachments, $prop->getAttachments());
+              }
               $raw_result[$delta] = $prop->getValue();
-              $result[$delta] = $prop instanceof PrimitiveInterface
+              if ($raw_result[$delta] === NULL && $prop instanceof EntityReference) {
+                $result_cacheability->addCacheableDependency(TypedDataHelper::getDeletedReferencedEntityCacheability($prop));
+              }
+              // ⚠️ Do not cast NULL, see above.
+              $result[$delta] = $prop instanceof PrimitiveInterface && $raw_result[$delta] !== NULL
                 ? $prop->getCastedValue()
                 : $raw_result[$delta];
             }
@@ -250,8 +391,23 @@ final class Evaluator {
             $result = $result[$expr->delta ?? 0] ?? NULL;
             $raw_result = $raw_result[$expr->delta ?? 0] ?? NULL;
           }
-          if (!$is_required) {
-            return new EvaluationResult($result, $result_cacheability);
+          // The premise below only holds for a field property that cannot
+          // legitimately be empty:
+          // 1. one that Typed Data marks required
+          // 2. a reference property, which core does not mark required even
+          //    though it is: it is computed from `target_id`, which is. Remove
+          //    this condition once core's metadata says so.
+          //    @see \Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem::propertyDefinitions()
+          // A required object may still have optional object props: the `image`
+          // shape requires only `src`; an SVG image may lack `width`/`height`.
+          // @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator::omitEmptyObjectProps()
+          $property_definition = $field_definition->getFieldStorageDefinition()
+            ->getPropertyDefinition($expr->getFieldPropertyName());
+          $may_be_empty = $property_definition !== NULL
+            && !$property_definition->isRequired()
+            && !$property_definition instanceof DataReferenceDefinitionInterface;
+          if (!$is_required || $may_be_empty) {
+            return new EvaluationResult($result, $result_cacheability, $result_attachments);
           }
 
           // If the evaluation is for a required component prop, then the shape
@@ -272,7 +428,7 @@ final class Evaluator {
 
           // Required and populated: evaluation successful.
           if (!$required_yet_empty) {
-            return new EvaluationResult($result, $result_cacheability);
+            return new EvaluationResult($result, $result_cacheability, $result_attachments);
           }
 
           // Required and empty: evaluation failed; infer access was forbidden.
@@ -291,14 +447,14 @@ final class Evaluator {
             )
           );
         })(),
-        ReferenceFieldPropExpression::class => (function () use ($entity, $field_item_list, $expr, $is_required, $cardinality) {
+        ReferenceFieldPropExpression::class => (function () use ($entity, $field_item_list, $expr, $is_required, $cardinality, $language) {
           \assert($field_item_list->getName() === $expr->referencer->getFieldName());
           // Step 1: evaluate the referencer expression to get the referenced
           // entities. This always is a FieldPropExpression, which also handles
           // respecting the delta in the expression.
           // Note: this EvaluationResult object carries cacheability (for e.g.
           // entity access).
-          $referencer_result = self::evaluate($entity, $expr->referencer, $is_required);
+          $referencer_result = self::evaluate($entity, $expr->referencer, $is_required, $language);
 
           // Step 2A: single-cardinality or single delta: result is a single
           // value, not an array.
@@ -311,10 +467,16 @@ final class Evaluator {
               \assert(!$is_required);
               return new EvaluationResult(NULL, $referencer_result);
             }
+            // Optional expression with no branch for this bundle: omit it.
+            if (self::shouldOmitUnmatchedBundle($expr, $referenced_entity, $is_required)) {
+              return new EvaluationResult(NULL, $referencer_result);
+            }
+            // Resolve the referenced entity to its translation if available.
+            $referenced_entity = self::resolveTranslation($referenced_entity, $language);
             $referenced_expression = $expr->getTargetExpression(
               $expr->targetsMultipleBundles() ? $referenced_entity : NULL
             );
-            return self::evaluate($referenced_entity, $referenced_expression, $is_required);
+            return self::evaluate($referenced_entity, $referenced_expression, $is_required, $language);
           }
 
           // Step 2B: multiple-cardinality, no delta: result is an array of
@@ -326,17 +488,23 @@ final class Evaluator {
           \assert(\is_array($referenced_entities));
           foreach ($referenced_entities as $delta => $referenced_entity) {
             \assert($referenced_entity instanceof FieldableEntityInterface);
+            // Optional expression with no branch for this bundle: skip it.
+            if (self::shouldOmitUnmatchedBundle($expr, $referenced_entity, $is_required)) {
+              continue;
+            }
+            // Resolve the referenced entity to its translation if available.
+            $referenced_entity = self::resolveTranslation($referenced_entity, $language);
             $referenced_expression = $expr->getTargetExpression(
               $expr->targetsMultipleBundles() ? $referenced_entity : NULL
             );
-            $evaluated_references[$delta] = self::evaluate($referenced_entity, $referenced_expression, $is_required);
+            $evaluated_references[$delta] = self::evaluate($referenced_entity, $referenced_expression, $is_required, $language);
           }
           return new EvaluationResult($evaluated_references, $referencer_result);
         })(),
-        FieldObjectPropsExpression::class => \array_map(
-          fn((ScalarPropExpressionInterface&EntityFieldBasedPropExpressionInterface)|(ReferencePropExpressionInterface&EntityFieldBasedPropExpressionInterface) $sub_expr): EvaluationResult => self::evaluate($entity_or_field, $sub_expr, $is_required),
+        FieldObjectPropsExpression::class => self::omitEmptyObjectProps(\array_map(
+          fn((ScalarPropExpressionInterface&EntityFieldBasedPropExpressionInterface)|(ReferencePropExpressionInterface&EntityFieldBasedPropExpressionInterface) $sub_expr): EvaluationResult => self::evaluate($entity_or_field, $sub_expr, $is_required, $language),
           $expr->getObjectExpressions(),
-        ),
+        )),
         default => throw new \LogicException('Unhandled expression type.'),
       };
       return new EvaluationResult(
@@ -345,6 +513,28 @@ final class Evaluator {
           ->addCacheableDependency($field_access)
       );
     }
+  }
+
+  /**
+   * Determines whether an unmatched multi-bundle reference must be omitted.
+   *
+   * A multi-bundle reference expression only carries branches for specific
+   * bundles. When the referenced entity's bundle has no branch, an optional
+   * result omits it (the caller returns NULL or skips the delta); a required
+   * result instead lets evaluation proceed so getBranch() surfaces an
+   * \OutOfRangeException.
+   *
+   * @todo Figure out a fuller solution for the required case in
+   *   https://www.drupal.org/project/canvas/issues/3563309
+   * @see \Drupal\canvas\PropExpressions\StructuredData\ReferencedBundleSpecificBranches::getBranch()
+   */
+  private static function shouldOmitUnmatchedBundle(ReferenceFieldTypePropExpression|ReferenceFieldPropExpression $expr, FieldableEntityInterface $entity, bool $is_required): bool {
+    if (!$expr->targetsMultipleBundles()) {
+      return FALSE;
+    }
+    \assert($expr->referenced instanceof ReferencedBundleSpecificBranches);
+    return !$is_required
+      && !$expr->referenced->hasBranch("entity:{$entity->getEntityTypeId()}:{$entity->bundle()}");
   }
 
   protected static function validateAccess(EntityInterface|FieldItemListInterface $entity_or_field, StructuredDataPropExpressionInterface $expr): AccessResultInterface {

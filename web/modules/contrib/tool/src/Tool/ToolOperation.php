@@ -72,13 +72,17 @@ enum ToolOperation: string {
   /**
    * Check if the operation is idempotent (safe to repeat).
    *
+   * Transform is idempotent by definition: it derives a result from its
+   * input without persisting changes (see isModifying()), so repeating it
+   * cannot alter state (#3582962).
+   *
    * @return bool
    *   TRUE if the operation is idempotent.
    */
   public function isIdempotent(): bool {
     return match ($this) {
-      self::Explain, self::Read => TRUE,
-      self::Transform, self::Trigger, self::Write => FALSE,
+      self::Explain, self::Read, self::Transform => TRUE,
+      self::Trigger, self::Write => FALSE,
     };
   }
 

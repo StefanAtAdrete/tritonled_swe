@@ -4,6 +4,7 @@ process.env.NODE_ENV = 'test';
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  testEnvironmentOptions: { customExportConditions: ['node'] },
   rootDir: '..',
   roots: ['<rootDir>/src'],
   testMatch: [
@@ -11,7 +12,7 @@ module.exports = {
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
+    '^.+\\.(ts|tsx|js)$': ['ts-jest', {
       tsconfig: {
         jsx: 'react-jsx',
         esModuleInterop: true,
@@ -21,10 +22,12 @@ module.exports = {
         module: 'ESNext',
         moduleResolution: 'node',
         target: 'ES2020',
+        allowJs: true,
         lib: ['DOM', 'DOM.Iterable', 'ES2020']
       }
     }]
   },
+  transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1'

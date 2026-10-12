@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Drupal\tool\Plugin\Validation\Constraint;
 
-use Symfony\Component\Validator\Constraint;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Validation\Attribute\Constraint;
+use Symfony\Component\Validator\Constraint as SymfonyConstraint;
 
 /**
  * Constraint to validate that a field exists on an entity type and bundle.
- *
- * @Constraint(
- *   id = "FieldExists",
- *   label = @Translation("Field exists", context = "Validation"),
- *   type = "string"
- * )
  */
-class FieldExistsConstraint extends Constraint {
+#[Constraint(
+  id: 'FieldExists',
+  label: new TranslatableMarkup('Field exists', [], ['context' => 'Validation']),
+  type: 'string',
+)]
+class FieldExistsConstraint extends SymfonyConstraint {
 
   /**
    * The default violation message.

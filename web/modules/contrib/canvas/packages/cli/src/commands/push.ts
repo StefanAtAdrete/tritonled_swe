@@ -3,43 +3,85 @@ import path from 'path';
 import chalk from 'chalk';
 import { Option } from 'commander';
 import * as p from '@clack/prompts';
-import { discoverCanvasProject } from '@drupal-canvas/discovery';
+import {
+  detectHeadlessSdk,
+  discoverCanvasProject,
+  loadComponentsMetadata,
+} from '@drupal-canvas/discovery';
 
-import { ensureConfig, getConfig } from '../config.js';
+import {
+  ensureBrandKitFileReadable,
+  ensureConfig,
+  getConfig,
+  parseBooleanSetting,
+} from '../config.js';
+import {
+  buildColorPushPlannedResults,
+  pushColors,
+} from '../lib/colors/color-push.js';
+import { validateColorsConfig } from '../lib/colors/color-validate.js';
 import {
   buildFontPushPlannedResults,
   pushFonts,
 } from '../lib/fonts/font-push.js';
-import { createApiService, ensureAuthConfig } from '../services/api.js';
+import {
+  createApiService,
+  ensureAuthConfig,
+  supportsPageVariants,
+} from '../services/api.js';
 import { buildCanvasProject } from '../utils/build-project';
 import {
+  applySyncOptionAliasesAndWarnings,
   parseBooleanOption,
   pluralize,
   pluralizeComponent,
   updateConfigFromOptions,
 } from '../utils/command-helpers';
+import { printCommandIntro } from '../utils/command-intro';
 import {
   collectContentTemplateResults,
   prepareContentTemplates,
   pushContentTemplates,
 } from '../utils/prepare-content-templates-push';
 import {
+  collectPageVariantResults,
+  preparePageVariants,
+  pushPageVariants,
+} from '../utils/prepare-page-variants-push';
+import {
   collectPageResults,
+  entitiesHaveColorProps,
   preparePages,
   pushPages,
 } from '../utils/prepare-pages-push';
 import {
+  prepareGlobalAssetLibraryUpdate,
   pushBuiltComponents,
-  uploadGlobalAssetLibrary,
 } from '../utils/prepare-push';
-import { reportResults } from '../utils/report-results';
+import {
+  formatErrorMessage,
+  PushPhaseError,
+  ReportedPushError,
+  runPushResourcePipeline,
+} from '../utils/push-resource-pipeline';
+import {
+  reportResults,
+  splitFailedResultsByFile,
+} from '../utils/report-results';
 import { createProgressCallback, processInPool } from '../utils/request-pool';
+import { preflightCodeComponentPayloads } from '../utils/target-component-metadata';
+import { formatFilePathForOutput } from '../utils/utils';
 import { validateContentTemplates } from '../utils/validate-content-template';
 import { validatePages } from '../utils/validate-page';
+import { validatePageTemplates } from '../utils/validate-page-variant';
 
+import type { DiscoveryWarning } from '@drupal-canvas/discovery';
 import type { Command } from 'commander';
+import type { ColorPushOutcome } from '../lib/colors/color-push.js';
 import type { ApiService } from '../services/api.js';
 import type {
+  AssetLibrary,
+  BrandKitColorEntry,
   BrandKitFontEntry,
   BuildManifest,
   UploadedArtifact,
@@ -48,6 +90,7 @@ import type {
 import type { ContentTemplateListItem } from '../types/ContentTemplate.js';
 import type { PageListItem } from '../types/Page.js';
 import type { Result } from '../types/Result.js';
+import type { CommandSummaryResource } from '../utils/command-summary';
 
 interface PushOptions {
   clientId?: string;
@@ -56,9 +99,275 @@ interface PushOptions {
   scope?: string;
   includePages?: boolean;
   includeContentTemplates?: boolean;
+  pages?: boolean;
+  contentTemplates?: boolean;
+  pageTemplates?: boolean;
   includeBrandKit?: boolean;
+  pruneColors?: boolean;
   dir?: string;
   yes?: boolean;
+}
+
+type PlannedPushResourceKey =
+  | 'components'
+  | 'pages'
+  | 'content-templates'
+  | 'page-templates'
+  | 'brand-kit'
+  | 'brand-kit-colors';
+
+interface NotStartedPushResource {
+  key: PlannedPushResourceKey;
+  label: string;
+  operations: Map<string, number>;
+}
+
+const PLANNED_OPERATION_ORDER = ['create', 'update', 'delete'];
+const SUMMARY_CHILD_INDENT = '  ';
+const SUMMARY_DETAIL_INDENT = '    ';
+const PUSH_REPORT_OPTIONS = {
+  showTitle: false,
+  indent: false,
+  failureStyle: 'inline' as const,
+};
+
+class ArtifactUploadError extends Error {
+  constructor(public readonly failedResults: Result[]) {
+    super(
+      [
+        'Some uploads failed:',
+        ...failedResults.map(formatArtifactUploadFailureMessage),
+      ].join('\n'),
+    );
+    this.name = 'ArtifactUploadError';
+  }
+}
+
+function comparePlannedOperations(a: string, b: string): number {
+  const aIndex = PLANNED_OPERATION_ORDER.indexOf(a);
+  const bIndex = PLANNED_OPERATION_ORDER.indexOf(b);
+  return (
+    (aIndex === -1 ? PLANNED_OPERATION_ORDER.length : aIndex) -
+      (bIndex === -1 ? PLANNED_OPERATION_ORDER.length : bIndex) ||
+    a.localeCompare(b)
+  );
+}
+
+function formatNotStartedResource(resource: NotStartedPushResource): string {
+  const operations = [...resource.operations.entries()]
+    .sort(([a], [b]) => comparePlannedOperations(a, b))
+    .map(([operation, count]) => `${count} ${operation}`)
+    .join(', ');
+  return `${resource.label}: ${operations}`;
+}
+
+function removeNotStartedResource(
+  resources: NotStartedPushResource[],
+  key: PlannedPushResourceKey,
+): void {
+  const index = resources.findIndex((resource) => resource.key === key);
+  if (index !== -1) {
+    resources.splice(index, 1);
+  }
+}
+
+function buildNotStartedResources(
+  plannedResults: Result[],
+): NotStartedPushResource[] {
+  const resourceDefinitions: Array<{
+    key: PlannedPushResourceKey;
+    label: string;
+    itemType: string;
+  }> = [
+    { key: 'components', label: 'Components', itemType: 'Component' },
+    { key: 'pages', label: 'Pages', itemType: 'Page' },
+    {
+      key: 'content-templates',
+      label: 'Content templates',
+      itemType: 'Content template',
+    },
+    {
+      key: 'page-templates',
+      label: 'Page templates',
+      itemType: 'Page template',
+    },
+    { key: 'brand-kit', label: 'brand kit', itemType: 'Font variant' },
+    {
+      key: 'brand-kit-colors',
+      label: 'brand kit colors',
+      itemType: 'Color',
+    },
+  ];
+
+  return resourceDefinitions
+    .map((definition) => {
+      const operations = new Map<string, number>();
+      for (const result of plannedResults) {
+        if (result.itemType !== definition.itemType) {
+          continue;
+        }
+        const operation = result.details?.[0]?.content.trim();
+        if (!operation) {
+          continue;
+        }
+        operations.set(operation, (operations.get(operation) ?? 0) + 1);
+      }
+      return operations.size > 0
+        ? {
+            key: definition.key,
+            label: definition.label,
+            operations,
+          }
+        : null;
+    })
+    .filter((resource): resource is NotStartedPushResource =>
+      Boolean(resource),
+    );
+}
+
+export function formatDiscoveryWarning(warning: DiscoveryWarning): string {
+  const location = warning.path
+    ? ` (${formatFilePathForOutput(warning.path)})`
+    : '';
+  return `${warning.message}${location}`;
+}
+
+export function formatDiscoveryWarningReport(
+  warnings: DiscoveryWarning[],
+): string | null {
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  return [
+    'Warnings',
+    ...warnings.map(
+      (warning) =>
+        `${SUMMARY_CHILD_INDENT}${chalk.yellow('!')} ${formatDiscoveryWarning(warning)}`,
+    ),
+  ].join('\n');
+}
+
+function reportDiscoveryWarnings(warnings: DiscoveryWarning[]): void {
+  const report = formatDiscoveryWarningReport(warnings);
+  if (report) {
+    p.log.message(report);
+  }
+}
+
+function formatArtifactUploadFailureMessage(result: Result): string {
+  const message = result.details?.[0]?.content ?? 'Unknown error';
+  return `Failed to upload ${result.itemName}: ${message}`;
+}
+
+function reportPushFailure(
+  error: unknown,
+  completedResources: CommandSummaryResource[],
+  notStartedResources: NotStartedPushResource[],
+): void {
+  const message = formatErrorMessage(error);
+  const isAuthFailure =
+    !(error instanceof PushPhaseError) &&
+    (message.includes('Authentication Error') ||
+      message.includes('Authentication failed'));
+  const phase =
+    error instanceof PushPhaseError
+      ? error.phase
+      : isAuthFailure
+        ? 'Authentication failed'
+        : 'Push failed';
+  const lines: string[] = [];
+
+  if (completedResources.length > 0 && notStartedResources.length > 0) {
+    lines.push('Not started');
+    for (const resource of notStartedResources) {
+      lines.push(
+        `${SUMMARY_CHILD_INDENT}${formatNotStartedResource(resource)}`,
+      );
+    }
+  }
+
+  if (!(error instanceof ReportedPushError)) {
+    const failedResults =
+      error instanceof PushPhaseError && error.failedResults.length > 0
+        ? error.failedResults
+        : [
+            {
+              itemName: phase,
+              success: false,
+              details: [{ content: message }],
+            },
+          ];
+
+    if (lines.length > 0) {
+      lines.push('');
+    }
+    lines.push('Failed');
+    for (const result of failedResults) {
+      lines.push(`${SUMMARY_CHILD_INDENT}${chalk.red('✗')} ${result.itemName}`);
+      for (const detail of result.details ?? []) {
+        lines.push(
+          ...detail.content
+            .split('\n')
+            .map((line) => `${SUMMARY_DETAIL_INDENT}${line}`),
+        );
+      }
+    }
+  }
+
+  if (lines.length > 0) {
+    p.log.message(lines.join('\n'));
+  }
+  p.outro(
+    completedResources.length > 0
+      ? `${chalk.red('✗')} Push incomplete`
+      : `${chalk.red('✗')} Push failed`,
+  );
+}
+
+export type SyncExclusionSource = 'flag' | 'deprecated-flag' | 'env' | 'config';
+
+export interface SyncExclusionMessageOptions {
+  noFlag: string;
+  // Only categories with a shipped deprecated `--include-*` flag or
+  // `CANVAS_INCLUDE_*` environment variable carry these.
+  includeFlag?: string;
+  envName?: string;
+  configPath: string;
+}
+
+export function getSyncExclusionSource(
+  noOption: boolean | undefined,
+  includeOption: boolean | undefined,
+  envValue: string | undefined,
+): SyncExclusionSource {
+  if (noOption === false) {
+    return 'flag';
+  }
+  if (includeOption === false) {
+    return 'deprecated-flag';
+  }
+  if (parseBooleanSetting(envValue ?? '') === false) {
+    return 'env';
+  }
+  return 'config';
+}
+
+export function getSyncExclusionMessage(
+  label: string,
+  source: SyncExclusionSource,
+  options: SyncExclusionMessageOptions,
+): string {
+  switch (source) {
+    case 'flag':
+      return `Local ${label} were found but excluded by ${options.noFlag}. Remove that flag to push them.`;
+    case 'deprecated-flag':
+      return `Local ${label} were found but excluded by deprecated ${options.includeFlag}=false. Remove that flag, or use ${options.noFlag} when you want to exclude them.`;
+    case 'env':
+      return `Local ${label} were found but excluded by deprecated ${options.envName}=false. Remove that environment variable, or set "${options.configPath}" to true in canvas.config.json to push them.`;
+    case 'config':
+      return `Local ${label} were found but excluded by "${options.configPath}": false in canvas.config.json. Set it to true to push them.`;
+  }
 }
 
 /**
@@ -83,11 +392,15 @@ export function collectManifestArtifacts(manifest: BuildManifest): Array<{
   name: string;
   filePath: string;
   type: 'vendor' | 'local' | 'shared';
+  path?: string;
+  source?: string;
 }> {
   const files: Array<{
     name: string;
     filePath: string;
     type: 'vendor' | 'local' | 'shared';
+    path?: string;
+    source?: string;
   }> = [];
 
   for (const [specifier, filePath] of Object.entries(manifest.vendor)) {
@@ -95,7 +408,16 @@ export function collectManifestArtifacts(manifest: BuildManifest): Array<{
   }
 
   for (const [specifier, filePath] of Object.entries(manifest.local)) {
-    files.push({ name: specifier, filePath, type: 'local' as const });
+    // Carry the original disk path and (for text modules) the verbatim source
+    // so a subsequent pull can reconstruct the source file on disk.
+    const meta = manifest.localSources?.[specifier];
+    files.push({
+      name: specifier,
+      filePath,
+      type: 'local' as const,
+      ...(meta?.path !== undefined ? { path: meta.path } : {}),
+      ...(meta?.source !== undefined ? { source: meta.source } : {}),
+    });
   }
 
   // Add shared chunks - use filePath as the name since they don't have import specifiers
@@ -106,6 +428,16 @@ export function collectManifestArtifacts(manifest: BuildManifest): Array<{
   return files;
 }
 
+interface GroupedUploadedManifest {
+  vendor: UploadedArtifact[];
+  local: UploadedArtifact[];
+  shared: UploadedArtifact[];
+  // Verbatim sources of local modules bundled into other artifacts. Not
+  // uploaded as file artifacts (there is no artifact); sent as-is so a pull can
+  // restore the editable file. Never part of the runtime import map.
+  bundledSources: Array<{ path: string; source: string }>;
+}
+
 /**
  * Uploads artifact files and builds manifest entries from the results.
  */
@@ -114,18 +446,16 @@ async function uploadAndBuildManifest(
     name: string;
     filePath: string;
     type: 'vendor' | 'local' | 'shared';
+    path?: string;
+    source?: string;
   }>,
   distDir: string,
   apiService: Pick<ApiService, 'uploadArtifact'>,
   spinner: { message: (msg?: string) => void },
-): Promise<{
-  vendor: UploadedArtifact[];
-  local: UploadedArtifact[];
-  shared: UploadedArtifact[];
-}> {
+): Promise<GroupedUploadedManifest> {
   const uploadProgress = createProgressCallback(
     spinner,
-    'Uploading artifacts',
+    'Pushing dependencies',
     new Set(files.map((file) => file.filePath)).size,
   );
 
@@ -146,46 +476,125 @@ async function uploadAndBuildManifest(
   });
 
   const uploadedByFilePath = new Map<string, UploadedArtifactResult>();
-  const errors: string[] = [];
+  const failedResults: Result[] = [];
 
   for (const result of results) {
     if (result.success && result.result) {
       uploadedByFilePath.set(uniqueFiles[result.index].filePath, result.result);
     } else {
       const fileName = uniqueFiles[result.index]?.name || 'unknown';
-      errors.push(
-        `Failed to upload ${fileName}: ${result.error?.message || 'Unknown error'}`,
-      );
+      failedResults.push({
+        itemName: fileName,
+        itemType: 'Artifact',
+        success: false,
+        details: [{ content: result.error?.message || 'Unknown error' }],
+      });
     }
   }
 
-  const grouped: {
-    vendor: UploadedArtifact[];
-    local: UploadedArtifact[];
-    shared: UploadedArtifact[];
-  } = {
+  const grouped: GroupedUploadedManifest = {
     vendor: [],
     local: [],
     shared: [],
+    bundledSources: [],
   };
 
-  if (errors.length === 0) {
+  if (failedResults.length === 0) {
     for (const file of files) {
       const uploadResult = uploadedByFilePath.get(file.filePath);
       if (uploadResult) {
+        // Only local entries carry path/source; vendor and shared stay
+        // {name, uri}.
         grouped[file.type].push({
           name: file.name,
           uri: uploadResult.uri,
+          ...(file.path !== undefined ? { path: file.path } : {}),
+          ...(file.source !== undefined ? { source: file.source } : {}),
         });
       }
     }
   }
 
-  if (errors.length > 0) {
-    throw new Error(`Some uploads failed:\n${errors.join('\n')}`);
+  if (failedResults.length > 0) {
+    throw new ArtifactUploadError(failedResults);
   }
 
   return grouped;
+}
+
+/**
+ * Uploads build artifacts from manifest.
+ */
+export async function uploadManifestArtifacts(
+  outputDir: string,
+  options: {
+    apiService: Pick<ApiService, 'uploadArtifact'>;
+    createSpinner?: () => {
+      start: (msg?: string) => void;
+      stop: (msg?: string, code?: number) => void;
+      message: (msg?: string) => void;
+    };
+    logInfo?: (msg: string) => void;
+  },
+): Promise<{
+  artifactCount: number;
+  groupedManifest: GroupedUploadedManifest;
+}> {
+  const createSpinner = options.createSpinner ?? (() => p.spinner());
+  const emptyManifest: GroupedUploadedManifest = {
+    vendor: [],
+    local: [],
+    shared: [],
+    bundledSources: [],
+  };
+
+  const artifactFiles: Array<{
+    name: string;
+    filePath: string;
+    type: 'vendor' | 'local' | 'shared';
+  }> = [];
+  // Sources of bundled local modules, carried verbatim (no artifact to upload).
+  let bundledSources: Array<{ path: string; source: string }> = [];
+  try {
+    const manifest = await readBuildManifest(outputDir);
+    artifactFiles.push(...collectManifestArtifacts(manifest));
+    bundledSources = manifest.bundledSources ?? [];
+  } catch {
+    // Build manifest may not exist if build wasn't run. This is not fatal once
+    // components have already been pushed.
+    options.logInfo?.(
+      'No dependency map found, skipping component dependency upload',
+    );
+  }
+
+  if (artifactFiles.length === 0) {
+    options.logInfo?.('No component dependencies to upload');
+    return {
+      artifactCount: 0,
+      groupedManifest: { ...emptyManifest, bundledSources },
+    };
+  }
+
+  const dependencySpinner = createSpinner();
+  dependencySpinner.start('Pushing dependencies');
+
+  const groupedManifest = await uploadAndBuildManifest(
+    artifactFiles,
+    outputDir,
+    options.apiService,
+    dependencySpinner,
+  ).catch((error) => {
+    dependencySpinner.stop('Pushed dependencies', 2);
+    throw error;
+  });
+  groupedManifest.bundledSources = bundledSources;
+  const artifactCount =
+    groupedManifest.vendor.length +
+    groupedManifest.local.length +
+    groupedManifest.shared.length;
+  dependencySpinner.stop('Pushed dependencies', 0);
+
+  return { artifactCount, groupedManifest };
 }
 
 /**
@@ -197,85 +606,99 @@ export async function syncManifestArtifacts(
     apiService: Pick<ApiService, 'uploadArtifact' | 'syncManifest'>;
     createSpinner?: () => {
       start: (msg?: string) => void;
-      stop: (msg?: string) => void;
+      stop: (msg?: string, code?: number) => void;
       message: (msg?: string) => void;
     };
     logInfo?: (msg: string) => void;
   },
 ): Promise<{
   artifactCount: number;
-  groupedManifest: {
-    vendor: UploadedArtifact[];
-    local: UploadedArtifact[];
-    shared: UploadedArtifact[];
-  };
+  groupedManifest: GroupedUploadedManifest;
 }> {
-  const createSpinner = options.createSpinner ?? (() => p.spinner());
-  const emptyManifest = { vendor: [], local: [], shared: [] };
-
-  const artifactFiles: Array<{
-    name: string;
-    filePath: string;
-    type: 'vendor' | 'local' | 'shared';
-  }> = [];
-  try {
-    const manifest = await readBuildManifest(outputDir);
-    artifactFiles.push(...collectManifestArtifacts(manifest));
-  } catch {
-    // Build manifest may not exist if build wasn't run.
-    // This is not fatal — components and global CSS were already pushed.
-    options.logInfo?.(
-      'No build manifest found, skipping vendor/local artifact sync',
-    );
+  const result = await uploadManifestArtifacts(outputDir, options);
+  if (result.artifactCount === 0) {
+    return result;
   }
 
-  if (artifactFiles.length === 0) {
-    options.logInfo?.(
-      'No manifest artifacts to upload, skipping manifest sync',
-    );
-    return { artifactCount: 0, groupedManifest: emptyManifest };
-  }
-
-  const artifactSpinner = createSpinner();
-  artifactSpinner.start('Uploading vendor/local artifacts');
-
-  const groupedManifest = await uploadAndBuildManifest(
-    artifactFiles,
-    outputDir,
-    options.apiService,
-    artifactSpinner,
-  );
-  const artifactCount =
-    groupedManifest.vendor.length +
-    groupedManifest.local.length +
-    groupedManifest.shared.length;
-  artifactSpinner.stop(chalk.green(`Uploaded ${artifactCount} artifacts`));
-
-  const syncSpinner = createSpinner();
-  syncSpinner.start('Syncing manifest');
   await options.apiService.syncManifest({
-    vendor: groupedManifest.vendor,
-    local: groupedManifest.local,
-    shared: groupedManifest.shared,
+    vendor: result.groupedManifest.vendor,
+    local: result.groupedManifest.local,
+    shared: result.groupedManifest.shared,
   });
-  syncSpinner.stop(chalk.green('Manifest synced'));
 
-  return { artifactCount, groupedManifest };
+  return result;
+}
+
+export async function updateGlobalAssetLibraryForPush(
+  apiService: Pick<
+    ApiService,
+    'getGlobalAssetLibrary' | 'updateGlobalAssetLibrary'
+  >,
+  globalAssetLibraryUpdate: Partial<AssetLibrary> | undefined,
+  manifestSyncResult: {
+    artifactCount: number;
+    groupedManifest: GroupedUploadedManifest;
+  },
+): Promise<void> {
+  const assetLibraryPatch: Partial<AssetLibrary> = {
+    ...(globalAssetLibraryUpdate ?? {}),
+  };
+  // Always send the current manifest groups, even when empty since empty
+  // arrays lets the backend clear them.
+  assetLibraryPatch.imports = manifestSyncResult.groupedManifest.vendor;
+  assetLibraryPatch.assets = manifestSyncResult.groupedManifest.local;
+  assetLibraryPatch.shared = manifestSyncResult.groupedManifest.shared;
+  assetLibraryPatch.bundledSources =
+    manifestSyncResult.groupedManifest.bundledSources;
+
+  const currentAssetLibrary = await apiService.getGlobalAssetLibrary();
+  const supportsCodebaseSync =
+    Object.hasOwn(currentAssetLibrary, 'bundledSources') &&
+    Object.hasOwn(currentAssetLibrary, 'packageJson');
+
+  if (!supportsCodebaseSync) {
+    delete assetLibraryPatch.bundledSources;
+    delete assetLibraryPatch.packageJson;
+    assetLibraryPatch.assets = assetLibraryPatch.assets?.map(
+      ({ name, uri }) => ({ name, uri }),
+    );
+  }
+
+  await apiService.updateGlobalAssetLibrary(assetLibraryPatch);
+}
+
+function buildDependencyResults(
+  groupedManifest: GroupedUploadedManifest,
+): Result[] {
+  return [
+    ...groupedManifest.vendor.map((dependency) => ({
+      itemName: dependency.name,
+      itemType: 'Dependency',
+      success: true,
+      details: [{ content: 'Third-party' }],
+    })),
+    ...groupedManifest.local.map((dependency) => ({
+      itemName: dependency.name,
+      itemType: 'Dependency',
+      success: true,
+      details: [{ content: 'Local' }],
+    })),
+  ];
 }
 
 /**
  * Registers the push command.
  *
- * Pushes local components, global CSS, and vendor/local build artifacts to Drupal.
+ * Pushes local components, global CSS, component dependencies, and content to Drupal.
  * 1. Component configs (via js_component entities)
  * 2. Global CSS/JS (via asset_library)
- * 3. Vendor/local build artifacts (uploaded as files, tracked in manifest)
+ * 3. Component dependencies (uploaded as files, tracked in manifest)
  */
 export function pushCommand(program: Command): void {
   program
     .command('push')
     .description(
-      'build and push local components, global CSS, vendor/local artifacts, and optional fonts and pages to Drupal',
+      'build and push local components, global CSS, component dependencies, and optional fonts and content to Drupal',
     )
     .option('--client-id <id>', 'Client ID')
     .option('--client-secret <secret>', 'Client Secret')
@@ -299,43 +722,92 @@ export function pushCommand(program: Command): void {
         .argParser(parseBooleanOption)
         .default(undefined),
     )
+    .option('--no-pages', 'Exclude pages from the push operation')
+    .option(
+      '--no-content-templates',
+      'Exclude content templates from the push operation',
+    )
+    .option(
+      '--no-page-templates',
+      'Exclude page templates from the push operation',
+    )
     .addOption(
       new Option(
         '--include-brand-kit [enabled]',
-        'Include brand kit (fonts) in the push operation',
+        'Include brand kit (fonts and colors) in the push operation',
       )
         .preset('true')
         .argParser(parseBooleanOption)
         .default(undefined),
     )
+    .option(
+      '--no-include-brand-kit',
+      'Exclude brand kit (fonts and colors) from the push operation',
+    )
+    .option(
+      '--prune-colors',
+      'Delete colors from the site that are absent from canvas.brand-kit.json',
+    )
     .option('-d, --dir <directory>', 'Component directory')
     .option('-y, --yes', 'Skip confirmation prompts')
     .action(async (options: PushOptions) => {
       let apiService: ApiService | undefined;
+      const completedResources: CommandSummaryResource[] = [];
+      const notStartedResources: NotStartedPushResource[] = [];
       try {
-        p.intro(chalk.bold('Drupal Canvas CLI: push'));
+        printCommandIntro('push');
         // Update config with CLI options.
+        applySyncOptionAliasesAndWarnings(options);
         updateConfigFromOptions(options);
+
+        // Validate the brand kit file upfront. Doing this before authentication
+        // and discovery ensures a malformed file won't cause a partial push.
+        {
+          const earlyConfig = getConfig();
+          if (earlyConfig.includeBrandKit) {
+            ensureBrandKitFileReadable();
+            if (earlyConfig.colors !== undefined) {
+              validateColorsConfig(earlyConfig.colors);
+            }
+          }
+        }
 
         await ensureAuthConfig();
         await ensureConfig(['componentDir']);
         const config = getConfig();
+        const pageVariantsSupported = await supportsPageVariants(
+          config.siteUrl,
+        );
         const { componentDir, aliasBaseDir, outputDir } = config;
         const includesPages = config.includePages;
         const includesContentTemplates = config.includeContentTemplates;
+        const includesPageTemplates = config.includePageTemplates;
         const includesBrandKit = config.includeBrandKit;
         const hasBrandKitFontsConfig = config.fonts !== undefined;
-        // Step 1. Discover all components, pages, and content templates.
+        const hasBrandKitColorsConfig = config.colors !== undefined;
+        const hasBrandKitConfig =
+          hasBrandKitFontsConfig || hasBrandKitColorsConfig;
+        // When the Canvas Headless SDK is installed, components are pushed as
+        // external components (metadata only): the headless app renders them.
+        // The app's entries may be framework single-file components (.vue,
+        // .astro, .svelte) that the Canvas build pipeline cannot compile, so
+        // discovery must not require a JavaScript entry in this mode.
+        const headlessSdkDetected = detectHeadlessSdk(process.cwd());
+        // Step 1. Discover all components, pages, content templates and page
+        // templates.
         const discoveryResult = await discoverCanvasProject({
           componentRoot: componentDir,
           pagesRoot: config.pagesDir,
           contentTemplatesRoot: config.contentTemplatesDir,
+          pageTemplatesRoot: config.pageTemplatesDir,
           projectRoot: process.cwd(),
+          requireJsEntry: !headlessSdkDetected,
         });
         const {
           components,
           pages: allDiscoveredPages,
           contentTemplates: allDiscoveredContentTemplates,
+          pageTemplates: allDiscoveredPageTemplates,
           warnings,
         } = discoveryResult;
         const discoveredPages = includesPages ? allDiscoveredPages : [];
@@ -345,25 +817,82 @@ export function pushCommand(program: Command): void {
           : [];
         const hasIgnoredContentTemplates =
           !includesContentTemplates && allDiscoveredContentTemplates.length > 0;
+        const discoveredPageTemplates = includesPageTemplates
+          ? allDiscoveredPageTemplates
+          : [];
+        const hasIgnoredPageTemplates =
+          !includesPageTemplates && allDiscoveredPageTemplates.length > 0;
+        const componentDiscoveryWarnings =
+          components.length > 0 ? warnings : [];
+        const immediateDiscoveryWarnings =
+          components.length > 0 ? [] : warnings;
+        const logIgnoredLocalResources = () => {
+          if (hasIgnoredPages) {
+            p.log.info(
+              getSyncExclusionMessage(
+                'pages',
+                getSyncExclusionSource(
+                  options.pages,
+                  options.includePages,
+                  process.env.CANVAS_INCLUDE_PAGES,
+                ),
+                {
+                  noFlag: '--no-pages',
+                  includeFlag: '--include-pages',
+                  envName: 'CANVAS_INCLUDE_PAGES',
+                  configPath: 'sync.pages',
+                },
+              ),
+            );
+          }
+          if (hasIgnoredContentTemplates) {
+            p.log.info(
+              getSyncExclusionMessage(
+                'content templates',
+                getSyncExclusionSource(
+                  options.contentTemplates,
+                  options.includeContentTemplates,
+                  process.env.CANVAS_INCLUDE_CONTENT_TEMPLATES,
+                ),
+                {
+                  noFlag: '--no-content-templates',
+                  includeFlag: '--include-content-templates',
+                  envName: 'CANVAS_INCLUDE_CONTENT_TEMPLATES',
+                  configPath: 'sync.contentTemplates',
+                },
+              ),
+            );
+          }
+          if (hasIgnoredPageTemplates) {
+            p.log.info(
+              getSyncExclusionMessage(
+                'page templates',
+                getSyncExclusionSource(
+                  options.pageTemplates,
+                  undefined,
+                  undefined,
+                ),
+                {
+                  noFlag: '--no-page-templates',
+                  configPath: 'sync.pageTemplates',
+                },
+              ),
+            );
+          }
+        };
 
         if (
           components.length === 0 &&
           discoveredPages.length === 0 &&
           discoveredContentTemplates.length === 0 &&
-          !(includesBrandKit && hasBrandKitFontsConfig)
+          discoveredPageTemplates.length === 0 &&
+          !(includesBrandKit && hasBrandKitConfig)
         ) {
-          if (hasIgnoredPages) {
-            p.log.info(
-              'Ignoring local pages. Use --include-pages or set CANVAS_INCLUDE_PAGES=true to push them.',
-            );
-          }
-          if (hasIgnoredContentTemplates) {
-            p.log.info(
-              'Ignoring local content templates. Use --include-content-templates or set CANVAS_INCLUDE_CONTENT_TEMPLATES=true to push them.',
-            );
-          }
-          p.log.warn('No components, pages, or content templates found.');
-          p.outro('Push aborted (nothing to push)');
+          logIgnoredLocalResources();
+          p.log.warn(
+            'No components, pages, content templates, or page templates found for the enabled sync settings.',
+          );
+          p.outro('Nothing to push');
           return;
         }
 
@@ -371,43 +900,74 @@ export function pushCommand(program: Command): void {
           components.length === 0 &&
           discoveredPages.length === 0 &&
           discoveredContentTemplates.length === 0 &&
+          discoveredPageTemplates.length === 0 &&
           includesBrandKit &&
-          hasBrandKitFontsConfig
+          hasBrandKitConfig
         ) {
           p.log.info(
-            'No components, pages, or content templates found; syncing Brand Kit fonts from canvas.brand-kit.json.',
+            'No components, pages, content templates, or page templates found; syncing brand kit from canvas.brand-kit.json.',
           );
         }
 
         if (components.length === 0) {
-          p.log.info('No components found. Skipping component push.');
-        }
-
-        if (hasIgnoredPages && components.length > 0) {
           p.log.info(
-            'Ignoring local pages. Use --include-pages or set CANVAS_INCLUDE_PAGES=true to push them.',
+            'No components found. Skipping component and global CSS push.',
           );
         }
 
-        if (hasIgnoredContentTemplates && components.length > 0) {
-          p.log.info(
-            'Ignoring local content templates. Use --include-content-templates or set CANVAS_INCLUDE_CONTENT_TEMPLATES=true to push them.',
-          );
-        }
+        logIgnoredLocalResources();
 
         apiService = await createApiService();
+        const pushApiService = apiService;
         const existingComponents =
           components.length > 0 ? await apiService.listComponents() : {};
         const remoteNames = new Set(Object.keys(existingComponents));
         const localNames = new Set(components.map((c) => c.name));
 
         let remoteBrandKitFonts: BrandKitFontEntry[] = [];
-        if (includesBrandKit && config.fonts !== undefined) {
+        let remoteBrandKitColors: BrandKitColorEntry[] = [];
+        if (includesBrandKit && hasBrandKitConfig) {
           try {
             const brandKit = await apiService.getBrandKit();
             remoteBrandKitFonts = brandKit.fonts ?? [];
+            remoteBrandKitColors = brandKit.colors ?? [];
           } catch {
             remoteBrandKitFonts = [];
+            remoteBrandKitColors = [];
+          }
+        }
+
+        const allDiscoveredEntities = [
+          ...discoveredPages,
+          ...discoveredContentTemplates,
+          ...discoveredPageTemplates,
+        ];
+
+        // Fetch remote brand kit colors for page/template color-prop reconciliation
+        // when the primary brand-kit fetch was skipped or returned nothing. Skip
+        // when includesBrandKit && hasBrandKitConfig because the fetch was already
+        // attempted above (even if it returned an empty colors array).
+        if (
+          allDiscoveredEntities.length > 0 &&
+          remoteBrandKitColors.length === 0 &&
+          !(includesBrandKit && hasBrandKitConfig)
+        ) {
+          const componentMetadata =
+            await loadComponentsMetadata(discoveryResult);
+          const requiresRemoteColors = await entitiesHaveColorProps(
+            allDiscoveredEntities,
+            componentMetadata,
+          );
+          // If the push payload needs to reference remote colors, fetch them
+          // before the push so colors can be matched with their uuids for
+          // updating.
+          if (requiresRemoteColors) {
+            try {
+              const brandKit = await apiService.getBrandKit();
+              remoteBrandKitColors = brandKit.colors ?? [];
+            } catch {
+              remoteBrandKitColors = [];
+            }
           }
         }
 
@@ -421,7 +981,7 @@ export function pushCommand(program: Command): void {
           remotePageByUuid.set(remotePage.uuid, remotePage);
         }
 
-        // Fetch remote content templates early for the planned summary.
+        // Fetch remote content templates early for the planned operations summary.
         const remoteContentTemplates =
           includesContentTemplates && discoveredContentTemplates.length > 0
             ? await apiService.listContentTemplates()
@@ -434,11 +994,44 @@ export function pushCommand(program: Command): void {
           remoteContentTemplateById.set(remote.id, remote);
         }
 
+        // Fetch remote page variants (and the site default) early for the
+        // planned operations summary.
+        const remotePageVariants =
+          includesPageTemplates ||
+          (pageVariantsSupported && (includesPages || includesContentTemplates))
+            ? await apiService.listPageVariants()
+            : {};
+        const currentDefaultPageVariant = includesPageTemplates
+          ? (await apiService.getDefaultPageVariant()).default_page_variant
+          : null;
+        const remotePageVariantIds = new Set(Object.keys(remotePageVariants));
+        const localPageTemplateIds = new Set(
+          discoveredPageTemplates.map((t) => t.id),
+        );
+        // When page templates are synchronized, only locally authored IDs
+        // remain after the replacement-style sync. Otherwise, dependents may
+        // reference any existing remote variant.
+        const availablePageVariantIds = pageVariantsSupported
+          ? includesPageTemplates
+            ? localPageTemplateIds
+            : remotePageVariantIds
+          : undefined;
+        // When page templates are synchronized, remote variants absent locally
+        // are candidates for deletion. The push step changes the site default
+        // before deleting its previous variant, or keeps that variant when no
+        // replacement becomes default.
+        const remotePageVariantIdsToDelete = includesPageTemplates
+          ? Array.from(remotePageVariantIds).filter(
+              (id) => !localPageTemplateIds.has(id),
+            )
+          : [];
+
         // Build a preview of planned operations.
         const operationLabels: Record<string, string> = {
-          create: chalk.green('Create'),
-          update: chalk.cyan('Update'),
-          delete: chalk.red('Delete'),
+          create: 'create',
+          update: 'update',
+          unchanged: 'unchanged',
+          delete: 'delete',
         };
         const plannedResults: Result[] = [
           ...components.map((c) => ({
@@ -494,6 +1087,24 @@ export function pushCommand(program: Command): void {
               ],
             };
           }),
+          ...discoveredPageTemplates.map((pageTemplate) => ({
+            itemName: pageTemplate.id,
+            itemType: 'Page template',
+            success: true,
+            details: [
+              {
+                content: remotePageVariantIds.has(pageTemplate.id)
+                  ? operationLabels.update
+                  : operationLabels.create,
+              },
+            ],
+          })),
+          ...remotePageVariantIdsToDelete.map((id) => ({
+            itemName: id,
+            itemType: 'Page template',
+            success: true,
+            details: [{ content: operationLabels.delete }],
+          })),
           ...(includesBrandKit && config.fonts !== undefined
             ? buildFontPushPlannedResults(config.fonts, remoteBrandKitFonts, {
                 create: operationLabels.create,
@@ -501,16 +1112,35 @@ export function pushCommand(program: Command): void {
                 delete: operationLabels.delete,
               })
             : []),
+          ...(includesBrandKit && config.colors !== undefined
+            ? buildColorPushPlannedResults(
+                config.colors,
+                remoteBrandKitColors,
+                {
+                  create: operationLabels.create,
+                  update: operationLabels.update,
+                  unchanged: operationLabels.unchanged,
+                  delete: operationLabels.delete,
+                },
+                options.pruneColors ?? false,
+              )
+            : []),
         ];
         if (plannedResults.length > 0) {
-          reportResults(plannedResults, 'Planned operations', 'Item', {
+          notStartedResources.push(...buildNotStartedResources(plannedResults));
+          reportResults(plannedResults, 'Plan', 'Item', {
             preview: true,
           });
         }
 
-        for (const warning of warnings) {
-          const location = warning.path ? chalk.dim(` (${warning.path})`) : '';
-          p.log.warn(`${warning.message}${location}`);
+        for (const warning of immediateDiscoveryWarnings) {
+          p.log.warn(formatDiscoveryWarning(warning));
+        }
+
+        if (headlessSdkDetected && components.length > 0) {
+          p.log.info(
+            'Canvas Headless SDK detected: components are pushed as external (metadata only).',
+          );
         }
 
         if (!options.yes) {
@@ -525,8 +1155,19 @@ export function pushCommand(program: Command): void {
               `${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
             );
           }
-          if (includesBrandKit && hasBrandKitFontsConfig) {
-            parts.push('Brand Kit fonts (canvas.brand-kit.json)');
+          if (discoveredPageTemplates.length > 0) {
+            parts.push(
+              `${discoveredPageTemplates.length} page ${pluralize(discoveredPageTemplates.length, 'template')}`,
+            );
+          }
+          if (includesBrandKit && hasBrandKitConfig) {
+            const brandKitParts = [
+              ...(hasBrandKitFontsConfig ? ['fonts'] : []),
+              ...(hasBrandKitColorsConfig ? ['colors'] : []),
+            ];
+            parts.push(
+              `brand kit ${brandKitParts.join(' and ')} (canvas.brand-kit.json)`,
+            );
           }
           const confirmed = await p.confirm({
             message: `Push these changes to ${config.siteUrl}?`,
@@ -540,94 +1181,196 @@ export function pushCommand(program: Command): void {
 
         await apiService.signalPushStart();
 
-        // Step 2: Build components, global CSS, and manifest artifacts.
-        const s2 = p.spinner();
-        s2.start('Building project');
-        const canvasBuild = await buildCanvasProject({
-          projectRoot: process.cwd(),
-          componentDir,
-          aliasBaseDir,
-          outputDir,
-          discoveryResult,
-          cleanOutputDir: true,
-          buildTailwind: true,
-          requireJsEntries: true,
-          useLocalGlobalCss: true,
-        });
-        s2.stop(chalk.green('Built project'));
+        let componentResults: Result[] = [];
+        let globalCssResult: Result | undefined;
+        let globalAssetLibraryUpdate: Partial<AssetLibrary> | undefined;
+        let fontCount = 0;
+        let colorPruneFailures: ColorPushOutcome[] = [];
 
-        if (canvasBuild.componentResults.some((r) => !r.success)) {
-          reportResults(
-            canvasBuild.componentResults,
-            'Built components',
-            'Component',
-          );
-          throw new Error('Component build failed. Nothing was pushed.');
-        }
+        if (components.length > 0) {
+          removeNotStartedResource(notStartedResources, 'components');
+          const componentPushApiService = apiService;
+          // Step 2: Build components, Tailwind CSS, and dependency artifacts.
+          const componentSpinner = p.spinner();
+          componentSpinner.start('Pushing components');
+          const canvasBuild = await buildCanvasProject({
+            projectRoot: process.cwd(),
+            componentDir,
+            aliasBaseDir,
+            outputDir,
+            discoveryResult,
+            cleanOutputDir: true,
+            requireJsEntries: true,
+            headlessSdkDetected,
+          }).catch((error) => {
+            const message = formatErrorMessage(error);
+            if (message.startsWith('Missing local Tailwind CSS file')) {
+              componentSpinner.stop('Pushed assets', 2);
+              reportResults(
+                [
+                  {
+                    itemName: 'Tailwind CSS',
+                    itemType: 'Asset',
+                    success: false,
+                    details: [{ content: message }],
+                  },
+                ],
+                'Pushed assets',
+                'Asset',
+                PUSH_REPORT_OPTIONS,
+              );
+              reportDiscoveryWarnings(componentDiscoveryWarnings);
+              throw new ReportedPushError(
+                'Tailwind build failed',
+                'Tailwind build failed, global assets upload aborted. Nothing was pushed.',
+              );
+            }
+            componentSpinner.stop('Build failed', 2);
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new PushPhaseError('Build failed', message);
+          });
 
-        if (canvasBuild.tailwindResult) {
-          reportResults([canvasBuild.tailwindResult], 'Built assets', 'Asset');
+          if (canvasBuild.componentResults.some((r) => !r.success)) {
+            componentSpinner.stop('Build failed', 2);
+            reportResults(
+              splitFailedResultsByFile(
+                canvasBuild.componentResults.filter(
+                  (result) => !result.success,
+                ),
+              ),
+              'Build failed',
+              'Component',
+              PUSH_REPORT_OPTIONS,
+            );
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new ReportedPushError(
+              'Build failed',
+              'Component build failed. Nothing was pushed.',
+            );
+          }
+
           if (!canvasBuild.tailwindResult.success) {
-            throw new Error(
+            componentSpinner.stop('Pushed assets', 2);
+            reportResults(
+              [canvasBuild.tailwindResult],
+              'Pushed assets',
+              'Asset',
+              PUSH_REPORT_OPTIONS,
+            );
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new ReportedPushError(
+              'Build failed',
               'Tailwind build failed, global assets upload aborted. Nothing was pushed.',
+            );
+          }
+
+          const preflight = await preflightCodeComponentPayloads(
+            canvasBuild.builtComponents,
+            componentPushApiService,
+          );
+          for (const warning of preflight.warnings) {
+            p.log.warn(warning);
+          }
+          if (preflight.results.some((result) => !result.success)) {
+            componentSpinner.stop('Validation failed', 2);
+            reportResults(
+              preflight.results.filter((result) => !result.success),
+              'Component validation failed',
+              'Component',
+              PUSH_REPORT_OPTIONS,
+            );
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new ReportedPushError(
+              'Component validation failed',
+              'Target validation failed. Nothing was pushed.',
+            );
+          }
+
+          // Build and push components.
+          try {
+            componentResults = await pushBuiltComponents(
+              canvasBuild.builtComponents,
+              componentPushApiService,
+              'Pushing',
+              componentSpinner,
+              remoteBrandKitColors,
+            );
+          } catch (error) {
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new PushPhaseError(
+              'Component upload failed',
+              formatErrorMessage(error),
+            );
+          }
+          if (componentResults.some((r) => !r.success)) {
+            reportResults(
+              componentResults,
+              'Pushed components',
+              'Component',
+              PUSH_REPORT_OPTIONS,
+            );
+            reportDiscoveryWarnings(componentDiscoveryWarnings);
+            throw new ReportedPushError(
+              'Component push failed',
+              'Component push failed. Nothing else was pushed.',
+            );
+          }
+          reportResults(
+            componentResults,
+            'Pushed components',
+            'Component',
+            PUSH_REPORT_OPTIONS,
+          );
+          reportDiscoveryWarnings(componentDiscoveryWarnings);
+          completedResources.push({
+            label: 'Components',
+            count: componentResults.length,
+            unit: 'component',
+            action: 'pushed',
+          });
+
+          // Prepare the global Tailwind CSS update. The final asset library
+          // PATCH is sent after dependency artifacts are uploaded so CSS and
+          // manifest fields land in the same config entity update.
+          const assetSpinner = p.spinner();
+          assetSpinner.start('Preparing assets');
+          const preparedGlobalAssetLibrary =
+            await prepareGlobalAssetLibraryUpdate(
+              config.outputDir,
+              process.cwd(),
+            );
+          globalCssResult = preparedGlobalAssetLibrary.result;
+          globalAssetLibraryUpdate = preparedGlobalAssetLibrary.assetLibrary;
+          assetSpinner.stop(
+            globalCssResult.success
+              ? 'Prepared assets'
+              : 'Global CSS push failed',
+            globalCssResult.success ? 0 : 2,
+          );
+          if (!globalCssResult.success) {
+            reportResults([globalCssResult], 'Pushed assets', 'Asset', {
+              ...PUSH_REPORT_OPTIONS,
+              showSuccessHeading: false,
+            });
+            throw new ReportedPushError(
+              'Global CSS push failed',
+              globalCssResult.details?.[0]?.content ??
+                'Global CSS push failed.',
             );
           }
         }
 
-        if (canvasBuild.vendorImportCount > 0) {
-          p.log.info(
-            chalk.green(
-              `Bundled ${canvasBuild.vendorImportCount} vendor ${pluralize(canvasBuild.vendorImportCount, 'package')} → ${outputDir}/vendor/`,
-            ),
-          );
-        }
-        if (canvasBuild.localImportCount > 0) {
-          p.log.info(
-            chalk.green(
-              `Bundled ${canvasBuild.localImportCount} local ${pluralize(canvasBuild.localImportCount, 'import')} → ${outputDir}/local/`,
-            ),
-          );
-        }
-
-        let componentResults: Result[] = [];
-        let includeGlobalCss = false;
-        let fontCount = 0;
-
-        // Build and push components
-        if (components.length > 0) {
-          componentResults = await pushBuiltComponents(
-            canvasBuild.builtComponents,
-            apiService,
-            'Pushing',
-          );
-          if (componentResults.some((r) => !r.success)) {
-            reportResults(componentResults, 'Pushed components', 'Component');
-            throw new Error('Component push failed. Push aborted.');
-          }
-          reportResults(componentResults, 'Pushed components', 'Component');
-        }
-
-        // Upload Tailwind CSS.
-        const globalCssResult = await uploadGlobalAssetLibrary(
-          apiService,
-          config.outputDir,
-        );
-        reportResults([globalCssResult], 'Pushed assets', 'Asset');
-        if (!globalCssResult.success) {
-          throw new Error('Push aborted (incomplete). Try again.');
-        }
-        includeGlobalCss = true;
-
         // Step 4b: Push fonts from canvas.brand-kit.json (when configured)
         if (includesBrandKit && config.fonts) {
+          removeNotStartedResource(notStartedResources, 'brand-kit');
           const fontOutcomeLabels: Record<string, string> = {
-            create: chalk.green('Create'),
-            update: chalk.cyan('Update'),
-            delete: chalk.red('Delete'),
+            create: chalk.green('Created'),
+            update: chalk.cyan('Updated'),
+            delete: chalk.red('Deleted'),
             unchanged: chalk.dim('Unchanged'),
           };
           const fontSpinner = p.spinner();
-          fontSpinner.start('Pushing fonts');
+          fontSpinner.start('Pushing brand kit');
           try {
             const result = await pushFonts(config, apiService);
             fontCount = result.count + result.skipped + result.deleted;
@@ -642,11 +1385,10 @@ export function pushCommand(program: Command): void {
               parts.push(`${result.deleted} deleted`);
             }
             fontSpinner.stop(
-              chalk.green(
-                parts.length > 0
-                  ? `${parts.join(', ')} font variants updated`
-                  : 'No font variants to update',
-              ),
+              parts.length > 0
+                ? 'Pushed brand kit'
+                : 'No brand kit font variants to update',
+              0,
             );
             if (result.outcomes.length > 0) {
               reportResults(
@@ -655,250 +1397,399 @@ export function pushCommand(program: Command): void {
                   success: true,
                   details: [{ content: fontOutcomeLabels[o.operation] }],
                 })),
-                'Pushed fonts',
+                'Pushed brand kit',
                 'Font variant',
+                PUSH_REPORT_OPTIONS,
               );
             }
+            if (fontCount > 0) {
+              completedResources.push({
+                label: 'brand kit',
+                count: fontCount,
+                unit: 'font variant',
+                action: 'pushed',
+              });
+            }
           } catch (err) {
-            fontSpinner.stop(chalk.red('Font push failed'));
-            throw err;
+            fontSpinner.stop('Brand kit push failed', 2);
+            throw new PushPhaseError(
+              'Brand kit push failed',
+              formatErrorMessage(err),
+            );
           }
         }
 
-        // Step 5: Upload vendor/local artifacts and sync manifest
-        const { artifactCount } = await syncManifestArtifacts(outputDir, {
-          apiService,
-          createSpinner: () => p.spinner(),
-          logInfo: (msg) => p.log.info(msg),
-        });
+        // Step 4c: Push colors from canvas.brand-kit.json (when the file has
+        // a colors key; an absent key leaves the site's colors unmanaged).
+        if (includesBrandKit && config.colors !== undefined) {
+          removeNotStartedResource(notStartedResources, 'brand-kit-colors');
+          const colorOutcomeLabels: Record<string, string> = {
+            create: chalk.green('Created'),
+            update: chalk.cyan('Updated'),
+            delete: chalk.red('Deleted'),
+            unchanged: chalk.dim('Unchanged'),
+          };
+          const colorSpinner = p.spinner();
+          colorSpinner.start('Pushing brand kit colors');
+          try {
+            const result = await pushColors(config.colors, apiService, {
+              pruneColors: options.pruneColors ?? false,
+            });
+            if (result !== null) {
+              const changedCount =
+                result.created + result.updated + result.deleted;
+              colorSpinner.stop(
+                changedCount > 0
+                  ? 'Pushed brand kit colors'
+                  : 'No brand kit colors to update',
+                0,
+              );
+              if (result.outcomes.length > 0) {
+                reportResults(
+                  result.outcomes.map((outcome) => ({
+                    itemName: outcome.itemName,
+                    success: outcome.success,
+                    details: [
+                      {
+                        content: outcome.success
+                          ? colorOutcomeLabels[outcome.operation]
+                          : (outcome.detail ?? 'Failed'),
+                      },
+                    ],
+                  })),
+                  'Pushed brand kit colors',
+                  'Color',
+                  PUSH_REPORT_OPTIONS,
+                );
+              }
+              if (result.serverOnly.length > 0) {
+                const count = result.serverOnly.length;
+                p.log.info(
+                  [
+                    `${count} ${pluralize(count, 'color')} on the site ${count === 1 ? 'is' : 'are'} not in canvas.brand-kit.json and ${count === 1 ? 'was' : 'were'} left unchanged:`,
+                    ...result.serverOnly.map((name) => `  ${name}`),
+                    'Run `canvas pull` to add them to the file, or `canvas push --prune-colors` to delete them from the site.',
+                  ].join('\n'),
+                );
+              }
+              const pushedCount = changedCount + result.unchanged;
+              if (pushedCount > 0) {
+                completedResources.push({
+                  label: 'brand kit colors',
+                  count: pushedCount,
+                  unit: 'color',
+                  action: 'pushed',
+                });
+              }
+              // Refused prune deletions must fail the command at the end,
+              // after the remaining resources have pushed.
+              colorPruneFailures = result.outcomes.filter(
+                (outcome) => !outcome.success,
+              );
+              // Re-fetch if new colors were created so page serialization can
+              // resolve their UUIDs — the pre-push snapshot doesn't include them.
+              if (result.created > 0) {
+                try {
+                  const refreshed = await apiService.getBrandKit();
+                  remoteBrandKitColors = refreshed.colors ?? [];
+                } catch {
+                  // Non-fatal: pages that reference newly created colors will
+                  // fail validation, which is the same outcome as before this fix.
+                }
+              }
+            }
+          } catch (err) {
+            colorSpinner.stop('Brand kit colors push failed', 2);
+            throw new PushPhaseError(
+              'Brand kit colors push failed',
+              formatErrorMessage(err),
+            );
+          }
+        }
+
+        if (components.length > 0) {
+          // Upload component dependencies and prepare the dependency map.
+          const manifestSyncResult = await uploadManifestArtifacts(outputDir, {
+            apiService,
+          }).catch((error) => {
+            throw new PushPhaseError(
+              'Component dependency upload failed',
+              formatErrorMessage(error),
+              error instanceof ArtifactUploadError ? error.failedResults : [],
+            );
+          });
+          const dependencyResults = buildDependencyResults(
+            manifestSyncResult.groupedManifest,
+          );
+          if (dependencyResults.length > 0) {
+            reportResults(
+              dependencyResults,
+              'Pushed dependencies',
+              'Dependency',
+              PUSH_REPORT_OPTIONS,
+            );
+            completedResources.push({
+              label: 'Dependencies',
+              count: dependencyResults.length,
+              unit: 'dependency',
+              unitPlural: 'dependencies',
+              action: 'pushed',
+            });
+          }
+
+          const assetSpinner = p.spinner();
+          assetSpinner.start('Pushing assets');
+          try {
+            await updateGlobalAssetLibraryForPush(
+              apiService,
+              globalAssetLibraryUpdate,
+              manifestSyncResult,
+            );
+          } catch (error) {
+            assetSpinner.stop('Assets push failed', 2);
+            throw new PushPhaseError(
+              'Assets push failed',
+              formatErrorMessage(error),
+            );
+          }
+          assetSpinner.stop('Pushed assets', 0);
+          if (globalCssResult) {
+            reportResults([globalCssResult], 'Pushed assets', 'Asset', {
+              ...PUSH_REPORT_OPTIONS,
+              showSuccessHeading: false,
+            });
+          }
+          completedResources.push({
+            label: 'Global CSS',
+            action: 'pushed',
+          });
+        }
+
+        // Validate and push page templates before pages and content templates,
+        // because both can reference a newly created page template.
+        if (
+          discoveredPageTemplates.length > 0 ||
+          remotePageVariantIdsToDelete.length > 0
+        ) {
+          const hasLocalPageTemplates = discoveredPageTemplates.length > 0;
+          const pageTemplateSummary = await runPushResourcePipeline({
+            labels: {
+              start: 'Pushing page templates',
+              validating: 'Validating page templates',
+              preparing: 'Preparing page templates',
+              pushing: 'Pushing page templates',
+              done: 'Pushed page templates',
+            },
+            phases: {
+              validation: 'Page template validation failed',
+              preparation: 'Page template preparation failed',
+              push: 'Page template push failed',
+            },
+            messages: {
+              validation: 'Page template validation failed.',
+              preparation: 'Page template preparation failed.',
+              noValidItems: 'No valid page templates to push.',
+              push: 'Some page templates failed to push.',
+            },
+            itemLabel: 'Page template',
+            validate: hasLocalPageTemplates
+              ? async () =>
+                  (await validatePageTemplates(discoveryResult)).results
+              : undefined,
+            markStarted: () =>
+              removeNotStartedResource(notStartedResources, 'page-templates'),
+            prepare: hasLocalPageTemplates
+              ? async () => {
+                  const componentVersions =
+                    await pushApiService.listComponentVersions();
+                  return preparePageVariants(
+                    discoveredPageTemplates,
+                    componentVersions,
+                    discoveryResult,
+                    remoteBrandKitColors,
+                  );
+                }
+              : undefined,
+            failOnPreparationFailures: true,
+            hasPushWork: (validPageTemplates) =>
+              validPageTemplates.length > 0 ||
+              remotePageVariantIdsToDelete.length > 0,
+            push: (validPageTemplates) =>
+              pushPageVariants(
+                validPageTemplates,
+                remotePageVariantIds,
+                pushApiService,
+                {
+                  remoteIdsToDelete: remotePageVariantIdsToDelete,
+                  currentDefault: currentDefaultPageVariant,
+                },
+              ),
+            collectResults: (pushResults, failedPreps) =>
+              collectPageVariantResults(
+                pushResults,
+                failedPreps,
+                discoveredPageTemplates,
+              ),
+            reportOptions: PUSH_REPORT_OPTIONS,
+            summary: {
+              label: 'Page templates',
+              unit: 'page template',
+            },
+          });
+          if (pageTemplateSummary) {
+            completedResources.push(pageTemplateSummary);
+          }
+        }
 
         // Validate and push pages.
         if (discoveredPages.length > 0) {
-          // Validate pages against the catalog.
-          const validationSpinner = p.spinner();
-          validationSpinner.start(
-            `Validating ${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
-          );
-
-          const { results: pageValidationResults } = await validatePages(
-            discoveryResult,
-            { remotePageByUuid },
-          );
-
-          validationSpinner.stop(
-            chalk.green(
-              `Validated ${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
-            ),
-          );
-
-          if (pageValidationResults.some((r) => !r.success)) {
-            reportResults(
-              pageValidationResults,
-              'Page validation results',
-              'Page',
-            );
-            throw new Error(
-              'Page validation failed. Fix the errors above before pushing.',
-            );
-          }
-
-          // Prepare and push pages.
-          const componentVersions = await apiService.listComponentVersions();
-
-          const pageSpinner = p.spinner();
-          pageSpinner.start('Preparing pages');
-
-          const {
-            valid: validPages,
-            failed: failedPreps,
-            pendingMediaReconciliations,
-          } = await preparePages(
-            discoveredPages,
-            componentVersions,
-            discoveryResult,
-          );
-
-          if (pendingMediaReconciliations.length > 0) {
-            throw new Error(
-              'Some pages contain media that references external URLs instead of Drupal media entities.\n' +
-                'Run `npx canvas reconcile-media` to download the external media, upload them to Drupal, and replace them in page files before pushing.',
-            );
-          }
-
-          if (validPages.length === 0) {
-            pageSpinner.stop(chalk.yellow('No valid pages to push'));
-          } else {
-            const pushProgress = createProgressCallback(
-              pageSpinner,
-              'Pushing pages',
-              validPages.length,
-            );
-            pageSpinner.message('Pushing pages');
-
-            const pushResults = await pushPages(
-              validPages,
-              remotePageByUuid,
-              apiService,
-            );
-
-            // Count progress for each successful result.
-            for (const r of pushResults) {
-              if (r.success) pushProgress();
-            }
-
-            pageSpinner.stop(
-              chalk.green(
-                `Processed ${pushResults.length} ${pluralize(pushResults.length, 'page')}`,
+          const pageSummary = await runPushResourcePipeline({
+            labels: {
+              start: 'Pushing pages',
+              validating: 'Validating pages',
+              preparing: 'Preparing pages',
+              pushing: 'Pushing pages',
+              done: 'Pushed pages',
+            },
+            phases: {
+              validation: 'Page validation failed',
+              preparation: 'Page preparation failed',
+              push: 'Page push failed',
+            },
+            messages: {
+              validation: 'Page validation failed.',
+              noValidItems: 'No valid pages to push.',
+              push: 'Some pages failed to push.',
+            },
+            itemLabel: 'Page',
+            validate: async () =>
+              (
+                await validatePages(discoveryResult, {
+                  remotePageByUuid,
+                  availablePageVariantIds,
+                  remoteBrandKitColors,
+                })
+              ).results,
+            markStarted: () =>
+              removeNotStartedResource(notStartedResources, 'pages'),
+            prepare: async () => {
+              const componentVersions =
+                await pushApiService.listComponentVersions();
+              return preparePages(
+                discoveredPages,
+                componentVersions,
+                discoveryResult,
+                remoteBrandKitColors,
+              );
+            },
+            push: (validPages) =>
+              pushPages(
+                validPages,
+                remotePageByUuid,
+                pushApiService,
+                pageVariantsSupported,
               ),
-            );
-
-            const pageResults = collectPageResults(
-              pushResults,
-              failedPreps,
-              discoveredPages,
-            );
-
-            reportResults(pageResults, 'Pushed pages', 'Page');
+            collectResults: (pushResults, failedPreps) =>
+              collectPageResults(pushResults, failedPreps, discoveredPages),
+            reportOptions: PUSH_REPORT_OPTIONS,
+            summary: {
+              label: 'Pages',
+              unit: 'page',
+            },
+          });
+          if (pageSummary) {
+            completedResources.push(pageSummary);
           }
         }
 
         // Validate and push content templates.
-        let pushedContentTemplateCount = 0;
         if (discoveredContentTemplates.length > 0) {
-          const ctValidationSpinner = p.spinner();
-          ctValidationSpinner.start(
-            `Validating ${discoveredContentTemplates.length} ${pluralize(discoveredContentTemplates.length, 'content template')}`,
-          );
-
-          const { results: ctValidationResults } =
-            await validateContentTemplates(discoveryResult, { apiService });
-
-          ctValidationSpinner.stop(
-            chalk.green(
-              `Validated ${discoveredContentTemplates.length} ${pluralize(discoveredContentTemplates.length, 'content template')}`,
-            ),
-          );
-
-          if (ctValidationResults.some((r) => !r.success)) {
-            reportResults(
-              ctValidationResults,
-              'Content template validation results',
-              'Content template',
-            );
-            throw new Error(
-              'Content template validation failed. Fix the errors above before pushing.',
-            );
-          }
-
-          const componentVersions = await apiService.listComponentVersions();
-
-          const ctSpinner = p.spinner();
-          ctSpinner.start('Preparing content templates');
-
-          const { valid: validTemplates, failed: failedCtPreps } =
-            await prepareContentTemplates(
-              discoveredContentTemplates,
-              componentVersions,
-              discoveryResult,
-            );
-
-          if (validTemplates.length === 0 && failedCtPreps.length > 0) {
-            ctSpinner.stop(chalk.yellow('No valid content templates to push'));
-            const ctResults = collectContentTemplateResults(
-              [],
-              failedCtPreps,
-              discoveredContentTemplates,
-            );
-            reportResults(
-              ctResults,
-              'Pushed content templates',
-              'Content template',
-            );
-          } else if (validTemplates.length > 0) {
-            const ctProgress = createProgressCallback(
-              ctSpinner,
-              'Pushing content templates',
-              validTemplates.length,
-            );
-            ctSpinner.message('Pushing content templates');
-
-            const ctPushResults = await pushContentTemplates(
-              validTemplates,
-              remoteContentTemplateById,
-              apiService,
-            );
-
-            for (const r of ctPushResults) {
-              if (r.success) ctProgress();
-            }
-            pushedContentTemplateCount = ctPushResults.filter(
-              (r) => r.success,
-            ).length;
-
-            ctSpinner.stop(
-              chalk.green(
-                `Processed ${ctPushResults.length} ${pluralize(ctPushResults.length, 'content template')}`,
+          const contentTemplateSummary = await runPushResourcePipeline({
+            labels: {
+              start: 'Pushing content templates',
+              validating: 'Validating content templates',
+              preparing: 'Preparing content templates',
+              pushing: 'Pushing content templates',
+              done: 'Pushed content templates',
+              empty: 'No valid content templates to push',
+            },
+            phases: {
+              validation: 'Content template validation failed',
+              preparation: 'Content template preparation failed',
+              push: 'Content template push failed',
+            },
+            messages: {
+              validation: 'Content template validation failed.',
+              noValidItems: 'No valid content templates to push.',
+              push: 'Some content templates failed to push.',
+            },
+            itemLabel: 'Content template',
+            validate: async () =>
+              (
+                await validateContentTemplates(discoveryResult, {
+                  apiService: pushApiService,
+                  availablePageVariantIds,
+                })
+              ).results,
+            markStarted: () =>
+              removeNotStartedResource(
+                notStartedResources,
+                'content-templates',
               ),
-            );
-
-            const ctResults = collectContentTemplateResults(
-              ctPushResults,
-              failedCtPreps,
-              discoveredContentTemplates,
-            );
-
-            reportResults(
-              ctResults,
-              'Pushed content templates',
-              'Content template',
-            );
-          } else {
-            ctSpinner.stop(chalk.yellow('No valid content templates to push'));
+            prepare: async () => {
+              const componentVersions =
+                await pushApiService.listComponentVersions();
+              return prepareContentTemplates(
+                discoveredContentTemplates,
+                componentVersions,
+                discoveryResult,
+                remoteBrandKitColors,
+              );
+            },
+            push: (validTemplates) =>
+              pushContentTemplates(
+                validTemplates,
+                remoteContentTemplateById,
+                pushApiService,
+                pageVariantsSupported,
+              ),
+            collectResults: (pushResults, failedPreps) =>
+              collectContentTemplateResults(
+                pushResults,
+                failedPreps,
+                discoveredContentTemplates,
+              ),
+            reportOptions: PUSH_REPORT_OPTIONS,
+            summary: {
+              label: 'Content templates',
+              unit: 'content template',
+            },
+          });
+          if (contentTemplateSummary) {
+            completedResources.push(contentTemplateSummary);
           }
+        }
+
+        if (colorPruneFailures.length > 0) {
+          throw new PushPhaseError(
+            'Brand kit color prune incomplete',
+            [
+              `${colorPruneFailures.length} ${pluralize(colorPruneFailures.length, 'color')} could not be deleted:`,
+              ...colorPruneFailures.map(
+                (outcome) =>
+                  `  ${outcome.itemName}: ${outcome.detail ?? 'deletion refused'}`,
+              ),
+            ].join('\n'),
+          );
         }
 
         await apiService.signalPushComplete();
-        const componentCount = components.length;
-        const parts = [];
-        if (componentCount > 0) {
-          parts.push(`${componentCount} ${pluralizeComponent(componentCount)}`);
-        }
-        if (discoveredPages.length > 0) {
-          parts.push(
-            `${discoveredPages.length} ${pluralize(discoveredPages.length, 'page')}`,
-          );
-        }
-        if (pushedContentTemplateCount > 0) {
-          parts.push(
-            `${pushedContentTemplateCount} ${pluralize(
-              pushedContentTemplateCount,
-              'content template',
-            )}`,
-          );
-        }
-        if (includeGlobalCss) {
-          parts.push('global CSS');
-        }
-        if (artifactCount > 0) {
-          parts.push(`${artifactCount} artifacts`);
-        }
-        if (fontCount > 0) {
-          parts.push(
-            `${fontCount} font ${fontCount === 1 ? 'variant' : 'variants'}`,
-          );
-        }
-
-        p.outro(`⬆️ Push completed: ${parts.join(', ') || 'done'}`);
+        p.outro(`${chalk.green('✓')} Push completed`);
       } catch (error) {
         await apiService?.signalPushFail(
           error instanceof Error ? error.message : undefined,
         );
-        if (error instanceof Error) {
-          p.note(chalk.red(`Error: ${error.message}`));
-        } else {
-          p.note(chalk.red(`Unknown error: ${String(error)}`));
-        }
-        p.note(chalk.red('Push aborted'));
+        reportPushFailure(error, completedResources, notStartedResources);
         process.exit(1);
       }
     });

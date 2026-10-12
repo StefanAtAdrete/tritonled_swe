@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Form;
 
+use Drupal\canvas\Audit\ComponentAudit;
+use Drupal\canvas\Entity\Component;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Url;
-use Drupal\canvas\Audit\ComponentAudit;
-use Drupal\canvas\Entity\Component;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -69,7 +69,7 @@ final class ComponentListBuilder extends ConfigEntityListBuilder {
     ];
     $usage = $this->audit->getConfigEntityUsageCount($entity) +
       // @todo Stop triggering a DB query per row, instead perform a single DB query in ::load() in https://www.drupal.org/i/3522953
-      count($this->audit->getContentRevisionsUsingComponent($entity));
+      count($this->audit->getContentRevisionsUsingAuditTarget($entity));
     $row['component_usage'] = $usage === 0 ? '' : $usage;
 
     return $row + parent::buildRow($entity);

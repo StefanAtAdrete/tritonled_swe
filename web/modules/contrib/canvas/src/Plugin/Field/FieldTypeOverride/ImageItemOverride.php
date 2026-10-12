@@ -4,22 +4,24 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\Field\FieldTypeOverride;
 
-use Drupal\canvas\Plugin\Validation\Constraint\UriConstraint;
-use Drupal\canvas\Plugin\Validation\Constraint\UriSchemeConstraint;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\canvas\Plugin\DataType\ComputedUrlWithQueryString;
 use Drupal\canvas\Plugin\DataType\UriTemplate;
 use Drupal\canvas\Plugin\Validation\Constraint\StringSemanticsConstraint;
+use Drupal\canvas\Plugin\Validation\Constraint\UriConstraint;
+use Drupal\canvas\Plugin\Validation\Constraint\UriSchemeConstraint;
 use Drupal\canvas\Plugin\Validation\Constraint\UriTargetMediaTypeConstraint;
 use Drupal\canvas\Plugin\Validation\Constraint\UriTemplateWithVariablesConstraint;
 use Drupal\canvas\PropExpressions\StructuredData\FieldPropExpression;
 use Drupal\canvas\PropExpressions\StructuredData\FieldTypePropExpression;
 use Drupal\canvas\PropExpressions\StructuredData\ReferenceFieldTypePropExpression;
 use Drupal\canvas\TypedData\BetterEntityDataDefinition;
-use Drupal\image\Plugin\Field\FieldType\ImageItem;
+use Drupal\canvas\TypedData\ImageDerivativeWithParametrizedWidth;
+use Drupal\canvas\Utility\SvgHelper;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\DataDefinition;
-use Drupal\canvas\TypedData\ImageDerivativeWithParametrizedWidth;
+use Drupal\file\FileInterface;
+use Drupal\image\Plugin\Field\FieldType\ImageItem;
 
 /**
  * @todo Fix upstream.
@@ -34,6 +36,38 @@ class ImageItemOverride extends ImageItem {
   public static function defaultStorageSettings(): array {
     // @todo Remove once https://drupal.org/i/3513317 is fixed.
     return ['display_default' => TRUE] + parent::defaultStorageSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Determines the dimensions of SVG images, which the parent cannot: it relies
+   * on the image toolkit, which only supports raster images. The contrib
+   * `svg_image` module attempts the same, but reads only `width` and `height`,
+   * not `viewBox`, and falls back to 64×64.
+   *
+   * @see \Drupal\canvas\Utility\SvgHelper::getIntrinsicDimensions()
+   * @see https://www.drupal.org/project/svg_image/issues/3227734
+   */
+  public function preSave() {
+    parent::preSave();
+
+    if ($this->get('width')->getValue() !== NULL && $this->get('height')->getValue() !== NULL) {
+      return;
+    }
+    $file = $this->get('entity')->getValue();
+    if (!$file instanceof FileInterface || $file->getMimeType() !== 'image/svg+xml') {
+      return;
+    }
+    $uri = $file->getFileUri();
+    $svg = \is_string($uri) && \is_file($uri) ? \file_get_contents($uri) : FALSE;
+    // An SVG image need not convey intrinsic dimensions: leave them empty
+    // rather than inventing them, so the browser sizes the image itself.
+    $dimensions = $svg === FALSE ? NULL : SvgHelper::getIntrinsicDimensions($svg);
+    if ($dimensions !== NULL) {
+      $this->set('width', $dimensions['width']);
+      $this->set('height', $dimensions['height']);
+    }
   }
 
   public static function defaultFieldSettings() {
@@ -75,9 +109,7 @@ class ImageItemOverride extends ImageItem {
     // File entity' `uri` field's `url` property an `?alternateWidths` query
     // parameter that contains an (encoded) URI template for a front-end
     // developer to use if they choose to do so.
-    // @todo It's not sustainable nor ecosystem-friendly to add computed field properties to field types. Remove in favor of adapters in https://www.drupal.org/project/canvas/issues/3464003.
-    // ⚠️ TRICKY: switching to adapters will require an update path for ALL
-    // component trees where this field property is being consumed.
+    // @todo Remove this in https://git.drupalcode.org/project/canvas/-/work_items/3591648.
     $properties['src_with_alternate_widths'] = DataDefinition::create('uri')
       ->setLabel(new TranslatableMarkup('Resolved image URL with ?alternateWidths query parameter'))
       ->setDescription(new TranslatableMarkup('Combines the referenced image file URL with the computed srcset template'))
@@ -101,6 +133,19 @@ class ImageItemOverride extends ImageItem {
         'allowedSchemes' => ['http', 'https'],
       ])
       ->setClass(ComputedUrlWithQueryString::class);
+
+    // Just a copy of `src_with_alternate_widths` with better DX:
+    // content-entity-reference selection exposes this in the UI and as a
+    // variable in code for code component developers, so we want them to be
+    // able to reference it with just `src` without exposed internal
+    // implementation details. The label is the one a Code Component Developer
+    // sees in the selection UI, so it omits the implementation detail too.
+    // @todo It's not sustainable nor ecosystem-friendly to add computed field properties to field types. Remove in favor of adapters in https://www.drupal.org/project/canvas/issues/3464003.
+    // ⚠️ TRICKY: switching to adapters will require an update path for ALL
+    // component trees where this field property is being consumed.
+    $properties['src'] = clone $properties['src_with_alternate_widths'];
+    $properties['src']->setLabel(new TranslatableMarkup('Image URL'));
+    $properties['src']->setSetting('is source for', 'src_with_alternate_widths');
 
     return $properties;
   }

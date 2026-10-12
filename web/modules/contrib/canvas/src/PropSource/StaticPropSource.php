@@ -7,6 +7,7 @@ namespace Drupal\canvas\PropSource;
 use Drupal\canvas\PropExpressions\StructuredData\EvaluationResult;
 use Drupal\canvas\PropExpressions\StructuredData\Evaluator;
 use Drupal\canvas\PropExpressions\StructuredData\FieldTypeBasedPropExpressionInterface;
+use Drupal\canvas\PropExpressions\StructuredData\NegotiatedLanguage;
 use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
 use Drupal\canvas\PropShape\PropShape;
 use Drupal\canvas\PropShape\StorablePropShape;
@@ -25,6 +26,7 @@ use Drupal\Core\Field\WidgetPluginManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataDefinitionInterface;
+use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\Core\TypedData\TypedDataManagerInterface;
 
 /**
@@ -410,9 +412,13 @@ final class StaticPropSource extends PropSourceBase {
    * {@inheritdoc}
    */
   public function evaluate(?FieldableEntityInterface $host_entity, bool $is_required): EvaluationResult {
+    // @todo Use `NegotiatedLanguage::matchEntity($this->>fieldItemList->getRoot()->getEntity())` in https://git.drupalcode.org/project/canvas/-/work_items/3571785, and drop this conditional.
+    $language = $host_entity instanceof TranslatableInterface && $host_entity->isTranslatable()
+      ? NegotiatedLanguage::matchEntity($host_entity)
+      : NegotiatedLanguage::negotiateFromConfigAndContext();
     return match ($this->getCardinality()) {
-      1 => Evaluator::evaluate($this->fieldItemList->first(), $this->expression, $is_required),
-      default => Evaluator::evaluate($this->fieldItemList, $this->expression, $is_required)
+      1 => Evaluator::evaluate($this->fieldItemList->first(), $this->expression, $is_required, $language),
+      default => Evaluator::evaluate($this->fieldItemList, $this->expression, $is_required, $language)
     };
   }
 
@@ -473,13 +479,16 @@ final class StaticPropSource extends PropSourceBase {
     };
   }
 
-  public function getWidget(string $component_config_entity_id, ?string $component_config_entity_version, string $prop_name, string $sdc_prop_label, ?string $field_widget_plugin_id, ?string $sdc_prop_description = NULL): WidgetInterface {
+  public function getWidget(string $component_config_entity_id, ?string $component_config_entity_version, string $prop_name, string $sdc_prop_label, ?string $field_widget_plugin_id, ?string $sdc_prop_description = NULL, ?array $field_widget_settings = NULL): WidgetInterface {
     // @phpstan-ignore-next-line
     $field_widget_plugin_manager = \Drupal::service('plugin.manager.field.widget');
     \assert($field_widget_plugin_manager instanceof WidgetPluginManager);
     $configuration = [];
     if ($field_widget_plugin_id) {
       $configuration['type'] = $field_widget_plugin_id;
+    }
+    if (!empty($field_widget_settings)) {
+      $configuration['settings'] = $field_widget_settings;
     }
     $field_storage_definition = $this->fieldItemList->getFieldDefinition();
     \assert($field_storage_definition instanceof FieldStorageDefinition);
@@ -533,7 +542,15 @@ final class StaticPropSource extends PropSourceBase {
     // @see \Drupal\image\Plugin\Field\FieldWidget\ImageWidget
     // @see \Drupal\Core\Field\Plugin\Field\FieldWidget\OptionsWidgetBase::getOptions()
     if ($host_entity) {
-      $field->setContext(NULL, EntityAdapter::createFromEntity($host_entity));
+      // Name this dangling field after its field type to avoid a cache
+      // collision: TypedDataManager caches item prototypes keyed by the root
+      // plus the field path, and re-parenting gives every prop field the same
+      // root. Left unnamed they would share one prototype, so a later field
+      // gets an earlier field's item type (e.g. an image field getting an
+      // IntegerItem). Keying by field type lets same-typed fields share a
+      // prototype while different types stay apart.
+      // @see \Drupal\Core\TypedData\TypedDataManager::getPropertyInstance()
+      $field->setContext($field_definition->getType(), EntityAdapter::createFromEntity($host_entity));
     }
 
     // Initialize widget state with existing items for widgets that rely on it.
@@ -580,7 +597,8 @@ final class StaticPropSource extends PropSourceBase {
       // @see \Drupal\datetime\Plugin\Field\FieldWidget\DateTimeWidgetBase::createDefaultValue()
       for ($i = 0; $i < $this->fieldItemList->count(); $i++) {
         \assert($this->fieldItemList[$i] !== NULL);
-        // Only add default values to existing widget items. In some cases such
+
+        // Only update existing widget items. In some cases such
         // as a delete AJAX request, the widget item might not exist despite it
         // still being present in the fieldItemList.
         if (isset($widget_form['widget'][$i])) {
@@ -588,6 +606,14 @@ final class StaticPropSource extends PropSourceBase {
           // @see \Drupal\datetime\Plugin\Field\FieldType\DateTimeItem::propertyDefinitions()
           // @phpstan-ignore property.notFound
           $widget_form['widget'][$i]['value']['#default_value'] = new DrupalDateTime($this->fieldItemList[$i]->value);
+
+          // No timezone adjusting takes place when entering or storing date
+          // values. It assumes the date time selected is literally the date
+          // time stored. Because of that, the form render needs to assume UTC
+          // as well, otherwise the input values will be different upon
+          // reloading the form.
+          // @see https://drupal.org/i/3501281
+          $widget_form['widget'][$i]['value']['#date_timezone'] = 'UTC';
         }
       }
     }

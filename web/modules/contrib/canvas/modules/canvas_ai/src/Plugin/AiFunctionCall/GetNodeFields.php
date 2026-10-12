@@ -2,17 +2,17 @@
 
 namespace Drupal\canvas_ai\Plugin\AiFunctionCall;
 
+use Drupal\ai\Attribute\FunctionCall;
+use Drupal\ai\Base\FunctionCallBase;
+use Drupal\ai\Service\FunctionCalling\ExecutableFunctionCallInterface;
 use Drupal\ai\Service\FunctionCalling\FunctionCallInterface;
+use Drupal\ai_agents\PluginInterfaces\AiAgentContextInterface;
 use Drupal\canvas_ai\CanvasAiPermissions;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\ai\Attribute\FunctionCall;
-use Drupal\ai\Base\FunctionCallBase;
-use Drupal\ai\Service\FunctionCalling\ExecutableFunctionCallInterface;
-use Drupal\ai_agents\PluginInterfaces\AiAgentContextInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -68,9 +68,9 @@ final class GetNodeFields extends FunctionCallBase implements ExecutableFunction
       $plugin_definition,
       $container->get('ai.context_definition_normalizer'),
     );
-    $instance->entityTypeManager = $container->get('entity_type.manager');
-    $instance->entityFieldManager = $container->get('entity_field.manager');
-    $instance->currentUser = $container->get('current_user');
+    $instance->entityTypeManager = $container->get(EntityTypeManagerInterface::class);
+    $instance->entityFieldManager = $container->get(EntityFieldManagerInterface::class);
+    $instance->currentUser = $container->get(AccountProxyInterface::class);
     return $instance;
   }
 

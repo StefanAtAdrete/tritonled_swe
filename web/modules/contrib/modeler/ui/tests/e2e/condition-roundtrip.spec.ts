@@ -18,19 +18,24 @@ test.describe('Condition Round-trip Preservation', () => {
     modeler = new ModelerPage(page);
   });
 
-  test('should load model with condition edge and display it correctly', async ({ page }) => {
+  test('should load model with condition promoted to a node and display it correctly', async () => {
     await modeler.goto();
 
-    // The model has 3 nodes and 1 condition edge
+    // Conditions are first-class NODES now (issue #3589093).  The backend
+    // model has 3 nodes (event_1, action_1, action_2) + 1 condition edge
+    // (edge_1) + 1 plain edge (edge_2).  On load the condition edge is PROMOTED
+    // to a condition node between event_1 and action_1, so the canvas renders:
+    //   - 4 nodes: event_1, condition node (cond__edge_1), action_1, action_2
+    //   - 3 edges: event_1 -> cond, cond -> action_1, action_1 -> action_2
     const nodeCount = await modeler.getNodeCount();
-    expect(nodeCount).toBe(3);
+    expect(nodeCount).toBe(4);
 
     const edgeCount = await modeler.getEdgeCount();
-    expect(edgeCount).toBe(2);
+    expect(edgeCount).toBe(3);
 
-    // The condition edge should be rendered (edge_1 has condition data)
-    const conditionEdge = page.locator('.react-flow__edge').first();
-    await expect(conditionEdge).toBeVisible();
+    // The condition is rendered as a node card (`.condition-node`), not an edge.
+    expect(await modeler.getConditionNodeCount()).toBe(1);
+    await expect(modeler.getConditionNode('cond__edge_1')).toBeVisible();
   });
 
   test('should preserve conditionId in save payload', async ({ page }) => {

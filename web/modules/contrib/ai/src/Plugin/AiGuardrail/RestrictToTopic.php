@@ -17,9 +17,7 @@ use Drupal\ai\OperationType\Chat\ChatInput;
 use Drupal\ai\OperationType\Chat\ChatMessage;
 use Drupal\ai\OperationType\InputInterface;
 use Drupal\ai\OperationType\OutputInterface;
-use Drupal\ai\Service\AiProviderFormHelper;
 use Drupal\ai\Service\PromptJsonDecoder\PromptJsonDecoderInterface;
-use Drupal\ai\Utility\CastUtility;
 use Drupal\ai\Utility\Textarea;
 use Drupal\Component\Plugin\ConfigurableInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -39,7 +37,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     "Checks if text's main topic is specified within a list of valid topics."
   ),
 )]
-final class RestrictToTopic extends AiGuardrailPluginBase implements ConfigurableInterface, PluginFormInterface, ContainerFactoryPluginInterface, NonDeterministicGuardrailInterface, NonStreamableGuardrailInterface {
+final class RestrictToTopic extends AiGuardrailPluginBase implements ConfigurableInterface, ContainerFactoryPluginInterface, PluginFormInterface, NonDeterministicGuardrailInterface, NonStreamableGuardrailInterface {
 
   use NeedsAiPluginManagerTrait;
   use StringTranslationTrait;
@@ -52,7 +50,6 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
     // Must stay protected and non-readonly so DependencySerializationTrait on
     // the base class can swap this service out for its ID when the guardrail
     // form is written to the form cache.
-    protected AiProviderFormHelper $aiProviderFormHelper,
     protected PromptJsonDecoderInterface $promptJsonDecoder,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -68,7 +65,6 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('ai.form_helper'),
       $container->get('ai.prompt_json_decode'),
     );
   }
@@ -77,7 +73,10 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
    * {@inheritdoc}
    */
   public function defaultConfiguration(): array {
-    return [];
+    return [
+      'matching_mode' => 'exact',
+      'similarity_threshold' => 0.75,
+    ];
   }
 
   /**
@@ -164,20 +163,47 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
       '#value_callback' => [Textarea::class, 'valueCallback'],
     ];
 
-    if ($form_state->getValue('llm_ai_provider') == NULL) {
-      $form_state->setValue('llm_ai_provider', $this->getConfiguration()['llm_provider'] ?? $this->getConfiguration()['llm_ai_provider'] ?? NULL);
-    }
-    if ($form_state->getValue('llm_ai_model') == NULL) {
-      $form_state->setValue('llm_ai_model', $this->getConfiguration()['llm_model'] ?? ($this->getConfiguration()['llm_ajax_prefix']['llm_ai_model'] ?? NULL));
-    }
+    $form['matching_mode'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Topic matching mode'),
+      '#description' => $this->t('<em>Exact</em> requires the LLM to return topic names exactly as listed above. <em>Semantic</em> hardens the prompt and then fuzzy-matches any residual drift back to the closest configured topic.'),
+      '#options' => [
+        'exact' => $this->t('Exact (default)'),
+        'semantic' => $this->t('Semantic'),
+      ],
+      '#default_value' => $this->configuration['matching_mode'] ?? 'exact',
+    ];
 
-    $this->aiProviderFormHelper->generateAiProvidersForm($form, $form_state, 'chat', 'llm', AiProviderFormHelper::FORM_CONFIGURATION_FULL, 0, '', $this->t('AI Provider'), $this->t('The provider of the AI models used by this guardrail.'), TRUE);
-    $llm_configs = $this->getConfiguration()['llm_config'] ?? [];
-    if ($llm_configs && count($llm_configs)) {
-      foreach ($llm_configs as $key => $value) {
-        $form['llm_ajax_prefix']['llm_ajax_prefix_configuration_' . $key]['#default_value'] = $value;
-      }
-    }
+    $form['similarity_threshold'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Similarity threshold'),
+      '#description' => $this->t('Minimum similarity (0.0 – 1.0) between a returned topic and a configured topic for it to count as a match in semantic mode. Values below the threshold are recorded as unmatched.'),
+      '#min' => 0,
+      '#max' => 1,
+      '#step' => 0.01,
+      '#default_value' => $this->configuration['similarity_threshold'] ?? 0.75,
+      '#states' => [
+        'visible' => [
+          ':input[name="guardrail_settings[matching_mode]"]' => ['value' => 'semantic'],
+        ],
+      ],
+    ];
+
+    $default_ai_provider_value = [
+      'provider' => $this->configuration['llm_provider'] ?? '',
+      'model' => $this->configuration['llm_model'] ?? '',
+      'config' => $this->configuration['llm_config'] ?? [],
+      'use_default' => empty($this->configuration['llm_provider']),
+    ];
+    $form['llm_ai_provider'] = [
+      '#type' => 'ai_provider_configuration',
+      '#title' => $this->t('AI provider'),
+      '#description' => $this->t('The AI provider and model used for internal LLM calls. Defaults to the site-wide default provider.'),
+      '#operation_type' => 'chat',
+      '#advanced_config' => TRUE,
+      '#default_provider_allowed' => TRUE,
+      '#default_value' => $default_ai_provider_value,
+    ];
 
     return $form;
   }
@@ -185,11 +211,8 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(
-    array &$form,
-    FormStateInterface $form_state,
-  ): void {
-    $this->aiProviderFormHelper->validateAiProvidersConfig($form, $form_state, 'chat', 'llm');
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
+    // The ai_provider_configuration element handles its own validation.
   }
 
   /**
@@ -201,20 +224,10 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
   ): void {
     $values = $form_state->getValues();
 
-    $values['llm_model'] = $values['llm_ajax_prefix']['llm_ai_model'];
-    $values['llm_provider'] = $values['llm_ai_provider'];
-    unset($values['llm_ajax_prefix']['llm_ai_model']);
+    $values['llm_model'] = $values['llm_ai_provider']['model'];
+    $values['llm_provider'] = $values['llm_ai_provider']['provider'];
+    $values['llm_config'] = $values['llm_ai_provider']['config'];
     unset($values['llm_ai_provider']);
-
-    $provider = $this->getAiPluginManager()->createInstance($values['llm_provider']);
-    $schema = $provider->getAvailableConfiguration('chat', $values['llm_model']);
-
-    foreach ($values['llm_ajax_prefix'] as $key => $value) {
-      $real_key = str_replace('llm_ajax_prefix_configuration_', '', $key);
-      $type = $schema[$real_key]['type'] ?? 'string';
-      $values['llm_config'][$real_key] = CastUtility::typeCast($type, $value);
-    }
-    unset($values['llm_ajax_prefix']);
 
     $this->setConfiguration($values);
   }
@@ -256,34 +269,10 @@ final class RestrictToTopic extends AiGuardrailPluginBase implements Configurabl
       )
     );
     $all_topics = array_merge($valid_topics, $invalid_topics);
-    $all_topics_formatted = implode(',', $all_topics);
+    $mode = $this->configuration['matching_mode'] ?? 'exact';
+    $threshold = (float) ($this->configuration['similarity_threshold'] ?? 0.75);
 
-    $prompt = <<<PROMPT
-Given a text and a list of topics, return a valid json list of which topics are present in the text. If none, just return an empty list. Don't format the output in any other way, just return the list as JSON inside a ```json code block.
-
-Output example when not finding anything:
--------------
-```json
-{"topics_present": []}
-```
-
-Output example when finding something relevant:
---------------
-```json
-{"topics_present": ["topic_4", "topic_6"]}
-```
-
-Text:
-----
-"$text"
-
-Relevant Topics you can pick from:
-------
-$all_topics_formatted
-
-Result:
-------
-PROMPT;
+    $prompt = $this->buildPrompt($text, $all_topics, $mode);
 
     $input = new ChatInput([
       new ChatMessage('user', $prompt),
@@ -319,16 +308,10 @@ PROMPT;
       $response_decoded['topics_present'] ?? []
     );
 
-    $invalid_topics_found = [];
-    $valid_topics_found = [];
-    foreach ($topics_present as $topic) {
-      if (\in_array($topic, $valid_topics)) {
-        $valid_topics_found[] = $topic;
-      }
-      elseif (\in_array($topic, $invalid_topics)) {
-        $invalid_topics_found[] = $topic;
-      }
-    }
+    $buckets = $this->bucketTopics($topics_present, $valid_topics, $invalid_topics, $mode, $threshold);
+    $valid_topics_found = $buckets['valid_found'];
+    $invalid_topics_found = $buckets['invalid_found'];
+    $unmatched_topics = $buckets['unmatched'];
 
     if (\count($invalid_topics_found) > 0) {
       return new StopResult(
@@ -337,6 +320,7 @@ PROMPT;
         [
           'valid_topics' => $valid_topics,
           'invalid_topics_found' => $invalid_topics_found,
+          'unmatched_topics' => $unmatched_topics,
         ],
       );
     }
@@ -348,6 +332,7 @@ PROMPT;
         [
           'valid_topics' => $valid_topics,
           'invalid_topics_found' => $invalid_topics_found,
+          'unmatched_topics' => $unmatched_topics,
         ],
       );
     }
@@ -357,9 +342,154 @@ PROMPT;
       $this,
       [
         'valid_topics' => $valid_topics,
+        'valid_topics_found' => $valid_topics_found,
         'invalid_topics_found' => $invalid_topics_found,
+        'unmatched_topics' => $unmatched_topics,
       ],
     );
+  }
+
+  /**
+   * Build the LLM prompt that classifies which topics are present in the text.
+   *
+   * @param string $text
+   *   The text being classified.
+   * @param array $all_topics
+   *   The merged list of configured valid + invalid topics.
+   * @param string $mode
+   *   Matching mode, `exact` (default prompt) or `semantic` (hardened prompt
+   *   that instructs the model to return list strings verbatim).
+   *
+   * @return string
+   *   The prompt to send to the LLM.
+   */
+  protected function buildPrompt(string $text, array $all_topics, string $mode): string {
+    $all_topics_formatted = implode(',', $all_topics);
+
+    if ($mode === 'semantic') {
+      $instruction = 'For each topic present in the text, return the closest'
+        . ' matching topic verbatim from the provided list. If no topic from'
+        . ' the list matches, return an empty list. Do not invent, translate,'
+        . " pluralize, or paraphrase topics \u{2014} use the list strings"
+        . " exactly as given. Don't format the output in any other way, just"
+        . ' return the list as JSON inside a ```json code block.';
+    }
+    else {
+      $instruction = 'Given a text and a list of topics, return a valid json'
+        . ' list of which topics are present in the text. If none, just'
+        . " return an empty list. Don't format the output in any other way,"
+        . ' just return the list as JSON inside a ```json code block.';
+    }
+
+    return <<<PROMPT
+$instruction
+
+Output Format:
+-------------
+```json
+{"topics_present": []}
+```
+
+Output example when finding something relevant:
+--------------
+```json
+{"topics_present": ["topic_4", "topic_6"]}
+```
+
+Text:
+----
+"$text"
+
+Relevant Topics you can pick from:
+------
+$all_topics_formatted
+
+Result:
+------
+PROMPT;
+  }
+
+  /**
+   * Bucket LLM-returned topics into valid / invalid / unmatched lists.
+   *
+   * In `exact` mode this is an `in_array()` check with unknown topics
+   * surfaced as unmatched. In `semantic` mode, topics that fail the exact
+   * check are compared against each configured topic using `similar_text()`;
+   * the best scorer wins if it clears the similarity threshold, otherwise
+   * the topic is recorded as unmatched.
+   *
+   * @param array $topics_present
+   *   The topics returned by the LLM (already lower-cased).
+   * @param array $valid_topics
+   *   The configured valid topic list (lower-cased).
+   * @param array $invalid_topics
+   *   The configured invalid topic list (lower-cased).
+   * @param string $mode
+   *   Matching mode, `exact` or `semantic`.
+   * @param float $threshold
+   *   Similarity threshold in the 0.0 – 1.0 range.
+   *
+   * @return array
+   *   Keys: `valid_found`, `invalid_found`, `unmatched`.
+   */
+  protected function bucketTopics(array $topics_present, array $valid_topics, array $invalid_topics, string $mode, float $threshold): array {
+    $valid_found = [];
+    $invalid_found = [];
+    $unmatched = [];
+
+    foreach ($topics_present as $topic) {
+      if (\in_array($topic, $valid_topics, TRUE)) {
+        $valid_found[] = $topic;
+        continue;
+      }
+      if (\in_array($topic, $invalid_topics, TRUE)) {
+        $invalid_found[] = $topic;
+        continue;
+      }
+
+      if ($mode !== 'semantic') {
+        $unmatched[] = $topic;
+        continue;
+      }
+
+      // Semantic fallback: map to the closest configured topic by string
+      // similarity. `similar_text()` returns a 0-100 percentage via its
+      // by-ref third argument.
+      $best_score = 0.0;
+      $best_bucket = NULL;
+      foreach ($valid_topics as $candidate) {
+        similar_text((string) $topic, (string) $candidate, $pct);
+        if ($pct > $best_score) {
+          $best_score = $pct;
+          $best_bucket = 'valid';
+        }
+      }
+      foreach ($invalid_topics as $candidate) {
+        similar_text((string) $topic, (string) $candidate, $pct);
+        if ($pct > $best_score) {
+          $best_score = $pct;
+          $best_bucket = 'invalid';
+        }
+      }
+
+      if ($best_bucket !== NULL && ($best_score / 100) >= $threshold) {
+        if ($best_bucket === 'valid') {
+          $valid_found[] = $topic;
+        }
+        else {
+          $invalid_found[] = $topic;
+        }
+        continue;
+      }
+
+      $unmatched[] = $topic;
+    }
+
+    return [
+      'valid_found' => $valid_found,
+      'invalid_found' => $invalid_found,
+      'unmatched' => $unmatched,
+    ];
   }
 
   /**

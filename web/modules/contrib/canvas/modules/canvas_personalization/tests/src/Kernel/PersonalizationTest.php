@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_personalization\Kernel;
 
-use PHPUnit\Framework\Attributes\Group;
 use Drupal\Core\Recipe\Recipe;
 use Drupal\Core\Recipe\RecipeRunner;
 use Drupal\Core\Render\HtmlResponse;
@@ -15,6 +14,7 @@ use Drupal\Tests\canvas\Kernel\Traits\RequestTrait;
 use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\canvas\Traits\CrawlerTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
@@ -88,11 +88,17 @@ final class PersonalizationTest extends KernelTestBase {
       'canvas_page:1',
       'canvas_page_view',
       'config:block_list',
+      // @see \Drupal\canvas\Hook\ComponentSourceHooks::pageAttachments()
+      'config:canvas.asset_library.global',
+      'config:canvas.brand_kit.global',
       'config:canvas.component.p13n.case',
       'config:canvas.component.p13n.switch',
       'config:canvas.component.sdc.canvas_test_sdc.heading',
       'config:canvas.component.sdc.canvas_test_sdc.my-hero',
       'config:canvas.component.sdc.canvas_test_sdc.two_column',
+      // The page variant resolver checks the site default selection.
+      // @see \Drupal\canvas\PageVariantResolver
+      'config:canvas.settings',
       'http_response',
       'rendered',
     ], $cache_tags);

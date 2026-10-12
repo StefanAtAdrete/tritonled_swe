@@ -7,17 +7,25 @@ import { Box, Button, Flex, Grid, Tooltip } from '@radix-ui/themes';
 
 import { useAppSelector } from '@/app/hooks';
 import AIToggleButton from '@/components/aiExtension/AiToggleButton';
+import FrontendSelect from '@/components/frontendSelect/FrontendSelect';
+import LanguageSelect from '@/components/languageSelect/LanguageSelect';
 import PreviewControls from '@/components/PreviewControls';
 import UnpublishedChanges from '@/components/review/UnpublishedChanges';
 import ContentPreviewSelector from '@/components/templates/ContentPreviewSelector';
 import UndoRedo from '@/components/UndoRedo';
 import NotificationBell from '@/features/notifications/NotificationBell';
-import { selectEditorFrameContext } from '@/features/ui/uiSlice';
+import PreviewWidthSelector from '@/features/pagePreview/PreviewWidthSelector';
+import {
+  EditorFrameContext,
+  selectEditorFrameContext,
+} from '@/features/ui/uiSlice';
+import { useCanvasHeadlessSettings } from '@/hooks/useCanvasHeadlessSettings';
 import useEditorNavigation from '@/hooks/useEditorNavigation';
 import { useGetPreviewContentEntitiesQuery } from '@/services/componentAndLayout';
-import { getDrupalSettings } from '@/utils/drupal-globals';
+import { getCanvasSettings } from '@/utils/drupal-globals';
 
 import PageInfo from '../pageInfo/PageInfo';
+import { isPreviewPath } from './topbarPreviewMode';
 
 import styles from './Topbar.module.css';
 
@@ -27,27 +35,39 @@ const Topbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { entityType, bundle, previewEntityId } = useParams();
-  const isPreview = location.pathname.includes('/preview');
+  const isPreview = isPreviewPath(location.pathname);
   const isEditor = location.pathname.includes('/editor');
   const isSegments = location.pathname.includes('/segments');
+  const isHeadlessFrontends = location.pathname.startsWith('/headless');
+  const editorFrameContext = useAppSelector(selectEditorFrameContext);
   const isTemplateEditorContext =
-    useAppSelector(selectEditorFrameContext) === 'template';
+    editorFrameContext === EditorFrameContext.TEMPLATE;
+  const isPatternEditorContext =
+    editorFrameContext === EditorFrameContext.PATTERN;
   const { setTemplatePreviewEntityId } = useEditorNavigation();
 
   let hasAiExtensionAvailable = false;
   let hasPersonalizeExtensionAvailable = false;
 
-  const drupalSettings = getDrupalSettings();
+  const canvasSettings = getCanvasSettings();
+  const headlessSettings = useCanvasHeadlessSettings();
+  const isPagePreview = location.pathname.startsWith('/preview/');
+  const isFrontendEmbedded =
+    headlessSettings !== undefined &&
+    Boolean(entityType) &&
+    (isEditor || isTemplateEditorContext || isPagePreview);
+
+  const isTranslationEnabled =
+    canvasSettings?.contentTranslationEnabled ||
+    canvasSettings?.configTranslationEnabled;
+
   if (
-    drupalSettings?.canvas?.aiExtensionAvailable &&
-    (drupalSettings.canvas as any).permissions?.useCanvasAi === true
+    canvasSettings?.aiExtensionAvailable &&
+    canvasSettings.permissions?.useCanvasAi === true
   ) {
     hasAiExtensionAvailable = true;
   }
-  if (
-    drupalSettings &&
-    drupalSettings.canvas.personalizationExtensionAvailable
-  ) {
+  if (canvasSettings?.personalizationExtensionAvailable) {
     hasPersonalizeExtensionAvailable = true;
   }
 
@@ -70,9 +90,20 @@ const Topbar = () => {
   const backHref =
     window.sessionStorage.getItem(PREVIOUS_URL_STORAGE_KEY) ?? '/';
 
-  // Must be wide enough to accommodate all the buttons that can appear in the top left and top right. The two
-  // columns must be the same width so that the center column is always centered to the whole window.
-  const leftRightColumnWidth = '300px';
+  const exitButton = (
+    <Tooltip content="Exit Drupal Canvas">
+      <a
+        href={backHref}
+        aria-labelledby="back-to-previous-label"
+        className={clsx(styles.topBarButton, styles.exitButton)}
+      >
+        <span className="visually-hidden" id="back-to-previous-label">
+          Exit Drupal Canvas
+        </span>
+        <DropIcon className={styles.drupalLogo} height="24" width="auto" />
+      </a>
+    </Tooltip>
+  );
 
   return (
     <Menubar.Root data-testid="canvas-topbar" asChild>
@@ -82,87 +113,88 @@ const Topbar = () => {
         })}
         pr="4"
       >
-        <Grid
-          columns="max-content 1fr max-content"
-          gap="0"
-          width="auto"
-          height="100%"
-        >
-          <Flex align="center" gap="2" width={leftRightColumnWidth}>
-            <Tooltip content="Exit Drupal Canvas">
-              <a
-                href={backHref}
-                aria-labelledby="back-to-previous-label"
-                className={clsx(styles.topBarButton, styles.exitButton)}
-              >
-                <span className="visually-hidden" id="back-to-previous-label">
-                  Exit Drupal Canvas
-                </span>
-                <DropIcon
-                  className={styles.drupalLogo}
-                  height="24"
-                  width="auto"
+        {isPreview ? (
+          <div className={styles.previewLayout}>
+            <div className={styles.previewLeft}>
+              {exitButton}
+              <div className={clsx(styles.verticalDivider)}></div>
+              <PreviewWidthSelector />
+              {isFrontendEmbedded && (
+                <FrontendSelect settings={headlessSettings} />
+              )}
+            </div>
+            <div className={styles.previewCenter}>
+              <PageInfo />
+            </div>
+            <div className={styles.previewRight}>
+              <NotificationBell />
+              {isTranslationEnabled && !isPatternEditorContext && (
+                <LanguageSelect />
+              )}
+              <PreviewControls isPreview={isPreview} />
+              <UnpublishedChanges />
+            </div>
+          </div>
+        ) : (
+          <Grid columns="1fr 1fr 1fr" gap="0" width="100%" height="100%">
+            <Flex align="center" gap="2">
+              {exitButton}
+              {hasAiExtensionAvailable && (
+                <>
+                  <div className={clsx(styles.verticalDivider)}></div>
+                  <AIToggleButton />
+                </>
+              )}
+              {hasPersonalizeExtensionAvailable && (
+                <>
+                  <Button
+                    variant={isEditor ? 'soft' : 'ghost'}
+                    color={isEditor ? 'blue' : 'gray'}
+                    onClick={() => navigate('/editor')}
+                  >
+                    <CardStackPlusIcon />
+                    <span className={isEditor ? '' : 'visually-hidden'}>
+                      Builder
+                    </span>
+                  </Button>
+                  <Button
+                    variant={isSegments ? 'soft' : 'ghost'}
+                    color={isSegments ? 'blue' : 'gray'}
+                    onClick={() => navigate('/segments')}
+                  >
+                    <PersonIcon />
+                    <span className={isSegments ? '' : 'visually-hidden'}>
+                      Segments
+                    </span>
+                  </Button>
+                </>
+              )}
+              <div className={clsx(styles.verticalDivider)}></div>
+              {!isHeadlessFrontends && <UndoRedo />}
+              {isFrontendEmbedded && (
+                <FrontendSelect settings={headlessSettings} />
+              )}
+            </Flex>
+            <Flex align="center" justify="center" gap="2">
+              <PageInfo />
+              {isTemplateEditorContext && (
+                <ContentPreviewSelector
+                  items={previewEntities}
+                  selectedItemId={previewEntityId}
+                  onSelectionChange={handlePreviewEntityChange}
                 />
-              </a>
-            </Tooltip>
-            {!isPreview && hasAiExtensionAvailable && (
-              <>
-                <div className={clsx(styles.verticalDivider)}></div>
-                <AIToggleButton />
-              </>
-            )}
-            {!isPreview && hasPersonalizeExtensionAvailable && (
-              <>
-                <Button
-                  variant={isEditor ? 'soft' : 'ghost'}
-                  color={isEditor ? 'blue' : 'gray'}
-                  onClick={() => navigate('/editor')}
-                >
-                  <CardStackPlusIcon />
-                  <span className={isEditor ? '' : 'visually-hidden'}>
-                    Builder
-                  </span>
-                </Button>
-                <Button
-                  variant={isSegments ? 'soft' : 'ghost'}
-                  color={isSegments ? 'blue' : 'gray'}
-                  onClick={() => navigate('/segments')}
-                >
-                  <PersonIcon />
-                  <span className={isSegments ? '' : 'visually-hidden'}>
-                    Segments
-                  </span>
-                </Button>
-              </>
-            )}
-            <div className={clsx(styles.verticalDivider)}></div>
-            {!isPreview && (
-              <>
-                <UndoRedo />
-              </>
-            )}
-          </Flex>
-          <Flex align="center" justify="center" gap="2">
-            <PageInfo />
-            {isTemplateEditorContext && (
-              <ContentPreviewSelector
-                items={previewEntities}
-                selectedItemId={previewEntityId}
-                onSelectionChange={handlePreviewEntityChange}
-              />
-            )}
-          </Flex>
-          <Flex
-            align="center"
-            justify="end"
-            gap="2"
-            width={leftRightColumnWidth}
-          >
-            <NotificationBell />
-            <PreviewControls isPreview={isPreview} />
-            <UnpublishedChanges />
-          </Flex>
-        </Grid>
+              )}
+            </Flex>
+            <Flex align="center" justify="end" gap="2">
+              <NotificationBell />
+              {isTranslationEnabled && !isPatternEditorContext && (
+                <LanguageSelect />
+              )}
+              <PreviewControls isPreview={isPreview} />
+              <UnpublishedChanges />
+            </Flex>
+          </Grid>
+        )}
       </Box>
     </Menubar.Root>
   );

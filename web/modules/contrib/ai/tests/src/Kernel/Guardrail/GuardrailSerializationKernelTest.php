@@ -199,6 +199,87 @@ class GuardrailSerializationKernelTest extends KernelTestBase {
   }
 
   /**
+   * Changing the plugin ID returns the newly selected guardrail plugin.
+   *
+   * The entity holds the plugin in a lazy plugin collection. The guardrail
+   * form swaps the plugin ID on every AJAX rebuild, so a collection that is
+   * not re-keyed keeps handing back the previously selected guardrail and the
+   * settings subform never changes when the user picks a different guardrail.
+   */
+  public function testPluginIsRebuiltWhenPluginIdChanges(): void {
+    $entity = AiGuardrail::create([
+      'id' => 'test_switching',
+      'label' => 'Test switching',
+      'description' => 'Plugin switching test guardrail.',
+      'guardrail' => 'regexp_guardrail',
+      'guardrail_settings' => [],
+    ]);
+
+    $this->assertSame('regexp_guardrail', $entity->getGuardrail()?->getPluginId());
+
+    $entity->set('guardrail', 'input_length_limit');
+    $this->assertSame(
+      'input_length_limit',
+      $entity->getGuardrail()?->getPluginId(),
+      'The entity must return the newly selected guardrail plugin.'
+    );
+
+    // The dedicated setter has to invalidate the memo too.
+    $entity->setPlugin('sensitive_content_stream');
+    $this->assertSame(
+      'sensitive_content_stream',
+      $entity->getGuardrail()?->getPluginId(),
+      'setPlugin() must re-key the plugin collection.'
+    );
+  }
+
+  /**
+   * Switching the selected guardrail rebuilds the settings subform.
+   *
+   * Mirrors what the AJAX rebuild does: the new plugin ID is written to the
+   * entity and the form is built again.
+   */
+  public function testSubformFollowsThePluginSelection(): void {
+    $entity = AiGuardrail::create([
+      'id' => 'test_subform_switching',
+      'label' => 'Test subform switching',
+      'description' => 'Subform switching test guardrail.',
+      'guardrail' => 'regexp_guardrail',
+      'guardrail_settings' => [],
+    ]);
+
+    $form_object = \Drupal::entityTypeManager()
+      ->getFormObject('ai_guardrail', 'add');
+    $form_object->setEntity($entity);
+    $form_state = new FormState();
+    $form = \Drupal::formBuilder()->buildForm($form_object, $form_state);
+    $this->assertArrayHasKey(
+      'regexp_pattern',
+      $form['guardrail_wrapper']['guardrail_settings']
+    );
+
+    // Pick a different guardrail, exactly as the AJAX rebuild would.
+    $entity->set('guardrail', 'input_length_limit');
+    $form_object = \Drupal::entityTypeManager()
+      ->getFormObject('ai_guardrail', 'add');
+    $form_object->setEntity($entity);
+    $form_state = new FormState();
+    $form = \Drupal::formBuilder()->buildForm($form_object, $form_state);
+
+    $subform = $form['guardrail_wrapper']['guardrail_settings'];
+    $this->assertArrayHasKey(
+      'max_length',
+      $subform,
+      'The subform must show the newly selected guardrail settings.'
+    );
+    $this->assertArrayNotHasKey(
+      'regexp_pattern',
+      $subform,
+      'The subform must not keep the previously selected guardrail settings.'
+    );
+  }
+
+  /**
    * The guardrail entity keeps its plugin out of the serialized payload.
    *
    * The entity holds the plugin in a DefaultSingleLazyPluginCollection, which

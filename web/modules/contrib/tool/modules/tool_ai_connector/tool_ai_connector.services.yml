@@ -1,4 +1,3 @@
 services:
-  Drupal\tool_ai_connector\Hook\AiToolsPropertyHooks:
-    class: Drupal\tool_ai_connector\Hook\AiToolsPropertyHooks
-    autowire: true
+  tool_ai_connector.schema_tools_property_converter:
+    class: Drupal\tool_ai_connector\SchemaToolsPropertyConverter

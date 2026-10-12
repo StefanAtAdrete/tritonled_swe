@@ -67,6 +67,14 @@ const mockEdge1: StoreEdge = {
   data: { condition: null },
 };
 
+const mockEdge2: StoreEdge = {
+  id: 'edge-2',
+  source: 'node-2',
+  target: 'node-1',
+  type: 'default',
+  data: { condition: null },
+};
+
 const graphStore = createStoreMock({
   nodes: [mockNode1, mockNode2] as StoreNode[],
   edges: [mockEdge1] as StoreEdge[],
@@ -83,6 +91,8 @@ const graphStore = createStoreMock({
 const selectionStore = createStoreMock({
   selectedNode: null as StoreNode | null,
   selectedEdge: null as StoreEdge | null,
+  selectedNodes: [] as string[],
+  selectedEdges: [] as string[],
   selectNode: jest.fn(),
   selectEdge: jest.fn(),
   clearSelection: jest.fn(),
@@ -105,10 +115,6 @@ const modelStore = createStoreMock({
 const uiSettingsStore = createStoreMock({
   darkMode: false,
   toggleDarkMode: jest.fn(),
-});
-
-const viewportStore = createStoreMock({
-  setViewportTarget: jest.fn(),
 });
 
 const componentStore = createStoreMock({
@@ -178,10 +184,6 @@ jest.mock('../../store/useUISettingsStore', () => ({
   useUISettingsStore: uiSettingsStore,
 }));
 
-jest.mock('../../store/useViewportStore', () => ({
-  useViewportStore: viewportStore,
-}));
-
 jest.mock('../../store/useComponentStore', () => ({
   useComponentStore: componentStore,
 }));
@@ -219,6 +221,10 @@ jest.mock('../../utils/clipboardUtils', () => ({
 }));
 
 jest.mock('../../utils/positionUtils', () => ({
+  // Keep the real pure helpers (requiredVerticalGap, findFlowAwarePosition)
+  // so incrementalLayout.placeNodeOnEdge — used by setCondition — works,
+  // while still stubbing findFreePosition for the addNode tests.
+  ...jest.requireActual('../../utils/positionUtils'),
   findFreePosition: jest.fn((candidate: { x: number; y: number }) => candidate),
 }));
 
@@ -228,12 +234,21 @@ import {
   setApiReadOnly,
   setMutationHooks,
   clearMutationHooks,
+  setViewportHooks,
+  clearViewportHooks,
   createPluginApi,
 } from '../pluginApi';
 
 import { resolveNodeType } from '../../utils/componentUtils';
 import { generateNodeId, generateEdgeId } from '../../utils/clipboardUtils';
 import { findFreePosition } from '../../utils/positionUtils';
+// The real (unmocked) placement primitives, so the tests below can assert
+// that a plugin-added node lands on exactly the coordinates the modeler's
+// own UI paths would have chosen (issue #3589110).
+import {
+  computeNewEventPosition,
+  computeSuccessorPosition,
+} from '../../utils/incrementalLayout';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -249,10 +264,14 @@ function resetStores() {
   (graphStore.getState().removeEdge as jest.Mock).mockClear();
   (graphStore.getState().updateNode as jest.Mock).mockClear();
   (graphStore.getState().updateEdge as jest.Mock).mockClear();
+  (graphStore.getState().setNodes as jest.Mock).mockClear();
+  (graphStore.getState().setEdges as jest.Mock).mockClear();
 
   selectionStore.setState({
     selectedNode: null,
     selectedEdge: null,
+    selectedNodes: [],
+    selectedEdges: [],
   });
   (selectionStore.getState().selectNode as jest.Mock).mockClear();
   (selectionStore.getState().selectEdge as jest.Mock).mockClear();
@@ -268,8 +287,6 @@ function resetStores() {
 
   uiSettingsStore.setState({ darkMode: false });
   (uiSettingsStore.getState().toggleDarkMode as jest.Mock).mockClear();
-
-  (viewportStore.getState().setViewportTarget as jest.Mock).mockClear();
 
   componentStore.setState({
     components: [
@@ -313,13 +330,18 @@ function resetStores() {
   });
 
   (resolveNodeType as jest.Mock).mockClear();
-  (generateNodeId as jest.Mock).mockClear();
-  (generateEdgeId as jest.Mock).mockClear();
+  // Restore the default deterministic implementations (individual tests may
+  // override with mockReturnValue; reset so leftover overrides don't bleed).
+  (generateNodeId as jest.Mock).mockReset();
+  (generateNodeId as jest.Mock).mockImplementation((label: string, type: string) => `${type}_${label}_123`);
+  (generateEdgeId as jest.Mock).mockReset();
+  (generateEdgeId as jest.Mock).mockImplementation((source: string, target: string) => `edge_${source}_${target}`);
   (findFreePosition as jest.Mock).mockClear();
 
   // Reset read-only to false
   setApiReadOnly(false);
   clearMutationHooks();
+  clearViewportHooks();
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -412,6 +434,40 @@ describe('pluginApi', () => {
       });
     });
 
+    describe('getSelectedNodes', () => {
+      it('returns an empty array when nothing is selected', () => {
+        expect(api.getSelectedNodes()).toEqual([]);
+      });
+
+      it('returns one node for a single selection', () => {
+        selectionStore.setState({ selectedNodes: ['node-1'] });
+
+        expect(api.getSelectedNodes()).toEqual([
+          expect.objectContaining({ id: 'node-1' }),
+        ]);
+      });
+
+      it('returns all selected nodes in selection-store order', () => {
+        selectionStore.setState({ selectedNodes: ['node-2', 'node-1'] });
+
+        expect(api.getSelectedNodes().map((node) => node.id)).toEqual([
+          'node-2',
+          'node-1',
+        ]);
+      });
+
+      it('skips selected node IDs missing from the graph store', () => {
+        selectionStore.setState({
+          selectedNodes: ['node-2', 'missing-node', 'node-1'],
+        });
+
+        expect(api.getSelectedNodes().map((node) => node.id)).toEqual([
+          'node-2',
+          'node-1',
+        ]);
+      });
+    });
+
     describe('getSelectedEdge', () => {
       it('returns null when nothing selected', () => {
         expect(api.getSelectedEdge()).toBeNull();
@@ -422,6 +478,44 @@ describe('pluginApi', () => {
         const edge = api.getSelectedEdge();
         expect(edge).not.toBeNull();
         expect(edge!.id).toBe('edge-1');
+      });
+    });
+
+    describe('getSelectedEdges', () => {
+      beforeEach(() => {
+        graphStore.setState({ edges: [mockEdge1, mockEdge2] });
+      });
+
+      it('returns an empty array when nothing is selected', () => {
+        expect(api.getSelectedEdges()).toEqual([]);
+      });
+
+      it('returns one edge for a single selection', () => {
+        selectionStore.setState({ selectedEdges: ['edge-1'] });
+
+        expect(api.getSelectedEdges()).toEqual([
+          expect.objectContaining({ id: 'edge-1' }),
+        ]);
+      });
+
+      it('returns all selected edges in selection-store order', () => {
+        selectionStore.setState({ selectedEdges: ['edge-2', 'edge-1'] });
+
+        expect(api.getSelectedEdges().map((edge) => edge.id)).toEqual([
+          'edge-2',
+          'edge-1',
+        ]);
+      });
+
+      it('skips selected edge IDs missing from the graph store', () => {
+        selectionStore.setState({
+          selectedEdges: ['edge-2', 'missing-edge', 'edge-1'],
+        });
+
+        expect(api.getSelectedEdges().map((edge) => edge.id)).toEqual([
+          'edge-2',
+          'edge-1',
+        ]);
       });
     });
 
@@ -689,6 +783,27 @@ describe('pluginApi', () => {
         // Same node again - no change
         selectionStore._notify();
         expect(cb).toHaveBeenCalledTimes(1);
+      });
+
+      it('fires when the multi-selection grows without changing the primary node', () => {
+        const cb = jest.fn();
+        api.onSelectionChange(cb);
+
+        selectionStore.setState({
+          selectedNode: mockNode1,
+          selectedNodes: ['node-1'],
+        });
+        selectionStore._notify();
+        cb.mockClear();
+
+        selectionStore.setState({ selectedNodes: ['node-1', 'node-2'] });
+        selectionStore._notify();
+
+        expect(cb).toHaveBeenCalledTimes(1);
+        expect(cb).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'node-1' }),
+          null,
+        );
       });
 
       it('unsubscribe stops future callbacks', () => {
@@ -1105,28 +1220,42 @@ describe('pluginApi', () => {
     });
 
     describe('focusNode', () => {
-      it('sets viewport target for existing node', () => {
+      it('calls the viewport focusNode hook for existing node', () => {
+        const mockFocusNode = jest.fn();
+        setViewportHooks({ focusNode: mockFocusNode, fitView: jest.fn() });
+
         api.focusNode('node-1');
-        expect(viewportStore.getState().setViewportTarget).toHaveBeenCalledWith({
-          type: 'center',
-          nodeId: 'node-1',
-          options: { duration: 800 },
-        });
+        expect(mockFocusNode).toHaveBeenCalledWith('node-1');
       });
 
       it('does nothing when node does not exist', () => {
+        const mockFocusNode = jest.fn();
+        setViewportHooks({ focusNode: mockFocusNode, fitView: jest.fn() });
+
         api.focusNode('nonexistent');
-        expect(viewportStore.getState().setViewportTarget).not.toHaveBeenCalled();
+        expect(mockFocusNode).not.toHaveBeenCalled();
+      });
+
+      it('does nothing when no viewport hooks are registered', () => {
+        clearViewportHooks();
+        // Should not throw
+        expect(() => api.focusNode('node-1')).not.toThrow();
       });
     });
 
     describe('fitView', () => {
-      it('sets viewport target to fit', () => {
+      it('calls the viewport fitView hook', () => {
+        const mockFitView = jest.fn();
+        setViewportHooks({ focusNode: jest.fn(), fitView: mockFitView });
+
         api.fitView();
-        expect(viewportStore.getState().setViewportTarget).toHaveBeenCalledWith({
-          type: 'fit',
-          options: { padding: 0.1, duration: 800 },
-        });
+        expect(mockFitView).toHaveBeenCalledTimes(1);
+      });
+
+      it('does nothing when no viewport hooks are registered', () => {
+        clearViewportHooks();
+        // Should not throw
+        expect(() => api.fitView()).not.toThrow();
       });
     });
   });
@@ -1225,25 +1354,6 @@ describe('pluginApi', () => {
         );
       });
 
-      it('uses default position when no nodes exist', () => {
-        graphStore.setState({ nodes: [] });
-        (generateNodeId as jest.Mock).mockReturnValue('element_Test_123');
-
-        api.addNode({
-          plugin: 'example.test',
-          componentType: 4,
-          label: 'Test',
-        });
-
-        // findFreePosition is called with LAYOUT.DEFAULT_POSITION_X/Y
-        expect(findFreePosition).toHaveBeenCalledWith(
-          { x: 100, y: 100 }, // LAYOUT.DEFAULT_POSITION_X/Y
-          [],
-          expect.any(Number),
-          expect.any(Number),
-        );
-      });
-
       it('includes configuration, description, documentationUrl', () => {
         (generateNodeId as jest.Mock).mockReturnValue('element_Test_123');
 
@@ -1278,6 +1388,167 @@ describe('pluginApi', () => {
         expect(result).toBeNull();
         expect(graphStore.getState().addNode).not.toHaveBeenCalled();
         expect(saveHistory).not.toHaveBeenCalled();
+      });
+
+      // ── Shared placement primitives (issue #3589110) ─────────────────
+      //
+      // addNode used to hand-roll its own placement instead of calling the
+      // primitives in utils/incrementalLayout.ts, so a plugin-added node
+      // could land somewhere the UI would never have put it.  These tests
+      // pin the node to the SAME coordinates the equivalent UI path
+      // produces, which is the actual point of the issue.
+      describe('placement via shared layout primitives', () => {
+        /** Read the node handed to graphStore.addNode by the last call. */
+        function addedNode(): StoreNode {
+          const calls = (graphStore.getState().addNode as jest.Mock).mock.calls;
+          return calls[calls.length - 1][0] as StoreNode;
+        }
+
+        it('uses an explicit position verbatim, ignoring sourceNodeId', () => {
+          // Explicit caller intent always wins — unchanged contract.
+          api.addNode({
+            plugin: 'example.test',
+            componentType: 4,
+            label: 'Test',
+            position: { x: 50, y: 60 },
+            sourceNodeId: 'node-1',
+          });
+
+          expect(addedNode().position).toEqual({ x: 50, y: 60 });
+          // No successor placement ran, so no flow shifts were applied.
+          expect(graphStore.getState().setNodes).not.toHaveBeenCalled();
+        });
+
+        it('places the first node on an empty canvas where the UI would', () => {
+          // Regression: addNode used to return DEFAULT_POSITION (100,100)
+          // while every UI path anchors the first flow at LAYOUT_START
+          // (400,100).  Both must now agree.
+          graphStore.setState({ nodes: [], edges: [] });
+
+          api.addNode({ plugin: 'example.test', componentType: 1, label: 'Test' });
+
+          const expected = computeNewEventPosition({ nodes: [], width: 180, height: 120 });
+          expect(expected).toEqual({ x: 400, y: 100 });
+          expect(addedNode().position).toEqual(expected);
+        });
+
+        it('places a new event flow to the right of existing flows', () => {
+          api.addNode({ plugin: 'example.test', componentType: 4, label: 'Test' });
+
+          const expected = computeNewEventPosition({
+            nodes: [mockNode1, mockNode2],
+            width: 180,
+            height: 120,
+          });
+          expect(addedNode().position).toEqual(expected);
+        });
+
+        it('uses the compact gateway footprint for gateway nodes', () => {
+          // Gateways are 60px tall, not 120 — feeding the card height into
+          // the primitives would reserve room the node does not occupy.
+          const findFree = findFreePosition as jest.Mock;
+          api.addNode({ plugin: 'example.gateway', componentType: 6, label: 'GW' });
+
+          expect(findFree).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.any(Array),
+            180, // NODE_DIMENSIONS.CARD_WIDTH
+            60,  // NODE_DIMENSIONS.GATEWAY_HEIGHT
+          );
+        });
+
+        it('places a successor exactly where quick-add would place it', () => {
+          // useQuickAdd.addSuccessorNode calls computeSuccessorPosition with
+          // precisely these arguments, so matching it proves the two paths
+          // now agree coordinate-for-coordinate.
+          api.addNode({
+            plugin: 'example.test',
+            componentType: 4,
+            label: 'Test',
+            sourceNodeId: 'node-1',
+          });
+
+          const expected = computeSuccessorPosition({
+            nodes: [mockNode1, mockNode2],
+            edges: [mockEdge1],
+            sourceNodeId: 'node-1',
+          }).position;
+
+          expect(addedNode().position).toEqual(expected);
+          // Below the parent, and column-aligned with it.
+          expect(addedNode().position.y).toBeGreaterThan(mockNode1.position.y);
+          expect(addedNode().position.x).toBe(mockNode1.position.x);
+        });
+
+        it('returns null and does not mutate for an unknown sourceNodeId', () => {
+          // Consistent with addEdge(), which rejects unknown endpoints.
+          const result = api.addNode({
+            plugin: 'example.test',
+            componentType: 4,
+            label: 'Test',
+            sourceNodeId: 'does-not-exist',
+          });
+
+          expect(result).toBeNull();
+          expect(graphStore.getState().addNode).not.toHaveBeenCalled();
+          expect(graphStore.getState().setNodes).not.toHaveBeenCalled();
+          // Crucially: no history entry for an operation that never happened.
+          expect(saveHistory).not.toHaveBeenCalled();
+          expect(markUnsaved).not.toHaveBeenCalled();
+        });
+
+        it('applies flow shifts, without clobbering the selection', () => {
+          // Source flow at x=100; a second, unconnected flow sits directly in
+          // the successor slot and close enough on the right that the
+          // primitive must push it aside to make room.
+          const source: StoreNode = {
+            id: 'src',
+            type: 'element',
+            position: { x: 100, y: 100 },
+            data: { label: 'Src', plugin: 'p.src', componentType: 4 },
+          };
+          const neighbor: StoreNode = {
+            id: 'blk',
+            type: 'element',
+            position: { x: 150, y: 320 },
+            selected: true,
+            data: { label: 'Blk', plugin: 'p.blk', componentType: 4 },
+          };
+          graphStore.setState({ nodes: [source, neighbor], edges: [] });
+
+          const expected = computeSuccessorPosition({
+            nodes: [source, neighbor],
+            edges: [],
+            sourceNodeId: 'src',
+          });
+          // Guard the fixture: this scenario is only meaningful if the
+          // primitive actually asks for a shift.
+          expect(expected.shiftAmount).toBeGreaterThan(0);
+          expect(expected.shiftNodeIds.has('blk')).toBe(true);
+
+          api.addNode({
+            plugin: 'example.test',
+            componentType: 4,
+            label: 'Test',
+            sourceNodeId: 'src',
+          });
+
+          expect(addedNode().position).toEqual(expected.position);
+
+          // The shift is applied through setNodes, as an updater function.
+          const setNodes = graphStore.getState().setNodes as jest.Mock;
+          expect(setNodes).toHaveBeenCalledTimes(1);
+          const updater = setNodes.mock.calls[0][0] as (n: StoreNode[]) => StoreNode[];
+          const shifted = updater([source, neighbor]);
+
+          const movedNeighbor = shifted.find((n) => n.id === 'blk')!;
+          expect(movedNeighbor.position.x).toBe(150 + expected.shiftAmount);
+          // The source flow is untouched.
+          expect(shifted.find((n) => n.id === 'src')!.position).toEqual({ x: 100, y: 100 });
+          // A background plugin call must NOT deselect the user's selection
+          // (quick-add deselects because it selects the new node instead).
+          expect(movedNeighbor.selected).toBe(true);
+        });
       });
     });
 
@@ -1426,6 +1697,9 @@ describe('pluginApi', () => {
     describe('addEdge', () => {
       it('creates an edge between two existing nodes', () => {
         (generateEdgeId as jest.Mock).mockReturnValue('edge_node-1_node-2');
+        // Start with a clean edge list so the new edge is the only one and
+        // does not collide with any existing parallel connection.
+        graphStore.setState({ edges: [] });
 
         const result = api.addEdge('node-1', 'node-2');
         expect(result).toBe('edge_node-1_node-2');
@@ -1440,6 +1714,31 @@ describe('pluginApi', () => {
         );
         expect(saveHistory).toHaveBeenCalledTimes(1);
         expect(markUnsaved).toHaveBeenCalledTimes(1);
+      });
+
+      it('routes a parallel edge with a sideways controlOffset', () => {
+        (generateEdgeId as jest.Mock).mockReturnValue('edge_node-1_node-2_b');
+        // Fixture already contains mockEdge1 (node-1 → node-2), so adding a
+        // second edge between the same endpoints triggers fan-out routing.
+        graphStore.setState({
+          edges: [
+            { id: 'edge-1', source: 'node-1', target: 'node-2', type: 'default', data: {} },
+          ] as StoreEdge[],
+        });
+
+        const result = api.addEdge('node-1', 'node-2');
+        expect(result).toBe('edge_node-1_node-2_b');
+
+        // The new edge must arrive with a non-zero controlOffset.x, distinct
+        // from the existing edge (which has been rebalanced to the other side).
+        const addEdgeCalls = (graphStore.getState().addEdge as jest.Mock).mock.calls;
+        const newEdgeArg = addEdgeCalls[addEdgeCalls.length - 1][0];
+        expect(newEdgeArg.id).toBe('edge_node-1_node-2_b');
+        expect(newEdgeArg.data.controlOffset).toBeDefined();
+        expect(newEdgeArg.data.controlOffset.x).not.toBe(0);
+
+        // The router must also rebalance the existing sibling via setEdges.
+        expect(graphStore.getState().setEdges).toHaveBeenCalled();
       });
 
       it('returns null when source node does not exist', () => {
@@ -1540,7 +1839,12 @@ describe('pluginApi', () => {
     });
 
     describe('setCondition', () => {
-      it('sets condition on an existing edge', () => {
+      // Conditions are first-class nodes now (issue #3589093): setCondition
+      // INSERTS a condition node on the edge (mirroring handleAddCondition)
+      // instead of mutating the edge.  It replaces the target edge with two
+      // plain edges around a new `type: 'condition'` node.
+
+      it('inserts a condition node on an existing edge', () => {
         const result = api.setCondition('edge-1', {
           plugin: 'eca_condition:entity_type',
           label: 'Entity Type',
@@ -1548,18 +1852,46 @@ describe('pluginApi', () => {
         });
 
         expect(result).toBe(true);
-        expect(graphStore.getState().updateEdge).toHaveBeenCalledWith(
-          'edge-1',
+
+        // A condition node is created via setNodes.
+        const setNodesArg = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as StoreNode[];
+        const condNode = setNodesArg.find((n) => n.type === 'condition');
+        expect(condNode).toBeDefined();
+        expect(condNode).toEqual(
           expect.objectContaining({
+            id: 'condition_Entity Type_123',
             type: 'condition',
-            label: 'Entity Type',
             data: expect.objectContaining({
-              condition: 'eca_condition:entity_type',
-              conditionLabel: 'Entity Type',
-              conditionConfiguration: { type: 'node' },
+              label: 'Entity Type',
+              plugin: 'eca_condition:entity_type',
+              configuration: { type: 'node' },
+              conditionId: '',
+              componentType: 5,
+              __isConditionNode: true,
             }),
           }),
         );
+
+        // The original edge is replaced by two plain edges around the node.
+        const setEdgesArg = (graphStore.getState().setEdges as jest.Mock).mock.calls[0][0] as StoreEdge[];
+        expect(setEdgesArg.some((e) => e.id === 'edge-1')).toBe(false);
+        const toNew = setEdgesArg.find((e) => e.target === 'condition_Entity Type_123');
+        const fromNew = setEdgesArg.find((e) => e.source === 'condition_Entity Type_123');
+        expect(toNew).toEqual(
+          expect.objectContaining({ source: 'node-1', target: 'condition_Entity Type_123', type: 'default' }),
+        );
+        expect(fromNew).toEqual(
+          expect.objectContaining({ source: 'condition_Entity Type_123', target: 'node-2', type: 'default' }),
+        );
+
+        // No edge carries a condition anymore.
+        for (const e of setEdgesArg) {
+          expect(e.type).not.toBe('condition');
+          expect(e.data?.condition).toBeUndefined();
+        }
+
+        // The old edge-mutation path is no longer used.
+        expect(graphStore.getState().updateEdge).not.toHaveBeenCalled();
         expect(saveHistory).toHaveBeenCalledTimes(1);
         expect(markUnsaved).toHaveBeenCalledTimes(1);
       });
@@ -1569,15 +1901,9 @@ describe('pluginApi', () => {
           plugin: 'eca_condition.entity_type',
         });
 
-        expect(graphStore.getState().updateEdge).toHaveBeenCalledWith(
-          'edge-1',
-          expect.objectContaining({
-            label: 'entity_type',
-            data: expect.objectContaining({
-              conditionLabel: 'entity_type',
-            }),
-          }),
-        );
+        const setNodesArg = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as StoreNode[];
+        const condNode = setNodesArg.find((n) => n.type === 'condition');
+        expect(condNode?.data).toEqual(expect.objectContaining({ label: 'entity_type' }));
       });
 
       it('falls back to full plugin name when split yields nothing', () => {
@@ -1585,15 +1911,9 @@ describe('pluginApi', () => {
           plugin: 'myplugin',
         });
 
-        expect(graphStore.getState().updateEdge).toHaveBeenCalledWith(
-          'edge-1',
-          expect.objectContaining({
-            label: 'myplugin',
-            data: expect.objectContaining({
-              conditionLabel: 'myplugin',
-            }),
-          }),
-        );
+        const setNodesArg = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as StoreNode[];
+        const condNode = setNodesArg.find((n) => n.type === 'condition');
+        expect(condNode?.data).toEqual(expect.objectContaining({ label: 'myplugin' }));
       });
 
       it('uses empty object for missing configuration', () => {
@@ -1602,73 +1922,154 @@ describe('pluginApi', () => {
           label: 'Test',
         });
 
-        expect(graphStore.getState().updateEdge).toHaveBeenCalledWith(
-          'edge-1',
-          expect.objectContaining({
-            data: expect.objectContaining({
-              conditionConfiguration: {},
-            }),
-          }),
-        );
+        const setNodesArg = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as StoreNode[];
+        const condNode = setNodesArg.find((n) => n.type === 'condition');
+        expect(condNode?.data).toEqual(expect.objectContaining({ configuration: {} }));
+      });
+
+      it('inserts a gateway when the edge source is a condition node (no condition->condition edge)', () => {
+        // Invariant (issue #3589093): inserting a condition on an edge whose
+        // source is already a condition must route through a gateway:
+        //   existingCond -> gateway -> newCond -> target.
+        graphStore.setState({
+          nodes: [
+            { id: 'cond-src', type: 'condition', position: { x: 0, y: 0 }, data: { __isConditionNode: true, label: 'Existing' } },
+            mockNode2,
+          ],
+          edges: [
+            { id: 'edge-cc', source: 'cond-src', target: 'node-2', type: 'default', data: {} },
+          ],
+        });
+
+        const result = api.setCondition('edge-cc', {
+          plugin: 'eca_condition:test',
+          label: 'New Cond',
+        });
+        expect(result).toBe(true);
+
+        const setNodesArg = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as StoreNode[];
+        const gateway = setNodesArg.find((n) => n.type === 'gateway');
+        const newCond = setNodesArg.find((n) => n.type === 'condition' && n.id !== 'cond-src');
+        expect(gateway).toBeDefined();
+        expect(newCond).toBeDefined();
+        expect(gateway!.data?.componentType).toBe(6);
+        expect(gateway!.data?.plugin).toBe('gateway');
+
+        const setEdgesArg = (graphStore.getState().setEdges as jest.Mock).mock.calls[0][0] as StoreEdge[];
+        // Original edge replaced; chain is cond-src -> gateway -> newCond -> node-2.
+        expect(setEdgesArg.some((e) => e.id === 'edge-cc')).toBe(false);
+        expect(setEdgesArg.find((e) => e.source === 'cond-src' && e.target === gateway!.id)).toBeDefined();
+        expect(setEdgesArg.find((e) => e.source === gateway!.id && e.target === newCond!.id)).toBeDefined();
+        expect(setEdgesArg.find((e) => e.source === newCond!.id && e.target === 'node-2')).toBeDefined();
+
+        // No condition -> condition edge exists.
+        const condIds = new Set(['cond-src', newCond!.id]);
+        for (const e of setEdgesArg) {
+          expect(condIds.has(e.source) && condIds.has(e.target)).toBe(false);
+        }
       });
 
       it('returns false when edge does not exist', () => {
         const result = api.setCondition('nonexistent', { plugin: 'x' });
         expect(result).toBe(false);
+        expect(graphStore.getState().setNodes).not.toHaveBeenCalled();
       });
 
       it('returns false in read-only mode', () => {
         setApiReadOnly(true);
         const result = api.setCondition('edge-1', { plugin: 'x' });
         expect(result).toBe(false);
-      });
-
-      it('preserves existing edge data fields', () => {
-        api.setCondition('edge-1', {
-          plugin: 'eca_condition:test',
-          label: 'Test',
-        });
-
-        const call = (graphStore.getState().updateEdge as jest.Mock).mock.calls[0];
-        // The data spread should include existing edge.data (condition: null)
-        expect(call[1].data).toEqual(
-          expect.objectContaining({
-            condition: 'eca_condition:test',
-          }),
-        );
+        expect(graphStore.getState().setNodes).not.toHaveBeenCalled();
       });
     });
 
     describe('removeCondition', () => {
-      it('removes condition from an existing edge', () => {
-        const result = api.removeCondition('edge-1');
+      // Conditions are nodes now: removeCondition collapses the condition
+      // node back into a single plain edge (the inverse of setCondition).
+      // `edgeId` resolves to a condition node when it is the condition node
+      // id itself OR an edge adjacent to a condition node.
+
+      // Build a graph with a condition node inserted between node-1 and
+      // node-2:  node-1 --in--> cond-node --out--> node-2.
+      const condNode: StoreNode = {
+        id: 'cond-node',
+        type: 'condition',
+        position: { x: 0, y: 0 },
+        data: { label: 'Cond', plugin: 'p', componentType: 5, __isConditionNode: true },
+      };
+      const inEdge: StoreEdge = { id: 'edge-in', source: 'node-1', target: 'cond-node', type: 'default', data: {} };
+      const outEdge: StoreEdge = { id: 'edge-out', source: 'cond-node', target: 'node-2', type: 'default', data: {} };
+
+      function seedConditionGraph() {
+        graphStore.setState({
+          nodes: [mockNode1, mockNode2, condNode],
+          edges: [inEdge, outEdge],
+        });
+      }
+
+      it('collapses the condition node when given the inbound edge id', () => {
+        seedConditionGraph();
+        const result = api.removeCondition('edge-in');
 
         expect(result).toBe(true);
-        expect(graphStore.getState().updateEdge).toHaveBeenCalledWith(
-          'edge-1',
-          expect.objectContaining({
-            type: 'default',
-            label: '',
-            data: expect.objectContaining({
-              condition: null,
-              conditionLabel: null,
-              conditionConfiguration: null,
-              annotation: null,
-            }),
-          }),
+
+        // The condition node is removed.
+        const setNodesFn = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as (n: StoreNode[]) => StoreNode[];
+        const remainingNodes = setNodesFn([mockNode1, mockNode2, condNode]);
+        expect(remainingNodes.some((n) => n.id === 'cond-node')).toBe(false);
+
+        // Its two edges are replaced by a single plain edge node-1 -> node-2.
+        const setEdgesFn = (graphStore.getState().setEdges as jest.Mock).mock.calls[0][0] as (e: StoreEdge[]) => StoreEdge[];
+        const remainingEdges = setEdgesFn([inEdge, outEdge]);
+        expect(remainingEdges).toHaveLength(1);
+        expect(remainingEdges[0]).toEqual(
+          expect.objectContaining({ source: 'node-1', target: 'node-2', type: 'default' }),
         );
+
+        expect(graphStore.getState().updateEdge).not.toHaveBeenCalled();
         expect(saveHistory).toHaveBeenCalledTimes(1);
         expect(markUnsaved).toHaveBeenCalledTimes(1);
       });
 
-      it('returns false when edge does not exist', () => {
+      it('collapses the condition node when given the outbound edge id', () => {
+        seedConditionGraph();
+        const result = api.removeCondition('edge-out');
+        expect(result).toBe(true);
+
+        const setEdgesFn = (graphStore.getState().setEdges as jest.Mock).mock.calls[0][0] as (e: StoreEdge[]) => StoreEdge[];
+        const remainingEdges = setEdgesFn([inEdge, outEdge]);
+        expect(remainingEdges).toHaveLength(1);
+        expect(remainingEdges[0]).toEqual(
+          expect.objectContaining({ source: 'node-1', target: 'node-2' }),
+        );
+      });
+
+      it('collapses the condition node when given the condition node id directly', () => {
+        seedConditionGraph();
+        const result = api.removeCondition('cond-node');
+        expect(result).toBe(true);
+
+        const setNodesFn = (graphStore.getState().setNodes as jest.Mock).mock.calls[0][0] as (n: StoreNode[]) => StoreNode[];
+        const remainingNodes = setNodesFn([mockNode1, mockNode2, condNode]);
+        expect(remainingNodes.some((n) => n.id === 'cond-node')).toBe(false);
+      });
+
+      it('returns false when the id matches neither a condition node nor an adjacent edge', () => {
+        // Baseline graph (no condition node) — edge-1 has no condition node.
+        const result = api.removeCondition('edge-1');
+        expect(result).toBe(false);
+        expect(graphStore.getState().setNodes).not.toHaveBeenCalled();
+      });
+
+      it('returns false when id does not exist', () => {
         const result = api.removeCondition('nonexistent');
         expect(result).toBe(false);
       });
 
       it('returns false in read-only mode', () => {
+        seedConditionGraph();
         setApiReadOnly(true);
-        const result = api.removeCondition('edge-1');
+        const result = api.removeCondition('edge-in');
         expect(result).toBe(false);
       });
     });
@@ -1833,7 +2234,16 @@ describe('pluginApi', () => {
     });
 
     it('removeCondition works without hooks', () => {
-      const result = api.removeCondition('edge-1');
+      // Insert a condition node, then collapse it — both succeed without
+      // mutation hooks registered.
+      graphStore.setState({
+        nodes: [mockNode1, mockNode2, { id: 'c', type: 'condition', position: { x: 0, y: 0 }, data: { __isConditionNode: true } }],
+        edges: [
+          { id: 'e-in', source: 'node-1', target: 'c', type: 'default', data: {} },
+          { id: 'e-out', source: 'c', target: 'node-2', type: 'default', data: {} },
+        ],
+      });
+      const result = api.removeCondition('c');
       expect(result).toBe(true);
     });
   });
@@ -1844,7 +2254,8 @@ describe('pluginApi', () => {
     it('createPluginApi returns an object with all expected methods', () => {
       const methodNames = [
         'getNodes', 'getEdges', 'getNodeById', 'getEdgeById',
-        'getSelectedNode', 'getSelectedEdge', 'getModelData',
+        'getSelectedNode', 'getSelectedEdge', 'getSelectedNodes',
+        'getSelectedEdges', 'getModelData',
         'isReadOnly', 'isDarkMode', 'getComponents', 'getComponentLabels',
         'getContexts', 'getSelectedContextId', 'getFilteredNodeIds',
         'getHistoryState', 'getErrors',

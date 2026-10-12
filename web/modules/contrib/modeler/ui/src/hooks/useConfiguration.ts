@@ -5,10 +5,9 @@
 
 import { useCallback } from 'react';
 import { useGraphStore } from '../store/useGraphStore';
-import { useSelectionStore } from '../store/useSelectionStore';
 import { autoLayout } from '../utils/modelUtils';
-import { getEdgeType, getEdgeTypeWithCondition } from '../utils/edgeTypeUtils';
-import type { StoreEdge as Edge, NodeData, EdgeData } from '../types/settings';
+import { getEdgeType } from '../utils/edgeTypeUtils';
+import type { NodeData, EdgeData } from '../types/settings';
 
 interface UseConfigurationProps {
   setHasUnsavedChanges: (value: boolean) => void;
@@ -17,16 +16,18 @@ interface UseConfigurationProps {
 }
 
 export function useConfiguration({ setHasUnsavedChanges, saveHistory }: UseConfigurationProps) {
-  const nodes = useGraphStore(state => state.nodes);
-  const edges = useGraphStore(state => state.edges);
   const setNodes = useGraphStore(state => state.setNodes);
   const setEdges = useGraphStore(state => state.setEdges);
-  const selectedNode = useSelectionStore(state => state.selectedNode);
-  const setSelectedNode = useSelectionStore(state => state.setSelectedNode);
-  const selectedEdge = useSelectionStore(state => state.selectedEdge);
-  const setSelectedEdge = useSelectionStore(state => state.setSelectedEdge);
 
   // Configuration change handler - updates node configuration (primary callback)
+  //
+  // Deliberately does NOT write to the selection store (issue #3589111).
+  // Refreshing the selected node object is useSelectionSync's job: it runs in
+  // an effect keyed on the nodes array, so it reads fresh state after the
+  // commit that follows setNodes() and only writes when the object identity
+  // actually changed. Doing it here as well would mean reading a render-time
+  // snapshot that setNodes() has not updated, pushing the pre-update node back
+  // into the property panel and clobbering debounced fields mid-edit.
   const onConfigurationChange = useCallback((nodeId: string, configuration: Record<string, unknown>) => {
     if (saveHistory) saveHistory();
     setNodes(prev => prev.map(node => 
@@ -43,97 +44,9 @@ export function useConfiguration({ setHasUnsavedChanges, saveHistory }: UseConfi
           }
         : node
     ));
-    
-    // Update selected node to reflect changes in property panel
-    if (selectedNode?.id === nodeId) {
-      setTimeout(() => {
-        const updatedNode = nodes.find(n => n.id === nodeId);
-        if (updatedNode) {
-          setSelectedNode(updatedNode);
-        }
-      }, 10);
-    }
-    
+
     setHasUnsavedChanges(true);
-  }, [setNodes, selectedNode, setSelectedNode, setHasUnsavedChanges, nodes, saveHistory]);
-
-  // Edge configuration change handler
-  const onEdgeConfigurationChange = useCallback((edgeId: string, configurationOrCallback: Record<string, unknown> | null | ((edge: Edge) => Record<string, unknown> | null)) => {
-    if (saveHistory) saveHistory();
-
-    // Check if the condition is being removed so we can re-layout.
-    const targetEdge = edges.find(e => e.id === edgeId);
-    const resolvedConfig = targetEdge && typeof configurationOrCallback === 'function'
-      ? configurationOrCallback(targetEdge)
-      : configurationOrCallback;
-    const hadCondition = targetEdge && !!(
-      targetEdge.data?.condition ||
-      targetEdge.data?.conditionLabel
-    );
-    const isRemoving = resolvedConfig === null;
-
-    // Helper to compute the updated edge.
-    const computeUpdatedEdge = (edge: Edge): Edge => {
-      const configuration = typeof configurationOrCallback === 'function'
-        ? configurationOrCallback(edge)
-        : configurationOrCallback;
-
-      const rawConditionLabel = configuration?._conditionLabel ?? configuration?.conditionLabel;
-      const newConditionLabel = rawConditionLabel != null ? String(rawConditionLabel) : undefined;
-      const { _conditionLabel: _, conditionLabel: __, ...restConfiguration } = configuration || {};
-
-      const newData = configuration
-        ? {
-            ...edge.data,
-            conditionConfiguration: { ...edge.data?.conditionConfiguration, ...restConfiguration },
-            ...(newConditionLabel !== undefined ? { conditionLabel: newConditionLabel } : {}),
-          }
-        : {
-            ...edge.data,
-            condition: null,
-            conditionLabel: null,
-            conditionConfiguration: null,
-            annotation: null,
-            isAnnotationVisible: false,
-          };
-
-      return {
-        ...edge,
-        ...(configuration
-          ? (newConditionLabel !== undefined ? { label: newConditionLabel } : {})
-          : { label: '' }),
-        type: getEdgeTypeWithCondition(configuration ? 'has-config' : null, newData),
-        data: newData
-      };
-    };
-
-    const updatedEdges = edges.map(edge =>
-      edge.id === edgeId ? computeUpdatedEdge(edge) : edge,
-    );
-
-    // When a condition is removed, re-run auto-layout with the updated edges
-    // so the spacing algorithm reclaims the extra space cleanly.
-    if (hadCondition && isRemoving && targetEdge) {
-      const layoutedNodes = autoLayout(nodes, updatedEdges);
-      if (layoutedNodes) {
-        setNodes(layoutedNodes);
-      }
-    }
-
-    setEdges(updatedEdges);
-
-    // Also update selectedEdge if it's the one being changed
-    if (selectedEdge?.id === edgeId && setSelectedEdge) {
-      setTimeout(() => {
-        const updatedEdge = edges.find(e => e.id === edgeId);
-        if (updatedEdge) {
-          setSelectedEdge(updatedEdge);
-        }
-      }, 10);
-    }
-    
-    setHasUnsavedChanges(true);
-  }, [nodes, setNodes, setEdges, selectedEdge, setSelectedEdge, edges, setHasUnsavedChanges, saveHistory]);
+  }, [setNodes, setHasUnsavedChanges, saveHistory]);
 
   // Node update handler (for broader updates than just config)
   const onNodeUpdate = useCallback((nodeId: string, newData: Partial<NodeData>) => {
@@ -162,21 +75,69 @@ export function useConfiguration({ setHasUnsavedChanges, saveHistory }: UseConfi
     setHasUnsavedChanges(true);
   }, [setEdges, setHasUnsavedChanges, saveHistory]);
 
+  // Endpoint reconnection handler (issue #3585553).
+  //
+  // Unlike onEdgeUpdate (which merges into edge `.data`), reconnection changes
+  // TOP-LEVEL edge fields — `source`, `target`, `sourceHandle`, `targetHandle`.
+  // A pure reconnect does NOT change edge data, so the edge `type` is left
+  // untouched (no getEdgeType recompute). saveHistory() runs first so undo/redo
+  // and unsaved-changes tracking work exactly like other mutations. Only the
+  // fields present in `updates` are applied; the unchanged end is preserved.
+  const onReconnectEdge = useCallback(
+    (
+      edgeId: string,
+      updates: {
+        source?: string;
+        sourceHandle?: string | null;
+        target?: string;
+        targetHandle?: string | null;
+      },
+    ) => {
+      if (saveHistory) saveHistory();
+      setEdges(prev =>
+        prev.map(edge =>
+          edge.id === edgeId
+            ? {
+                ...edge,
+                ...(updates.source !== undefined ? { source: updates.source } : {}),
+                ...(updates.target !== undefined ? { target: updates.target } : {}),
+                ...(updates.sourceHandle !== undefined ? { sourceHandle: updates.sourceHandle } : {}),
+                ...(updates.targetHandle !== undefined ? { targetHandle: updates.targetHandle } : {}),
+              }
+            : edge,
+        ),
+      );
+      setHasUnsavedChanges(true);
+    },
+    [setEdges, setHasUnsavedChanges, saveHistory],
+  );
+
   // Auto-layout handler
+  //
+  // Reads the live graph from the store at call time instead of closing over
+  // a render-time snapshot (issue #3589109). The plugin API mutates the store
+  // synchronously, so a plugin can add nodes and call autoLayout() within a
+  // single tick — before React has re-rendered. A captured snapshot would
+  // therefore be stale, and because setNodes() replaces the whole array when
+  // given a plain array, writing that snapshot back deleted every node added
+  // in the same tick and left orphaned edges behind. Reading getState() here
+  // also removes nodes/edges from the dependency array, making the callback
+  // stable for the plugin-API hook registered in Flow.tsx.
   const handleAutoLayout = useCallback(() => {
     if (saveHistory) saveHistory();
-    const layoutedNodes = autoLayout(nodes, edges);
+    const { nodes: currentNodes, edges: currentEdges } = useGraphStore.getState();
+    const layoutedNodes = autoLayout(currentNodes, currentEdges);
     if (layoutedNodes) {
       setNodes(layoutedNodes);
       setHasUnsavedChanges(true);
     }
-  }, [nodes, edges, setNodes, setHasUnsavedChanges, saveHistory]);
+  }, [setNodes, setHasUnsavedChanges, saveHistory]);
 
   return {
     onConfigurationChange,
-    onEdgeConfigurationChange,
     onNodeUpdate,
     onEdgeUpdate,
+    onReconnectEdge,
     handleAutoLayout
   };
 }

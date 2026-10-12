@@ -31,17 +31,22 @@ const mockSetSelectedEdge = jest.fn((edge) => {
   mockSelectedEdge = edge;
 });
 
-jest.mock('../../store/useGraphStore', () => ({
-  useGraphStore: jest.fn((selector) => {
-    const state = {
-      nodes: mockNodes,
-      edges: mockEdges,
-      setNodes: mockSetNodes,
-      setEdges: mockSetEdges,
-    };
-    return selector(state);
-  }),
-}));
+// The hook reads live state via useGraphStore.getState() (issue #3589109),
+// so the mock exposes getState() alongside the selector call signature.
+jest.mock('../../store/useGraphStore', () => {
+  const getState = () => ({
+    nodes: mockNodes,
+    edges: mockEdges,
+    setNodes: mockSetNodes,
+    setEdges: mockSetEdges,
+  });
+  return {
+    useGraphStore: Object.assign(
+      jest.fn((selector) => selector(getState())),
+      { getState },
+    ),
+  };
+});
 
 jest.mock('../../store/useSelectionStore', () => ({
   useSelectionStore: jest.fn((selector) => {
@@ -162,173 +167,6 @@ describe('useConfiguration', () => {
     });
   });
 
-  describe('onEdgeConfigurationChange', () => {
-    it('should update edge configuration', () => {
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', { conditionLabel: 'Yes' });
-      });
-
-      expect(mockSetEdges).toHaveBeenCalled();
-      expect(mockSetHasUnsavedChanges).toHaveBeenCalledWith(true);
-    });
-
-    it('should change edge type to condition when condition is added', () => {
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', { conditionLabel: 'Yes' });
-      });
-
-      const updatedEdges = mockEdges;
-      const edge1 = updatedEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.type).toBe('condition');
-    });
-
-    it('should handle callback pattern', () => {
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', (edge) => ({
-          conditionLabel: `Condition for ${edge.id}`,
-        }));
-      });
-
-      const updatedEdges = mockEdges;
-      const edge1 = updatedEdges.find((e: any) => e.id === 'edge-1');
-      // conditionLabel should be stored at data level, not in conditionConfiguration
-      expect(edge1.data.conditionLabel).toBe('Condition for edge-1');
-      // Also check that it's set as the edge label for ReactFlow display
-      expect(edge1.label).toBe('Condition for edge-1');
-    });
-
-    it('should handle null configuration', () => {
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', null);
-      });
-
-      const updatedEdges = mockEdges;
-      const edge1 = updatedEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.data.conditionConfiguration).toBeNull();
-    });
-
-    it('should clear annotation when condition is deleted', () => {
-      mockEdges = [
-        {
-          id: 'edge-1',
-          source: 'node-1',
-          target: 'node-2',
-          type: 'condition',
-          data: { condition: 'some_condition', annotation: 'Test annotation', isAnnotationVisible: true },
-        },
-      ];
-      const { result } = renderUseConfiguration();
-
-      // Deleting condition (null) should also clear annotation
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', null);
-      });
-
-      const updatedEdges = mockEdges;
-      const edge1 = updatedEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.data.condition).toBeNull();
-      expect(edge1.data.conditionConfiguration).toBeNull();
-      expect(edge1.data.annotation).toBeNull();
-      expect(edge1.data.isAnnotationVisible).toBe(false);
-      expect(edge1.type).toBe('default');
-    });
-
-    it('should clear conditionLabel and label when condition is deleted', () => {
-      // Regression: conditionLabel and top-level label were not cleared on deletion.
-      mockEdges = [
-        {
-          id: 'edge-1',
-          source: 'node-1',
-          target: 'node-2',
-          type: 'condition',
-          label: 'My Condition',
-          data: {
-            condition: 'some_plugin',
-            conditionLabel: 'My Condition',
-            conditionConfiguration: { key: 'value' },
-          },
-        },
-      ];
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', null);
-      });
-
-      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.data.condition).toBeNull();
-      expect(edge1.data.conditionLabel).toBeNull();
-      expect(edge1.data.conditionConfiguration).toBeNull();
-      expect(edge1.label).toBe('');
-      expect(edge1.type).toBe('default');
-    });
-
-    it('should revert edge type to default when condition is deleted from edge with empty conditionConfiguration', () => {
-      // Regression: conditionConfiguration: {} is truthy in JS, so the edge
-      // type was not reverting to 'default' after condition deletion.
-      mockEdges = [
-        {
-          id: 'edge-1',
-          source: 'node-1',
-          target: 'node-2',
-          type: 'condition',
-          data: {
-            condition: 'some_plugin',
-            conditionLabel: 'Yes',
-            conditionConfiguration: {},
-          },
-        },
-      ];
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', null);
-      });
-
-      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.type).toBe('default');
-      expect(edge1.data.condition).toBeNull();
-    });
-
-    it('should clear annotation even when conditionConfiguration was empty', () => {
-      // Regression: annotation survived condition deletion, creating an orphaned
-      // annotation with no way to edit or remove it.
-      mockEdges = [
-        {
-          id: 'edge-1',
-          source: 'node-1',
-          target: 'node-2',
-          type: 'condition',
-          data: {
-            condition: 'some_plugin',
-            conditionLabel: 'Check',
-            conditionConfiguration: {},
-            annotation: 'Important note',
-            isAnnotationVisible: true,
-          },
-        },
-      ];
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', null);
-      });
-
-      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.data.annotation).toBeNull();
-      expect(edge1.data.isAnnotationVisible).toBe(false);
-      expect(edge1.type).toBe('default');
-    });
-  });
-
   describe('onNodeUpdate', () => {
     it('should update node data', () => {
       const { result } = renderUseConfiguration();
@@ -402,6 +240,71 @@ describe('useConfiguration', () => {
     });
   });
 
+  describe('onReconnectEdge (issue #3585553)', () => {
+    it('should update top-level source/sourceHandle and save history', () => {
+      const saveHistory = jest.fn();
+      const { result } = renderHook(() =>
+        useConfiguration({ setHasUnsavedChanges: mockSetHasUnsavedChanges, saveHistory }),
+      );
+
+      act(() => {
+        result.current.onReconnectEdge('edge-1', { source: 'node-new', sourceHandle: 'output' });
+      });
+
+      expect(saveHistory).toHaveBeenCalled();
+      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
+      expect(edge1.source).toBe('node-new');
+      expect(edge1.sourceHandle).toBe('output');
+      // Target is untouched.
+      expect(edge1.target).toBe('node-2');
+      expect(mockSetHasUnsavedChanges).toHaveBeenCalledWith(true);
+    });
+
+    it('should update top-level target/targetHandle only', () => {
+      const { result } = renderUseConfiguration();
+
+      act(() => {
+        result.current.onReconnectEdge('edge-1', { target: 'node-new', targetHandle: 'input' });
+      });
+
+      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
+      expect(edge1.target).toBe('node-new');
+      expect(edge1.targetHandle).toBe('input');
+      expect(edge1.source).toBe('node-1');
+    });
+
+    it('should not change edge data or type on a pure reconnect', () => {
+      mockEdges = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2', type: 'default', data: { annotation: 'keep' } },
+      ];
+      const { result } = renderUseConfiguration();
+
+      act(() => {
+        result.current.onReconnectEdge('edge-1', { target: 'node-3' });
+      });
+
+      const edge1 = mockEdges.find((e: any) => e.id === 'edge-1');
+      expect(edge1.type).toBe('default');
+      expect(edge1.data.annotation).toBe('keep');
+    });
+
+    it('should not touch other edges', () => {
+      mockEdges = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2', type: 'default', data: {} },
+        { id: 'edge-2', source: 'node-2', target: 'node-3', type: 'default', data: {} },
+      ];
+      const { result } = renderUseConfiguration();
+
+      act(() => {
+        result.current.onReconnectEdge('edge-1', { target: 'node-3' });
+      });
+
+      const edge2 = mockEdges.find((e: any) => e.id === 'edge-2');
+      expect(edge2.source).toBe('node-2');
+      expect(edge2.target).toBe('node-3');
+    });
+  });
+
   describe('handleAutoLayout', () => {
     it('should call autoLayout with nodes and edges', () => {
       const { autoLayout } = require('../../utils/modelUtils');
@@ -454,8 +357,15 @@ describe('useConfiguration', () => {
     });
   });
 
-  describe('selected node update on configuration change', () => {
-    it('should update selectedNode when matching node is changed', async () => {
+  describe('selected node is not written by configuration changes', () => {
+    // Regression guard for issue #3589111. onConfigurationChange used to
+    // re-sync the selection store from a render-time snapshot behind a 10ms
+    // setTimeout, which pushed the PRE-update node back into the property
+    // panel. Refreshing the selected node object belongs to useSelectionSync
+    // (see useSelectionSync.test.ts), which reads fresh state in an effect
+    // keyed on the nodes array. This test fails if that duplicate path is
+    // ever reinstated.
+    it('should not write to the selection store when the selected node changes', async () => {
       mockSelectedNode = { id: 'node-1', position: { x: 100, y: 100 }, data: { label: 'Node 1' } };
       const { result } = renderUseConfiguration();
 
@@ -463,55 +373,17 @@ describe('useConfiguration', () => {
         result.current.onConfigurationChange('node-1', { field: 'value' });
       });
 
-      // Wait for the setTimeout
+      // Wait past the window the removed setTimeout used to fire in.
       await act(async () => {
         await new Promise(resolve => setTimeout(resolve, 20));
       });
 
       expect(mockSetNodes).toHaveBeenCalled();
-    });
-  });
-
-  describe('selected edge update on configuration change', () => {
-    it('should update selectedEdge when matching edge is changed', async () => {
-      mockSelectedEdge = { id: 'edge-1', source: 'node-1', target: 'node-2' };
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', { conditionLabel: 'Test' });
-      });
-
-      // Wait for the setTimeout
-      await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 20));
-      });
-
-      expect(mockSetEdges).toHaveBeenCalled();
+      expect(mockSetSelectedNode).not.toHaveBeenCalled();
     });
   });
 
   describe('edge type determination with both condition and annotation', () => {
-    it('should set type to condition when both condition and annotation exist', () => {
-      mockEdges = [
-        {
-          id: 'edge-1',
-          source: 'node-1',
-          target: 'node-2',
-          type: 'default',
-          data: { annotation: 'A note', condition: 'some_condition' },
-        },
-      ];
-      const { result } = renderUseConfiguration();
-
-      act(() => {
-        result.current.onEdgeConfigurationChange('edge-1', { conditionLabel: 'Yes' });
-      });
-
-      const updatedEdges = mockEdges;
-      const edge1 = updatedEdges.find((e: any) => e.id === 'edge-1');
-      expect(edge1.type).toBe('condition');
-    });
-
     it('should stay default type when only annotation exists via onEdgeUpdate', () => {
       mockEdges = [
         {

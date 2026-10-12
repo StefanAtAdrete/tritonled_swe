@@ -75,6 +75,10 @@ canvas.component.*:
           - js
           # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\BlockComponent
           - block
+          # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker
+          - marker
+          # @see \Drupal\canvas_page_template_component\Plugin\Canvas\ComponentSource\ThemePageTemplate
+          - theme_page_template
     source_local_id:
       type: canvas.component_source_local_id.[%parent.source]
     versioned_properties:
@@ -163,6 +167,14 @@ canvas.js_component.*:
     name:
       type: required_label
       label: 'Name'
+    type:
+      type: string
+      label: 'Code component type'
+      requiredKey: false
+      constraints:
+        Choice:
+          - react
+          - external
     # See core/assets/schemas/v1/metadata-full.schema.json#properties.props.properties.required
     required:
       type: sequence
@@ -195,9 +207,11 @@ canvas.js_component.*:
     js:
       type: canvas.compilable_code
       label: 'JS'
+      requiredKey: false
     css:
       type: canvas.compilable_code
       label: 'CSS'
+      requiredKey: false
     dataDependencies:
       type: mapping
       label: 'Data dependencies'
@@ -258,6 +272,23 @@ canvas.js_component.*:
                 message: 'There must be >=1 entity field expression; otherwise the content-entity-reference prop should be deleted.'
               # All expressions must target the same entity type and bundle.
               EntityFieldExpressionsSameTarget: ~
+              # All expressions targeting the same field must be coalesced into a single
+              # FieldObjectPropsExpression.
+              # @see \Drupal\canvas\PropExpressions\StructuredData\Coalescer::coalesce()
+              EntityFieldExpressionsSameFieldMustBeCoalesced: ~
+              # Every expression must survive the content selection UI's
+              # expand → edit → coalesce round trip without losing data.
+              # @see \Drupal\canvas\PropExpressions\StructuredData\Coalescer::expand()
+              EntityFieldExpressionsMustBeIdempotent: ~
+              # A nested branch (a branch inside a branch) is not yet supported;
+              # reject selections that would coalesce into one.
+              # @todo Remove once nested branching is supported, in https://git.drupalcode.org/project/canvas/-/work_items/3591865
+              EntityFieldExpressionsMustNotNestBranches: ~
+              # Reading multiple/differing fields per bundle across bundles
+              # coalesces into an object that mixes bundle-specific picks, which
+              # is unrenderable; reject it until it coalesces into a branch.
+              # @todo Remove once such selections coalesce into a branch, in https://git.drupalcode.org/project/canvas/-/work_items/3591873
+              EntityFieldExpressionsMustNotMixBundlesInObject: ~
             sequence:
               type: string
               label: 'Entity field prop expression'
@@ -273,6 +304,14 @@ canvas.js_component.*:
                   message: 'The expression is valid, but not one of the allowed types: %choices.'
                 # Validate that the expression targets an existing entity type and bundle.
                 ExpressionTargetEntityBundleExists: ~
+                # Reject expressions on multi-valued fields: resolving them at
+                # render time is not yet supported.
+                # @todo https://git.drupalcode.org/project/canvas/-/work_items/3589536
+                MultiValuedFieldNotSupported: ~
+                # Reject expressions targeting an internal field or field property.
+                EntityFieldExpressionMustNotTargetInternalProperty: ~
+                # Reject expressions targeting a raw, non-resolvable URI property.
+                EntityFieldExpressionMayOnlyTargetResolvableUris: ~
 
 canvas.page_region.*:
   type: config_entity
@@ -322,6 +361,55 @@ canvas.page_region.*:
       type: canvas.component_tree
       # A region that is left empty may be `null`.
       nullable: true
+
+canvas.page_variant.*:
+  type: config_entity
+  constraints:
+    FullyValidatable: ~
+  mapping:
+    status:
+      constraints:
+        # The site default must stay enabled: disabled variants keep rendering
+        # where already selected, but cannot be selected anew.
+        SiteDefaultPageVariantEnabled: ~
+    id:
+      type: machine_name
+      label: 'ID'
+    label:
+      type: required_label
+      label: 'Label'
+    description:
+      type: text
+      label: 'Description'
+      nullable: true
+    component_tree:
+      type: canvas.component_tree
+      # A variant with no components yet may be `null`.
+      nullable: true
+      constraints:
+        # A page variant must contain exactly one "Page content" marker.
+        # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker::PAGE_CONTENT_COMPONENT_ID
+        PageVariantHasContentMarker: ~
+
+# Site-wide Drupal Canvas settings.
+canvas.settings:
+  type: config_object
+  label: 'Drupal Canvas settings'
+  constraints:
+    FullyValidatable: ~
+  mapping:
+    default_page_variant:
+      type: string
+      label: 'Default page variant'
+      # The machine name of the page_variant that renders everything without an
+      # explicit selection. `null` means no default: pages render through core
+      # block layout.
+      nullable: true
+      constraints:
+        Regex:
+          pattern: '/^[a-z0-9_]+$/'
+        ConfigExists:
+          prefix: canvas.page_variant.
 
 # The config equivalent of a ComponentTreeItemList, validated by the same constraints.
 # This is a list of component items in a tree, one item per component instance.
@@ -462,7 +550,7 @@ canvas.component_source_local_id.sdc:
 canvas.component_source_settings.sdc:
   constraints:
     FullyValidatable: ~
-  type: canvas.generated_field_explicit_input_ux
+  type: canvas.json_schema_props
   label: 'SDC component settings'
   mapping:
     prop_field_definitions:
@@ -495,15 +583,15 @@ canvas.component_source_settings.*:
   # No settings by default.
   mapping: {}
 
-# @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase
-# Each ComponentSource that extends GeneratedFieldExplicitInputUxComponentSourceBase MUST provide an override that:
+# @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase
+# Each ComponentSource that extends JsonSchemaPropsComponentSourceBase MUST provide an override that:
 # - MUST override the top-level label
 # - MUST add appropriate validation constraints to `local_source_id`
 # - MAY add more key-value pairs to the mapping — and then add appropriate validation constraints for those
 # - MUST mark the entire subtype as being fully validatable
-canvas.generated_field_explicit_input_ux:
+canvas.json_schema_props:
   type: canvas.component_source_settings.*
-  label: 'Baseline component settings for ComponentSource plugins that extend GeneratedFieldExplicitInputUxComponentSourceBase'
+  label: 'Baseline component settings for ComponentSource plugins that extend JsonSchemaPropsComponentSourceBase'
   mapping:
     prop_field_definitions:
       type: sequence
@@ -512,7 +600,7 @@ canvas.generated_field_explicit_input_ux:
       # Note: simply reordering the props in the schema without other changes (such as changing the example value) will
       # result in an identical component version hash. That means all existing component instances are automatically
       # "upgraded" to the updated prop order.
-      # @see \Drupal\experience_builder\Plugin\ExperienceBuilder\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::buildConfigurationForm()
+      # @see \Drupal\experience_builder\Plugin\ExperienceBuilder\ComponentSource\JsonSchemaPropsComponentSourceBase::buildConfigurationForm()
       orderby: ~
       sequence:
         type: mapping
@@ -534,7 +622,7 @@ canvas.generated_field_explicit_input_ux:
           cardinality:
             type: integer
             label: 'Maximum number of values accepted by this component prop'
-            # @todo Uncomment this once Canvas requires Drupal >=11.2
+            # @todo Uncomment this in https://git.drupalcode.org/project/canvas/-/work_items/3526703
             #constraints:
             #  AtLeastOneOf:
             #    constraints:
@@ -554,8 +642,6 @@ canvas.generated_field_explicit_input_ux:
             type: field.field_settings.[%parent.field_type]
             # Optional *if* the default instance settings should be used.
             requiredKey: false
-          # After a field type is selected, a field widget must be picked.
-          # @todo MUCH later: widget settings.
           field_widget:
             type: string
             label: 'Default field widget'
@@ -592,6 +678,73 @@ canvas.generated_field_explicit_input_ux:
                   - FieldTypeObjectPropsExpression
                   - ReferenceFieldTypePropExpression
                 message: 'The expression is valid, but not one of the allowed types: %choices.'
+          # Implementation metadata for this prop at this specific component version. Deliberately NOT part of the
+          # component version hash: anything in `derived_schema_metadata` CANNOT cause changes to component instances;
+          # it MUST be derived from information in ::getExplicitInputDefinitions() (which includes detailed schema
+          # information that is not retained in the Component config entity).
+          # @see \Drupal\canvas\PropShape\PropShape::getTranslatableStringShape()
+          # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::settingsAffectingVersionHash()
+          # @see \Drupal\canvas\ComponentSource\ComponentSourceBase::generateVersionHash()
+          derived_schema_metadata:
+            type: mapping
+            mapping:
+              # The normalized string JSON schema for this prop (for a multiple-cardinality prop: of its items),
+              # reduced to the keys that matter for translation systems. An implied `type: string` is omitted.
+              # Present if and only if the prop's JSON schema held translatable text when this component version was
+              # created. Translatability is derived from this shape — NOT stored as a boolean — so it can be re-derived
+              # if the translatability rules evolve. (A prop populated by an entity reference is not translatable even
+              # when this shape is present: references are structured data, not author-entered text. That is derived
+              # from this prop's `expression`.)
+              # @see \Drupal\canvas\PropShape\PropShape::getTranslatableStringShape()
+              # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::isExplicitInputTranslatable()
+              string_shape:
+                # Only present for props whose shape holds translatable text. Component versions created before this
+                # key existed never have it: their props are treated as not translatable.
+                # @todo Delete this (aka make this required) in Canvas 2.0, blocked on https://git.drupalcode.org/project/canvas/-/work_items/3530097 and then zero instances being left using component versions without `string_shape`
+                requiredKey: false
+                type: mapping
+                mapping:
+                  # Multi-line plain prose.
+                  pattern:
+                    requiredKey: false
+                    type: string
+                    constraints:
+                      Choice:
+                        choices:
+                          - '(.|\r?\n)*'
+                  # Rich prose.
+                  contentMediaType:
+                    requiredKey: false
+                    type: string
+                    label: 'Content media type'
+                    constraints:
+                      Choice:
+                        choices:
+                          - 'text/html'
+                  # Rich prose formatting context. Does not affect *whether* the prop is translatable, but translation
+                  # systems must respect it: an `inline` prop must not receive block-level HTML from a translation.
+                  'x-formatting-context':
+                    requiredKey: false
+                    type: string
+                    label: 'Formatting context'
+                    constraints:
+                      Choice:
+                        choices:
+                          - 'block'
+                          - 'inline'
+                  # URI-esque strings.
+                  # @see \Drupal\canvas\JsonSchemaInterpreter\JsonSchemaStringFormat::isUriEsque()
+                  format:
+                    requiredKey: false
+                    type: string
+                    label: 'Format'
+                    constraints:
+                      Choice:
+                        choices:
+                          - 'iri'
+                          - 'iri-reference'
+                          - 'uri'
+                          - 'uri-reference'
 
 canvas.component_source_local_id.js:
   type: canvas.component_source_local_id.*
@@ -603,7 +756,7 @@ canvas.component_source_local_id.js:
 canvas.component_source_settings.js:
   constraints:
     FullyValidatable: ~
-  type: canvas.generated_field_explicit_input_ux
+  type: canvas.json_schema_props
   label: 'Code component settings'
   mapping:
     prop_field_definitions:
@@ -636,6 +789,40 @@ canvas.component_source_settings.block:
   mapping:
     default_settings:
       type: block.settings.[%parent.%parent.%parent.%parent.source_local_id]
+
+# Marker components (intrinsic placeholders such as the page content marker).
+# @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker
+canvas.component_source_local_id.marker:
+  type: canvas.component_source_local_id.*
+  label: 'Marker component ID'
+  constraints:
+    FullyValidatable: ~
+    Choice:
+      - page_content
+canvas.component_source_settings.marker:
+  type: canvas.component_source_settings.*
+  label: 'Marker component settings'
+  constraints:
+    FullyValidatable: ~
+
+# Theme page template components (one per installed theme, provided by the
+# optional canvas_page_template_component module). The source-local ID is the
+# theme's machine name.
+# @see \Drupal\canvas_page_template_component\Plugin\Canvas\ComponentSource\ThemePageTemplate
+canvas.component_source_local_id.theme_page_template:
+  type: canvas.component_source_local_id.*
+  label: 'Theme'
+  constraints:
+    FullyValidatable: ~
+    # Matches the `theme` validation of `type: canvas.page_region.*`.
+    NotBlank: [ ]
+    ExtensionName: [ ]
+    ExtensionExists: theme
+canvas.component_source_settings.theme_page_template:
+  type: canvas.component_source_settings.*
+  label: 'Theme page template component settings'
+  constraints:
+    FullyValidatable: ~
 
 # The `fallback` plugin ID is the only one not required to specify a source-local ID.
 canvas.component_source_settings.fallback:
@@ -681,6 +868,9 @@ field.value.component_tree:
         absence:
           - Drupal\Core\Block\TitleBlockPluginInterface
           - Drupal\Core\Block\MessagesBlockPluginInterface
+          # The page content marker is only allowed in page_variant trees.
+          # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker
+          - marker.page_content
         presence: ~
     FullyValidatable: ~
 
@@ -723,6 +913,9 @@ canvas.pattern.*:
               # @see `type: canvas.page_region.*`
               - Drupal\Core\Block\TitleBlockPluginInterface
               - Drupal\Core\Block\MessagesBlockPluginInterface
+              # The page content marker is only allowed in page_variant trees.
+              # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker
+              - marker.page_content
             presence: ~
 canvas.asset_library.*:
   type: config_entity
@@ -784,6 +977,21 @@ canvas.asset_library.*:
         NotBlank: ~
       sequence:
         type: canvas.asset_library_manifest_entry
+    bundledSources:
+      type: sequence
+      label: 'Bundled local module sources'
+      requiredKey: false
+      orderby: value
+      constraints:
+        # There must be >=1 entry; otherwise the key should be omitted.
+        NotBlank: ~
+      sequence:
+        type: canvas.asset_library_bundled_source
+    packageJson:
+      type: string
+      label: 'Project package.json'
+      requiredKey: false
+      nullable: true
 
 canvas.asset_library_manifest_entry:
   type: mapping
@@ -800,6 +1008,30 @@ canvas.asset_library_manifest_entry:
       constraints:
         NotBlank: []
         UriScheme: ['public']
+    path:
+      type: string
+      label: 'Original relative disk path'
+      requiredKey: false
+    source:
+      type: string
+      label: 'Original source code of a module'
+      requiredKey: false
+      nullable: true
+
+canvas.asset_library_bundled_source:
+  type: mapping
+  label: 'Bundled local module source'
+  mapping:
+    path:
+      type: string
+      label: 'Original relative disk path'
+      constraints:
+        NotBlank: []
+    source:
+      type: string
+      label: 'Verbatim original source code'
+      constraints:
+        NotBlank: []
 
 canvas.brand_kit.*:
   type: config_entity
@@ -971,6 +1203,9 @@ canvas.content_template.*.*.*:
               # @see `type: canvas.page_region.*`
               - Drupal\Core\Block\TitleBlockPluginInterface
               - Drupal\Core\Block\MessagesBlockPluginInterface
+              # The page content marker is only allowed in page_variant trees.
+              # @see \Drupal\canvas\Plugin\Canvas\ComponentSource\Marker
+              - marker.page_content
             presence: ~
       label: 'Component tree'
     exposed_slots:
@@ -1018,6 +1253,20 @@ canvas.content_template.*.*.*:
           # @see \Drupal\canvas\Plugin\Validation\Constraint\ValidSlotNameConstraint::VALID_NAME
           pattern: '/^[a-z0-9]+([a-z0-9_-]+)[a-z0-9]+$/'
           message: "%value is not a valid exposed slot name."
+    page_variant:
+      type: string
+      label: 'Page variant'
+      # The machine name of the page_variant that renders content using this
+      # template. `null` uses the site default.
+      nullable: true
+      constraints:
+        Regex:
+          pattern: '/^[a-z0-9_]+$/'
+        ConfigExists:
+          prefix: canvas.page_variant.
+        # Disabled variants keep rendering where already selected, but cannot
+        # be selected anew (pages enforce this through their options list).
+        PageVariantSelectable: ~
 
 canvas.staged_config_update.*:
   type: config_entity
@@ -1064,6 +1313,57 @@ canvas.staged_config_update.*:
             constraints:
               NotBlank: [ ]
 
+canvas.staged_language_config_override.*:
+  type: config_entity
+  constraints:
+    FullyValidatable: ~
+  mapping:
+    id:
+      # The ID is "{langcode}.{config_name}", which contains dots. This ID intentionally does not use
+      # `type: machine_name`, because it is a composite ID that is better validated using the `StringParts` constraint
+      # than the `RegEx` constraint.
+      type: string
+      label: 'ID'
+      constraints:
+        NotBlank: [ ]
+        StringParts:
+          separator: .
+          reservedCharacters:
+            - ':'
+          reservedCharactersSubstitute: .
+          parts:
+            - '%parent.langcode'
+            - '%parent.config_name'
+    langcode:
+      type: string
+      label: 'Language code'
+      constraints:
+        NotBlank: [ ]
+        BetterConfigExists:
+          prefix: 'language.entity.'
+    config_name:
+      # We do not use `machine_name` since config entities have `.` in their IDs.
+      type: string
+      label: 'Config name'
+      constraints:
+        NotBlank: [ ]
+        Length:
+          # @see \Drupal\Core\Config\Entity\ConfigEntityStorage::MAX_ID_LENGTH
+          max: 166
+        # @todo Use `ConfigExists` once https://www.drupal.org/project/drupal/issues/3518273 is
+        #   fixed in core.
+        BetterConfigExists:
+          prefix: ''
+    data:
+      # The sparse override data has no fixed schema — it mirrors the structure of whatever config entity it targets.
+      # TRICKY: this could in theory be validated, but requires the default translation of the target config entity,
+      # which itself may be in the process of being modified (i.e. it may have a Canvas auto-save entry). This reduces
+      # the usefulness of validation, especially because when this staged language config override is saved, the final
+      # validation will be applied to the target config entity and all of its LanguageConfigOverrides anyway.
+      # @see \Drupal\canvas\Plugin\Validation\Constraint\CanvasConfigEntityTranslationsAreValidConstraintValidator
+      type: ignore
+      label: 'Override data'
+
 canvas.folder.*:
   type: config_entity
   constraints:
@@ -1101,6 +1401,102 @@ canvas.folder.*:
             configEntityTypeId: '%parent.%parent.configEntityTypeId'
       constraints:
         Unique: ~
+
+canvas.color.*:
+  type: config_entity
+  constraints:
+    FullyValidatable: ~
+  mapping:
+    name:
+      type: required_label
+      label: 'Color name'
+      constraints:
+        UniqueColorNameConstraint:
+          id: '%parent.uuid'
+    cssVariable:
+      type: string
+      label: 'CSS variable name'
+      constraints:
+        Regex:
+          pattern: '/^--[a-zA-Z_-][a-zA-Z0-9_-]*$/'
+          message: "The %value is not a valid CSS custom property name."
+        UniqueColorCssVariableConstraint:
+          id: '%parent.uuid'
+    value:
+      type: mapping
+      label: 'Color value in W3C Design Token format'
+      mapping:
+        colorSpace:
+          type: string
+          label: 'Color space'
+          constraints:
+            Choice:
+              choices:
+                - srgb
+                - hsl
+        components:
+          type: sequence
+          label: 'Color components'
+          constraints:
+            # Each known color space requires a fixed number of components.
+            # Unknown color spaces are silently allowed so that future spaces can
+            # be introduced without updating this constraint simultaneously.
+            # @see \Drupal\canvas\Plugin\Validation\Constraint\ColorComponentCountConstraint::COMPONENT_COUNTS
+            ColorComponentCount: []
+          sequence:
+            type: float
+            label: 'Component value'
+            # @todo Add per-colorSpace range validation (e.g., sRGB [0,1], HSL [0-360, 0-100, 0-100])
+        alpha:
+          type: float
+          label: 'Alpha (opacity)'
+          requiredKey: false
+          nullable: true
+          constraints:
+            Range:
+              min: 0.0
+              max: 1.0
+              notInRangeMessage: "Alpha must be between 0 and 1."
+        hex:
+          type: string
+          label: 'Hex fallback'
+          requiredKey: false
+          nullable: true
+          constraints:
+            Regex:
+              pattern: '/^#[0-9a-fA-F]{6}$/'
+              message: "The %value is not a valid 6-digit hex color."
+    displayFormat:
+      type: string
+      label: 'Display format'
+      requiredKey: false
+      nullable: true
+      constraints:
+        Choice:
+          choices:
+            - rgb
+            - hex
+            - hsl
+    weight:
+      type: weight
+      label: 'Weight'
+
+field.widget_settings.canvas_color_picker:
+  type: mapping
+  label: 'Canvas Color Picker widget settings'
+  mapping:
+    mode:
+      type: string
+      label: 'Picker mode'
+    folders:
+      type: sequence
+      label: 'Allowed folder UUIDs'
+      requiredKey: false
+      # Populated transiently at form-build time from the x-canvas-color-folders
+      # annotation on the component prop schema. Never stored in config.
+      sequence:
+        type: string
+        label: 'Folder UUID'
 
 # Search API processor configuration
 plugin.plugin_configuration.search_api_processor.canvas_component_tree_inputs:

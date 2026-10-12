@@ -4,8 +4,17 @@ import type { Spec } from '@json-render/core';
 import type { DiscoveryResult, DiscoveryWarning } from './discovery-client';
 
 export type PreviewIneligibilityReason =
+  | 'invalid_metadata'
   | 'missing_js_entry'
   | 'unsupported_js_extension';
+
+export interface PreviewComponentMetadataError {
+  sourcePath: string;
+  path: string;
+  line?: number;
+  column?: number;
+  message: string;
+}
 
 export interface PreviewManifestComponent {
   id: string;
@@ -25,6 +34,11 @@ export interface PreviewManifestComponent {
   previewable: boolean;
   ineligibilityReason: PreviewIneligibilityReason | null;
   exampleProps: Record<string, unknown>;
+  props: Record<string, unknown>;
+  dataDependencies: {
+    entityFields?: Record<string, string[]>;
+  };
+  metadataErrors: PreviewComponentMetadataError[];
   mocks: PreviewManifestComponentMock[];
 }
 
@@ -50,6 +64,7 @@ export interface PreviewManifest {
   components: PreviewManifestComponent[];
   warnings: PreviewWarning[];
   globalCssUrl: string | null;
+  brandKitCssUrl: string | null;
 }
 
 /** Parent tells the preview iframe to refetch discovery/manifest without remounting (e.g. after page JSON save). */
@@ -58,18 +73,25 @@ export interface WorkbenchDiscoveryRefresh {
   type: 'workbench:discovery-refresh';
 }
 
+export interface PreviewRenderPageTemplate {
+  /** Page template spec whose marker.page_content renders the page spec. */
+  spec: Spec;
+}
+
 export interface PreviewRenderRequest {
   source: 'canvas-workbench-parent';
   type: 'preview:render';
   payload: {
     renderId: string;
-    renderType: 'component' | 'page';
+    renderType: 'component' | 'page' | 'page-template';
     spec: Spec;
     registrySources: Array<{
       name: string;
       jsEntryUrl: string;
     }>;
     cssUrls: string[];
+    /** Optional page template rendered around a page at marker.page_content. */
+    pageTemplate?: PreviewRenderPageTemplate;
     /** Workbench shell path (pathname + search) so the preview iframe MemoryRouter stays aligned. */
     shellPath?: string;
   };
@@ -84,7 +106,7 @@ export interface PreviewFrameRendered {
   source: 'canvas-workbench-frame';
   type: 'preview:rendered';
   payload: {
-    type: 'component' | 'page';
+    type: 'component' | 'page' | 'page-template';
     renderId: string;
   };
 }
@@ -141,6 +163,9 @@ export function toPreviewManifestComponent(component: {
       previewable: false,
       ineligibilityReason: 'missing_js_entry',
       exampleProps: {},
+      props: {},
+      dataDependencies: {},
+      metadataErrors: [],
       mocks: [],
     };
   }
@@ -164,6 +189,9 @@ export function toPreviewManifestComponent(component: {
       previewable: false,
       ineligibilityReason: 'unsupported_js_extension',
       exampleProps: {},
+      props: {},
+      dataDependencies: {},
+      metadataErrors: [],
       mocks: [],
     };
   }
@@ -186,7 +214,26 @@ export function toPreviewManifestComponent(component: {
     previewable: true,
     ineligibilityReason: null,
     exampleProps: {},
+    props: {},
+    dataDependencies: {},
+    metadataErrors: [],
     mocks: [],
+  };
+}
+
+export function markPreviewManifestComponentMetadataInvalid(
+  component: PreviewManifestComponent,
+  sourcePath: string,
+  diagnostics: Array<Omit<PreviewComponentMetadataError, 'sourcePath'>>,
+): PreviewManifestComponent {
+  return {
+    ...component,
+    previewable: false,
+    ineligibilityReason: 'invalid_metadata',
+    metadataErrors: diagnostics.map((diagnostic) => ({
+      sourcePath,
+      ...diagnostic,
+    })),
   };
 }
 
@@ -198,6 +245,7 @@ export function buildPreviewManifest(
     components: discoveryResult.components.map(toPreviewManifestComponent),
     warnings: discoveryResult.warnings,
     globalCssUrl: null,
+    brandKitCssUrl: null,
   };
 }
 
@@ -233,17 +281,36 @@ export function isPreviewRenderRequest(
     return false;
   }
 
-  const { renderId, renderType, spec, registrySources, cssUrls, shellPath } =
-    value.payload;
+  const {
+    renderId,
+    renderType,
+    spec,
+    registrySources,
+    cssUrls,
+    pageTemplate,
+    shellPath,
+  } = value.payload;
   if (
     shellPath !== undefined &&
     (typeof shellPath !== 'string' || shellPath.length === 0)
   ) {
     return false;
   }
+  if (pageTemplate !== undefined) {
+    if (
+      !isRecord(pageTemplate) ||
+      !isRecord(pageTemplate.spec) ||
+      typeof pageTemplate.spec.root !== 'string' ||
+      !isRecord(pageTemplate.spec.elements)
+    ) {
+      return false;
+    }
+  }
   return (
     typeof renderId === 'string' &&
-    (renderType === 'component' || renderType === 'page') &&
+    (renderType === 'component' ||
+      renderType === 'page' ||
+      renderType === 'page-template') &&
     isRecord(spec) &&
     typeof spec.root === 'string' &&
     isRecord(spec.elements) &&
@@ -273,7 +340,9 @@ export function isPreviewFrameEvent(
   if (value.type === 'preview:rendered') {
     return (
       isRecord(value.payload) &&
-      (value.payload.type === 'component' || value.payload.type === 'page') &&
+      (value.payload.type === 'component' ||
+        value.payload.type === 'page' ||
+        value.payload.type === 'page-template') &&
       typeof value.payload.renderId === 'string'
     );
   }

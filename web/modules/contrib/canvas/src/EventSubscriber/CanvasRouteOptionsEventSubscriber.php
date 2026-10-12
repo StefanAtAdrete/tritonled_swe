@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\EventSubscriber;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\RouteBuildEvent;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Routing\RoutingEvents;
+use Drupal\Core\Routing\TrustedRedirectResponse;
+use Drupal\Core\Url;
+use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUrl;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Route;
 
@@ -22,7 +31,143 @@ final class CanvasRouteOptionsEventSubscriber implements EventSubscriberInterfac
 
   public function __construct(
     private readonly RouteMatchInterface $routeMatch,
+    private readonly LanguageManagerInterface $languageManager,
+    private readonly ConfigFactoryInterface $configFactory,
+    private readonly ModuleHandlerInterface $moduleHandler,
   ) {}
+
+  public function redirectCanvasToUnprefixedPath(RequestEvent $event): void {
+    $request = $event->getRequest();
+    $path = $request->getPathInfo();
+    // Only act on /canvas paths, but not canvas API paths - those handle
+    // language negotiation themselves and must not be redirected.
+    if (
+      !preg_match('#^/[^/]+/canvas(/|$)#', $path) ||
+      str_contains($path, '/canvas/api/') ||
+      str_contains($path, '/canvas/content-api/')
+    ) {
+      return;
+    }
+
+    // Without the language module there are no URL language prefixes to strip,
+    // and its LanguageNegotiationUrl (dereferenced below) is not autoloadable.
+    if (!$this->moduleHandler->moduleExists('language')) {
+      return;
+    }
+
+    // Strip the prefix configured for the URL-negotiated language (the
+    // default language may carry a prefix too) with a 302 redirect, so that
+    // Canvas always receives a prefix-free path (/canvas/editor/canvas_page/1).
+    // @todo Remove this redirect once Canvas natively supports
+    //   language-prefixed URLs in
+    //   https://git.drupalcode.org/project/canvas/-/work_items/3546597.
+    // @see \Drupal\canvas\EventSubscriber\CanvasRouteOptionsEventSubscriber::preventRouteNormalization()
+    $negotiation = $this->configFactory->get('language.negotiation');
+    // Only path-prefix URL negotiation encodes the language in the path. Under
+    // domain negotiation (or with URL negotiation off) a leading path segment
+    // is not a language prefix, so there is nothing to strip.
+    if ($negotiation->get('url.source') !== LanguageNegotiationUrl::CONFIG_PATH_PREFIX) {
+      return;
+    }
+    $current_langcode = $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_URL)->getId();
+    $prefixes = $negotiation->get('url.prefixes') ?? [];
+    // The default language may have an empty prefix; then the path is already
+    // prefix-free and there is nothing to strip.
+    $prefix = $prefixes[$current_langcode] ?? '';
+    if ($prefix === '') {
+      return;
+    }
+    $prefix_path = "/$prefix/";
+    if (\str_starts_with($path, $prefix_path)) {
+      $canvas_path = substr_replace($path, '/', 0, strlen($prefix_path));
+      // Keep the query string, but drop `destination` from the active
+      // request: RedirectResponseSubscriber would override the redirect
+      // target with it.
+      $query = $request->getQueryString();
+      $request->query->remove('destination');
+      $event->setResponse(new LocalRedirectResponse($request->getBasePath() . $canvas_path . ($query !== NULL ? "?$query" : ''), 302));
+    }
+  }
+
+  /**
+   * Redirects layout GET requests to the hinted preview translation.
+   *
+   * The `?canvas_preview_langcode` hint names the translation to preview. It
+   * must not conflict with e.g. the `session.parameter` language negotiation.
+   *
+   * This is an event subscriber rather than a `#[LanguageNegotiation]` plugin
+   * because the goal is not to negotiate a language — it is to defer to the
+   * negotiation the site already has. A negotiation plugin would compete with
+   * the site's configured negotiators, would need a site builder to enable and
+   * order it in the `language.types` configuration (which Canvas must not
+   * modify on install), and would apply to every request on the site. This
+   * subscriber instead applies to exactly two internal routes and lets the
+   * active negotiation chain build the URL that resolves to the requested
+   * language, redirecting there.
+   */
+  public function redirectCanvasApiToPreviewLanguage(RequestEvent $event): void {
+    $request = $event->getRequest();
+    // Only safe (GET/HEAD) requests carry the preview language hint; never
+    // redirect a request that has a body.
+    if (!$request->isMethodSafe()) {
+      return;
+    }
+    // Only the layout GET routes — the ones the Canvas UI previews through —
+    // accept a preview language hint.
+    $route_name = $this->routeMatch->getRouteName();
+    if (!\in_array($route_name, ['canvas.api.layout.get', 'canvas.api.layout.get.content_template'], TRUE)) {
+      return;
+    }
+    $langcode = $request->query->get('canvas_preview_langcode');
+    if (!\is_string($langcode) || $langcode === '') {
+      return;
+    }
+
+    // A hint naming a language that does not exist is a request for a
+    // translation that cannot exist: 404. This is the right place for it —
+    // this subscriber owns the `canvas_preview_langcode` hint, and it runs
+    // before the controller, which never sees the hint.
+    $languages = $this->languageManager->getLanguages();
+    if (!isset($languages[$langcode])) {
+      throw new NotFoundHttpException();
+    }
+    $language = $languages[$langcode];
+
+    // If the active negotiation chain already resolved the content language to
+    // the requested one — e.g. a query/session/domain negotiator that honors
+    // the incoming request directly, or the requested language being the
+    // default — there is nothing to redirect.
+    // @todo Assumes the interface and content languages negotiate to the same language; support divergent interface/content negotiation in https://git.drupalcode.org/project/canvas/-/work_items/3546597.
+    if ($this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId() === $language->getId()) {
+      return;
+    }
+
+    // Otherwise let the active negotiation chain build the URL that resolves
+    // to the requested language instead of assuming a particular negotiation
+    // method, and redirect there. Drop the `canvas_preview_langcode` hint; the
+    // redirect carries whatever the negotiator needs.
+    $query = $request->query->all();
+    unset($query['canvas_preview_langcode']);
+    $url = Url::fromRoute($route_name, $this->routeMatch->getRawParameters()->all());
+    // Negotiators that read a query parameter declare it in their language
+    // switch links — the same mechanism the language switcher block uses — so
+    // merge in the query of the link that switches the content language.
+    $switch_links = $this->languageManager->getLanguageSwitchLinks(LanguageInterface::TYPE_CONTENT, $url);
+    $switch_query = $switch_links instanceof \stdClass ? ($switch_links->links[$langcode]['query'] ?? NULL) : NULL;
+    if (\is_array($switch_query)) {
+      unset($switch_query['canvas_preview_langcode']);
+      $query = $switch_query + $query;
+    }
+    // Negotiators that read the language from the URL path or domain encode it
+    // during URL generation, from the `language` option.
+    $url->setOption('language', $language);
+    $url->setOption('query', $query);
+    // Not a LocalRedirectResponse: with domain negotiation, the URL that
+    // resolves to the requested language lives on another domain of this same
+    // site. The URL is generated above from the matched route, not from user
+    // input, so it is trusted.
+    $event->setResponse(new TrustedRedirectResponse($url->toString(), 302));
+  }
 
   public function transformWrapperFormatRouteOption(RequestEvent $event): void {
     if (!str_starts_with($this->routeMatch->getRouteName() ?? '', 'canvas.api.')) {
@@ -78,6 +223,11 @@ final class CanvasRouteOptionsEventSubscriber implements EventSubscriberInterfac
    * {@inheritdoc}
    */
   public static function getSubscribedEvents(): array {
+    $events[KernelEvents::REQUEST][] = ['redirectCanvasToUnprefixedPath', 100];
+    // Runs after the router (priority 32) so the matched route and raw
+    // parameters are available, but before the OpenAPI request validator
+    // (priority 0) so a redirected request never reaches it.
+    $events[KernelEvents::REQUEST][] = ['redirectCanvasApiToPreviewLanguage', 30];
     $events[KernelEvents::REQUEST][] = ['transformWrapperFormatRouteOption'];
     $events[RoutingEvents::ALTER][] = ['addCsrfToken'];
     $events[RoutingEvents::ALTER][] = ['preventRouteNormalization'];

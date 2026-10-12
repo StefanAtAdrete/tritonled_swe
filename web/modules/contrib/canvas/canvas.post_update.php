@@ -4,13 +4,31 @@ declare(strict_types=1);
 
 use Drupal\canvas\AutoSave\AutoSaveManager;
 use Drupal\canvas\CanvasConfigUpdater;
+use Drupal\canvas\ContentTranslation\ComponentTreeFieldSymmetricalTranslationSynchronizer;
 use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\Color;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ContentTemplate;
+use Drupal\canvas\Entity\Folder;
 use Drupal\canvas\Entity\PageRegion;
+use Drupal\canvas\Entity\PageVariant;
 use Drupal\canvas\Entity\Pattern;
+use Drupal\canvas\Entity\StagedLanguageConfigOverride;
+use Drupal\canvas\PageVariantMigration;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\BlockComponent;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\Core\Config\Entity\ConfigEntityUpdater;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityDefinitionUpdateManagerInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\RevisionableStorageInterface;
+use Drupal\Core\Site\Settings;
+use Drupal\Core\TempStore\SharedTempStoreFactory;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\image\Entity\ImageStyle;
 
@@ -175,7 +193,7 @@ function canvas_post_update_0007_respect_prop_ordering(array &$sandbox): void {
  * 2. using a dot in a `meta:enum` key is no longer forbidden for SDCs
  *
  * @see https://www.drupal.org/node/2960601
- * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::getComponentInputsForMetadata()
+ * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::getComponentInputsForMetadata()
  * @see \Drupal\canvas\PropShape\PropShape::standardize()
  * @see \Drupal\canvas\ComponentMetadataRequirementsChecker)
  */
@@ -199,7 +217,7 @@ function canvas_post_update_0009_unset_category_property_on_components(array &$s
  */
 function canvas_post_update_0010_migrate_auto_save(): void {
   $keyvalue_factory = \Drupal::service('keyvalue');
-  $tempstore_factory = \Drupal::service('tempstore.shared');
+  $tempstore_factory = \Drupal::service(SharedTempStoreFactory::class);
 
   $collections = [
     AutoSaveManager::AUTO_SAVE_STORE,
@@ -221,7 +239,6 @@ function canvas_post_update_0010_migrate_auto_save(): void {
     $tempstore_storage = $storage_property->getValue($tempstore);
 
     foreach ($tempstore_storage->getAll() as $key => $value) {
-      // @phpstan-ignore property.notFound
       if (\is_object($value) && isset($value->data)) {
         $data = $value->data;
         \assert(\property_exists($value, 'owner'));
@@ -294,7 +311,7 @@ function canvas_post_update_0013_update_dynamic_prop_sources_to_entity_field_pro
  * Creates the global brand kit config entity for updated sites.
  */
 function canvas_post_update_0014_create_global_brand_kit(): void {
-  $entity_definition_update_manager = \Drupal::service('entity.definition_update_manager');
+  $entity_definition_update_manager = \Drupal::service(EntityDefinitionUpdateManagerInterface::class);
   \assert($entity_definition_update_manager instanceof EntityDefinitionUpdateManagerInterface);
   $change_list = $entity_definition_update_manager->getChangeList();
   if (($change_list[BrandKit::ENTITY_TYPE_ID]['entity_type'] ?? NULL) === EntityDefinitionUpdateManagerInterface::DEFINITION_CREATED) {
@@ -403,4 +420,378 @@ function canvas_post_update_0017_content_template_component_tree_sequence_keys(a
   $canvasConfigUpdater->setDeprecationsEnabled(FALSE);
   \Drupal::classResolver(ConfigEntityUpdater::class)
     ->update($sandbox, ContentTemplate::ENTITY_TYPE_ID, static fn(ContentTemplate $template): bool => $canvasConfigUpdater->needsConfigEntityWithComponentTreeSequenceKeysUpdate($template));
+}
+
+/**
+ * Update Folder config entities to declare their items as config dependencies.
+ */
+function canvas_post_update_0018_folder_component_dependencies(array &$sandbox): void {
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, Folder::ENTITY_TYPE_ID, static fn(Folder $folder): bool => !empty($folder->get('items')));
+}
+
+/**
+ * Recompute version hashes of components with a `list_float` prop default.
+ */
+function canvas_post_update_0019_recompute_list_float_component_version_hashes(array &$sandbox): void {
+  $canvasConfigUpdater = \Drupal::service(CanvasConfigUpdater::class);
+  \assert($canvasConfigUpdater instanceof CanvasConfigUpdater);
+  $canvasConfigUpdater->setDeprecationsEnabled(FALSE);
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, Component::ENTITY_TYPE_ID, static fn(Component $component): bool => $canvasConfigUpdater->updateListFloatComponentVersionHash($component));
+}
+
+/**
+ * Installs the StagedLanguageConfigOverride config entity type.
+ */
+function canvas_post_update_0020_install_staged_language_config_override_entity_type(array &$sandbox): void {
+  $entity_definition_update_manager = \Drupal::service(EntityDefinitionUpdateManagerInterface::class);
+  \assert($entity_definition_update_manager instanceof EntityDefinitionUpdateManagerInterface);
+  $change_list = $entity_definition_update_manager->getChangeList();
+  if (($change_list[StagedLanguageConfigOverride::ENTITY_TYPE_ID]['entity_type'] ?? NULL) === EntityDefinitionUpdateManagerInterface::DEFINITION_CREATED) {
+    $entity_definition_update_manager->installEntityType(\Drupal::entityTypeManager()->getDefinition(StagedLanguageConfigOverride::ENTITY_TYPE_ID));
+  }
+}
+
+/**
+ * Store each SDC/code component prop's `derived_schema_metadata`.
+ */
+function canvas_post_update_0021_store_prop_derived_schema_metadata(array &$sandbox): void {
+  $canvasConfigUpdater = \Drupal::service(CanvasConfigUpdater::class);
+  \assert($canvasConfigUpdater instanceof CanvasConfigUpdater);
+  $canvasConfigUpdater->setDeprecationsEnabled(FALSE);
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, Component::ENTITY_TYPE_ID, static fn(Component $component): bool => CanvasConfigUpdater::needsPropDerivedSchemaMetadata($component));
+}
+
+/**
+ * Enforce symmetrical translation of the Canvas Page `components` base field.
+ */
+function canvas_post_update_0022_enforce_symmetrical_canvas_page_components_translation(): void {
+  // Case 1. Sites without content_translation need no update: the override
+  // gets created when content_translation gets installed.
+  // @see \Drupal\canvas\Hook\ContentTranslationHooks::modulesInstalled()
+  // @see \Drupal\Tests\canvas\Functional\Update\SymmetricalCanvasPageComponentsTranslationUpdateTest::testWithoutContentTranslation
+  if (!\Drupal::moduleHandler()->moduleExists('content_translation')) {
+    return;
+  }
+  // Case 2. Sites that used canvas_dev_translation and had invalid config are
+  // forced into the only valid config.
+  // @see \Drupal\Tests\canvas\Functional\Update\SymmetricalCanvasPageComponentsTranslationUpdateTest::testExistingOverrideWithUnsupportedSettings
+  // Case 3. Sites that used canvas_dev_translation and had the right config:
+  // an effective no-op.
+  // @see \Drupal\Tests\canvas\Functional\Update\SymmetricalCanvasPageComponentsTranslationUpdateTest::testExistingOverrideWithValidSettings
+  // Case 4. Sites with content_translation but no base field override yet get
+  // it created.
+  // @see \Drupal\Tests\canvas\Functional\Update\SymmetricalCanvasPageComponentsTranslationUpdateTest::testMissingOverride
+  ComponentTreeFieldSymmetricalTranslationSynchronizer::ensureSymmetricalCanvasPageComponents();
+}
+
+/**
+ * Convert legacy boolean block `label_display` inputs to strings in content.
+ *
+ * Core 11.3 (#3547808) made `block.settings` `label_display` a string enum
+ * ('0' | 'visible'); data written under 11.2 could hold a boolean, which now
+ * fails validation. Rewrite every block component instance whose
+ * `label_display` input is a boolean, across all revisions and translations.
+ * Config-entity trees and auto-save snapshots are covered by the sibling 0024
+ * and 0025 updates.
+ *
+ * @see \Drupal\canvas\CanvasConfigUpdater::coerceBlockLabelDisplay()
+ */
+function canvas_post_update_0023_block_label_display_boolean_to_string(array &$sandbox): void {
+  $entity_type_manager = \Drupal::entityTypeManager();
+
+  // Build the work list once: every revision (or entity) id of every content
+  // entity holding a component_tree field. Every revision must be fixed — the
+  // data-health audit validates default, past and forward revisions separately.
+  if (!isset($sandbox['items'])) {
+    $entity_field_manager = \Drupal::service(EntityFieldManagerInterface::class);
+    \assert($entity_field_manager instanceof EntityFieldManagerInterface);
+    $sandbox['items'] = [];
+    $sandbox['fields'] = [];
+    foreach ($entity_field_manager->getFieldMapByFieldType(ComponentTreeItem::PLUGIN_ID) as $entity_type_id => $fields) {
+      $sandbox['fields'][$entity_type_id] = \array_keys($fields);
+      $query = $entity_type_manager->getStorage($entity_type_id)->getQuery()->accessCheck(FALSE);
+      if ($entity_type_manager->getDefinition($entity_type_id)->isRevisionable()) {
+        $query->allRevisions();
+      }
+      // allRevisions() keys the result by revision id, otherwise by entity id.
+      foreach (\array_keys($query->execute()) as $id) {
+        $sandbox['items'][] = [$entity_type_id, $id];
+      }
+    }
+    $sandbox['total'] = \count($sandbox['items']);
+    $sandbox['progress'] = 0;
+  }
+
+  $batch = \array_slice($sandbox['items'], $sandbox['progress'], (int) Settings::get('entity_update_batch_size', 50));
+  foreach ($batch as [$entity_type_id, $id]) {
+    $storage = $entity_type_manager->getStorage($entity_type_id);
+    $revisionable = $entity_type_manager->getDefinition($entity_type_id)->isRevisionable();
+    if ($revisionable) {
+      \assert($storage instanceof RevisionableStorageInterface);
+      $entity = $storage->loadRevision($id);
+    }
+    else {
+      $entity = $storage->load($id);
+    }
+    if (!$entity instanceof ContentEntityInterface) {
+      continue;
+    }
+    $changed = FALSE;
+    // Inputs can differ per translation (asymmetric fields), so visit each.
+    foreach ($entity->getTranslationLanguages() as $langcode => $language) {
+      $translation = $entity->getTranslation($langcode);
+      foreach ($sandbox['fields'][$entity_type_id] as $field_name) {
+        \assert(\is_string($field_name));
+        if (!$translation->hasField($field_name)) {
+          continue;
+        }
+        foreach ($translation->get($field_name) as $item) {
+          \assert($item instanceof ComponentTreeItem);
+          $changed = CanvasConfigUpdater::coerceBlockLabelDisplay($item) || $changed;
+        }
+      }
+    }
+    if ($changed) {
+      // Rewrite the revision in place; do not spawn a new one.
+      if ($revisionable) {
+        $entity->setNewRevision(FALSE);
+      }
+      $entity->save();
+    }
+  }
+
+  $sandbox['progress'] += \count($batch);
+  $sandbox['#finished'] = $sandbox['total'] == 0 ? 1 : ($sandbox['progress'] / $sandbox['total']);
+}
+
+/**
+ * Cast boolean block `label_display` inputs to strings in Pattern trees.
+ */
+function canvas_post_update_0024_pattern_block_label_display_to_string(array &$sandbox): void {
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, Pattern::ENTITY_TYPE_ID, static fn(Pattern $pattern): bool => CanvasConfigUpdater::needsBlockLabelDisplayCast($pattern));
+}
+
+/**
+ * Cast boolean block `label_display` inputs to strings in Page Region trees.
+ */
+function canvas_post_update_0024_page_region_block_label_display_to_string(array &$sandbox): void {
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, PageRegion::ENTITY_TYPE_ID, static fn(PageRegion $region): bool => CanvasConfigUpdater::needsBlockLabelDisplayCast($region));
+}
+
+/**
+ * Cast boolean block `label_display` inputs to strings in Content Templates.
+ */
+function canvas_post_update_0024_content_template_block_label_display_to_string(array &$sandbox): void {
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, ContentTemplate::ENTITY_TYPE_ID, static fn(ContentTemplate $template): bool => CanvasConfigUpdater::needsBlockLabelDisplayCast($template));
+}
+
+/**
+ * Cast boolean block `label_display` inputs to strings in field default values.
+ */
+function canvas_post_update_0024_component_tree_field_default_value_block_label_display_to_string(array &$sandbox): void {
+  \Drupal::classResolver(ConfigEntityUpdater::class)
+    ->update($sandbox, 'field_config', static fn(FieldConfig $field): bool => CanvasConfigUpdater::needsBlockLabelDisplayCast($field));
+}
+
+/**
+ * Cast boolean block `label_display` inputs to strings in auto-save snapshots.
+ *
+ * Auto-save drafts are stored as raw arrays in the `canvas.auto_save`
+ * key-value collection and are never validated on load, so a boolean
+ * `label_display` written under 11.2 would survive publishing and only fail
+ * then. Rewrite every stored block instance whose `label_display` is bool.
+ *
+ * @todo Batch via $sandbox for very large auto-save stores.
+ * @todo Verify the two stored `inputs` shapes (JSON string for content, array
+ *   for config) against real 11.2 auto-save data, and whether the data-health
+ *   audit re-hashes snapshots (if so, refresh the entry hash here).
+ */
+function canvas_post_update_0025_auto_save_block_label_display_to_string(array &$sandbox): void {
+  $store = \Drupal::keyValue(AutoSaveManager::AUTO_SAVE_STORE);
+  $changed_keys = [];
+  foreach ($store->getAll() as $key => $entry) {
+    if (!\is_array($entry) || !\array_key_exists('data', $entry) || !\is_array($entry['data'])) {
+      continue;
+    }
+    if (_canvas_coerce_block_label_display_in_raw($entry['data'])) {
+      $store->set($key, $entry);
+      $changed_keys[] = $key;
+    }
+  }
+  if ($changed_keys !== []) {
+    \Drupal::service(CacheTagsInvalidatorInterface::class)->invalidateTags([AutoSaveManager::CACHE_TAG]);
+  }
+}
+
+/**
+ * Recursively coerces block `label_display` inputs in a raw auto-save array.
+ *
+ * A component instance is any associative array carrying both a `component_id`
+ * (a "block.*" plugin ID) and an `inputs` member. `inputs` is a JSON string for
+ * content-entity component-tree items and a decoded array for config-entity
+ * trees; both are handled. Mutates $data by reference; returns TRUE if changed.
+ */
+function _canvas_coerce_block_label_display_in_raw(array &$data): bool {
+  $changed = FALSE;
+  if (
+    isset($data['component_id']) && \is_string($data['component_id'])
+    && \str_starts_with($data['component_id'], BlockComponent::SOURCE_PLUGIN_ID . '.')
+    && \array_key_exists('inputs', $data)
+  ) {
+    $inputs = $data['inputs'];
+    $was_string = \is_string($inputs);
+    if ($was_string) {
+      $inputs = Json::decode($inputs);
+    }
+    if (\is_array($inputs) && \array_key_exists('label_display', $inputs) && \is_bool($inputs['label_display'])) {
+      $inputs['label_display'] = $inputs['label_display'] ? 'visible' : '0';
+      $data['inputs'] = $was_string ? Json::encode($inputs) : $inputs;
+      $changed = TRUE;
+    }
+  }
+  foreach ($data as &$value) {
+    if (\is_array($value)) {
+      $changed = _canvas_coerce_block_label_display_in_raw($value) || $changed;
+    }
+  }
+  return $changed;
+}
+
+/**
+ * Rehash existing auto-save items with the strengthened normalization.
+ *
+ * Changes to AutoSaveManager::toStorableArray() and ::normalizeEntity() mean
+ * the data and hashes stored in existing auto-save items may be stale. This
+ * rebuilds data, data_hash, and original_hash in place — using the new
+ * normalization — without touching any other auto-save item metadata
+ * (owner, updated, label, …).
+ *
+ * @see \Drupal\canvas\AutoSave\AutoSaveManager::normalizeEntity()
+ * @see \Drupal\canvas\AutoSave\AutoSaveManager::toStorableArray()
+ */
+function canvas_post_update_0026_rehash_auto_save_items(): void {
+  $auto_save_store = \Drupal::service('keyvalue')->get(AutoSaveManager::AUTO_SAVE_STORE);
+  $entity_type_manager = \Drupal::service(EntityTypeManagerInterface::class);
+
+  // AutoSaveManager's normalization helpers are private static. Use reflection
+  // to reach the necessary helpers without converting them to public.
+  $normalize = new \ReflectionMethod(AutoSaveManager::class, 'normalizeEntity');
+  $normalize->setAccessible(TRUE);
+  $generate_hash = new \ReflectionMethod(AutoSaveManager::class, 'generateHash');
+  $generate_hash->setAccessible(TRUE);
+  $to_storable = new \ReflectionMethod(AutoSaveManager::class, 'toStorableArray');
+  $to_storable->setAccessible(TRUE);
+
+  foreach ($auto_save_store->getAll() as $key => $item) {
+    \assert(\is_array($item));
+    \assert(isset($item['entity_type'], $item['data'], $item['entity_id']));
+    $storage = $entity_type_manager->getStorage($item['entity_type']);
+    \assert($storage instanceof EntityStorageInterface);
+
+    // Reconstruct the entity from its stored snapshot and rehash with the
+    // new normalization.
+    $entity = $storage->create($item['data']);
+    $entity->enforceIsNew(FALSE);
+    $item['data'] = $to_storable->invoke(NULL, $entity);
+    $item['data_hash'] = $generate_hash->invoke(NULL, $normalize->invoke(NULL, $entity));
+
+    // Recompute original_hash against the currently stored entity so conflict
+    // detection stays correct after the normalization change.
+    $stored = $storage->loadUnchanged($item['entity_id']);
+    \assert($stored instanceof EntityInterface);
+    $item[AutoSaveManager::AUTO_SAVE_STORED_ENTITY_HASH_KEY] = $generate_hash->invoke(NULL, $normalize->invoke(NULL, $stored));
+
+    $auto_save_store->set($key, $item);
+  }
+}
+
+/**
+ * Installs the Color config entity type.
+ */
+function canvas_post_update_0027_install_color_entity_type(): void {
+  $entity_definition_update_manager = \Drupal::service(EntityDefinitionUpdateManagerInterface::class);
+  \assert($entity_definition_update_manager instanceof EntityDefinitionUpdateManagerInterface);
+  $change_list = $entity_definition_update_manager->getChangeList();
+  if (($change_list[Color::ENTITY_TYPE_ID]['entity_type'] ?? NULL) === EntityDefinitionUpdateManagerInterface::DEFINITION_CREATED) {
+    $entity_definition_update_manager->installEntityType(\Drupal::entityTypeManager()->getDefinition(Color::ENTITY_TYPE_ID));
+  }
+}
+
+/**
+ * Install page variants: entity type, selection field, marker, and settings.
+ */
+function canvas_post_update_0028_install_page_variants(): void {
+  $update_manager = \Drupal::service(EntityDefinitionUpdateManagerInterface::class);
+  \assert($update_manager instanceof EntityDefinitionUpdateManagerInterface);
+  $entity_type_manager = \Drupal::entityTypeManager();
+
+  // 1. Install the page_variant config entity type.
+  if ($update_manager->getEntityType(PageVariant::ENTITY_TYPE_ID) === NULL) {
+    $update_manager->installEntityType($entity_type_manager->getDefinition(PageVariant::ENTITY_TYPE_ID));
+  }
+
+  // 2. Install the page_variant selection field on canvas_page.
+  if ($update_manager->getFieldStorageDefinition('page_variant', 'canvas_page') === NULL) {
+    $storage_definitions = \Drupal::service(EntityFieldManagerInterface::class)->getFieldStorageDefinitions('canvas_page');
+    if (isset($storage_definitions['page_variant'])) {
+      $update_manager->installFieldStorageDefinition('page_variant', 'canvas_page', 'canvas', $storage_definitions['page_variant']);
+    }
+  }
+
+  // 3. Create the "Page content" marker component (shipped in config/install,
+  // which existing sites do not import).
+  // @see config/install/canvas.component.marker.page_content.yml
+  PageVariantMigration::ensurePageContentMarker();
+
+  // 4. Create the settings object holding the default page variant.
+  $settings = \Drupal::configFactory()->getEditable('canvas.settings');
+  if ($settings->isNew()) {
+    $settings->set('default_page_variant', NULL)->save();
+  }
+}
+
+/**
+ * Convert the default theme's page regions into one page variant.
+ *
+ * Only the default theme is migrated, and only when it has enabled regions.
+ * On the live site the front end always rendered through the active (default)
+ * theme's regions, and only the enabled ones, so:
+ * - a non-default theme's regions were dormant and become no variant, and
+ * - a site whose default theme has no enabled regions was not using Canvas
+ *   global regions at all, so nothing is migrated and rendering stays on core
+ *   block layout.
+ * A site can restructure a leftover theme's regions into a variant by hand, or
+ * re-enable Canvas for that theme through the theme settings form. Role
+ * permissions need no migration: page variants deliberately reuse the
+ * permission page regions used, so a role that could administer the page
+ * template keeps that ability over the variant it is converted into.
+ *
+ * @see \Drupal\canvas\Entity\PageRegion::loadForActiveTheme()
+ * @see \Drupal\canvas\Hook\PageRegionHooks::formSystemThemeSettingsSubmit()
+ * @see \Drupal\canvas\Entity\PageVariant::ADMIN_PERMISSION
+ */
+function canvas_post_update_0029_migrate_page_regions_to_variants(): void {
+  PageVariantMigration::migrateDefaultTheme();
+}
+
+/**
+ * Updates the canvas_page `page_variant` selection field to an options list.
+ */
+function canvas_post_update_0030_page_variant_selection_options(): void {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  if ($update_manager->getFieldStorageDefinition('page_variant', 'canvas_page') === NULL) {
+    // Fresh installs (and sites upgraded by post_update 0028 running after
+    // this code landed) already have the options-list definition.
+    return;
+  }
+  // The stored values and column schema are unchanged (a machine name in a
+  // varchar column); only the field type and its settings change.
+  $storage_definitions = \Drupal::service(EntityFieldManagerInterface::class)->getFieldStorageDefinitions('canvas_page');
+  $update_manager->updateFieldStorageDefinition($storage_definitions['page_variant']);
 }

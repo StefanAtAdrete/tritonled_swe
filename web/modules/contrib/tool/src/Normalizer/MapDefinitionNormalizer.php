@@ -14,7 +14,7 @@ class MapDefinitionNormalizer extends ComplexDataNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $context = []): array|string|int|float|bool|\ArrayObject|NULL {
+  public function normalize($object, $format = NULL, array $context = []): array {
     if ($format === 'json_schema') {
       return $this->getNormalizationSchema($object, $context);
     }
@@ -24,8 +24,8 @@ class MapDefinitionNormalizer extends ComplexDataNormalizer {
   /**
    * {@inheritdoc}
    */
-  protected function doNormalize($object, $format = NULL, array $context = []): array|string|int|float|bool|\ArrayObject|null {
-    return NULL;
+  protected function doNormalize($object, $format = NULL, array $context = []): array {
+    return [];
   }
 
   /**
@@ -44,10 +44,13 @@ class MapDefinitionNormalizer extends ComplexDataNormalizer {
         $schema['properties'][$name] = $property_schema;
         if ($property_definition->isRequired()) {
           $schema['required'] ??= [];
-          $schema['required'][] = $name;
+          $schema['required'][] = (string) $name;
         }
       }
     }
+    // Without properties, an empty PHP array would encode as [] rather than
+    // the {} JSON Schema expects for object members.
+    $schema['properties'] ??= new \ArrayObject();
     return $schema;
 
   }
@@ -66,8 +69,11 @@ class MapDefinitionNormalizer extends ComplexDataNormalizer {
    * {@inheritdoc}
    */
   public function getSupportedTypes(?string $format): array {
+    if ($format !== 'json_schema') {
+      return [];
+    }
     return [
-      Map::class => ($format === 'json_schema'),
+      Map::class => TRUE,
     ];
   }
 

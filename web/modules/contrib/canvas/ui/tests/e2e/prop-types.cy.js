@@ -1,3 +1,4 @@
+// @canvas-ci weight=13 flaky
 /* cspell:ignore Ronk mander mando bination mentary */
 describe('Prop types editing', () => {
   const textFieldIterations = {
@@ -68,7 +69,7 @@ describe('Prop types editing', () => {
     cy.drupalLogin('canvasUser', 'canvasUser');
     cy.loadURLandWaitForCanvasLoaded();
     cy.openLibraryPanel();
-    cy.insertComponent({ name: 'Two Column' });
+    cy.insertComponent({ name: 'Two Column' }, { waitForVisible: false });
     cy.findByLabelText('Column Width').should('exist');
     cy.insertComponent({ name: 'All props' });
     cy.openLayersPanel();
@@ -96,6 +97,25 @@ describe('Prop types editing', () => {
         '#test-bool-default-false code',
         'true',
       );
+
+      // Updating another field must not flip boolean defaults.
+      cy.findByLabelText('Bool (default true)').assertToggleState(true);
+      cy.findByLabelText('String — single line').type(' keep value', {
+        force: true,
+      });
+      cy.findByLabelText('Bool (default false)').assertToggleState(false);
+      cy.findByLabelText('Bool (default true)').assertToggleState(true);
+
+      cy.waitForElementContentInIframe(
+        '#test-string code',
+        'Hello, world! keep value',
+      );
+      cy.waitForElementContentInIframe(
+        '#test-bool-default-false code',
+        'false',
+      );
+      cy.waitForElementContentInIframe('#test-bool-default-true code', 'true');
+
       cy.findByLabelText('Bool (default false)')
         .assertToggleState(false)
         .toggleToggle()
@@ -256,26 +276,31 @@ describe('Prop types editing', () => {
       'exist',
     );
 
-    cy.get(dateSelector).should('have.value', '2016-09-17');
+    cy.get(dateSelector).should('have.value', '2016-09-16');
 
-    cy.get(timeSelector).should('have.value', '06:20:39');
+    cy.get(timeSelector).should('have.value', '20:20:39');
+    cy.testInIframe('#test-string-format-date-time', (el) =>
+      el.scrollIntoView(),
+    );
     cy.waitForElementContentInIframe(
       '#test-string-format-date-time',
       '2016-09-16T20:20:39+00:00',
     );
 
     cy.get(dateSelector).focus();
-    cy.realType('628{uparrow}');
+    cy.get(dateSelector).clear();
+    cy.get(dateSelector).type('2017-06-28');
 
     cy.get(timeSelector).focus();
-    cy.realType('72135');
+    cy.get(timeSelector).clear();
+    cy.get(timeSelector).type('19:21:35');
 
     cy.get(dateSelector).should('have.value', '2017-06-28');
+    cy.get(timeSelector).should('have.value', '19:21:35');
 
-    cy.get(timeSelector).should('have.value', '07:21:35');
     cy.waitForElementContentInIframe(
       '#test-string-format-date-time',
-      '2017-06-28T07:21:35.000Z',
+      '2017-06-28T19:21:35.000Z',
     );
   });
 
@@ -910,5 +935,36 @@ describe('Prop types editing', () => {
       'data-invalid-prop-value',
     );
     cy.get('[data-prop-message="true"]').should('not.exist');
+  });
+
+  it('textarea can handle values that are JSON formatted strings', () => {
+    const jsonString = '{"name":"test","value":123,"nested":{"key":"data"}}';
+    const iframeSelector = '#test-string-multiline';
+    const labelText = 'String — multi-line';
+
+    // Clear the existing value and type the JSON string
+    cy.findByLabelText(labelText).clear({ force: true });
+    cy.findByLabelText(labelText).type(jsonString, {
+      parseSpecialCharSequences: false,
+      force: true,
+    });
+
+    // Verify it appears correctly in the input
+    cy.findByLabelText(labelText).should('have.value', jsonString);
+
+    // Wait for it to appear in the preview
+    cy.waitForElementContentInIframe(iframeSelector, jsonString);
+
+    // Reload the page without clearing auto-save
+    cy.loadURLandWaitForCanvasLoaded({ clearAutoSave: false });
+    cy.openLayersPanel();
+    cy.clickComponentInLayersView('All props');
+    cy.findByLabelText('String — single line').should('exist');
+
+    // Verify the JSON string is still in the input (not [Object object]).
+    cy.findByLabelText(labelText).should('have.value', jsonString);
+
+    // Verify it's still correctly displayed in the preview
+    cy.waitForElementContentInIframe(iframeSelector, jsonString);
   });
 });

@@ -1,4 +1,5 @@
 import { InvalidArgumentError } from 'commander';
+import * as p from '@clack/prompts';
 
 import {
   getConfig,
@@ -8,38 +9,64 @@ import {
   usesManagedDefaultScope,
 } from '../config';
 
-/**
- * Magic string constant for "all components" selector
- */
-export const ALL_COMPONENTS_SELECTOR = '_allComponents';
-
-/**
- * Validates that --all and --components options are not used together
- */
-export function validateComponentOptions(options: {
-  components?: string;
-  all?: boolean;
-}): void {
-  if (options.components && options.all) {
-    throw new Error(
-      'Cannot use --all and --components options together. Please use either:\n   • --components to specify specific components, or\n   • --all to process everything.',
-    );
-  }
-}
+import type { CanvasSyncConfig } from '@drupal-canvas/discovery';
 
 /**
  * Updates config with common CLI options
  */
+interface SyncCommandOptions {
+  includePages?: boolean;
+  includeContentTemplates?: boolean;
+  pages?: boolean;
+  contentTemplates?: boolean;
+  pageTemplates?: boolean;
+  sync?: Partial<CanvasSyncConfig>;
+}
+
+export function applySyncOptionAliasesAndWarnings(
+  options: SyncCommandOptions,
+): void {
+  if (typeof options.includePages === 'boolean') {
+    p.log.warn(
+      options.includePages
+        ? '--include-pages is deprecated because pages are included by default. Remove this flag.'
+        : '--include-pages=false is deprecated and will be removed in a future release. Use --no-pages to exclude pages.',
+    );
+  }
+  if (typeof options.includeContentTemplates === 'boolean') {
+    p.log.warn(
+      options.includeContentTemplates
+        ? '--include-content-templates is deprecated because content templates are included by default. Remove this flag.'
+        : '--include-content-templates=false is deprecated and will be removed in a future release. Use --no-content-templates to exclude content templates.',
+    );
+  }
+  const syncOptions = options.sync ?? {};
+  if (typeof options.includePages === 'boolean') {
+    syncOptions.pages = options.includePages;
+  }
+  if (typeof options.includeContentTemplates === 'boolean') {
+    syncOptions.contentTemplates = options.includeContentTemplates;
+  }
+  if (options.pages === false) {
+    syncOptions.pages = false;
+  }
+  if (options.contentTemplates === false) {
+    syncOptions.contentTemplates = false;
+  }
+  if (options.pageTemplates === false) {
+    syncOptions.pageTemplates = false;
+  }
+  options.sync = syncOptions;
+}
+
 export function updateConfigFromOptions(options: {
   clientId?: string;
   clientSecret?: string;
   siteUrl?: string;
   dir?: string;
   scope?: string;
-  includePages?: boolean;
-  includeContentTemplates?: boolean;
+  sync?: Partial<CanvasSyncConfig>;
   includeBrandKit?: boolean;
-  all?: boolean;
   aliasBaseDir?: string;
   outputDir?: string;
 }): void {
@@ -47,13 +74,21 @@ export function updateConfigFromOptions(options: {
   if (options.clientSecret) setConfig({ clientSecret: options.clientSecret });
   if (options.siteUrl) setConfig({ siteUrl: options.siteUrl });
   if (options.dir) setConfig({ componentDir: options.dir });
-  if (typeof options.includePages === 'boolean') {
-    setConfig({ includePages: options.includePages });
+  if (typeof options.sync?.pages === 'boolean') {
+    setConfig({ includePages: options.sync.pages });
   }
-  if (typeof options.includeContentTemplates === 'boolean') {
-    setConfig({ includeContentTemplates: options.includeContentTemplates });
+  if (typeof options.sync?.contentTemplates === 'boolean') {
+    setConfig({ includeContentTemplates: options.sync.contentTemplates });
+  }
+  if (typeof options.sync?.pageTemplates === 'boolean') {
+    setConfig({ includePageTemplates: options.sync.pageTemplates });
   }
   if (typeof options.includeBrandKit === 'boolean') {
+    if (options.includeBrandKit) {
+      p.log.warn(
+        '--include-brand-kit is deprecated because brand kit is included by default. Remove this flag.',
+      );
+    }
     setConfig({ includeBrandKit: options.includeBrandKit });
   }
   const currentConfig = getConfig();
@@ -67,11 +102,11 @@ export function updateConfigFromOptions(options: {
         currentConfig.includePages,
         currentConfig.includeBrandKit,
         currentConfig.includeContentTemplates,
+        currentConfig.includePageTemplates,
       ),
     });
   }
   if (options.scope) setConfig({ scope: options.scope });
-  if (options.all) setConfig({ all: options.all });
   if (options.aliasBaseDir) setConfig({ aliasBaseDir: options.aliasBaseDir });
   if (options.outputDir) setConfig({ outputDir: options.outputDir });
 }

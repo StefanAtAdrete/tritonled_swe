@@ -60,7 +60,10 @@ class AiGuardrailSubformAjaxTest extends BaseClassFunctionalJavascriptTests {
    * @var array<string, string>
    */
   protected const GUARDRAILS = [
+    'moderation' => 'guardrail_settings[flagged_message]',
+    'input_length_limit' => 'guardrail_settings[max_length]',
     'restrict_to_topic' => 'guardrail_settings[valid_topics]',
+    'sensitive_content_stream' => 'guardrail_settings[start_marker]',
     'regexp_guardrail' => 'guardrail_settings[regexp_pattern]',
   ];
 
@@ -152,16 +155,26 @@ class AiGuardrailSubformAjaxTest extends BaseClassFunctionalJavascriptTests {
     $this->takeScreenshot('2_regexp_subform');
 
     // Switch to a different guardrail.
-    $page->selectFieldOption('guardrail', 'restrict_to_topic');
+    $page->selectFieldOption('guardrail', 'input_length_limit');
     $assert->assertWaitOnAjaxRequest();
     $this->assertNotEmpty(
-      $assert->waitForField('guardrail_settings[valid_topics]'),
+      $assert->waitForField('guardrail_settings[max_length]'),
       'The subform must switch to the newly selected guardrail.'
     );
-    $this->takeScreenshot('3_topic_subform');
+    $this->takeScreenshot('3_length_subform');
 
     // The previous guardrail's settings must be gone, not merely hidden.
     $assert->fieldNotExists('guardrail_settings[regexp_pattern]');
+
+    // Switch a third time to be sure it keeps following the selection.
+    $page->selectFieldOption('guardrail', 'sensitive_content_stream');
+    $assert->assertWaitOnAjaxRequest();
+    $this->assertNotEmpty(
+      $assert->waitForField('guardrail_settings[start_marker]'),
+      'The subform must keep following further selections.'
+    );
+    $assert->fieldNotExists('guardrail_settings[max_length]');
+    $this->takeScreenshot('4_stream_subform');
   }
 
   /**
@@ -187,12 +200,12 @@ class AiGuardrailSubformAjaxTest extends BaseClassFunctionalJavascriptTests {
       'The machine name should be derived from the label.'
     );
 
-    $page->selectFieldOption('guardrail', 'restrict_to_topic');
+    $page->selectFieldOption('guardrail', 'input_length_limit');
     $assert->assertWaitOnAjaxRequest();
     $this->takeScreenshot('2_subform_loaded');
 
-    $max_length = $assert->waitForField('guardrail_settings[valid_topics]');
-    $this->assertNotEmpty($max_length, 'The valid_topics setting must render.');
+    $max_length = $assert->waitForField('guardrail_settings[max_length]');
+    $this->assertNotEmpty($max_length, 'The max_length setting must render.');
     $max_length->setValue('123');
     $this->takeScreenshot('3_subform_filled');
 
@@ -204,7 +217,7 @@ class AiGuardrailSubformAjaxTest extends BaseClassFunctionalJavascriptTests {
     $this->drupalGet('admin/config/ai/guardrails/length_guard');
     $this->takeScreenshot('5_edit_form');
 
-    $assert->fieldValueEquals('guardrail_settings[valid_topics]', '123');
+    $assert->fieldValueEquals('guardrail_settings[max_length]', '123');
   }
 
 }

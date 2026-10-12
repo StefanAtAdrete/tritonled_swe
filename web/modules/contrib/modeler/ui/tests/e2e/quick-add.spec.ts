@@ -170,9 +170,9 @@ test.describe('Workflow Modeler - Quick Add Node', () => {
       const finalCount = await modeler.getNodeCount();
       expect(finalCount).toBe(initialCount + 1);
       
-      // The newest node should be selected (has .selected class)
-      // Note: React Flow uses .selected class on selected nodes
-      const selectedNodes = await modeler.nodes.filter({ hasClass: 'selected' }).count();
+      // The newest node should be selected (React Flow adds the .selected
+      // class to the selected node element).
+      const selectedNodes = await page.locator('.react-flow__node.selected').count();
       expect(selectedNodes).toBeGreaterThanOrEqual(1);
     });
 
@@ -271,16 +271,16 @@ test.describe('Workflow Modeler - Quick Add Condition', () => {
       await expect(popup).toBeVisible();
     });
 
-    test('should only show conditions in popup', async ({ page }) => {
+    test('should show conditions and actions in popup', async ({ page }) => {
       await modeler.openQuickAddConditionPopup('edge_2');
       
-      // Should show condition components
+      // Should show condition components (preferred, listed first)
       const isNewCondition = modeler.getQuickAddComponent('Entity is New');
       await expect(isNewCondition).toBeVisible();
       
-      // Should NOT show actions
+      // Should also show action components (for inserting nodes on edges)
       const saveAction = modeler.getQuickAddComponent('Save Entity');
-      await expect(saveAction).not.toBeVisible();
+      await expect(saveAction).toBeVisible();
     });
 
     test('should filter conditions by search', async ({ page }) => {
@@ -298,60 +298,57 @@ test.describe('Workflow Modeler - Quick Add Condition', () => {
     });
   });
 
-  test.describe('Adding Conditions to Edges', () => {
-    test('should add condition data to edge when selected', async ({ page }) => {
-      // Initially edge_2 should not have a condition label
+  test.describe('Inserting Condition Nodes on Edges', () => {
+    test('should insert a condition node on the edge when a condition is selected', async ({ page }) => {
+      const initialNodeCount = await modeler.getNodeCount();
+      const initialConditionCount = await modeler.getConditionNodeCount();
+
       await modeler.openQuickAddConditionPopup('edge_2');
       await modeler.selectQuickAddComponent('Entity is New');
-      
-      await page.waitForTimeout(300);
-      
-      // The edge should now be a condition edge with the condition label
-      // This updates the existing edge rather than creating a new node
-      // Verify by checking that the popup closes (condition was applied)
+      await page.waitForTimeout(400);
+
+      // The popup closes and a condition NODE is inserted on the edge
+      // (issue #3589093), so the node count and condition-node count grow by 1.
       const popup = modeler.getQuickAddPopup();
       await expect(popup).not.toBeVisible();
+      expect(await modeler.getNodeCount()).toBe(initialNodeCount + 1);
+      expect(await modeler.getConditionNodeCount()).toBe(initialConditionCount + 1);
     });
 
     test('should mark model as having unsaved changes', async ({ page }) => {
       await modeler.openQuickAddConditionPopup('edge_2');
       await modeler.selectQuickAddComponent('Entity is New');
-      
+
       await page.waitForTimeout(300);
-      
-      // The save button should be enabled (model has unsaved changes)
-      // In this implementation, adding a condition marks the model as changed
+
+      // Inserting a condition node marks the model as changed.
       await expect(modeler.saveButton).toBeEnabled();
     });
 
-    test('should select the edge after adding condition', async ({ page }) => {
+    test('should select the inserted condition node', async ({ page }) => {
       await modeler.openQuickAddConditionPopup('edge_2');
       await modeler.selectQuickAddComponent('Entity is New');
-      
+
       await page.waitForTimeout(300);
-      
-      // After adding condition, the edge should be selected
-      // The property panel should show edge properties
-      const propertyPanel = modeler.propertyPanel;
-      await expect(propertyPanel).toBeVisible();
+
+      // The inserted condition node is auto-selected; the property panel shows
+      // its node properties.
+      await expect(modeler.propertyPanel).toBeVisible();
     });
 
-    test('should show condition label input in property panel after adding condition', async ({ page }) => {
+    test('should show the node label input in the property panel after inserting a condition', async ({ page }) => {
       await modeler.openQuickAddConditionPopup('edge_2');
       await modeler.selectQuickAddComponent('Entity is New');
-      
+
       await page.waitForTimeout(500);
-      
-      // Property panel should be visible with condition details
-      const propertyPanel = modeler.propertyPanel;
-      await expect(propertyPanel).toBeVisible();
-      
-      // The condition label input should be present in the property panel
-      const conditionLabel = propertyPanel.locator('#modeler-condition-label');
-      await expect(conditionLabel).toBeVisible();
-      
-      // The label should contain the condition name
-      await expect(conditionLabel).toHaveValue('Entity is New');
+
+      await expect(modeler.propertyPanel).toBeVisible();
+
+      // Conditions are edited via the NODE properties panel now, so the node
+      // label input is present and prefilled with the condition name.
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
+      await expect(labelInput).toHaveValue('Entity is New');
     });
   });
 });
@@ -481,7 +478,7 @@ test.describe('Workflow Modeler - Quick Add Event', () => {
       await page.waitForTimeout(500);
       
       // The new event node should be selected
-      const selectedNodes = await modeler.nodes.filter({ hasClass: 'selected' }).count();
+      const selectedNodes = await page.locator('.react-flow__node.selected').count();
       expect(selectedNodes).toBeGreaterThanOrEqual(1);
     });
 
@@ -604,6 +601,9 @@ test.describe('Workflow Modeler - New Model Flow', () => {
   });
 });
 
+/** Identity plus left edge of one rendered canvas node. */
+type NodeBox = { id: string; x: number };
+
 test.describe('Workflow Modeler - Event Positioning', () => {
   let modeler: ModelerPage;
 
@@ -613,29 +613,57 @@ test.describe('Workflow Modeler - Event Positioning', () => {
     await modeler.goto();
   });
 
-  test('should position new event to the right of existing nodes', async ({ page }) => {
-    // Get the rightmost existing node position
-    const existingNodes = await modeler.nodes.all();
-    let maxX = 0;
-    for (const node of existingNodes) {
-      const box = await node.boundingBox();
-      if (box && box.x > maxX) {
-        maxX = box.x;
-      }
-    }
-    
-    // Add a new event
+  /** Ids of all nodes currently rendered on the canvas. */
+  const readNodeIds = (): Promise<string[]> =>
+    modeler.nodes.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-id') ?? ''));
+
+  /**
+   * Left edge of every rendered node, read in a single pass.
+   *
+   * One evaluateAll collects all rectangles synchronously inside the page, so
+   * every value belongs to the same viewport state.  Calling
+   * locator.boundingBox() per node would be one round trip each and could
+   * straddle a canvas animation frame, mixing viewport states.
+   */
+  const readNodeBoxes = (): Promise<NodeBox[]> =>
+    modeler.nodes.evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        id: node.getAttribute('data-id') ?? '',
+        x: node.getBoundingClientRect().x,
+      })),
+    );
+
+  test('should position new event to the right of existing nodes', async () => {
+    // Remember the existing nodes by id.  DOM order is not a reliable identity
+    // because ReactFlow reorders node elements on selection, and adding a node
+    // selects it.
+    const idsBefore = await readNodeIds();
+
     await modeler.openQuickAddEventPopup();
     await modeler.selectQuickAddEvent('Cron Run');
-    
-    await page.waitForTimeout(300);
-    
-    // Get the new node (should be the last one)
-    const newNodes = await modeler.nodes.all();
-    const newNode = newNodes[newNodes.length - 1];
-    const newBox = await newNode.boundingBox();
-    
-    // New node should be to the right of existing nodes
-    expect(newBox!.x).toBeGreaterThan(maxX);
+
+    // Adding a node selects it, which opens the property panel and pans/zooms the
+    // canvas onto the new node.  Screen coordinates keep changing while that
+    // viewport animation runs, so a box captured before the add belongs to a
+    // different viewport than one captured after it.  Wait until the new node
+    // stops moving, then compare all nodes from that one settled snapshot: the
+    // viewport transform is a positive scale plus a translation, so it preserves
+    // the left-to-right order of whatever it is applied to.
+    let boxes: NodeBox[] = [];
+    let previousX: number | null = null;
+    await expect(async () => {
+      boxes = await readNodeBoxes();
+      const added = boxes.filter((box) => !idsBefore.includes(box.id));
+      expect(added, 'exactly one node should have been added').toHaveLength(1);
+      const settled = previousX !== null && Math.abs(added[0].x - previousX) < 0.5;
+      previousX = added[0].x;
+      expect(settled, 'new node should have stopped moving').toBe(true);
+      // toPass ignores the configured expect timeout by default, so the default
+      // 5s expect budget is applied explicitly here.
+    }).toPass({ intervals: [100], timeout: 5000 });
+
+    const addedBox = boxes.find((box) => !idsBefore.includes(box.id))!;
+    const otherX = boxes.filter((box) => box.id !== addedBox.id).map((box) => box.x);
+    expect(addedBox.x).toBeGreaterThan(Math.max(...otherX));
   });
 });

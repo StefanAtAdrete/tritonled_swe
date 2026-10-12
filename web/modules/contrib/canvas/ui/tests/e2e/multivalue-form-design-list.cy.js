@@ -1,3 +1,4 @@
+// @canvas-ci weight=10
 /**
  * Comprehensive tests for multi-value form design for List (Text) and
  * List (Integer) fields.
@@ -313,10 +314,18 @@ configs.forEach((config) => {
 
       interceptPreview();
       selectOption(`@${config.fieldAlias}`, config.pickOption);
+
       waitForPreview();
 
       interceptPreview();
+      cy.intercept({
+        url: '**/canvas/api/v0/layout/node/2',
+        times: 1,
+        method: 'POST',
+      }).as('updatePreview');
       selectOption(`@${config.fieldAlias}`, config.pickOption2);
+      cy.wait('@updatePreview');
+      cy.findByLabelText('Loading Preview').should('not.exist');
       waitForPreview();
 
       const expectedChips = [

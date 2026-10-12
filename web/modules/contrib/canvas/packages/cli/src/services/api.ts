@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import axios from 'axios';
+import * as p from '@clack/prompts';
 import {
   defaultTokenEndpoint,
   fetchClientCredentialsToken,
@@ -10,14 +11,22 @@ import {
   setTokenEntry,
 } from '@drupal-canvas/auth';
 
-import { BRAND_KIT_GLOBAL_ID, ensureConfig, getConfig } from '../config.js';
+import {
+  BRAND_KIT_GLOBAL_ID,
+  ensureConfig,
+  getConfig,
+  setConfig,
+} from '../config.js';
 
 import type { AxiosError, AxiosInstance } from 'axios';
 import type { CanvasComponentTree } from 'drupal-canvas/json-render-utils';
 import type {
   AssetLibrary,
   BrandKit,
+  BrandKitColorEntry,
+  BrandKitColorPayload,
   BrandKitFontEntry,
+  ColorFolderEntry,
   Component,
   UploadedArtifact,
   UploadedArtifactResult,
@@ -27,6 +36,8 @@ import type {
   ContentTemplateListItem,
 } from '../types/ContentTemplate';
 import type { Page, PageListItem } from '../types/Page';
+import type { PageVariant } from '../types/PageVariant';
+import type { ConfigComponentTreePayload } from '../utils/component-tree-payload';
 
 export interface ApiOptions {
   siteUrl: string;
@@ -39,10 +50,126 @@ export interface ApiOptions {
   tokenEndpoint?: string;
 }
 
+export class CodeComponentMetadataOperationUnsupportedError extends Error {}
+
+export class CodeComponentMetadataValidationUnavailableError extends Error {}
+
+const pageVariantSupportCache = new Map<string, Promise<boolean>>();
+
+/**
+ * Check for the page-variant route without authenticating.
+ *
+ * An older site rejects `page_variant` during routing with a 404. A site that
+ * supports page variants reaches authentication and responds with 401 or 403,
+ * unless it permits the request. Ignore all non-404 failures so the normal API
+ * request can report authentication, permission, network, and server errors.
+ */
+export async function supportsPageVariants(siteUrl?: string): Promise<boolean> {
+  if (!siteUrl) {
+    return false;
+  }
+  const normalizedSiteUrl = siteUrl.replace(/\/+$/, '');
+  let support = pageVariantSupportCache.get(normalizedSiteUrl);
+  if (!support) {
+    support = (async () => {
+      try {
+        await axios.get(
+          `${normalizedSiteUrl}/canvas/api/v0/config/page_variant`,
+          {
+            headers: {
+              Accept: 'application/json',
+              'X-Canvas-CLI': '1',
+            },
+            timeout: 10000,
+          },
+        );
+        return true;
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          return false;
+        }
+        return true;
+      }
+    })();
+    pageVariantSupportCache.set(normalizedSiteUrl, support);
+  }
+  return support;
+}
+
+/**
+ * Remove unsupported page-variant behavior from the current command.
+ *
+ * Commands continue after disabling page-template synchronization and removing
+ * OAuth scopes unavailable before Canvas 1.11. Warn when page-template
+ * synchronization was enabled.
+ */
+export async function applyPageVariantCompatibility(
+  siteUrl: string,
+): Promise<void> {
+  if (await supportsPageVariants(siteUrl)) {
+    return;
+  }
+
+  const currentConfig = getConfig();
+  if (currentConfig.includePageTemplates) {
+    const normalizedSiteUrl = siteUrl.replace(/\/+$/, '');
+    p.log.warn(
+      `The site at ${normalizedSiteUrl} does not serve page templates yet. Page template syncing will be skipped until the site's Drupal Canvas module is updated to 1.11 or later. Ask a site administrator if you cannot do this yourself. Alternatively, use Canvas CLI 0.23 with this site.`,
+    );
+  }
+
+  setConfig({
+    includePageTemplates: false,
+    scope: currentConfig.scope
+      .split(/\s+/)
+      .filter(
+        (scope) =>
+          scope &&
+          scope !== 'canvas:page_variant' &&
+          // If page variants aren't supported then the media document also
+          // isn't since both were added in Canvas 1.11.
+          scope !== 'canvas:media:document:create',
+      )
+      .join(' '),
+  });
+}
+
 export interface UploadedMedia<TInputsResolved = unknown> {
   id: number;
   uuid: string;
   inputs_resolved: TInputsResolved;
+}
+
+export interface ContentEntityReferenceBundle {
+  label: string;
+  links?: Record<string, { href: string }>;
+}
+
+export interface ContentEntityReferenceEntityType {
+  label: string;
+  bundles: Record<string, ContentEntityReferenceBundle>;
+}
+
+export interface ContentEntityReferenceFieldProperty {
+  name: string;
+  label: string;
+  expression: string;
+}
+
+export interface ContentEntityReferenceField {
+  name: string;
+  label: string;
+  hasChildren: boolean;
+  properties: ContentEntityReferenceFieldProperty[];
+  targetEntityType?: string;
+  targetBundles?: Record<
+    string,
+    {
+      label: string;
+      labelExpression: string;
+      links?: Record<string, { href: string }>;
+    }
+  >;
 }
 
 export class ApiService {
@@ -268,6 +395,31 @@ export class ApiService {
     return this.accessToken;
   }
 
+  async validateCodeComponentPayload(component: Component): Promise<void> {
+    try {
+      await this.client.post(
+        '/canvas/api/v0/code-components/validate',
+        component,
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          throw new CodeComponentMetadataOperationUnsupportedError();
+        }
+        if (
+          !error.response ||
+          [401, 403].includes(error.response.status) ||
+          error.response.status >= 500
+        ) {
+          throw new CodeComponentMetadataValidationUnavailableError(
+            'Target metadata validation is unavailable.',
+          );
+        }
+      }
+      this.handleApiError(error);
+    }
+  }
+
   /**
    * List all components.
    */
@@ -431,6 +583,7 @@ export class ApiService {
   async createPage(page: {
     title: string;
     description: string;
+    pageVariant?: string | null;
     status: boolean;
     path: string;
     components: CanvasComponentTree;
@@ -454,6 +607,7 @@ export class ApiService {
     page: {
       title: string;
       description: string;
+      pageVariant?: string | null;
       status: boolean;
       path: string;
       components: CanvasComponentTree;
@@ -531,9 +685,14 @@ export class ApiService {
   /**
    * Create a new content template.
    */
-  async createContentTemplate(
-    template: ContentTemplate,
-  ): Promise<ContentTemplate> {
+  async createContentTemplate(template: {
+    entityType: string;
+    bundle: string;
+    viewMode: string;
+    pageVariant?: string | null;
+    status: boolean;
+    component_tree: ConfigComponentTreePayload;
+  }): Promise<ContentTemplate> {
     try {
       const response = await this.client.post(
         '/canvas/api/v0/config/content_template',
@@ -550,7 +709,12 @@ export class ApiService {
    */
   async updateContentTemplate(
     id: string,
-    template: Partial<ContentTemplate>,
+    template: {
+      label?: string;
+      status?: boolean;
+      pageVariant?: string | null;
+      component_tree?: ConfigComponentTreePayload;
+    },
   ): Promise<ContentTemplate> {
     try {
       const response = await this.client.patch(
@@ -626,7 +790,7 @@ export class ApiService {
   ): Promise<{ model: Record<string, unknown> }> {
     try {
       const response = await this.client.post(
-        `/canvas/api/v0/layout-content-template-draft/${encodeURIComponent(entityTypeId)}/${encodeURIComponent(previewEntityId)}?_format=json`,
+        `/canvas/api/v0/layout-content-template-draft/${encodeURIComponent(entityTypeId)}/${encodeURIComponent(previewEntityId)}`,
         {
           bundle,
           viewMode,
@@ -634,6 +798,22 @@ export class ApiService {
         },
       );
       return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  async previewContentEntityReferenceFields(
+    entityTypeId: string,
+    entityId: string,
+    entityFields: Record<string, string[]>,
+  ): Promise<Record<string, unknown>> {
+    try {
+      const response = await this.client.post(
+        `/canvas/api/v0/ui/content-entity-reference/preview/${encodeURIComponent(entityTypeId)}/${encodeURIComponent(entityId)}`,
+        { entityFields },
+      );
+      return response.data.data;
     } catch (error) {
       this.handleApiError(error);
     }
@@ -665,6 +845,169 @@ export class ApiService {
         `/canvas/api/v0/ui/content_template/suggestions/prop-sources/${encodeURIComponent(entityTypeId)}/${encodeURIComponent(bundle)}/${encodeURIComponent(componentId)}`,
       );
       return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  async listContentEntityReferenceEntityTypes(): Promise<
+    Record<string, ContentEntityReferenceEntityType>
+  > {
+    try {
+      const response = await this.client.get(
+        '/canvas/api/v0/ui/content-entity-reference',
+      );
+      return response.data.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  async fetchContentEntityReferenceFields(
+    entityTypeId: string,
+    bundle: string,
+    href?: string,
+  ): Promise<ContentEntityReferenceField[]> {
+    try {
+      const response = await this.client.get(
+        href ??
+          `/canvas/api/v0/ui/content-entity-reference/${encodeURIComponent(entityTypeId)}/${encodeURIComponent(bundle)}`,
+      );
+      return response.data.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Rethrows a page-variant collection 404 as an actionable explanation.
+   *
+   * The list and settings routes exist on every Canvas release that has page
+   * variants (unlike a per-id 404, which just means "no such variant"), so a
+   * 404 here means the connected site's Canvas predates them: its module
+   * update — which converts theme regions into a page variant — has not run.
+   * That is a Drupal-side action the CLI user may not be able to perform
+   * themselves.
+   */
+  private rethrowPageVariantsUnsupported(error: unknown): void {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      const normalizedSiteUrl = this.siteUrl.replace(/\/+$/, '');
+      throw new Error(
+        `The site at ${normalizedSiteUrl} does not serve page templates yet. Its Drupal Canvas module must be updated to 1.11 or later. Ask a site administrator if you cannot do this yourself. Alternatively, use Canvas CLI 0.23 with this site.`,
+      );
+    }
+  }
+
+  /**
+   * List all page variants ("page templates" in the UI).
+   */
+  async listPageVariants(): Promise<Record<string, PageVariant>> {
+    try {
+      const response = await this.client.get(
+        '/canvas/api/v0/config/page_variant',
+      );
+      return response.data;
+    } catch (error) {
+      this.rethrowPageVariantsUnsupported(error);
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Get a single page variant.
+   */
+  async getPageVariant(id: string): Promise<PageVariant> {
+    try {
+      const response = await this.client.get(
+        `/canvas/api/v0/config/page_variant/${id}`,
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Create a new page variant.
+   */
+  async createPageVariant(pageVariant: {
+    id: string;
+    label: string;
+    description: string | null;
+    status: boolean;
+    component_tree: ConfigComponentTreePayload;
+  }): Promise<PageVariant> {
+    try {
+      const response = await this.client.post(
+        '/canvas/api/v0/config/page_variant',
+        pageVariant,
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Update an existing page variant.
+   */
+  async updatePageVariant(
+    id: string,
+    pageVariant: {
+      label?: string;
+      description: string | null;
+      status?: boolean;
+      component_tree?: ConfigComponentTreePayload;
+    },
+  ): Promise<PageVariant> {
+    try {
+      const response = await this.client.patch(
+        `/canvas/api/v0/config/page_variant/${id}`,
+        pageVariant,
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Delete a page variant.
+   */
+  async deletePageVariant(id: string): Promise<void> {
+    try {
+      await this.client.delete(`/canvas/api/v0/config/page_variant/${id}`);
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Get the site default page variant id (null when core block layout
+   * renders pages).
+   */
+  async getDefaultPageVariant(): Promise<{
+    default_page_variant: string | null;
+  }> {
+    try {
+      const response = await this.client.get(
+        '/canvas/api/v0/settings/default-page-variant',
+      );
+      return response.data;
+    } catch (error) {
+      this.rethrowPageVariantsUnsupported(error);
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Set (or clear) the site default page variant.
+   */
+  async setDefaultPageVariant(id: string | null): Promise<void> {
+    try {
+      await this.client.patch('/canvas/api/v0/settings/default-page-variant', {
+        default_page_variant: id,
+      });
     } catch (error) {
       this.handleApiError(error);
     }
@@ -832,8 +1175,8 @@ export class ApiService {
   }
 
   /**
-   * Upload a font file for Brand Kit (same endpoint as UI: artifacts/upload).
-   * Returns uri and fid for building a Brand Kit font entry.
+   * Upload a font file for brand kit (same endpoint as UI: artifacts/upload).
+   * Returns uri and fid for building a brand kit font entry.
    * When filename is provided (e.g. slugified), it is used for the upload; otherwise the path basename is used.
    */
   async uploadFont(
@@ -862,7 +1205,7 @@ export class ApiService {
   }
 
   /**
-   * Get a Brand Kit config entity by id.
+   * Get a brand kit config entity by id.
    */
   async getBrandKit(id: string = BRAND_KIT_GLOBAL_ID): Promise<BrandKit> {
     try {
@@ -876,7 +1219,7 @@ export class ApiService {
   }
 
   /**
-   * Update the global Brand Kit (replace the fonts array).
+   * Update the global brand kit (replace the fonts array).
    */
   async updateBrandKit(data: {
     fonts: BrandKitFontEntry[];
@@ -887,6 +1230,59 @@ export class ApiService {
         data,
       );
       return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /** Create a brand kit color; the server assigns the id. */
+  async createColor(color: BrandKitColorPayload): Promise<BrandKitColorEntry> {
+    try {
+      const response = await this.client.post(
+        '/canvas/api/v0/config/color',
+        color,
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /** Update a brand kit color by its server-assigned id. */
+  async updateColor(
+    id: string,
+    color: Partial<BrandKitColorPayload>,
+  ): Promise<BrandKitColorEntry> {
+    try {
+      const response = await this.client.patch(
+        `/canvas/api/v0/config/color/${encodeURIComponent(id)}`,
+        color,
+      );
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /** Delete a brand kit color by id; the server refuses one in use. */
+  async deleteColor(id: string): Promise<void> {
+    try {
+      await this.client.delete(
+        `/canvas/api/v0/config/color/${encodeURIComponent(id)}`,
+      );
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Get all folders; client-side filter to type: color for color folders.
+   */
+  async getFolders(): Promise<ColorFolderEntry[]> {
+    try {
+      const response = await this.client.get('/canvas/api/v0/config/folder');
+      const data = response.data as Record<string, ColorFolderEntry>;
+      return Object.values(data);
     } catch (error) {
       this.handleApiError(error);
     }
@@ -982,7 +1378,7 @@ export class ApiService {
         'error_description' in data &&
         typeof data.error_description === 'string'
       ) {
-        message = `Authentication Error: ${data.error_description}\n\n${message}`;
+        message = `Authentication Error: ${data.error_description}`;
       }
 
       throw new Error(message);
@@ -1063,9 +1459,7 @@ export class ApiService {
     if (this.siteUrl.includes('ddev.site')) {
       message += 'Troubleshooting tips:\n';
       message += '  • Check if DDEV is running: ddev status\n';
-      message += '  • Try HTTP instead of HTTPS\n';
       message += '  • Verify site is accessible in browser\n';
-      message += '  • For HTTPS issues, try: ddev auth ssl';
     } else {
       message += 'Check your site URL and internet connection.';
     }
@@ -1201,4 +1595,5 @@ export async function ensureAuthConfig(): Promise<void> {
   if (!isUserAuthenticated(getConfig().siteUrl!)) {
     await ensureConfig(['clientId', 'clientSecret', 'scope']);
   }
+  await applyPageVariantCompatibility(getConfig().siteUrl);
 }

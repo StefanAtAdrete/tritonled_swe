@@ -2,13 +2,53 @@
 
 namespace Drupal\stringoverrides\Form;
 
+use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class StringoverridesAdminForm.
+ * Provides a form to administer string overrides.
  */
 class StringoverridesAdminForm extends FormBase {
+
+  /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
+   * The cache backend.
+   *
+   * @var \Drupal\Core\Cache\CacheBackendInterface
+   */
+  protected $cacheBackend;
+
+  /**
+   * Constructs a StringoverridesAdminForm object.
+   *
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   * @param \Drupal\Core\Cache\CacheBackendInterface $cache_backend
+   *   The cache backend.
+   */
+  public function __construct(LanguageManagerInterface $language_manager, CacheBackendInterface $cache_backend) {
+    $this->languageManager = $language_manager;
+    $this->cacheBackend = $cache_backend;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('language_manager'),
+      $container->get('cache.default')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -22,7 +62,7 @@ class StringoverridesAdminForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $language = NULL) {
     if (!$language) {
-      $language = \Drupal::languageManager()->getDefaultLanguage();
+      $language = $this->languageManager->getDefaultLanguage();
     }
     $strings = $this->getCurrentTranslations($language);
 
@@ -246,7 +286,7 @@ class StringoverridesAdminForm extends FormBase {
     foreach ($form_data as $string) {
       if (!empty($string['source'])) {
         $context = $string['context'];
-        list($source, $translation) = str_replace("\r", '', [$string['source'], $string['translation']]);
+        [$source, $translation] = str_replace("\r", '', [$string['source'], $string['translation']]);
         $words[$string['enabled']][$context]['context'] = $context;
         $words[$string['enabled']][$context]['translations'][] = [
           'source' => $source,
@@ -278,13 +318,14 @@ class StringoverridesAdminForm extends FormBase {
     }
 
     // Delete cache for active translation of this language.
-    \Drupal::cache()->delete('stringoverides:translation_for_' . $language);
+    $this->cacheBackend->delete('stringoverrides:translation_for_' . $language);
   }
 
   /**
-   * Displays a status message, checking for compatibility with drupal_set_message.
+   * Displays a status message.
    *
-   * @param $message The translated message to be displayed.
+   * @param string $message
+   *   The translated message to be displayed.
    */
   private function statusMessage(string $message) {
     if (function_exists('drupal_set_message')) {
@@ -294,4 +335,5 @@ class StringoverridesAdminForm extends FormBase {
       $this->messenger()->addStatus($message);
     }
   }
+
 }

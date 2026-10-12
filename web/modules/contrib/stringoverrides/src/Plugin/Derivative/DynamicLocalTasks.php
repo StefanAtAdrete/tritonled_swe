@@ -3,17 +3,46 @@
 namespace Drupal\stringoverrides\Plugin\Derivative;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines dynamic local tasks (menu tabs).
  */
-class DynamicLocalTasks extends DeriverBase {
+class DynamicLocalTasks extends DeriverBase implements ContainerDeriverInterface {
+
+  /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
+   * Constructs a DynamicLocalTasks object.
+   *
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   */
+  public function __construct(LanguageManagerInterface $language_manager) {
+    $this->languageManager = $language_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, $base_plugin_id) {
+    return new static(
+      $container->get('language_manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
    */
   public function getDerivativeDefinitions($base_plugin_definition) {
-    $languages = \Drupal::languageManager()->getLanguages();
+    $languages = $this->languageManager->getLanguages();
     foreach ($languages as $language_code => $language) {
       $this->derivatives['stringoverrides.translations_form.' . $language_code] = [
         'title' => $language->getName(),

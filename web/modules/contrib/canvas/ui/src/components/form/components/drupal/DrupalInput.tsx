@@ -1,11 +1,12 @@
 import clsx from 'clsx';
 
 import Checkbox from '@/components/form/components/Checkbox';
+import DrupalColorPicker from '@/components/form/components/drupal/DrupalColorPicker';
 import { DrupalRadioItem } from '@/components/form/components/drupal/DrupalRadio';
 import Hidden from '@/components/form/components/Hidden';
 import TextField from '@/components/form/components/TextField';
 import TextFieldAutocomplete from '@/components/form/components/TextFieldAutocomplete';
-import InputBehaviors from '@/components/form/inputBehaviors';
+import { withRHF } from '@/components/form/react-hook-form/withRHF';
 import { a2p } from '@/local_packages/utils.js';
 
 import type {
@@ -15,14 +16,22 @@ import type {
 
 const DrupalInput = ({
   attributes = {},
+  element = {},
 }: {
-  attributes?: (Attributes | NumericInputAttributes) & {
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  };
+  attributes?: Attributes | NumericInputAttributes;
+  element?: any;
 }) => {
   switch (attributes?.type) {
     case 'checkbox': {
-      return <Checkbox attributes={attributes} />;
+      return (
+        <Checkbox
+          attributes={{
+            ...attributes,
+            checked: element['#checked'],
+            'data-canvas-form': true,
+          }}
+        />
+      );
     }
     case 'number':
       // The a2p() process converts 'value to 'defaultValue', which is typically
@@ -44,15 +53,35 @@ const DrupalInput = ({
       );
     case 'radio':
       return <DrupalRadioItem attributes={attributes} />;
+    case 'color':
+      // Canvas color picker: enhanced color picker with Brand Kit integration.
+      return (
+        <DrupalColorPicker
+          attributes={{
+            ...a2p(attributes, {}, { skipAttributes: ['value'] }),
+            value: attributes.value || '',
+            'data-canvas-color-picker': attributes['data-canvas-color-picker'],
+          }}
+        />
+      );
     case 'hidden':
     case 'submit':
       if (attributes['data-track-hidden-value']) {
         return <Hidden attributes={attributes} />;
       }
+      if (attributes.name === 'form_build_id') {
+        return (
+          <input
+            {...a2p(attributes, {}, { skipAttributes: ['value'] })}
+            defaultValue={attributes.value || ''}
+          />
+        );
+      }
+
       // The a2p() process converts 'value to 'defaultValue', which is typically
       // what React wants. Explicitly set the value on submit inputs since that
       // is the text it displays.
-      return <input {...a2p(attributes)} value={attributes.value || ''} />;
+      return <input {...a2p(attributes)} value={attributes.value} />;
     default:
       if (
         attributes?.class instanceof Array &&
@@ -74,4 +103,4 @@ const DrupalInput = ({
   }
 };
 
-export default InputBehaviors(DrupalInput);
+export default withRHF(DrupalInput);

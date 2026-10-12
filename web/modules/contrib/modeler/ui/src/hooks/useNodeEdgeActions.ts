@@ -1,105 +1,130 @@
 /**
- * Custom hook for adding conditions to edges and event nodes to the canvas.
- * Handles the creation of new nodes and updating edge data when conditions
- * are attached via drag-and-drop or the quick-add popups.
+ * Custom hook for inserting condition nodes on edges, inserting action
+ * nodes on edges, and adding event nodes to the canvas.
+ *
+ * All node placement decisions are delegated to the shared incremental
+ * layout primitives in utils/incrementalLayout.ts so that interactive
+ * edits produce visually identical output to auto-layout (see issue
+ * #3588454).
  */
 import { useCallback } from 'react';
-import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '../store/useGraphStore';
-import type { StoreNode as Node, StoreComponent } from '../types/settings';
-import { generateNodeId } from '../utils/clipboardUtils';
+import type { StoreNode as Node, StoreEdge as Edge, StoreComponent } from '../types/settings';
+import { generateNodeId, generateEdgeId } from '../utils/clipboardUtils';
 
-import { LAYOUT, NODE_DIMENSIONS, VIEWPORT } from '../constants/dimensions';
-import { findFreePosition } from '../utils/positionUtils';
-import { autoLayout } from '../utils/modelUtils';
+import { NODE_DIMENSIONS } from '../constants/dimensions';
+import {
+  computeNewEventPosition,
+  placeNodeOnEdge,
+  buildConditionInsertion,
+  isConditionNode,
+  placeChainOnEdge,
+} from '../utils/incrementalLayout';
 import { t } from '../utils/translation';
+import type { ViewportActions } from './useViewportActions';
 
 interface UseNodeEdgeActionsProps {
   setHasUnsavedChanges: (value: boolean) => void;
   /** Callback to save history before making changes */
   saveHistory?: () => void;
+  /** Unified viewport actions for pan/zoom operations */
+  viewportActions: ViewportActions;
 }
 
-export function useNodeEdgeActions({ setHasUnsavedChanges, saveHistory }: UseNodeEdgeActionsProps) {
-  const { setCenter } = useReactFlow();
+export function useNodeEdgeActions({ setHasUnsavedChanges, saveHistory, viewportActions }: UseNodeEdgeActionsProps) {
   const nodes = useGraphStore(state => state.nodes);
   const edges = useGraphStore(state => state.edges);
   const setNodes = useGraphStore(state => state.setNodes);
   const setEdges = useGraphStore(state => state.setEdges);
 
-  // Add condition to edge handler
+  // ── Insert a condition NODE on an existing edge ───────────────────
+  // Conditions are first-class nodes (issue #3589093).  "Add condition"
+  // inserts a real condition node on the target edge — mirroring the
+  // load-time translation in parseModelData — so the condition is
+  // immediately a draggable, selectable node instead of an edge mutation
+  // that only becomes a node after a reload.  This uses the exact same
+  // edge-split + placement flow as handleAddActionOnEdge below.
   const handleAddCondition = useCallback((edgeId: string, component: StoreComponent) => {
     if (saveHistory) saveHistory();
-    const conditionLabel = component.label || component.plugin?.split('.').pop() || component.plugin;
 
-    // Build the updated edge data
-    const updatedEdgeData = {
-      label: conditionLabel,
-      type: 'condition' as const,
-      data: {
-        condition: component.plugin,
-        conditionLabel: conditionLabel
-      }
-    };
-
-    // Build the updated edges with the condition data applied.
-    const updatedEdges = edges.map(edge => {
-      if (edge.id === edgeId) {
-        return {
-          ...edge,
-          ...updatedEdgeData,
-          selected: true,
-          data: {
-            ...edge.data,
-            ...updatedEdgeData.data
-          }
-        };
-      }
-      return edge.selected ? { ...edge, selected: false } : edge;
-    });
-
-    // Re-run auto-layout so the condition-aware spacing algorithm positions
-    // all nodes cleanly, rather than naively shifting descendants.
-    const deselectedNodes = nodes.some(n => n.selected)
-      ? nodes.map(n => n.selected ? { ...n, selected: false } : n)
-      : nodes;
-    const layoutedNodes = autoLayout(deselectedNodes, updatedEdges);
-    if (layoutedNodes) {
-      setNodes(layoutedNodes);
+    const targetEdge = edges.find(e => e.id === edgeId);
+    if (!targetEdge) {
+      console.error('Edge not found:', edgeId);
+      return;
     }
 
-    setEdges(updatedEdges);
-    setHasUnsavedChanges(true);
-  }, [nodes, edges, setNodes, setEdges, setHasUnsavedChanges, saveHistory]);
+    const sourceNodeId = targetEdge.source;
+    const targetNodeId = targetEdge.target;
 
-  // Add event/start node to canvas handler
+    const conditionLabel = component.label || component.plugin?.split('.').pop() || component.plugin;
+    const newNodeId = generateNodeId(conditionLabel, 'condition');
+
+    const newNode: Node = {
+      id: newNodeId,
+      type: 'condition',
+      // Temporary position — placeChainOnEdge will replace it.
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        label: conditionLabel,
+        plugin: component.plugin,
+        configuration: {},
+        // New condition — export will mint a UUID when conditionId is empty.
+        conditionId: '',
+        componentType: 5,
+        __isConditionNode: true,
+      },
+    };
+
+    // Enforce the "no two adjacent conditions" invariant (issue #3589093):
+    // if either end of the target edge is a condition node, route through a
+    // gateway so we never produce a condition -> condition edge.
+    const sourceNode = nodes.find(n => n.id === sourceNodeId);
+    const targetNode = nodes.find(n => n.id === targetNodeId);
+    const { nodesToAdd, edgesToAdd } = buildConditionInsertion({
+      sourceNodeId,
+      targetNodeId,
+      conditionNode: newNode,
+      sourceIsCondition: isConditionNode(sourceNode),
+      targetIsCondition: isConditionNode(targetNode),
+    });
+
+    const allEdges = [
+      ...edges.filter(e => e.id !== edgeId).map(e => e.selected ? { ...e, selected: false } : e),
+      ...edgesToAdd,
+    ];
+
+    const deselectedNodes = nodes.map(n => n.selected ? { ...n, selected: false } : n);
+    // Position the whole chain (condition + any gateway) below the source,
+    // shifting the target and its descendants down to make room.
+    const positionedNodes = placeChainOnEdge(
+      deselectedNodes,
+      allEdges,
+      nodesToAdd,
+      sourceNodeId,
+      targetNodeId,
+    );
+
+    setNodes(positionedNodes);
+    setEdges(allEdges);
+    setHasUnsavedChanges(true);
+    viewportActions.panToNodeIfOffscreen(newNodeId);
+  }, [nodes, edges, setNodes, setEdges, setHasUnsavedChanges, saveHistory, viewportActions]);
+
+  // ── Add an event/start node to the canvas ─────────────────────────
   const handleAddEvent = useCallback((component: StoreComponent) => {
     if (saveHistory) saveHistory();
     const label = component.label || component.plugin?.split('.').pop() || t('New Event');
     const newNodeId = generateNodeId(label, 'start');
 
-    // Find a good position for the new event - to the right of existing nodes
-    let candidateX: number = LAYOUT.DEFAULT_POSITION_X;
-    let candidateY: number = LAYOUT.DEFAULT_POSITION_Y;
-
-    // Check if there are existing nodes and position to the right of them
-    if (nodes.length > 0) {
-      // Find rightmost position and topmost Y position
-      const maxX = Math.max(...nodes.map(n => n.position.x));
-      const minY = Math.min(...nodes.map(n => n.position.y));
-
-      // Place new event to the right of existing content
-      candidateX = maxX + LAYOUT.NODE_SPACING_X;
-      candidateY = minY;
-    }
-
-    // Find a free position that doesn't overlap any existing node
-    const freePosition = findFreePosition(
-      { x: candidateX, y: candidateY },
+    // Shared primitive places the new event flow to the right of all
+    // existing flows — identical behavior to auto-layout's start-node
+    // reservation logic.
+    const freePosition = computeNewEventPosition({
       nodes,
-      NODE_DIMENSIONS.START_NODE_WIDTH,
-      NODE_DIMENSIONS.START_NODE_HEIGHT,
-    );
+      width: NODE_DIMENSIONS.START_NODE_WIDTH,
+      height: NODE_DIMENSIONS.START_NODE_HEIGHT,
+    });
 
     const newNode: Node = {
       id: newNodeId,
@@ -115,27 +140,88 @@ export function useNodeEdgeActions({ setHasUnsavedChanges, saveHistory }: UseNod
       },
     };
 
-    // Deselect all existing nodes/edges and add the new node as selected,
-    // so that ReactFlow's internal selection stays in sync with the store.
     setNodes(prev => [...prev.map(n => n.selected ? { ...n, selected: false } : n), newNode]);
     setEdges(prev => {
       const hasSelected = prev.some(e => e.selected);
       return hasSelected ? prev.map(e => e.selected ? { ...e, selected: false } : e) : prev;
     });
 
-    // Mark as having unsaved changes
     setHasUnsavedChanges(true);
+    viewportActions.panToNodeIfOffscreen(newNodeId);
+  }, [nodes, setNodes, setEdges, setHasUnsavedChanges, saveHistory, viewportActions]);
 
-    // Pan to the new event node
-    setCenter(
-      freePosition.x + NODE_DIMENSIONS.START_NODE_WIDTH / 2,
-      freePosition.y + NODE_DIMENSIONS.START_NODE_HEIGHT / 2,
-      { duration: VIEWPORT.PAN_ANIMATION_DURATION }
+  // ── Insert an action/gateway node on an existing edge ─────────────
+  const handleAddActionOnEdge = useCallback((edgeId: string, component: StoreComponent) => {
+    if (saveHistory) saveHistory();
+
+    const targetEdge = edges.find(e => e.id === edgeId);
+    if (!targetEdge) {
+      console.error('Edge not found:', edgeId);
+      return;
+    }
+
+    const sourceNodeId = targetEdge.source;
+    const targetNodeId = targetEdge.target;
+
+    const nodeType = component.type === 'gateway' ? 'gateway' : 'element';
+    const label = component.label || component.plugin?.split('.').pop() || t('New Node');
+    const newNodeId = generateNodeId(label, nodeType);
+
+    const newNode: Node = {
+      id: newNodeId,
+      type: nodeType,
+      // Temporary position — placeNodeOnEdge will replace it.
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        plugin: component.plugin,
+        label,
+        componentType: component.componentType,
+        description: component.description,
+        documentationUrl: component.documentationUrl,
+      },
+    };
+
+    const edgeToNew: Edge = {
+      id: generateEdgeId(sourceNodeId, newNodeId),
+      source: sourceNodeId,
+      target: newNodeId,
+      type: 'default' as const,
+      data: {},
+    };
+
+    const edgeFromNew: Edge = {
+      id: generateEdgeId(newNodeId, targetNodeId),
+      source: newNodeId,
+      target: targetNodeId,
+      type: 'default' as const,
+      data: {},
+    };
+
+    const allEdges = [
+      ...edges.filter(e => e.id !== edgeId).map(e => e.selected ? { ...e, selected: false } : e),
+      edgeToNew,
+      edgeFromNew,
+    ];
+
+    const deselectedNodes = nodes.map(n => n.selected ? { ...n, selected: false } : n);
+    const positionedNodes = placeNodeOnEdge(
+      deselectedNodes,
+      allEdges,
+      newNode,
+      sourceNodeId,
+      targetNodeId,
     );
-  }, [nodes, setNodes, setEdges, setHasUnsavedChanges, saveHistory, setCenter]);
+
+    setNodes(positionedNodes);
+    setEdges(allEdges);
+    setHasUnsavedChanges(true);
+    viewportActions.panToNodeIfOffscreen(newNodeId);
+  }, [nodes, edges, setNodes, setEdges, setHasUnsavedChanges, saveHistory, viewportActions]);
 
   return {
     handleAddCondition,
     handleAddEvent,
+    handleAddActionOnEdge,
   };
 }

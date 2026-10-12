@@ -6,6 +6,8 @@
  */
 
 import { t } from './translation';
+import { sanitizeTokenHtml } from './sanitize';
+import { safeJsonParse } from './validation';
 
 /**
  * Convert token strings like "[node:author:name]" to HTML with token elements
@@ -31,6 +33,62 @@ export function convertTokensToHTML(text: string | null): string {
   });
 }
 
+const CONTENTEDITABLE_BLOCK_TAGS: Record<string, true> = {
+  DIV: true,
+  P: true,
+};
+
+interface SerializedFragment {
+  text: string;
+  meaningful: boolean;
+}
+
+function isContenteditableBlock(node: Node): node is Element {
+  return node instanceof Element && CONTENTEDITABLE_BLOCK_TAGS[node.tagName] === true;
+}
+
+function serializeTokenNode(node: Node): SerializedFragment {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = (node.textContent || '').replace(/\u200B/g, '');
+    return { text, meaningful: text.length > 0 };
+  }
+
+  if (node instanceof Element && node.classList.contains('config-token')) {
+    const token = node.getAttribute('data-token');
+    if (token) return { text: token, meaningful: true };
+  }
+
+  if (node instanceof HTMLBRElement) {
+    const parent = node.parentNode;
+    const isPlaceholder =
+      !!parent &&
+      isContenteditableBlock(parent) &&
+      parent.childNodes.length === 1;
+    return isPlaceholder
+      ? { text: '', meaningful: false }
+      : { text: '\n', meaningful: true };
+  }
+
+  let text = '';
+  let started = false;
+  let lastWasEmptyBlock = false;
+  node.childNodes.forEach(child => {
+    const childFragment = serializeTokenNode(child);
+    const isBlock = isContenteditableBlock(child);
+    if (isBlock && started && (!text.endsWith('\n') || lastWasEmptyBlock)) {
+      text += '\n';
+    }
+    text += childFragment.text;
+    if (isBlock || childFragment.meaningful) started = true;
+    lastWasEmptyBlock = isBlock && childFragment.text.length === 0;
+  });
+
+  return {
+    text,
+    meaningful: isContenteditableBlock(node) || started,
+  };
+}
+
 /**
  * Convert HTML with token elements back to token strings
  * 
@@ -44,20 +102,12 @@ export function convertTokensToHTML(text: string | null): string {
 export function convertHTMLToTokens(html: string | null): string {
   if (!html || typeof html !== 'string') return html || '';
 
-  // Create a temporary div to parse the HTML
+  // Parse sanitized HTML and serialize the same structure users edit. Native
+  // contenteditable inserts block elements for line breaks; textContent alone
+  // flattens those blocks and silently joins lines.
   const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-
-  // Find all token elements and replace them with their token strings
-  const tokenElements = tempDiv.querySelectorAll('.config-token');
-  tokenElements.forEach(tokenEl => {
-    const tokenString = tokenEl.getAttribute('data-token');
-    if (tokenString) {
-      tokenEl.replaceWith(document.createTextNode(tokenString));
-    }
-  });
-
-  return tempDiv.textContent || tempDiv.innerText || '';
+  tempDiv.innerHTML = sanitizeTokenHtml(html);
+  return serializeTokenNode(tempDiv).text;
 }
 
 /**
@@ -103,7 +153,7 @@ export function parseTokenFromDragEvent(
   if (!tokenData) return null;
 
   try {
-    const parsed = JSON.parse(tokenData);
+    const parsed = safeJsonParse<{ label?: unknown; token?: unknown }>(tokenData);
 
     // Validate token data structure
     const label = typeof parsed.label === 'string' ? parsed.label : '';

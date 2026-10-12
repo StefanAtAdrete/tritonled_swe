@@ -6,7 +6,6 @@ namespace Drupal\tool_test\Plugin\tool\Tool;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tool\Attribute\Tool;
@@ -14,6 +13,7 @@ use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
 use Drupal\tool\Tool\ToolOperation;
 use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\OutputDefinition;
 
 /**
  * A tool with a required numeric input for testing validation.
@@ -32,7 +32,7 @@ use Drupal\tool\TypedData\InputDefinition;
     ),
   ],
   output_definitions: [
-    'doubled' => new ContextDefinition(
+    'doubled' => new OutputDefinition(
       data_type: 'integer',
       label: new TranslatableMarkup('Doubled'),
       description: new TranslatableMarkup('The input number doubled.'),

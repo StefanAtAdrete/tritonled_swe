@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Hook;
 
+use Drupal\canvas\CodeComponentDataProvider;
 use Drupal\canvas\ComponentSource\ComponentSourceManager;
+use Drupal\canvas\Entity\AssetLibrary;
+use Drupal\canvas\Entity\BrandKit;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Asset\AttachedAssetsInterface;
 use Drupal\Core\Asset\LibraryDependencyResolverInterface;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\DrupalKernelInterface;
 use Drupal\Core\Extension\ThemeInstallerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Theme\ThemeManagerInterface;
-use Drupal\canvas\CodeComponentDataProvider;
-use Drupal\canvas\Entity\AssetLibrary;
-use Drupal\canvas\Entity\BrandKit;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
@@ -38,6 +41,8 @@ readonly final class ComponentSourceHooks {
     private ConfigFactoryInterface $configFactory,
     private RequestStack $requestStack,
     private ThemeInstallerInterface $themeInstaller,
+    #[Autowire(service: 'kernel')]
+    private DrupalKernelInterface $kernel,
   ) {}
 
   const ASSET_LIBRARY_METHOD_MAPPING = [
@@ -74,7 +79,20 @@ readonly final class ComponentSourceHooks {
     if ($is_syncing) {
       return;
     }
-    $this->rebuild();
+    // Generate via the container's *current* ComponentSourceManager rather
+    // than the injected one. Since Drupal 11.3, installing canvas_stark above
+    // reboots the kernel and rebuilds the service container: ThemeInstaller
+    // now resets the container in install/uninstall (via
+    // DrupalKernel::updateThemes()). That leaves $this — and its injected
+    // $this->componentSourceManager — pointing at now-orphaned pre-rebuild
+    // services. Resolving the manager (and through it the
+    // PersistentPropShapeRepository) from the live container makes the prop
+    // shapes get written to the cache that outlives the install (the other one
+    // will never have its ::destruct() called).
+    // @see \Drupal\canvas\PropShape\PersistentPropShapeRepository
+    $component_source_manager = $this->kernel->getContainer()->get(ComponentSourceManager::class);
+    \assert($component_source_manager instanceof ComponentSourceManager);
+    $component_source_manager->generateComponents();
   }
 
   /**
@@ -111,16 +129,24 @@ readonly final class ComponentSourceHooks {
     // TRICKY: the `route` cache context varies also by route parameters, that
     // is unnecessary here, because this only varies by route definition.
     $page['#cache']['contexts'][] = 'route.name';
+    // The generated asset files have a content-dependent hash in their name,
+    // so responses must be invalidated when these config entities change, to
+    // make them refer to the newly generated files.
+    // @see \Drupal\canvas\Entity\AssetLibrary::postSave()
+    $cacheability = CacheableMetadata::createFromRenderArray($page);
     $asset_library = AssetLibrary::load(AssetLibrary::GLOBAL_ID);
     // The `global `asset library is guaranteed to exist, but protect even
     // against the most obscure edge cases. (Also: tests do simulate that!)
     if ($asset_library) {
       $page['#attached']['library'][] = $asset_library->getAssetLibrary($is_preview);
+      $cacheability->addCacheableDependency($asset_library);
     }
     $brand_kit = BrandKit::load(BrandKit::GLOBAL_ID);
     if ($brand_kit) {
       $page['#attached']['library'][] = $brand_kit->getAssetLibrary($is_preview);
+      $cacheability->addCacheableDependency($brand_kit);
     }
+    $cacheability->applyTo($page);
   }
 
   /**

@@ -38,28 +38,22 @@ title of the current entity).
 
 ### How to use tokens
 
-1. Load replay data or run a test to see available tokens in the Replay Panel.
-2. Look for token values in the **Step Data** or **Global Tokens** sections.
-3. Drag a token from the Replay Panel directly into a token-enabled
-   configuration field.
-
-### Visual indicators
-
-During a token drag:
-
-- **Eligible fields**: Glow with a border highlight to show they accept the
-  token.
-- **Non-eligible fields**: Dim to indicate they do not accept tokens.
+1. Type **`[`** in a token-supporting field to open the token picker.
+2. Pick a category - **Step data tokens**, **Global tokens** or
+   **Template tokens**. Step data tokens become available once you load replay
+   data or run a test in **Review flow** mode, where selecting a step also
+   shows its data inline.
+3. Insert a token with the picker's **Use →** action.
 
 ### The "Replace tokens" checkbox
 
 Some forms include a **Replace tokens** checkbox. When enabled, it makes
-**all** fields in the form accept token drops, regardless of their individual
+**all** fields in the form accept tokens, regardless of their individual
 token support setting.
 
 ### Inline token editing
 
-After dropping a token into a field, it appears as a styled pill (e.g.,
+After inserting a token into a field, it appears as a styled pill (e.g.,
 `[node:title]`). You can:
 
 - **Edit**: Hover over the token and click the pencil icon, or press

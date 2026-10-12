@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   computeWorkbenchStructuralFingerprint,
+  shouldHideComponentPreviewFrame,
   shouldSkipWorkbenchIframeRemount,
 } from './workbench-preview-iframe-remount';
 
@@ -34,8 +35,10 @@ const baseDiscovery: DiscoveryResult = {
     },
   ],
   contentTemplates: [],
+  pageTemplates: [],
   warnings: [],
   stats: { scannedFiles: 0, ignoredFiles: 0 },
+  componentSchemas: new Map(),
 };
 
 const baseManifest: PreviewManifest = {
@@ -43,6 +46,7 @@ const baseManifest: PreviewManifest = {
   components: [],
   warnings: [],
   globalCssUrl: null,
+  brandKitCssUrl: null,
 };
 
 describe('computeWorkbenchStructuralFingerprint', () => {
@@ -56,6 +60,50 @@ describe('computeWorkbenchStructuralFingerprint', () => {
       structuredClone(baseManifest),
     );
     expect(a).toBe(b);
+  });
+
+  it('changes when the brand kit CSS URL changes', () => {
+    const a = computeWorkbenchStructuralFingerprint(
+      baseDiscovery,
+      baseManifest,
+    );
+    const b = computeWorkbenchStructuralFingerprint(baseDiscovery, {
+      ...baseManifest,
+      brandKitCssUrl: '/@id/virtual:canvas-brand-kit.css',
+    });
+    expect(a).not.toBe(b);
+  });
+});
+
+describe('shouldHideComponentPreviewFrame', () => {
+  it('hides a previous component until the selected component settles', () => {
+    const component = { previewable: true, metadataErrors: [] };
+
+    expect(
+      shouldHideComponentPreviewFrame(component, 'component-b', 'component-a'),
+    ).toBe(true);
+    expect(
+      shouldHideComponentPreviewFrame(component, 'component-b', 'component-b'),
+    ).toBe(false);
+  });
+
+  it('hides the frame behind component metadata errors', () => {
+    expect(
+      shouldHideComponentPreviewFrame(
+        {
+          previewable: false,
+          metadataErrors: [
+            {
+              sourcePath: 'component.yml',
+              path: '$.type',
+              message: 'invalid',
+            },
+          ],
+        },
+        null,
+        null,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -96,7 +144,7 @@ describe('shouldSkipWorkbenchIframeRemount', () => {
     ).toBe(false);
   });
 
-  it('returns false when path is not a top-level page spec', () => {
+  it('returns false when path does not support an in-place refresh', () => {
     expect(
       shouldSkipWorkbenchIframeRemount({
         payload: {
@@ -151,6 +199,64 @@ describe('shouldSkipWorkbenchIframeRemount', () => {
         },
         previousFingerprint: fp,
         nextFingerprint: nextFp,
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    'src/components/hero/component.yml',
+    'src/components/hero/hero.component.yml',
+  ])(
+    'returns true for component metadata change at %s with same fingerprint',
+    (filePath) => {
+      expect(
+        shouldSkipWorkbenchIframeRemount({
+          payload: {
+            reloadFrameOnly: false,
+            filePath,
+            event: 'change',
+          },
+          previousFingerprint: fp,
+          nextFingerprint: fp,
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('returns true for a mock edit with same fingerprint, false when the structure changed', () => {
+    for (const filePath of [
+      'src/components/card/mocks.json',
+      'src/components/card/card.mocks.json',
+    ]) {
+      expect(
+        shouldSkipWorkbenchIframeRemount({
+          payload: { reloadFrameOnly: false, filePath, event: 'change' },
+          previousFingerprint: fp,
+          nextFingerprint: fp,
+        }),
+      ).toBe(true);
+    }
+    // Adding or removing a mock file is not an in-place edit.
+    expect(
+      shouldSkipWorkbenchIframeRemount({
+        payload: {
+          reloadFrameOnly: false,
+          filePath: 'src/components/card/mocks.json',
+          event: 'add',
+        },
+        previousFingerprint: fp,
+        nextFingerprint: fp,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSkipWorkbenchIframeRemount({
+        payload: {
+          reloadFrameOnly: false,
+          filePath: 'src/components/card/mocks.json',
+          event: 'change',
+        },
+        previousFingerprint: fp,
+        nextFingerprint: `${fp}\nchanged`,
       }),
     ).toBe(false);
   });

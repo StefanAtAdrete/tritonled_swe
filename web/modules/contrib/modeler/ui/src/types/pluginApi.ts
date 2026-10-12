@@ -68,6 +68,11 @@ export interface PluginModelData {
     executable?: boolean;
     tags?: string[];
     changelog?: string;
+    summary?: string;
+    recipes?: string[];
+    config_actions?: Array<{ config: string; actions: unknown }>;
+    export_config?: string[];
+    modules?: string[];
   };
 }
 
@@ -141,8 +146,30 @@ export interface AddNodeDescriptor {
   componentType: number;
   /** Human-readable label. If omitted, derived from the plugin ID. */
   label?: string;
-  /** Canvas position. If omitted, placed automatically. */
+  /**
+   * Canvas position. If omitted, placed automatically by the shared
+   * incremental layout primitives — see `sourceNodeId` for the two
+   * automatic placement modes.
+   */
   position?: { x: number; y: number };
+  /**
+   * ID of an existing node the new node is being added *below*, as its
+   * successor.  Placement then matches exactly what quick-add produces
+   * for the same parent: column-aligned one row-gap under the parent,
+   * with neighboring flows shifted aside if required.
+   *
+   * This only controls **placement** — no edge is created.  Call
+   * `addEdge(sourceNodeId, newNodeId)` to wire the two nodes together.
+   *
+   * Ignored when `position` is given (an explicit position always wins).
+   * If the referenced node does not exist, `addNode()` returns `null`
+   * without mutating the graph, consistent with `addEdge()`.
+   *
+   * When omitted, the node is placed as a brand-new event flow to the
+   * right of every existing flow — the same position the modeler's own
+   * "add event" affordance would choose.
+   */
+  sourceNodeId?: string;
   /** Initial configuration values. */
   configuration?: Record<string, unknown>;
   /** Short description. */
@@ -188,7 +215,10 @@ export interface SetConditionDescriptor {
 }
 
 /**
- * Callback signatures for plugin event subscriptions.
+ * Called when the primary selection or any multi-selection member changes.
+ *
+ * The callback receives only the first selected node and edge. Use the
+ * multi-selection getters when the complete selection is needed.
  */
 export type SelectionChangeCallback = (
   node: PluginNode | null,
@@ -230,10 +260,19 @@ export interface ModelerPluginApi {
   getNodeById: (nodeId: string) => PluginNode | null;
   /** Returns a single edge by ID, or null if not found. */
   getEdgeById: (edgeId: string) => PluginEdge | null;
-  /** Returns the currently selected node, or null. */
+  /** Returns the first selected node (the primary selection), or null. */
   getSelectedNode: () => PluginNode | null;
-  /** Returns the currently selected edge, or null. */
+  /** Returns the first selected edge (the primary selection), or null. */
   getSelectedEdge: () => PluginEdge | null;
+  /**
+   * Returns every selected node, in selection order.
+   *
+   * A single selection yields a one-element array, so a plugin never needs
+   * `getSelectedNode()` as well.
+   */
+  getSelectedNodes: () => PluginNode[];
+  /** Returns every selected edge, in selection order. */
+  getSelectedEdges: () => PluginEdge[];
   /** Returns a deep-cloned snapshot of the model data. */
   getModelData: () => PluginModelData | null;
   /** Returns whether the modeler is in read-only mode. */
@@ -259,7 +298,11 @@ export interface ModelerPluginApi {
   getErrors: () => PluginError[];
 
   // ── Event subscriptions ─────────────────────────────────────────────
-  /** Subscribe to selection changes (node or edge selected/deselected). */
+  /**
+   * Subscribe to primary and multi-selection changes.
+   *
+   * The callback receives only the first selected node and edge.
+   */
   onSelectionChange: (callback: SelectionChangeCallback) => Unsubscribe;
   /** Subscribe to node list changes (add, remove, update, reorder). */
   onNodesChange: (callback: NodesChangeCallback) => Unsubscribe;
@@ -297,9 +340,13 @@ export interface ModelerPluginApi {
   // ── Node mutations ──────────────────────────────────────────────────
   /**
    * Add a new node to the canvas.  Returns the ID of the newly created
-   * node, or `null` if the operation was rejected (read-only mode).
+   * node, or `null` if the operation was rejected (read-only mode, or an
+   * unknown `sourceNodeId`).
    *
-   * If `position` is omitted the node is placed automatically.
+   * If `position` is omitted the node is placed automatically by the same
+   * layout primitives the UI itself uses: as a successor of
+   * `descriptor.sourceNodeId` when that is given, otherwise as a new event
+   * flow to the right of everything already on the canvas.
    */
   addNode: (descriptor: AddNodeDescriptor) => string | null;
   /**
@@ -334,13 +381,19 @@ export interface ModelerPluginApi {
    */
   removeEdge: (edgeId: string) => boolean;
   /**
-   * Attach a condition to an existing edge (converting it from `default`
-   * to `condition` type).  Returns `true` on success.
+   * Attach a condition to an existing edge.  Conditions are first-class
+   * nodes: this inserts a condition node on the identified edge, splitting
+   * it into `source → conditionNode → target`.  Returns `true` on success,
+   * `false` if the edge was not found or the modeler is read-only.
    */
   setCondition: (edgeId: string, condition: SetConditionDescriptor) => boolean;
   /**
-   * Remove the condition from an edge (converting it back to `default`
-   * type).  Returns `true` on success.
+   * Remove a condition, collapsing its condition node back into a single
+   * plain edge (the inverse of `setCondition`).  The `edgeId` argument is
+   * resolved to a condition node when it is either the condition node id
+   * itself or an edge adjacent to a condition node.  Returns `true` on
+   * success, `false` if no condition could be resolved or the modeler is
+   * read-only.
    */
   removeCondition: (edgeId: string) => boolean;
 
@@ -369,10 +422,15 @@ export interface ModelerPluginApi {
 export interface PluginPanelDescriptor {
   /** Unique identifier for the panel (e.g. `'my_module_analytics'`). */
   id: string;
-  /** Human-readable label shown in the collapsed tab. */
+  /** Human-readable label shown in the panel header. */
   label: string;
   /**
    * Where to render the panel.
+   *
+   * For docked panels this is the slot the panel is placed in.  For
+   * floating panels (see `floating`) it only seeds the initial on-screen
+   * corner the panel appears at.
+   *
    * @default 'right'
    */
   position?: PanelPosition;
@@ -386,6 +444,19 @@ export interface PluginPanelDescriptor {
    * @default 320
    */
   width?: number;
+  /**
+   * Render the panel detached from the layout, floating above the canvas.
+   *
+   * A floating panel reserves no space next to the canvas and can be moved
+   * by the user by dragging its header (or by focusing the move handle and
+   * using the arrow keys).  It is always kept within the modeler's bounds.
+   *
+   * This is a registration-time choice: there is no user-facing control to
+   * switch a panel between docked and floating.
+   *
+   * @default false
+   */
+  floating?: boolean;
   /**
    * Render the panel content into the given container element.
    * Called once when the panel mounts.  The `api` object provides
@@ -410,6 +481,7 @@ export interface RegisteredPanel extends PluginPanelDescriptor {
   position: PanelPosition;
   weight: number;
   width: number;
+  floating: boolean;
 }
 
 // ── Toolbar Widget Types ──────────────────────────────────────────────

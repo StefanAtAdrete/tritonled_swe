@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas\Entity\Page;
 use Drupal\canvas\Storage\ComponentTreeLoader;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Extension\ModuleInstallerInterface;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\canvas\Kernel\Traits\VfsPublicStreamUrlTrait;
 use Drupal\Tests\canvas\TestSite\CanvasTestSetup;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -33,7 +35,7 @@ class ComponentTreeLoaderTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    $this->container->get('module_installer')->install(['system']);
+    $this->container->get(ModuleInstallerInterface::class)->install(['system']);
     // @todo Refactor this away in https://www.drupal.org/project/canvas/issues/3531679
     (new CanvasTestSetup())->setup();
   }
@@ -80,7 +82,7 @@ class ComponentTreeLoaderTest extends KernelTestBase {
     ]);
     $node->save();
     FieldStorageConfig::loadByName('node', 'field_canvas_demo')?->delete();
-    $this->container->get('entity_field.manager')->clearCachedFieldDefinitions();
+    $this->container->get(EntityFieldManagerInterface::class)->clearCachedFieldDefinitions();
     // Reload the node to refresh field definitions.
     $node = Node::load($node->id());
     self::assertNotNull($node);

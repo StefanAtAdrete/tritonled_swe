@@ -9,7 +9,12 @@
 import { useState, useEffect } from 'react';
 import type { StoreNode as Node, StoreEdge as Edge } from '../types/settings';
 import { NODE_DIMENSIONS } from '../constants/dimensions';
-import { ReplayStep, isConditionStep, isAddSuccessorStep } from '../utils/replayStepUtils';
+import {
+  ReplayStep,
+  isConditionStep,
+  isAddSuccessorStep,
+  findConditionNodeForStep,
+} from '../utils/replayStepUtils';
 
 interface ReplayIndicator {
   id: string;
@@ -32,7 +37,6 @@ export function useReplayIndicators({
   isReplayMode,
   currentReplayStep,
   replayData,
-  edges,
   nodes,
 }: UseReplayIndicatorsProps) {
   
@@ -48,57 +52,36 @@ export function useReplayIndicators({
     const currentStep = replayData[currentReplayStep];
     const indicators: ReplayIndicator[] = [];
 
-    // Check for condition result indicators
+    // Check for condition result indicators.
+    //
+    // Conditions are first-class NODES now (issue #3589093), so the
+    // true/false result indicator attaches to the condition NODE's position
+    // rather than to a (nonexistent) condition edge.  Resolution rules live in
+    // the shared findConditionNodeForStep() helper.
     if (isConditionStep(currentStep)) {
-      const conditionId = currentStep.conditionId;
+      const conditionNode = findConditionNodeForStep(nodes, currentStep);
 
-      // Primary: Try to find edge by condition ID
-      let conditionEdge = edges.find(edge =>
-        edge.data?.condition === conditionId ||
-        edge.data?.conditionLabel === conditionId
-      );
+      if (conditionNode) {
+        // Center the indicator above the condition node.  Nodes carry no
+        // control-point offset (that was an edge-only concept), so the
+        // position derives purely from the node's own coordinates.
+        const nodeWidth = conditionNode.width || NODE_DIMENSIONS.DEFAULT_WIDTH;
+        const flowX = conditionNode.position.x + nodeWidth / 2;
+        const flowY = conditionNode.position.y - 20; // Position above the condition node
 
-      // Fallback: Find edge by source/target relationship (same as useSimpleReplaySync)
-      if (!conditionEdge && currentStep.successorId) {
-        conditionEdge = edges.find(edge =>
-          edge.source === currentStep.id && edge.target === currentStep.successorId && edge.data?.condition
-        );
-      }
-
-      if (conditionEdge) {
-        // Find source and target nodes to calculate edge center position
-        const sourceNode = nodes.find(n => n.id === conditionEdge.source);
-        const targetNode = nodes.find(n => n.id === conditionEdge.target);
-
-        if (sourceNode && targetNode) {
-          // Calculate edge center position (same logic as condition positioning)
-          const sourceX = sourceNode.position.x + (sourceNode.width || NODE_DIMENSIONS.DEFAULT_WIDTH) / 2;
-          const sourceY = sourceNode.position.y + (sourceNode.height || NODE_DIMENSIONS.DEFAULT_HEIGHT) / 2;
-          const targetX = targetNode.position.x + (targetNode.width || NODE_DIMENSIONS.DEFAULT_WIDTH) / 2;
-          const targetY = targetNode.position.y + (targetNode.height || NODE_DIMENSIONS.DEFAULT_HEIGHT) / 2;
-
-          const edgeCenterX = (sourceX + targetX) / 2;
-          const edgeCenterY = (sourceY + targetY) / 2;
-
-          // Apply control point offset if edge has been manipulated
-          const controlOffset = conditionEdge.data?.controlOffset || { x: 0, y: 0 };
-          const flowX = edgeCenterX + controlOffset.x;
-          const flowY = edgeCenterY + controlOffset.y - 20; // Position above the condition
-
-          // Return flow coordinates — rendering will use EdgeLabelRenderer
-          // which automatically applies the viewport transform.
-          indicators.push({
-            id: `condition-result-${currentStep.conditionId}`,
-            x: flowX,
-            y: flowY,
-            color: isAddSuccessorStep(currentStep) ? 'var(--modeler-color-success)' : 'var(--modeler-color-danger-soft)' // Green for passed, red for failed
-          });
-        }
+        // Return flow coordinates — rendering will use EdgeLabelRenderer
+        // which automatically applies the viewport transform.
+        indicators.push({
+          id: `condition-result-${currentStep.conditionId}`,
+          x: flowX,
+          y: flowY,
+          color: isAddSuccessorStep(currentStep) ? 'var(--modeler-color-success)' : 'var(--modeler-color-danger-soft)' // Green for passed, red for failed
+        });
       }
     }
 
     setReplayIndicators(indicators);
-  }, [isReplayMode, currentReplayStep, replayData, edges, nodes]);
+  }, [isReplayMode, currentReplayStep, replayData, nodes]);
 
   return {
     replayIndicators,

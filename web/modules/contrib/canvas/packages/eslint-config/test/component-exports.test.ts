@@ -20,12 +20,28 @@ const testRunner = new RuleTester({
 // Mock fs to test isComponentDir used in component-exports rule.
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(() => true),
+  readFileSync: vi.fn((filePath) => {
+    // Only the headless project declares the Canvas Headless SDK.
+    if (filePath === '/headless/package.json') {
+      return JSON.stringify({
+        dependencies: { '@drupal-canvas/headless-next': '^0.1.0' },
+      });
+    }
+
+    return JSON.stringify({});
+  }),
   readdirSync: vi.fn((dir) => {
     const dirs: Record<string, string[]> = {
       '/components/button': ['component.yml', 'index.jsx', 'index.css'],
       '/components/card': ['card.component.yml', 'index.jsx'],
       '/components/heading': ['component.yml', 'index.tsx'],
       '/components/alert': ['alert.component.yml', 'alert.tsx'],
+      '/components/flat': [
+        'button.component.yml',
+        'button.tsx',
+        'pricing-table.component.yml',
+        'pricing-table.tsx',
+      ],
       '/src/utils': ['utils.js'],
     };
     return dirs[dir] ?? [];
@@ -181,5 +197,65 @@ testRunner.run('component-exports rule', rule, {
         },
       ],
     },
+    {
+      name: 'flat named-style: should fail for every component entrypoint in a shared directory',
+      code: `
+        export const PricingTable = ({ title }) => {
+          return <div>{title}</div>;
+        };
+      `,
+      filename: '/components/flat/pricing-table.tsx',
+      errors: [
+        {
+          message: 'Component must have a default export',
+          line: 2,
+        },
+      ],
+    },
   ],
 });
+
+// The rule is ignored when the Canvas Headless SDK is installed.
+const cwd = vi.spyOn(process, 'cwd');
+cwd.mockReturnValue('/headless');
+
+const headlessTestRunner = new RuleTester({
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    parserOptions: {
+      ecmaFeatures: {
+        jsx: true,
+      },
+    },
+  },
+});
+
+headlessTestRunner.run(
+  'component-exports rule ignored when headless SDK detected',
+  rule,
+  {
+    valid: [
+      {
+        name: 'should pass when a component has only a named export',
+        code: `
+        export const Button = ({ title }) => {
+          return <button>{title}</button>;
+        };
+      `,
+        filename: '/headless/components/button/index.jsx',
+      },
+      {
+        name: 'should pass when a component has no exports',
+        code: `
+        const Button = ({ title }) => {
+          return <button>{title}</button>;
+        };
+      `,
+        filename: '/headless/components/button/index.jsx',
+      },
+    ],
+    invalid: [],
+  },
+);

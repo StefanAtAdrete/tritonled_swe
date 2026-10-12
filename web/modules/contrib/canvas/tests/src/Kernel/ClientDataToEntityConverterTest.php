@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel;
 
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\TestWith;
+use Drupal\canvas\AutoSave\AutoSaveManager;
+use Drupal\canvas\ClientDataToEntityConverter;
+use Drupal\canvas\Controller\ApiLayoutController;
+use Drupal\canvas\Controller\EntityFormTrait;
+use Drupal\canvas\Entity\Component;
+use Drupal\canvas\Entity\EntityConstraintViolationList;
+use Drupal\canvas\Entity\VersionedConfigEntityInterface;
+use Drupal\canvas\Exception\ConstraintViolationException;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
+use Drupal\canvas\Render\PreviewEnvelope;
+use Drupal\canvas_test_article_fields\Hook\CanvasTestArticleFieldsHooks;
 use Drupal\Component\Datetime\Time;
 use Drupal\content_moderation\Permissions;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
-use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
-use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
-use Drupal\canvas\AutoSave\AutoSaveManager;
-use Drupal\canvas\Controller\ApiLayoutController;
-use Drupal\canvas\Entity\Component;
-use Drupal\canvas\Entity\EntityConstraintViolationList;
 use Drupal\Core\Extension\ModuleInstallerInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\StringTextfieldWidget;
@@ -23,31 +27,27 @@ use Drupal\Core\Field\WidgetPluginManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
-use Drupal\canvas\ClientDataToEntityConverter;
-use Drupal\canvas\Controller\EntityFormTrait;
-use Drupal\canvas\Entity\VersionedConfigEntityInterface;
-use Drupal\canvas\Exception\ConstraintViolationException;
-use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
-use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
-use Drupal\canvas\Render\PreviewEnvelope;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
-use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\canvas\Kernel\Traits\RequestTrait;
 use Drupal\Tests\canvas\Kernel\Traits\VfsPublicStreamUrlTrait;
 use Drupal\Tests\canvas\TestSite\CanvasTestSetup;
-use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
 use Drupal\Tests\canvas\Traits\CanvasFieldTrait;
+use Drupal\Tests\canvas\Traits\ConstraintViolationsTestTrait;
+use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\Entity\Role;
 use Drupal\user\Entity\User;
 use Drupal\user\RoleInterface;
-use Drupal\canvas_test_article_fields\Hook\CanvasTestArticleFieldsHooks;
 use GuzzleHttp\Psr7\Query;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -75,7 +75,7 @@ class ClientDataToEntityConverterTest extends KernelTestBase {
 
   public function setUp(): void {
     parent::setUp();
-    $this->container->get('module_installer')->install(['system']);
+    $this->container->get(ModuleInstallerInterface::class)->install(['system']);
     // @todo Refactor this away in https://www.drupal.org/project/canvas/issues/3531679
     (new CanvasTestSetup())->setup();
     $this->setUpImages();
@@ -355,7 +355,8 @@ class ClientDataToEntityConverterTest extends KernelTestBase {
       ],
     ]);
     self::assertSame([], self::violationsToArray($test_node->validate()));
-    $result = \Drupal::classResolver(ApiLayoutController::class)->get($test_node);
+    $request = Request::create('/api/canvas/content/canvas_page/' . $test_node->id());
+    $result = \Drupal::classResolver(ApiLayoutController::class)->get(request: $request, entity: $test_node);
     \assert($result instanceof PreviewEnvelope);
     $invalid_form_callback_client_json = \array_intersect_key($result->additionalData, \array_flip(['layout', 'model', 'entity_form_fields']));
     // Assert the default date and time values are returned.
@@ -403,7 +404,7 @@ class ClientDataToEntityConverterTest extends KernelTestBase {
       'Modified!',
     );
 
-    $this->container->get('module_installer')->install(['canvas_test_article_fields']);
+    $this->container->get(ModuleInstallerInterface::class)->install(['canvas_test_article_fields']);
     // Remove the field_cvt_textarea_summary field installed by
     // canvas_test_article_fields because it is not used in the test and causes
     // unrelated validation errors.
@@ -498,6 +499,72 @@ class ClientDataToEntityConverterTest extends KernelTestBase {
     $node = $this->assertConvert($client_json, [], 'The updated title.');
     self::assertCount(0, $autoSave->getEntityFormViolations($node));
     self::assertEquals(TestTime::$requestTime, $node->getChangedTime());
+  }
+
+  /**
+   * Tests that submitted NULL clears only an optional options field.
+   */
+  public function testOptionalOptionsFieldCanBeCleared(): void {
+    $field_name = 'field_optional_option';
+    $text_field_name = 'field_optional_text';
+    FieldStorageConfig::create([
+      'field_name' => $field_name,
+      'entity_type' => 'node',
+      'type' => 'list_string',
+      'settings' => [
+        'allowed_values' => ['marketing' => 'Marketing'],
+      ],
+    ])->save();
+    FieldConfig::create([
+      'field_name' => $field_name,
+      'entity_type' => 'node',
+      'bundle' => 'article',
+      'label' => 'Optional option',
+    ])->save();
+    FieldStorageConfig::create([
+      'field_name' => $text_field_name,
+      'entity_type' => 'node',
+      'type' => 'string',
+    ])->save();
+    FieldConfig::create([
+      'field_name' => $text_field_name,
+      'entity_type' => 'node',
+      'bundle' => 'article',
+      'label' => 'Optional text',
+    ])->save();
+    $this->container
+      ->get(EntityDisplayRepositoryInterface::class)
+      ->getFormDisplay('node', 'article')
+      ->setComponent($field_name, ['type' => 'options_select'])
+      ->setComponent($text_field_name, ['type' => 'string_textfield'])
+      ->save();
+
+    /** @var \Drupal\user\Entity\User $account */
+    $account = $this->createUser(values: ['roles' => ['canvas']]);
+    $this->setCurrentUser($account);
+
+    $node = $this->createTestNode([
+      $field_name => 'marketing',
+      $text_field_name => 'Original text',
+    ]);
+    self::assertSame('marketing', $node->get($field_name)->getString());
+    self::assertSame('Original text', $node->get($text_field_name)->getString());
+    $client_json = $this->getValidClientJson(FALSE);
+    // The explicit empty value must win even when a stale flattened value
+    // appears later in the request.
+    $client_json['entity_form_fields'][$field_name] = NULL;
+    $client_json['entity_form_fields'][$field_name . '[0]'] = 'marketing';
+    $client_json['entity_form_fields'][$text_field_name . '[0][value]'] = 'Original text';
+    $client_json['entity_form_fields'][$text_field_name] = NULL;
+
+    $updated_node = $this->assertConvert(
+      $client_json,
+      [],
+      'The updated title.',
+      $node,
+    );
+    self::assertSame('', $updated_node->get($field_name)->getString());
+    self::assertSame('Original text', $updated_node->get($text_field_name)->getString());
   }
 
   protected function assertConvert(array $client_json, array $expected_errors, string $expected_title, ?Node $node = NULL): NodeInterface {
@@ -597,7 +664,7 @@ class ClientDataToEntityConverterTest extends KernelTestBase {
     // Originally the `No more gravy please` checkbox is checked.
     $response = $this->request(Request::create($url->toString()));
     self::assertEquals(Response::HTTP_OK, $response->getStatusCode());
-    $json = \json_decode($response->getContent() ?: '', TRUE, \JSON_THROW_ON_ERROR);
+    $json = \json_decode((string) $response->getContent(), TRUE, flags: \JSON_THROW_ON_ERROR);
     self::assertEquals(TRUE, $json['entity_form_fields'][CanvasTestArticleFieldsHooks::NO_MORE_GRAVY]);
     self::assertNull($autoSave->getAutoSaveEntity($node)->entity);
     self::assertEquals('Canvas Needs This For The Time Being', $json['entity_form_fields']['title[0][value]']);

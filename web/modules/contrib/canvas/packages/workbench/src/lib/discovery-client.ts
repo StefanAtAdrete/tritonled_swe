@@ -4,6 +4,7 @@ export type {
   DiscoveredComponent,
   DiscoveredContentTemplate,
   DiscoveredPage,
+  DiscoveredPageTemplate,
   DiscoveryResult,
   DiscoveryWarning,
 } from '@drupal-canvas/discovery';

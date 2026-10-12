@@ -21,8 +21,22 @@ final class TypedDataAdapterManager extends DefaultPluginManager {
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
     parent::__construct('Plugin/tool/TypedData/Adapter', $namespaces, $module_handler, TypedDataAdapterInterface::class, TypedDataAdapter::class);
-    $this->alterInfo('data_type_adapter_info');
-    $this->setCacheBackend($cache_backend, 'data_type_adapter_plugins');
+    $this->alterInfo('tool_typed_data_adapter_info');
+    $this->setCacheBackend($cache_backend, 'tool_typed_data_adapter_plugins');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function alterDefinitions(&$definitions) {
+    // Legacy unprefixed alter hook, kept for one beta cycle so existing
+    // adapter implementers keep working. Fired before the prefixed hook so
+    // current implementations win on conflict.
+    if ($this->moduleHandler->hasImplementations('data_type_adapter_info_alter')) {
+      @trigger_error('hook_data_type_adapter_info_alter() is deprecated in tool:1.0.0-beta4 and is removed from tool:1.0.0-rc1. Implement hook_tool_typed_data_adapter_info_alter() instead. See https://www.drupal.org/project/tool/issues/3582963', E_USER_DEPRECATED);
+      $this->moduleHandler->alter('data_type_adapter_info', $definitions);
+    }
+    parent::alterDefinitions($definitions);
   }
 
   /**

@@ -3,6 +3,7 @@
 namespace Drupal\modeler\Plugin\ModelerApiModeler;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\modeler\FormToJsonConverter;
@@ -47,11 +48,17 @@ class WorkflowModeler extends ModelerBase {
 
   /**
    * Get the form-to-JSON converter service.
+   *
+   * The parent ModelerBase declares both its constructor and create() method
+   * as final to force modeler plugins into lazy/getter dependency injection
+   * (to avoid circular dependencies, see modeler_api issue #3517655). Proper
+   * constructor injection is therefore not available; we use the base class's
+   * getContainer() getter-injection helper rather than a static service
+   * locator.
    */
   protected function getFormToJsonConverter(): FormToJsonConverter {
     if ($this->formToJsonConverter === NULL) {
-      // @phpstan-ignore-next-line
-      $this->formToJsonConverter = \Drupal::service('modeler.form_to_json_converter');
+      $this->formToJsonConverter = $this->getContainer()->get(FormToJsonConverter::class);
     }
     return $this->formToJsonConverter;
   }
@@ -80,104 +87,338 @@ class WorkflowModeler extends ModelerBase {
     }
     else {
       $id = $model->id();
-      // Rebuild model data from the model entity.
-      $usedComponents = $owner->getUsedComponents($model);
+      $modelData = json_encode($this->buildGraph($owner, $model, TRUE), JSON_THROW_ON_ERROR);
+    }
+    return $this->edit($owner, $id, $modelData, $model->isNew(), $readOnly);
+  }
 
-      // Build nodes array and collect conditions and annotations.
-      $nodes = [];
-      $edges = [];
-      $conditions = [];
-      $annotations = [];
+  /**
+   * {@inheritdoc}
+   */
+  public function export(ModelOwnerInterface $owner, ConfigEntityInterface $model): ?string {
+    $id = $model->id();
+    $version = $owner->getVersion($model);
+    $metadata = [
+      'label' => $owner->getLabel($model),
+      'documentation' => $owner->getDocumentation($model),
+      'summary' => $owner->getSummary($model),
+      'recipes' => $owner->getRecipes($model),
+      'config_actions' => $owner->getConfigActions($model),
+      'export_config' => $owner->getExportConfig($model),
+      'modules' => $owner->getModules($model),
+      'executable' => $owner->getStatus($model),
+      'tags' => $owner->getTags($model),
+      'changelog' => $owner->getChangelog($model),
+      'id' => $id,
+      'version' => $version,
+      'storage' => $owner->getStorage($model),
+      'template' => $owner->getTemplate($model),
+    ];
 
-      foreach ($owner->getAnnotations($model) as $annotation) {
-        foreach ($annotation->getSuccessors() as $association) {
-          $annotations[$association->getConditionId()] = $annotation->getLabel();
+    $configForms = $this->buildConfigForms($owner, $owner->getUsedComponents($model), $id, $model->isNew());
+
+    // The model configuration form speaks its own vocabulary: the machine
+    // name lives in model_id, and tags are a single comma-separated string.
+    $config = $metadata + ['model_id' => $id];
+    $config['tags'] = implode(', ', $metadata['tags']);
+
+    return json_encode([
+      'id' => $id,
+      'version' => $version,
+      'metadata' => $metadata,
+      ...$this->buildGraph($owner, $model, FALSE),
+      // Cast to an object so that a model with no config forms at all still
+      // serializes the map as `{}` instead of as an empty JSON list.
+      'configForms' => (object) $configForms,
+      'metadataForm' => $this->buildMetadataForm($owner, $config, FALSE),
+    ], JSON_THROW_ON_ERROR);
+  }
+
+  /**
+   * Builds the configuration forms for all plugins used by a model.
+   *
+   * The exported graph carries each component's configuration values but not
+   * the form definitions required to render them. Consumers outside of Drupal
+   * therefore receive one form definition per plugin ID, which is all they
+   * need as components using the same plugin share their form.
+   *
+   * @param \Drupal\modeler_api\Plugin\ModelerApiModelOwner\ModelOwnerInterface $owner
+   *   The model owner.
+   * @param \Drupal\modeler_api\Component[] $usedComponents
+   *   The components used by the model. This covers edge conditions as well as
+   *   nodes, as the consumer looks up both by plugin ID.
+   * @param string|null $modelId
+   *   The ID of the model being exported.
+   * @param bool $modelIsNew
+   *   Whether the model being exported is new.
+   *
+   * @return array
+   *   The converted configuration forms, keyed by plugin ID.
+   */
+  protected function buildConfigForms(ModelOwnerInterface $owner, array $usedComponents, ?string $modelId, bool $modelIsNew): array {
+    $configForms = [];
+    $processed = [];
+    foreach ($usedComponents as $component) {
+      $pluginId = $component->getPluginId();
+      // Annotations carry no plugin, and each plugin is only built once, no
+      // matter how many components make use of it.
+      if ($pluginId === '' || isset($processed[$pluginId])) {
+        continue;
+      }
+      $processed[$pluginId] = TRUE;
+      try {
+        $form = $this->buildComponentConfigForm($owner, $component->getType(), $pluginId, $component->getConfiguration(), $modelId, $modelIsNew);
+      }
+      catch (\Throwable $e) {
+        // A single broken plugin must never abort the whole export. The graph
+        // itself stays valid, the consumer just cannot render that one form.
+        $this->logger->warning('Skipped the config form of plugin %plugin while exporting model %model: @message', [
+          '%plugin' => $pluginId,
+          '%model' => $modelId ?? '',
+          '@message' => $e->getMessage(),
+        ]);
+        continue;
+      }
+      if ($form !== NULL) {
+        $configForms[$pluginId] = $form;
+      }
+    }
+    return $configForms;
+  }
+
+  /**
+   * Builds the configuration form for a single component plugin.
+   *
+   * @param \Drupal\modeler_api\Plugin\ModelerApiModelOwner\ModelOwnerInterface $owner
+   *   The model owner.
+   * @param int $componentType
+   *   The component type.
+   * @param string $pluginId
+   *   The plugin ID.
+   * @param array $configuration
+   *   The plugin configuration.
+   * @param string|null $modelId
+   *   The ID of the model the form is built for.
+   * @param bool $modelIsNew
+   *   Whether the model the form is built for is new.
+   *
+   * @return array|null
+   *   The converted configuration form, or NULL if the plugin does not exist
+   *   or is not editable.
+   */
+  protected function buildComponentConfigForm(ModelOwnerInterface $owner, int $componentType, string $pluginId, array $configuration, ?string $modelId, bool $modelIsNew): ?array {
+    $plugin = $owner->ownerComponent($componentType, $pluginId);
+    if ($plugin === NULL || !$owner->ownerComponentEditable($plugin)) {
+      return NULL;
+    }
+    return $this->buildPluginConfigForm($owner, $plugin, $configuration, $modelId, $modelIsNew);
+  }
+
+  /**
+   * Converts a plugin's configuration form into its JSON representation.
+   *
+   * Shared by the config form endpoint and the standalone graph export, so
+   * that both always hand out the very same form definition.
+   *
+   * @param \Drupal\modeler_api\Plugin\ModelerApiModelOwner\ModelOwnerInterface $owner
+   *   The model owner.
+   * @param \Drupal\Component\Plugin\PluginInspectionInterface $plugin
+   *   The plugin, which must be editable.
+   * @param array $configuration
+   *   The plugin configuration.
+   * @param string|null $modelId
+   *   The ID of the model the form is built for.
+   * @param bool $modelIsNew
+   *   Whether the model the form is built for is new.
+   *
+   * @return array
+   *   The converted configuration form.
+   */
+  protected function buildPluginConfigForm(ModelOwnerInterface $owner, PluginInspectionInterface $plugin, array $configuration, ?string $modelId, bool $modelIsNew): array {
+    if ($plugin instanceof ConfigurableInterface) {
+      $plugin->setConfiguration($configuration);
+    }
+    $form = $owner->buildConfigurationForm($plugin, $modelId, $modelIsNew);
+    // The model owner may have added configuration properties to the plugin
+    // although it's not configurable. This e.g. happens in ECA for action
+    // plugins that have a type property. Let's add the default values
+    // separately for those.
+    if (!($plugin instanceof ConfigurableInterface)) {
+      foreach ($configuration as $configKey => $configValue) {
+        if (isset($form[$configKey])) {
+          $form[$configKey]['#default_value'] = $configValue;
         }
       }
+    }
+    $form = $this->formBuilder->getForm(Wrapper::class, $form);
+    unset($form['ecatemplatedummy']);
+    // Derive the config schema key for this plugin to enable YAML schema
+    // discovery on textarea fields.
+    $schemaKey = $owner->getPluginSchemaKey($plugin);
+    // Convert form to JSON-serializable format.
+    return $this->getFormToJsonConverter()->convert($form, $schemaKey);
+  }
 
-      // First pass: collect all condition components so they are available
-      // when building edges. Without this, conditions referenced by events
-      // (which are iterated before conditions) would be missing.
-      foreach ($usedComponents as $component) {
-        if ($component->getType() === Api::COMPONENT_TYPE_LINK) {
-          $componentId = $component->getId();
-          $element = [
-            'id' => $componentId,
-            'plugin' => $component->getPluginId(),
-            'label' => $component->getLabel(),
-            'position' => ['x' => 100, 'y' => 100],
-            'configuration' => $component->getConfiguration(),
-            'componentType' => Api::COMPONENT_TYPE_LINK,
-            'configured' => TRUE,
-          ];
-          if (isset($annotations[$componentId])) {
-            $element['annotation'] = $annotations[$componentId];
-          }
-          $conditions[$componentId] = $element;
-        }
+  /**
+   * Builds the model's own configuration form in its JSON representation.
+   *
+   * The React metadata dialog renders this array with the very same component
+   * that renders a plugin's configuration form. Whatever a model owner adds,
+   * relabels or hides in the shared modeler_api form therefore reaches the UI
+   * without this modeler knowing the individual fields.
+   *
+   * The YAML hint on the config actions field is applied here rather than in
+   * the converter, because the converter derives a widget format from config
+   * schema constraints and this form has no config schema behind it. The
+   * modeler is the layer that knows its raw JSON keeps config actions as
+   * structured data that the user edits as YAML.
+   *
+   * @param \Drupal\modeler_api\Plugin\ModelerApiModelOwner\ModelOwnerInterface $owner
+   *   The model owner.
+   * @param array $config
+   *   The values the form fields are built with.
+   * @param bool $isNew
+   *   Whether the model the form is built for is new.
+   *
+   * @return array
+   *   The converted model configuration form.
+   */
+  protected function buildMetadataForm(ModelOwnerInterface $owner, array $config, bool $isNew): array {
+    $form = $this->defaultModelConfigForm($owner, $config, $isNew);
+    // This form carries no plugin, hence no config schema key.
+    $fields = $this->getFormToJsonConverter()->convert($form, '');
+    $this->markConfigActionsAsYaml($fields);
+    return $fields;
+  }
+
+  /**
+   * Marks the config actions field of a converted form as YAML.
+   *
+   * The field may sit in any group, so the whole tree is walked.
+   *
+   * @param array $fields
+   *   The converted form fields, modified in place.
+   */
+  protected function markConfigActionsAsYaml(array &$fields): void {
+    foreach ($fields as &$field) {
+      if (!is_array($field)) {
+        continue;
       }
+      if (($field['key'] ?? '') === 'config_actions') {
+        $field['format'] = 'yaml';
+      }
+      if (isset($field['children'])) {
+        $this->markConfigActionsAsYaml($field['children']);
+      }
+    }
+  }
 
-      // Second pass: build nodes and edges with full condition data available.
-      foreach ($usedComponents as $component) {
+  /**
+   * Rebuilds the Workflow Modeler graph from the model entity.
+   *
+   * @param \Drupal\modeler_api\Plugin\ModelerApiModelOwner\ModelOwnerInterface $owner
+   *   The model owner.
+   * @param \Drupal\Core\Config\Entity\ConfigEntityInterface $model
+   *   The model entity.
+   * @param bool $includePositions
+   *   Whether default coordinates should be included for the editor.
+   *
+   * @return array{nodes: array, edges: array}
+   *   The reconstructed nodes and edges.
+   */
+  protected function buildGraph(ModelOwnerInterface $owner, ConfigEntityInterface $model, bool $includePositions): array {
+    $usedComponents = $owner->getUsedComponents($model);
+    $nodes = [];
+    $edges = [];
+    $conditions = [];
+    $annotations = [];
+
+    foreach ($owner->getAnnotations($model) as $annotation) {
+      foreach ($annotation->getSuccessors() as $association) {
+        $annotations[$association->getConditionId()] = $annotation->getLabel();
+      }
+    }
+
+    // Collect all condition components before building edges. Events are
+    // iterated before conditions and may already refer to them.
+    foreach ($usedComponents as $component) {
+      if ($component->getType() === Api::COMPONENT_TYPE_LINK) {
         $componentId = $component->getId();
-        $componentType = $component->getType();
-
-        // Skip conditions — already collected in the first pass.
-        if ($componentType === Api::COMPONENT_TYPE_LINK) {
-          continue;
-        }
-
         $element = [
           'id' => $componentId,
           'plugin' => $component->getPluginId(),
           'label' => $component->getLabel(),
-          'position' => ['x' => 100, 'y' => 100],
           'configuration' => $component->getConfiguration(),
-          'componentType' => $componentType,
+          'componentType' => Api::COMPONENT_TYPE_LINK,
           'configured' => TRUE,
         ];
+        if ($includePositions) {
+          $element['position'] = ['x' => 100, 'y' => 100];
+        }
         if (isset($annotations[$componentId])) {
           $element['annotation'] = $annotations[$componentId];
         }
-        $nodes[] = $element;
+        $conditions[$componentId] = $element;
+      }
+    }
 
-        // Create edges from successors.
-        $successors = $component->getSuccessors();
-        foreach ($successors as $successor) {
-          $successorId = $successor->getId();
-          $conditionId = $successor->getConditionId();
+    // Track duplicate source-target pairs so parallel edges receive unique
+    // IDs while the first edge retains the legacy ID format.
+    $edgeIdCounts = [];
 
-          $edge = [
-            'id' => $componentId . '_' . $successorId,
-            'source' => $componentId,
-            'target' => $successorId,
-          ];
-
-          // Attach condition data if there's a condition.
-          if ($conditionId && isset($conditions[$conditionId])) {
-            $edge['condition'] = $conditions[$conditionId]['plugin'];
-            $edge['conditionConfiguration'] = $conditions[$conditionId]['configuration'];
-            $edge['conditionLabel'] = $conditions[$conditionId]['label'];
-            // Preserve the original condition ID for round-trip stability.
-            $edge['conditionId'] = $conditionId;
-          }
-
-          // Add annotation if one exists for this edge.
-          $edgeId = $edge['id'];
-          if (isset($annotations[$edgeId])) {
-            $edge['annotation'] = $annotations[$edgeId];
-          }
-
-          $edges[] = $edge;
-        }
+    foreach ($usedComponents as $component) {
+      $componentId = $component->getId();
+      $componentType = $component->getType();
+      if ($componentType === Api::COMPONENT_TYPE_LINK) {
+        continue;
       }
 
-      $modelData = json_encode([
-        'nodes' => $nodes,
-        'edges' => $edges,
-      ]);
+      $element = [
+        'id' => $componentId,
+        'plugin' => $component->getPluginId(),
+        'label' => $component->getLabel(),
+        'configuration' => $component->getConfiguration(),
+        'componentType' => $componentType,
+        'configured' => TRUE,
+      ];
+      if ($includePositions) {
+        $element['position'] = ['x' => 100, 'y' => 100];
+      }
+      if (isset($annotations[$componentId])) {
+        $element['annotation'] = $annotations[$componentId];
+      }
+      $nodes[] = $element;
+
+      foreach ($component->getSuccessors() as $successor) {
+        $successorId = $successor->getId();
+        $conditionId = $successor->getConditionId();
+        $edgeIdBase = $componentId . '_' . $successorId;
+        $count = $edgeIdCounts[$edgeIdBase] ?? 0;
+        $edgeId = $count === 0 ? $edgeIdBase : $edgeIdBase . '_' . $count;
+        $edgeIdCounts[$edgeIdBase] = $count + 1;
+
+        $edge = [
+          'id' => $edgeId,
+          'source' => $componentId,
+          'target' => $successorId,
+        ];
+        if ($conditionId && isset($conditions[$conditionId])) {
+          $edge['condition'] = $conditions[$conditionId]['plugin'];
+          $edge['conditionConfiguration'] = $conditions[$conditionId]['configuration'];
+          $edge['conditionLabel'] = $conditions[$conditionId]['label'];
+          $edge['conditionId'] = $conditionId;
+        }
+        if (isset($annotations[$edgeId])) {
+          $edge['annotation'] = $annotations[$edgeId];
+        }
+        $edges[] = $edge;
+      }
     }
-    return $this->edit($owner, $id, $modelData, $model->isNew(), $readOnly);
+
+    return [
+      'nodes' => $nodes,
+      'edges' => $edges,
+    ];
   }
 
   /**
@@ -200,11 +441,31 @@ class WorkflowModeler extends ModelerBase {
         }
       }
     }
+    // The metadata dialog gets its structure from the form and its values
+    // from the React store, which holds the model data the API assembled.
+    // The defaults below therefore only have to be of the right type.
+    $metadataConfig = [
+      'label' => '',
+      'model_id' => $id,
+      'version' => '',
+      'executable' => TRUE,
+      'template' => FALSE,
+      'storage' => '',
+      'documentation' => '',
+      'summary' => '',
+      'recipes' => [],
+      'export_config' => [],
+      'modules' => [],
+      'config_actions' => [],
+      'tags' => '',
+      'changelog' => '',
+    ];
     $settings = [
       'modelId' => $id,
       'modelData' => $data,
       'components' => $components,
       'typeMap' => Api::COMPONENT_TYPE_NAMES,
+      'metadataForm' => $this->buildMetadataForm($owner, $metadataConfig, $isNew),
     ];
     if ($this->request->query->has('select')) {
       $settings['selectComponentId'] = $this->request->query->get('select');
@@ -213,7 +474,11 @@ class WorkflowModeler extends ModelerBase {
       $settings['selectContextId'] = $this->request->query->get('context');
     }
     if (!$readOnly && $this->request->query->has('contextConfig')) {
-      $settings['setContextConfig'] = json_decode($this->request->query->get('contextConfig'), TRUE);
+      $decoded = json_decode($this->request->query->get('contextConfig'), TRUE);
+      // Only accept a decoded array; avoid passing null/scalar downstream.
+      if (is_array($decoded)) {
+        $settings['setContextConfig'] = $decoded;
+      }
     }
     if ($this->request->query->has('hash')) {
       $settings['replayData'] = $owner->getReplayData($this->request->query->get('hash'));
@@ -464,28 +729,7 @@ class WorkflowModeler extends ModelerBase {
           $data['error'] = $this->t('Plugin not editable.');
         }
         else {
-          if ($plugin instanceof ConfigurableInterface) {
-            $plugin->setConfiguration($configuration);
-          }
-          $form = $owner->buildConfigurationForm($plugin, $model_id, $model_is_new);
-          // The model owner may have added configuration properties to the
-          // plugin although it's not configurable. This e.g. happens in ECA for
-          // action plugins that have a type property. Let's add the default
-          // values separately for those.
-          if (!($plugin instanceof ConfigurableInterface)) {
-            foreach ($configuration as $configKey => $configValue) {
-              if (isset($form[$configKey])) {
-                $form[$configKey]['#default_value'] = $configValue;
-              }
-            }
-          }
-          $form = $this->formBuilder->getForm(Wrapper::class, $form);
-          unset($form['ecatemplatedummy']);
-          // Derive the config schema key for this plugin to enable YAML
-          // schema discovery on textarea fields.
-          $schema_key = $owner->getPluginSchemaKey($plugin);
-          // Convert form to JSON-serializable format.
-          $data['form'] = $this->getFormToJsonConverter()->convert($form, $schema_key);
+          $data['form'] = $this->buildPluginConfigForm($owner, $plugin, $configuration, $model_id, $model_is_new);
         }
       }
     }
@@ -514,7 +758,7 @@ class WorkflowModeler extends ModelerBase {
       'edges' => [],
     ];
 
-    return json_encode($emptyModel, JSON_PRETTY_PRINT);
+    return json_encode($emptyModel, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
   }
 
   /**
@@ -565,6 +809,70 @@ class WorkflowModeler extends ModelerBase {
    */
   public function getDocumentation(): string {
     return $this->metadata['documentation'] ?? '';
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Unlike the getters above, an absent key yields NULL rather than an empty
+   * value. NULL tells the API that this model's raw data does not express the
+   * setting at all, so the owner's current value is left alone; an empty string
+   * is the user deliberately clearing the field and does overwrite it.
+   */
+  public function getSummary(): ?string {
+    return array_key_exists('summary', $this->metadata) ? (string) $this->metadata['summary'] : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Returns NULL for an absent key, for the reason given on getSummary().
+   */
+  public function getRecipes(): ?array {
+    if (!array_key_exists('recipes', $this->metadata)) {
+      return NULL;
+    }
+    $recipes = $this->metadata['recipes'];
+    return is_array($recipes) ? $recipes : [];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Returns NULL for an absent key, for the reason given on getSummary().
+   */
+  public function getConfigActions(): ?array {
+    if (!array_key_exists('config_actions', $this->metadata)) {
+      return NULL;
+    }
+    $configActions = $this->metadata['config_actions'];
+    return is_array($configActions) ? $configActions : [];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Returns NULL for an absent key, for the reason given on getSummary().
+   */
+  public function getExportConfig(): ?array {
+    if (!array_key_exists('export_config', $this->metadata)) {
+      return NULL;
+    }
+    $exportConfig = $this->metadata['export_config'];
+    return is_array($exportConfig) ? $exportConfig : [];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Returns NULL for an absent key, for the reason given on getSummary().
+   */
+  public function getModules(): ?array {
+    if (!array_key_exists('modules', $this->metadata)) {
+      return NULL;
+    }
+    $modules = $this->metadata['modules'];
+    return is_array($modules) ? $modules : [];
   }
 
   /**
@@ -624,7 +932,7 @@ class WorkflowModeler extends ModelerBase {
     $decoded['id'] = $this->metadata['id'] ?? '';
     $decoded['metadata'] = $this->metadata;
     unset($decoded['metadata']['id']);
-    $this->rawData = json_encode($decoded, JSON_PRETTY_PRINT);
+    $this->rawData = json_encode($decoded, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
   }
 
 }

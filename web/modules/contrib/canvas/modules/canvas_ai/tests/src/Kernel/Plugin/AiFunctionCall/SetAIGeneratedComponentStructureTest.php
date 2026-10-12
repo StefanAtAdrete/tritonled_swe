@@ -4,28 +4,40 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall;
 
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Drupal\ai\Service\FunctionCalling\ExecutableFunctionCallInterface;
-use Drupal\canvas\Entity\Page;
-use Drupal\canvas_ai\Plugin\AiFunctionCall\SetAIGeneratedComponentStructure;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
-use Drupal\Tests\user\Traits\UserCreationTrait;
-use Drupal\Tests\canvas_ai\Traits\FunctionalCallTestTrait;
-use Drupal\user\Entity\User;
 use Drupal\canvas\ComponentSource\ComponentSourceManager;
+use Drupal\canvas\Entity\Page;
 use Drupal\canvas_ai\CanvasAiPermissions;
 use Drupal\canvas_ai\CanvasAiTempStore;
+use Drupal\canvas_ai\Plugin\AiFunctionCall\SetAIGeneratedComponentStructure;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
+use Drupal\Tests\canvas\Traits\CreateTestJsComponentTrait;
+use Drupal\Tests\canvas_ai\Traits\FunctionalCallTestTrait;
+use Drupal\Tests\canvas_ai\Traits\ImageMediaPropTestTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Yaml\Yaml;
 
 /**
  * Tests for the SetAIGeneratedComponentStructure function call plugin.
+ *
+ * This test will be replaced by
+ * \Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall\PlaceComponentsTest
+ * once the set_component_structure tool is deleted.
+ *
+ * @see \Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall\PlaceComponentsTest
  */
 #[Group('canvas_ai')]
 final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
 
+  use CreateTestJsComponentTrait;
   use FunctionalCallTestTrait;
+  use ImageMediaPropTestTrait;
   use UserCreationTrait;
 
   /**
@@ -53,7 +65,8 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    * {@inheritdoc}
    */
   protected static $modules = [
-    ...CanvasKernelTestBase::CANVAS_KERNEL_TEST_MINIMAL_MODULES,
+    ...self::CANVAS_KERNEL_TEST_MINIMAL_MODULES,
+    'field',
     'ai',
     'ai_agents',
     'canvas_ai',
@@ -70,6 +83,7 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
     $this->installEntitySchema('file');
     $this->installEntitySchema('path_alias');
     $this->installEntitySchema(Page::ENTITY_TYPE_ID);
+    $this->setUpImageMediaType();
     $this->container->get(ComponentSourceManager::class)->generateComponents();
 
     $this->functionCallManager = $this->container->get('plugin.manager.ai.function_calls');
@@ -80,7 +94,7 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
     }
     $this->privilegedUser = $privileged_user;
     $this->unprivilegedUser = $unprivileged_user;
-    $this->container->get('config.factory')
+    $this->container->get(ConfigFactoryInterface::class)
       ->getEditable('system.theme')
       ->set('default', 'stark')
       ->save();
@@ -91,9 +105,9 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    */
   #[DataProvider('componentStructureDataProvider')]
   public function testSetComponentStructureWithPermissionsAndValidData(string $layout_type, string $yaml_input, array $expected_output): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
     // Set the current layout to a valid layout.
-    $this->container->get('canvas_ai.tempstore')->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout($layout_type));
+    $this->container->get(CanvasAiTempStore::class)->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout($layout_type));
 
     $tool = $this->functionCallManager->createInstance('canvas_ai:set_component_structure');
     $this->assertInstanceOf(SetAIGeneratedComponentStructure::class, $tool);
@@ -106,7 +120,7 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    * Tests setting component structure without proper permissions.
    */
   public function testSetComponentStructureWithoutPermissions(): void {
-    $this->container->get('current_user')->setAccount($this->unprivilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->unprivilegedUser);
 
     $tool = $this->functionCallManager->createInstance('canvas_ai:set_component_structure');
     $this->assertInstanceOf(ExecutableFunctionCallInterface::class, $tool);
@@ -124,9 +138,9 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    */
   #[DataProvider('invalidComponentStructureDataProvider')]
   public function testSetComponentStructureWithInvalidYaml(string $layout_type, string $yaml_input, array $expected_error): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
     // Set the current layout to a valid layout.
-    $this->container->get('canvas_ai.tempstore')->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout($layout_type));
+    $this->container->get(CanvasAiTempStore::class)->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout($layout_type));
 
     $result = $this->getComponentToolOutput($yaml_input);
     $expected_error = 'Failed to process layout data: ' . Yaml::dump($expected_error);
@@ -137,9 +151,9 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    * Tests setting component structure with invalid component validation.
    */
   public function testSetComponentStructureWithInvalidComponents(): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
     // Set the current layout to a valid layout.
-    $this->container->get('canvas_ai.tempstore')->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout('multi_region_empty'));
+    $this->container->get(CanvasAiTempStore::class)->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout('multi_region_empty'));
 
     $valid_yaml = <<<YAML
       operations:
@@ -182,7 +196,7 @@ final class SetAIGeneratedComponentStructureTest extends CanvasKernelTestBase {
    * Tests component validation logic.
    */
   public function testValidateComponent(): void {
-    $this->container->get('current_user')->setAccount($this->privilegedUser);
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
 
     $invalid_yaml = <<<YAML
       operations:
@@ -233,6 +247,145 @@ YAML;
     $invalid_slot_name_yaml = Yaml::dump($decoded);
     $result = $this->getComponentToolOutput($invalid_slot_name_yaml);
     $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.two_column]: Invalid component subtree. This component subtree contains an invalid slot name for component <em class="placeholder">sdc.canvas_test_sdc.two_column</em>: <em class="placeholder">not_real_slot</em>. Valid slot names are: <em class="placeholder">column_one, column_two</em>. components.0.[sdc.canvas_test_sdc.two_column].slots.column_one.0.[sdc.canvas_test_sdc.my-hero].props.cta1href: The property cta1href is required. components.0.[sdc.canvas_test_sdc.two_column].slots.not_real_slot.0.[sdc.canvas_test_sdc.my-hero].props.cta1href: The property cta1href is required.', self::normalizeErrorString($result));
+  }
+
+  /**
+   * Tests a media item the current user is not allowed to view.
+   *
+   * An image prop is populated by a reference to a media item, and Canvas
+   * resolves that reference with the current user's access rights: an agent
+   * must not be able to put media on the page for a user who may not see it.
+   */
+  public function testSetComponentStructureWithInaccessibleMedia(): void {
+    $media = $this->createImageMedia();
+    $yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+          - sdc.canvas_test_sdc.image:
+              props:
+                image: {$media->id()}
+      YAML;
+
+    // The first account ::setUp() creates is user 1, which bypasses access
+    // checks: the very same media item raises no validation error for it.
+    $this->assertSame(1, (int) $this->privilegedUser->id());
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
+    $this->container->get(CanvasAiTempStore::class)->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout('multi_region_empty'));
+    $result = $this->getComponentToolOutput($yaml);
+    $this->assertSame('Component structure processed successfully.', $result);
+
+    // User A may use Canvas AI, but may not view the media item.
+    $user_a = $this->createUserWithoutMediaAccess();
+    $this->assertFalse($media->access('view', $user_a));
+    $this->container->get(AccountProxyInterface::class)->setAccount($user_a);
+    $this->container->get(CanvasAiTempStore::class)->setData(CanvasAiTempStore::CURRENT_LAYOUT_KEY, $this->getCurrentLayout('multi_region_empty'));
+    $result = $this->getComponentToolOutput($yaml);
+    $this->assertSame(\sprintf('Failed to process layout data: %s', self::MEDIA_ACCESS_DENIED_MESSAGE), self::normalizeErrorString($result));
+  }
+
+  /**
+   * Tests that props that do not exist on a component fail validation.
+   */
+  public function testValidateComponentWithNonExistentProps(): void {
+    $this->container->get(AccountProxyInterface::class)->setAccount($this->privilegedUser);
+
+    // A valid required prop plus a prop the component does not define.
+    $bogus_prop_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - sdc.canvas_test_sdc.props-no-slots:
+                props:
+                  heading: 'A valid heading'
+                  nonexistent_prop: 'This prop does not exist'
+      YAML;
+    $result = $this->getComponentToolOutput($bogus_prop_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.props-no-slots].props.nonexistent_prop: Component `sdc.canvas_test_sdc.props-no-slots`: the `nonexistent_prop` prop is not defined. (code garbage)', self::normalizeErrorString($result));
+
+    // Any prop sent to a component that defines no props must fail.
+    $zero_prop_component_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - sdc.canvas_test_sdc.druplicon:
+                props:
+                  heading: 'Druplicon has no props'
+      YAML;
+    $result = $this->getComponentToolOutput($zero_prop_component_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.druplicon].props.heading: Component `sdc.canvas_test_sdc.druplicon`: the `heading` prop is not defined. (code garbage)', self::normalizeErrorString($result));
+
+    // A non-existent prop on a component nested inside a slot.
+    $nested_bogus_prop_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - sdc.canvas_test_sdc.two_column:
+                props:
+                  width: 50
+                slots:
+                  column_one:
+                    - sdc.canvas_test_sdc.heading:
+                        props:
+                          text: 'A heading'
+                          element: 'h2'
+                          nonexistent_prop: 'Bogus'
+      YAML;
+    $result = $this->getComponentToolOutput($nested_bogus_prop_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.two_column].slots.column_one.0.[sdc.canvas_test_sdc.heading].props.nonexistent_prop: Component `sdc.canvas_test_sdc.heading`: the `nonexistent_prop` prop is not defined. (code garbage)', self::normalizeErrorString($result));
+
+    // A missing required prop and a non-existent prop are both reported.
+    $combined_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - sdc.canvas_test_sdc.props-no-slots:
+                props:
+                  nonexistent_prop: 'This prop does not exist'
+      YAML;
+    $result = $this->getComponentToolOutput($combined_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.props-no-slots].props.heading: The property heading is required. components.0.[sdc.canvas_test_sdc.props-no-slots].props.nonexistent_prop: Component `sdc.canvas_test_sdc.props-no-slots`: the `nonexistent_prop` prop is not defined. (code garbage)', self::normalizeErrorString($result));
+
+    // Props provided as a scalar instead of a mapping must also fail instead
+    // of being silently dropped.
+    $scalar_props_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - sdc.canvas_test_sdc.druplicon:
+                props: 'heading: Not a mapping'
+      YAML;
+    $result = $this->getComponentToolOutput($scalar_props_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[sdc.canvas_test_sdc.druplicon].props: Component `sdc.canvas_test_sdc.druplicon`: the props must be a mapping of prop names to values. (code garbage)', self::normalizeErrorString($result));
+
+    // Code components (JS source) resolve props the same way as SDCs, so a
+    // prop the component does not define must fail for them too.
+    $this->createTestCodeComponent();
+    $js_bogus_prop_yaml = <<<YAML
+      operations:
+        - target: 'content'
+          reference_uuid: ''
+          placement: 'inside'
+          components:
+            - js.test-code-component:
+                props:
+                  heading: 'A valid heading'
+                  nonexistent_prop: 'This prop does not exist'
+      YAML;
+    $result = $this->getComponentToolOutput($js_bogus_prop_yaml);
+    $this->assertSame('Failed to process layout data: Component validation errors: components.0.[js.test-code-component].props.nonexistent_prop: Component `js.test-code-component`: the `nonexistent_prop` prop is not defined. (code garbage)', self::normalizeErrorString($result));
   }
 
   private function getComponentToolOutput(string $yaml): string {
@@ -565,6 +718,62 @@ YAML;
         'expected_error' => [
           'Operation 0' => [
             'The operation must contain components.',
+          ],
+        ],
+      ],
+      'test_unknown_target_region' => [
+        'layout_type' => 'multi_region_empty',
+        'yaml_input' => <<<YAML
+          operations:
+            - target: 'sidebar'
+              reference_uuid: ''
+              placement: 'inside'
+              components:
+                - sdc.canvas_test_sdc.heading:
+                    props:
+                      text: "Some text"
+                      element: "h1"
+          YAML,
+        'expected_error' => [
+          'Operation 0' => [
+            'Region "sidebar" does not exist. Available regions are: header, content, footer.',
+          ],
+        ],
+      ],
+      'test_missing_target' => [
+        'layout_type' => 'multi_region_empty',
+        'yaml_input' => <<<YAML
+          operations:
+            - reference_uuid: ''
+              placement: 'inside'
+              components:
+                - sdc.canvas_test_sdc.heading:
+                    props:
+                      text: "Some text"
+                      element: "h1"
+          YAML,
+        'expected_error' => [
+          'Operation 0' => [
+            'The target key is missing or invalid in the operation.',
+          ],
+        ],
+      ],
+      'test_non_string_target' => [
+        'layout_type' => 'multi_region_empty',
+        'yaml_input' => <<<YAML
+          operations:
+            - target: 0
+              reference_uuid: ''
+              placement: 'inside'
+              components:
+                - sdc.canvas_test_sdc.heading:
+                    props:
+                      text: "Some text"
+                      element: "h1"
+          YAML,
+        'expected_error' => [
+          'Operation 0' => [
+            'The target key is missing or invalid in the operation.',
           ],
         ],
       ],

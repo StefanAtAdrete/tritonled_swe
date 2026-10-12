@@ -12,7 +12,7 @@ interface SplideFormInterface {
   /**
    * Typecast the setting values.
    *
-   * @param array $settings
+   * @param array<string, mixed> $settings
    *   An array of Optionset settings.
    */
   public function typecastOptionset(array &$settings): void;

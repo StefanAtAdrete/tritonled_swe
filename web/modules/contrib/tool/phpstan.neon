@@ -6,8 +6,6 @@ includes:
 parameters:
   level: 3
   reportUnmatchedIgnoredErrors: false
-  scanDirectories:
-    - ../../../../vendor/drush/drush/src-symfony-compatibility
   paths:
     - .
   fileExtensions:
@@ -23,5 +21,10 @@ parameters:
     - '#^Attribute class Drupal\\ai\\OperationType\\Chat\\Tools\\ToolsPropertyInputInterface does not exist\.$#'
     - '#^Attribute class Drupal\\tool_ai_connector\\Plugin\\AiFunctionCall\\ToolPluginBase does not exist\.$#'
     - '#^Attribute class Drupal\\ai\\Service\\FunctionCalling\\FunctionCallInterface does not exist\.$#'
+    # ToolInterface deliberately extends the deprecated BC shell so
+    # instanceof checks keep working for one beta cycle (#3582964).
+    -
+      identifier: interface.extendsDeprecatedInterface
+      path: src/Tool/ToolInterface.php
   bootstrapFiles:
     - phpstan-bootstrap.php

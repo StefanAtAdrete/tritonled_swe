@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-// cspell:ignore gitane
 namespace Drupal\Tests\canvas\Kernel\Plugin\Canvas\ComponentSource;
 
-use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputTranslatability;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\Depends;
-use PHPUnit\Framework\Attributes\TestWith;
-use PHPUnit\Framework\Attributes\DataProvider;
+// cspell:ignore gitane
+
 use Drupal\canvas\Block\BlockManagerDecorator;
+use Drupal\canvas\Controller\ApiConfigControllers;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Entity\Page;
@@ -20,22 +16,31 @@ use Drupal\canvas\Plugin\Canvas\ComponentSource\BlockComponentDiscovery;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
 use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputNone;
 use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputSchemaChangePoc;
+use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputTranslatability;
 use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputValidatable;
 use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputValidatableCrash;
 use Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockOptionalContexts;
 use Drupal\canvas_test_block_form\Plugin\Block\CanvasTestBlockForm;
 use Drupal\Core\Block\BlockManagerInterface;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Extension\ModuleInstallerInterface;
+use Drupal\Core\Extension\ThemeInstallerInterface;
 use Drupal\node\Entity\Node;
 use Drupal\system\Entity\Menu;
 use Drupal\Tests\canvas\Kernel\BrokenBlockManager;
 use Drupal\Tests\canvas\Kernel\BrokenPluginManagerInterface;
 use Drupal\Tests\canvas\Traits\BlockComponentTreeTestTrait;
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 
 /**
@@ -97,6 +102,9 @@ final class BlockComponentTest extends ComponentSourceTestBase {
     // Some Block Components may already be discovered at this point due to the
     // BlockManagerDecorator reacting to earlier block definition cache clears.
     self::assertSame([
+      'block.canvas_test_block_input_invalid_default' => [
+        'Block plugin has invalid default setting "crash": This value should be of the correct primitive type.',
+      ],
       'block.canvas_test_block_input_unvalidatable' => [
         'Block plugin settings must opt into strict validation. Use the FullyValidatable constraint. See https://www.drupal.org/node/3404425',
       ],
@@ -118,7 +126,8 @@ final class BlockComponentTest extends ComponentSourceTestBase {
     // Due to BlockManagerDecorator, this should result in zero extra Block
     // Components being discovered.
     $this->generateComponentConfig();
-    $this->assertCount($this->expectedDefaultComponentInstallCount, \array_filter(
+    // Minus one: the shipped "Page content" marker is not a block component.
+    $this->assertCount($this->expectedDefaultComponentInstallCount - 1, \array_filter(
       $this->componentStorage->loadMultiple(),
       static function (EntityInterface $component) {
         \assert($component instanceof Component);
@@ -365,7 +374,7 @@ HTML,
     $this->generateComponentConfig();
 
     $this->installEntitySchema('node');
-    $this->container->get('module_installer')->install(['canvas_test_config_node_article']);
+    $this->container->get(ModuleInstallerInterface::class)->install(['canvas_test_config_node_article']);
     $node = Node::create([
       'title' => 'Test node',
       'type' => 'article',
@@ -384,6 +393,41 @@ HTML,
     $componentSettingsOriginal = $componentItemValue[0]['inputs'];
 
     $this->assertSame($componentSettingsOriginal, $componentSettings);
+  }
+
+  /**
+   * A component that crashes while building its preview must not break listing.
+   *
+   * The crash must stay contained to the one component: the listing keeps
+   * working and flags that component as broken, instead of returning a 500 that
+   * hides every component.
+   *
+   * @see \Drupal\canvas\Entity\Component::normalizeForClientSide()
+   */
+  public function testCrashingPreviewDoesNotBreakComponentList(): void {
+    // Enable the themes the preview needs, and set the default.
+    $this->container->get(ThemeInstallerInterface::class)->install(['stark', 'canvas_stark']);
+    $this->container->get(ConfigFactoryInterface::class)->getEditable('system.theme')->set('default', 'stark')->save();
+    $this->setUpCurrentUser(permissions: [Page::CREATE_PERMISSION, Page::EDIT_PERMISSION]);
+    $this->generateComponentConfig();
+
+    // Make this block crash while building its preview.
+    // @see \Drupal\canvas_test_block\Plugin\Block\CanvasTestBlockInputValidatableCrash::build()
+    CanvasTestBlockInputValidatableCrash::$forceCrash = TRUE;
+
+    // Listing every component must still succeed.
+    $response = \Drupal::classResolver(ApiConfigControllers::class)->list(Component::ENTITY_TYPE_ID);
+    $list = \json_decode((string) $response->getContent(), TRUE, flags: \JSON_THROW_ON_ERROR);
+
+    // The crashing component is flagged broken instead of taking down the whole
+    // response…
+    self::assertArrayHasKey('block.canvas_test_block_input_validatable_crash', $list);
+    self::assertTrue($list['block.canvas_test_block_input_validatable_crash']['broken']);
+    self::assertStringContainsString('Component failed to render', $list['block.canvas_test_block_input_validatable_crash']['default_markup']);
+
+    // …and the other components stay present and usable.
+    self::assertArrayHasKey('block.canvas_test_block_input_none', $list);
+    self::assertFalse($list['block.canvas_test_block_input_none']['broken']);
   }
 
   public static function providerRenderComponentFailure(): \Generator {

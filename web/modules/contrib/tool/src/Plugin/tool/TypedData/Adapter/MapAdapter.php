@@ -59,7 +59,7 @@ final class MapAdapter extends TypedDataAdapterBase {
       '#type' => 'container',
     ];
     foreach ($property_definitions as $property_name => $property_definition) {
-      $adapter = $this->getAdapterInstance($property_definition, $property_name);
+      $adapter = $this->getAdapterInstance($property_definition, (string) $property_name);
       $property_data = $property_definition->getClass()::createInstance($property_definition);
       if (!isset($element['value'][$property_name])) {
         $element['value'][$property_name] = [];
@@ -95,7 +95,7 @@ final class MapAdapter extends TypedDataAdapterBase {
     // Otherwise, extract values from property form elements.
     $result = [];
     foreach ($property_definitions as $property_name => $property_definition) {
-      $adapter = $this->getAdapterInstance($property_definition, $property_name);
+      $adapter = $this->getAdapterInstance($property_definition, (string) $property_name);
       $property_data = $property_definition->getClass()::createInstance($property_definition);
       $property_form_state = SubformState::createForSubform($form['value'][$property_name], $form, $form_state);
       $form[$property_name] = $adapter->formElement($property_data, $form['value'][$property_name], $property_form_state);
@@ -119,7 +119,7 @@ final class MapAdapter extends TypedDataAdapterBase {
     if (!empty($property_definitions)) {
       $schema['mapping'] = [];
       foreach ($property_definitions as $property_name => $property_definition) {
-        $adapter = $this->getAdapterInstance($property_definition, $property_name);
+        $adapter = $this->getAdapterInstance($property_definition, (string) $property_name);
         $schema['mapping'][$property_name] = $adapter->getSchemaDefinition($property_definition);
       }
 
@@ -162,7 +162,7 @@ final class MapAdapter extends TypedDataAdapterBase {
         continue;
       }
 
-      $adapter = $this->getAdapterInstance($property_definition, $property_name);
+      $adapter = $this->getAdapterInstance($property_definition, (string) $property_name);
 
       // Create a temporary typed data object for the property.
       $property_data = $property_definition->getClass()::createInstance($property_definition);

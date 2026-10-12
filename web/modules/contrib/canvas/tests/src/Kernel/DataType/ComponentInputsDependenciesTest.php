@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Kernel\DataType;
 
+use Drupal\canvas\Entity\Page;
 use Drupal\canvas\Plugin\DataType\ResolvedComponentInputs;
-use PHPUnit\Framework\Attributes\CoversMethod;
-use PHPUnit\Framework\Attributes\Group;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemListInstantiatorTrait;
 use Drupal\canvas\PropSource\PropSource;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableDependencyInterface;
-use Drupal\canvas\Entity\Page;
-use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
-use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemListInstantiatorTrait;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\file\Entity\File;
@@ -27,6 +26,8 @@ use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -102,7 +103,7 @@ class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
     ]);
     $this->createMediaType('image', ['id' => 'image', 'label' => 'Image']);
 
-    $field_definitions = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', 'alpha');
+    $field_definitions = \Drupal::service(EntityFieldManagerInterface::class)->getFieldDefinitions('node', 'alpha');
     $image_field_sample_value = ImageItem::generateSampleValue($field_definitions['field_hero']);
     \assert(\is_array($image_field_sample_value) && \array_key_exists('target_id', $image_field_sample_value));
     $hero_reference = Media::create([
@@ -142,7 +143,7 @@ class ComponentInputsDependenciesTest extends CanvasKernelTestBase {
       ],
     ]);
     // Same as above, but now with collapsed values.
-    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::rawInputValueToPropSourceArray()
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::rawInputValueToPropSourceArray()
     // @see \Drupal\canvas\Plugin\DataType\ComponentInputs::getPropSources()
     $item_list->appendItem([
       'uuid' => $uuid->generate(),

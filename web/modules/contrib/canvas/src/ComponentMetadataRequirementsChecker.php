@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Drupal\canvas;
 
 use Drupal\canvas\JsonSchemaInterpreter\JsonSchemaObjectRef;
-use Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase;
 use Drupal\canvas\PropExpressions\Component\ComponentPropExpression;
 use Drupal\canvas\PropShape\EphemeralPropShapeRepository;
+use Drupal\canvas\PropShape\StorablePropShape;
 use Drupal\canvas\Validation\JsonSchema\ContentEntityReferenceObjectConstraint;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Theme\Component\ComponentMetadata;
-use Drupal\canvas\PropShape\StorablePropShape;
 use JsonSchema\Validator;
 
 /**
@@ -51,7 +51,11 @@ final class ComponentMetadataRequirementsChecker {
     // Check fundamentals.
     $validator = new Validator();
     foreach ($metadata->schema['properties'] ?? [] as $prop_name => $prop) {
-      if (\in_array(Attribute::class, $prop['type'], TRUE)) {
+      // Since Drupal 11.5, `type` is whatever the component declared: a string
+      // for a single type, an array only for a union of types.
+      // @see https://www.drupal.org/node/3554720
+      $prop_types = (array) $prop['type'];
+      if (\in_array(Attribute::class, $prop_types, TRUE)) {
         continue;
       }
 
@@ -62,7 +66,7 @@ final class ComponentMetadataRequirementsChecker {
       }
 
       // For array types, also check enum in items.
-      $is_array_prop_type = \in_array('array', $prop['type'], TRUE);
+      $is_array_prop_type = \in_array('array', $prop_types, TRUE);
       if ($is_array_prop_type && isset($prop['items']['enum']) && \in_array('', $prop['items']['enum'], TRUE)) {
         $messages[] = \sprintf('Prop "%s" has an empty enum value in items.', $prop_name);
       }
@@ -104,11 +108,11 @@ final class ComponentMetadataRequirementsChecker {
         $example = $prop['examples'][0];
         // PHP's "associative arrays" are JSON's "objects". The JSON Schema
         // validator expects such "objects" to be \stdClass objects.
-        if ($prop['type'] === ['object'] && \is_array($example)) {
+        if ($prop_types === ['object'] && \is_array($example)) {
           $example = (object) $example;
         }
         // Similarly, for `type: array, items: {type: object}`.
-        if ($prop['type'][0] === 'array' && $prop['items']['type'] === 'object' && \is_array($example)) {
+        if ($is_array_prop_type && ($prop['items']['type'] ?? NULL) === 'object' && \is_array($example)) {
           $example = \array_map(
             fn (array|object $item) => (object) $item,
             $example,
@@ -140,6 +144,33 @@ final class ComponentMetadataRequirementsChecker {
         if (!\in_array($prop['x-formatting-context'], ['inline', 'block'], TRUE)) {
           $messages[] = \sprintf('Invalid value "%s" for "x-formatting-context". Valid values are "inline" and "block".', $prop['x-formatting-context']);
           continue;
+        }
+      }
+
+      // Validation for x-canvas-color-picker.
+      if (isset($prop['x-canvas-color-picker'])) {
+        if (!\in_array($prop['x-canvas-color-picker'], ['kit-only', 'kit-and-free'], TRUE)) {
+          $messages[] = \sprintf('Invalid value "%s" for "x-canvas-color-picker". Valid values are "kit-only" and "kit-and-free".', $prop['x-canvas-color-picker']);
+          continue;
+        }
+      }
+
+      // Validation for x-canvas-color-folders.
+      if (\array_key_exists('x-canvas-color-folders', $prop)) {
+        $folders = $prop['x-canvas-color-folders'];
+        if (($prop['$ref'] ?? NULL) !== 'json-schema-definitions://canvas.module/color') {
+          $messages[] = \sprintf('"x-canvas-color-folders" on prop "%s" requires $ref: json-schema-definitions://canvas.module/color.', $prop_name);
+          continue;
+        }
+        if (!\is_array($folders) || empty($folders)) {
+          $messages[] = \sprintf('"x-canvas-color-folders" on prop "%s" must be a non-empty array of folder UUIDs.', $prop_name);
+          continue;
+        }
+        foreach ($folders as $folder_id) {
+          if (!\is_string($folder_id) || $folder_id === '') {
+            $messages[] = \sprintf('"x-canvas-color-folders" on prop "%s" must contain only non-empty strings.', $prop_name);
+            break;
+          }
         }
       }
 
@@ -177,7 +208,7 @@ final class ComponentMetadataRequirementsChecker {
 
     // Every prop must have a StorablePropShape. If an example is provided, it
     // must be considered non-empty by the field type that will power it.
-    $props_for_metadata = GeneratedFieldExplicitInputUxComponentSourceBase::getComponentInputsForMetadata($component_id, $metadata);
+    $props_for_metadata = JsonSchemaPropsComponentSourceBase::getComponentInputsForMetadata($component_id, $metadata);
     /** @var \Drupal\canvas\PropShape\PropShapeRepositoryInterface $prop_shape_repository */
     $prop_shape_repository = \Drupal::service(EphemeralPropShapeRepository::class);
     foreach ($props_for_metadata as $cpe => $prop_shape) {
@@ -189,7 +220,7 @@ final class ComponentMetadataRequirementsChecker {
       }
       // Entity-referencing props skip the StaticPropSource pipeline at runtime,
       // so don't trial them here either.
-      if (GeneratedFieldExplicitInputUxComponentSourceBase::exampleValueRequiresEntity($storable_prop_shape)) {
+      if (JsonSchemaPropsComponentSourceBase::exampleValueRequiresEntity($storable_prop_shape)) {
         continue;
       }
       $example = $metadata->schema['properties'][$prop_name]['examples'][0] ?? NULL;

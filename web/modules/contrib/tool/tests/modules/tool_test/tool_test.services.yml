@@ -1,0 +1,11 @@
+services:
+  tool_test.test_tool_transform_subscriber:
+    class: Drupal\tool_test\EventSubscriber\TestToolTransformSubscriber
+    tags:
+      - { name: event_subscriber }
+
+
+  tool_test.test_capability_subscriber:
+    class: Drupal\tool_test\EventSubscriber\TestCapabilitySubscriber
+    tags:
+      - { name: event_subscriber }

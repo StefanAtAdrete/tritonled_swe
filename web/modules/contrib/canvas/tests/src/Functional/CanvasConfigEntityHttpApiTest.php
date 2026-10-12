@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Functional;
 
-use PHPUnit\Framework\Attributes\Group;
+use Drupal\canvas\Audit\ComponentAudit;
+use Drupal\canvas\AutoSave\AutoSaveManager;
+use Drupal\canvas\Entity\AssetLibrary;
+use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\CanvasHttpApiEligibleConfigEntityInterface;
+use Drupal\canvas\Entity\Color;
+use Drupal\canvas\Entity\Component;
+use Drupal\canvas\Entity\ComponentInterface;
 use Drupal\canvas\Entity\ContentTemplate;
+use Drupal\canvas\Entity\Folder;
+use Drupal\canvas\Entity\JavaScriptComponent;
+use Drupal\canvas\Entity\Page;
+use Drupal\canvas\Entity\PageRegion;
+use Drupal\canvas\Entity\PageVariant;
+use Drupal\canvas\Entity\Pattern;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\Random;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\Entity\ConfigEntityType;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ThemeInstallerInterface;
+use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\Url;
-use Drupal\canvas\Audit\ComponentAudit;
-use Drupal\canvas\AutoSave\AutoSaveManager;
-use Drupal\canvas\Entity\AssetLibrary;
-use Drupal\canvas\Entity\BrandKit;
-use Drupal\canvas\Entity\Folder;
-use Drupal\canvas\Entity\Component;
-use Drupal\canvas\Entity\ComponentInterface;
-use Drupal\canvas\Entity\JavaScriptComponent;
-use Drupal\canvas\Entity\Page;
-use Drupal\canvas\Entity\Pattern;
+use Drupal\file\Entity\File;
+use Drupal\media\Entity\Media;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
 use Drupal\system\Entity\Menu;
@@ -31,9 +39,11 @@ use Drupal\Tests\canvas\Traits\ContribStrictConfigSchemaTestTrait;
 use Drupal\Tests\canvas\Traits\CreateTestJsComponentTrait;
 use Drupal\Tests\canvas\Traits\GenerateComponentConfigTrait;
 use Drupal\Tests\canvas\Traits\OpenApiSpecTrait;
+use Drupal\Tests\media\Traits\MediaTypeCreationTrait;
 use Drupal\Tests\system\Functional\Cache\AssertPageCacheContextsAndTagsTrait;
 use Drupal\user\UserInterface;
 use GuzzleHttp\RequestOptions;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -53,6 +63,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
   use OpenApiSpecTrait;
   use AssertPageCacheContextsAndTagsTrait;
   use CreateTestJsComponentTrait;
+  use MediaTypeCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -82,6 +93,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'type' => 'component',
       'weight' => 0,
       'items' => [
+        'sdc.canvas_test_sdc.document',
         'sdc.canvas_test_sdc.video',
       ],
     ],
@@ -176,6 +188,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'type' => 'component',
       'weight' => 0,
       'items' => [
+        'marker.page_content',
         'sdc.canvas_broken_sdcs.invalid-filter',
         'sdc.canvas_broken_sdcs.malformed-image',
         'sdc.canvas_test_sdc.mixed-images-with-example',
@@ -184,6 +197,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
         'sdc.canvas_test_sdc.component-mismatch-meta-enum',
         'sdc.canvas_test_sdc.component-mismatch-meta-enum-array-items',
         'sdc.canvas_test_sdc.component-no-meta-enum',
+        'sdc.canvas_test_sdc.code-example',
         'sdc.canvas_test_sdc.banner',
         'sdc.canvas_test_sdc.card',
         'sdc.canvas_test_sdc.props-no-slots',
@@ -209,6 +223,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
         'sdc.canvas_test_sdc.image-gallery',
         'sdc.canvas_test_sdc.druplicon',
         'sdc.canvas_test_sdc.image-without-ref',
+        'sdc.canvas_test_sdc.color-valid',
       ],
     ],
     'd0ba87b2-79b4-4622-98e1-cf82dc3655a0' => [
@@ -257,8 +272,10 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       BrandKit::ADMIN_PERMISSION,
       JavaScriptComponent::ADMIN_PERMISSION,
       Pattern::ADMIN_PERMISSION,
+      PageVariant::ADMIN_PERMISSION,
       Folder::ADMIN_PERMISSION,
       ContentTemplate::ADMIN_PERMISSION,
+      Color::ADMIN_PERMISSION,
     ]);
     \assert($user instanceof UserInterface);
     $this->httpApiUser = $user;
@@ -329,7 +346,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertSame([], $body);
 
     // Admin should not be able to get disabled pattern from the Canvas HTTP API.
-    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 403, ['user.permissions'], ['4xx-response', 'config:canvas.pattern.disabled_pattern', 'http_response'], 'UNCACHEABLE (request policy)', NULL);
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 403, ['user.permissions'], ['4xx-response', 'config:canvas.pattern.disabled_pattern', 'http_response'], 'UNCACHEABLE (request policy)', 'UNCACHEABLE (403)');
     $this->assertSame([
       'errors' => [''],
     ], $body);
@@ -355,13 +372,13 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       [
         'uuid' => 'a3ade070-dc70-4989-b078-85cfd8fc741e',
         'nodeType' => 'component',
-        'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+        'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
         'slots' => [],
       ],
       [
         'uuid' => '67d6b081-a62f-463c-a5d8-42a145ec7243',
         'nodeType' => 'component',
-        'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+        'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
         'slots' => [],
       ],
     ];
@@ -457,14 +474,14 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
           [
             'uuid' => 'a3ade070-dc70-4989-b078-85cfd8fc741e',
             'nodeType' => 'component',
-            'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+            'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
             'name' => NULL,
             'slots' => [],
           ],
           [
             'uuid' => '67d6b081-a62f-463c-a5d8-42a145ec7243',
             'nodeType' => 'component',
-            'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+            'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
             'name' => NULL,
             'slots' => [],
           ],
@@ -534,13 +551,13 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
               [
                 'uuid' => 'a3ade070-dc70-4989-b078-85cfd8fc741e',
                 'nodeType' => 'component',
-                'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+                'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
                 'slots' => [],
               ],
               [
                 'uuid' => '67d6b081-a62f-463c-a5d8-42a145ec7243',
                 'nodeType' => 'component',
-                'type' => 'sdc.canvas_test_sdc.props-no-slots@b1e991f726a2a266',
+                'type' => 'sdc.canvas_test_sdc.props-no-slots@d34b93534777207a',
                 'slots' => [],
               ],
             ],
@@ -669,6 +686,373 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
   }
 
   /**
+   * @see \Drupal\canvas\Controller\ApiConfigControllers::pageRegionGone()
+   */
+  public function testPageRegionApiIsGone(): void {
+    $region = PageRegion::create([
+      'theme' => 'stark',
+      'region' => 'sidebar_first',
+      'status' => TRUE,
+      'component_tree' => [],
+    ]);
+    $region->save();
+    self::assertNotInstanceOf(CanvasHttpApiEligibleConfigEntityInterface::class, $region);
+
+    $this->drupalLogin($this->limitedPermissionsUser);
+    $collection_url = Url::fromUri('base:/canvas/api/v0/config/page_region');
+    $item_url = Url::fromUri('base:/canvas/api/v0/config/page_region/stark.sidebar_first');
+    $expected = [
+      'message' => 'Global regions were replaced by page templates.',
+    ];
+    $write_options = [
+      RequestOptions::JSON => [],
+    ];
+
+    foreach ([
+      ['GET', $collection_url, []],
+      ['POST', $collection_url, $write_options],
+      ['GET', $item_url, []],
+      ['PATCH', $item_url, $write_options],
+      ['DELETE', $item_url, []],
+    ] as [$method, $url, $options]) {
+      $page_cache = $method === 'GET' ? 'UNCACHEABLE (request policy)' : NULL;
+      $dynamic_page_cache = $method === 'GET' ? 'UNCACHEABLE (no cacheability)' : NULL;
+      $body = $this->assertExpectedResponse($method, $url, $options, Response::HTTP_GONE, NULL, NULL, $page_cache, $dynamic_page_cache);
+      self::assertSame($expected, $body);
+    }
+
+    self::assertInstanceOf(PageRegion::class, PageRegion::load('stark.sidebar_first'));
+    $this->drupalGet('/canvas/editor/page_region/stark.sidebar_first');
+    $this->assertSession()->statusCodeEquals(Response::HTTP_FORBIDDEN);
+  }
+
+  /**
+   * Tests that editing referenced media invalidates resolved template props.
+   */
+  public function testPageVariantResolvedInputsCacheability(): void {
+    $this->drupalLogin($this->httpApiUser);
+    $media_type = $this->createMediaType('image');
+    $image_uri = $this->getRandomGenerator()->image(uniqid('public://') . '.png', '200x200', '400x400');
+    $file = File::create(['uri' => $image_uri]);
+    $file->save();
+    $media = Media::create([
+      'bundle' => $media_type->id(),
+      'name' => 'Template image',
+      'field_media_image' => ['target_id' => $file->id(), 'alt' => 'Original alt'],
+      'status' => TRUE,
+    ]);
+    $media->save();
+    JavaScriptComponent::create([
+      'machineName' => 'cacheable_banner',
+      'name' => 'Cacheable banner',
+      'status' => TRUE,
+      'props' => [
+        'image' => ['title' => 'Image', 'type' => 'object', '$ref' => 'json-schema-definitions://canvas.module/image'],
+        'text' => ['title' => 'Text', 'type' => 'string', 'contentMediaType' => 'text/html'],
+      ],
+      'slots' => [],
+      'js' => ['original' => '', 'compiled' => ''],
+      'css' => ['original' => '', 'compiled' => ''],
+      'dataDependencies' => [],
+    ])->save();
+    $component = Component::load('js.cacheable_banner');
+    self::assertInstanceOf(Component::class, $component);
+    $marker = Component::load('marker.page_content');
+    self::assertInstanceOf(Component::class, $marker);
+    PageVariant::create([
+      'id' => 'cacheable',
+      'label' => 'Cacheable',
+      'component_tree' => [
+        [
+          'uuid' => $this->container->get('uuid')->generate(),
+          'component_id' => $component->id(),
+          'component_version' => $component->getActiveVersion(),
+          'inputs' => [
+            'image' => ['target_id' => (int) $media->id()],
+            'text' => ['value' => '<p>Welcome</p>', 'format' => 'canvas_html_block'],
+          ],
+        ],
+        [
+          'uuid' => $this->container->get('uuid')->generate(),
+          'component_id' => $marker->id(),
+          'component_version' => $marker->getActiveVersion(),
+          'inputs' => [],
+        ],
+      ],
+    ])->save();
+    $url = Url::fromUri('base:/canvas/api/v0/config/page_variant/cacheable');
+    foreach (['MISS', 'HIT'] as $cache_status) {
+      $response = $this->makeApiRequest('GET', $url, []);
+      self::assertSame(200, $response->getStatusCode());
+      self::assertSame($cache_status, $response->getHeaderLine('X-Drupal-Dynamic-Cache'));
+      $body = Json::decode((string) $response->getBody());
+      self::assertSame('Original alt', $body['component_tree'][0]['inputs_resolved']['image']['alt']);
+    }
+
+    $media->set('field_media_image', ['target_id' => $file->id(), 'alt' => 'Updated alt']);
+    $media->save();
+    foreach (['MISS', 'HIT'] as $cache_status) {
+      $body = $this->assertExpectedResponse('GET', $url, [], 200, ['languages:language_interface', 'theme', 'user.permissions'], [
+        'config:canvas.page_variant.cacheable',
+        'config:filter.format.canvas_html_block',
+        'config:image.style.canvas_parametrized_width',
+        'file:' . $file->id(),
+        'http_response',
+        'media:' . $media->id(),
+      ], 'UNCACHEABLE (request policy)', $cache_status);
+      self::assertIsArray($body);
+      self::assertSame('Updated alt', $body['component_tree'][0]['inputs_resolved']['image']['alt']);
+    }
+  }
+
+  /**
+   * @see \Drupal\canvas\Entity\PageVariant
+   * @see \Drupal\canvas\Controller\ApiSettingsController
+   */
+  public function testPageVariant(): void {
+    $this->drupalLogin($this->limitedPermissionsUser);
+    $this->assertAuthenticationAndAuthorization('page_variant');
+
+    $base = rtrim(base_path(), '/');
+    $list_url = Url::fromUri('base:/canvas/api/v0/config/page_variant');
+    $individual_url = Url::fromUri('base:/canvas/api/v0/config/page_variant/homepage');
+    $settings_url = Url::fromUri('base:/canvas/api/v0/settings/default-page-variant');
+
+    $request_options = [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+      ],
+    ];
+
+    // The "Page content" marker ships in the module's default config.
+    // @see config/install/canvas.component.marker.page_content.yml
+    $marker_component = Component::load('marker.page_content');
+    self::assertInstanceOf(ComponentInterface::class, $marker_component);
+    $marker = [
+      'uuid' => '14b2e2b7-5e05-42e2-9f6e-2ffdbb37df35',
+      'component_id' => 'marker.page_content',
+      'component_version' => $marker_component->getActiveVersion(),
+      'inputs' => [],
+    ];
+
+    // POST without a "Page content" marker: 422.
+    $request_options[RequestOptions::JSON] = [
+      'id' => 'homepage',
+      'label' => 'Homepage',
+      'status' => TRUE,
+      'component_tree' => [],
+    ];
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => [
+        [
+          'detail' => 'A page variant must contain a "Page content" placement.',
+          'source' => ['pointer' => 'layout'],
+        ],
+      ],
+    ], $body);
+
+    // POST with more than one marker: 422.
+    $request_options[RequestOptions::JSON] = [
+      'id' => 'homepage',
+      'label' => 'Homepage',
+      'status' => TRUE,
+      'component_tree' => [
+        $marker,
+        ['uuid' => 'fa9ff0a8-e23a-492a-ab14-5460611fa2c1'] + $marker,
+      ],
+    ];
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => [
+        [
+          'detail' => 'A page variant must contain only one "Page content" placement, but found 2.',
+          'source' => ['pointer' => 'layout'],
+        ],
+      ],
+    ], $body);
+
+    // POST a valid variant: 201.
+    $variant_to_send = [
+      'id' => 'homepage',
+      'label' => 'Homepage',
+      'description' => 'The default full-page layout.',
+      'status' => TRUE,
+      'component_tree' => [$marker],
+    ];
+    $request_options[RequestOptions::JSON] = $variant_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 201, NULL, NULL, NULL, NULL, [
+      'Location' => [
+        "$base/canvas/api/v0/config/page_variant/homepage",
+      ],
+    ]);
+    $expected_normalization = [
+      'id' => 'homepage',
+      'label' => 'Homepage',
+      'description' => 'The default full-page layout.',
+      'status' => TRUE,
+      'component_tree' => [[
+        'parent_uuid' => NULL,
+        'slot' => NULL,
+        ...$marker,
+        'label' => NULL,
+        'inputs_resolved' => [],
+      ],
+      ],
+    ];
+    $this->assertSame($expected_normalization, $body);
+
+    // GET individual returns the same normalization.
+    $body = $this->assertExpectedResponse('GET', $individual_url, [], 200, ['user.permissions'], [
+      'config:canvas.page_variant.homepage',
+      'http_response',
+    ], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertSame($expected_normalization, $body);
+
+    // GET list returns the variant; page variants are theme-independent so
+    // there is no `theme` cache context.
+    // @see \Drupal\canvas\Entity\PageVariant::refineListQuery()
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], [
+      'config:page_variant_list',
+      'http_response',
+    ], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertSame(['homepage' => $expected_normalization], $body);
+
+    // POSTing the same ID again: 409.
+    $request_options[RequestOptions::JSON] = $variant_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 409, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => [
+        "'page_variant' entity with ID 'homepage' already exists.",
+      ],
+    ], $body);
+
+    // PATCH updates label and description.
+    $request_options[RequestOptions::JSON] = [
+      'label' => 'Homepage (updated)',
+      'description' => NULL,
+    ];
+    $body = $this->assertExpectedResponse('PATCH', $individual_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    self::assertIsArray($body);
+    self::assertSame('Homepage (updated)', $body['label']);
+    self::assertNull($body['description']);
+    self::assertSame($expected_normalization['component_tree'], $body['component_tree']);
+
+    // PATCHing a tree without the marker: 422, the stored variant unchanged.
+    $request_options[RequestOptions::JSON] = ['component_tree' => []];
+    $body = $this->assertExpectedResponse('PATCH', $individual_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => [
+        [
+          'detail' => 'A page variant must contain a "Page content" placement.',
+          'source' => ['pointer' => 'layout'],
+        ],
+      ],
+    ], $body);
+
+    // PATCHing the immutable `id` is silently ignored — updateFromClientSide
+    // only applies label, description, component_tree and status.
+    $request_options[RequestOptions::JSON] = ['id' => 'renamed'];
+    $body = $this->assertExpectedResponse('PATCH', $individual_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    self::assertIsArray($body);
+    self::assertSame('homepage', $body['id']);
+
+    // The site default page variant starts unset.
+    $body = $this->assertExpectedResponse('GET', $settings_url, [], 200, ['user.permissions'], [
+      'config:canvas.settings',
+      'http_response',
+    ], 'UNCACHEABLE (request policy)', 'MISS');
+    self::assertSame(['default_page_variant' => NULL], $body);
+
+    // PATCHing the default to a variant that does not exist: 422.
+    $request_options[RequestOptions::JSON] = ['default_page_variant' => 'ghost'];
+    $body = $this->assertExpectedResponse('PATCH', $settings_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => ['The page variant "ghost" does not exist.'],
+    ], $body);
+
+    // PATCHing without the `default_page_variant` key: 400. The OpenAPI
+    // request validator would reject this before the controller, so bypass it
+    // to prove the controller validates on its own.
+    $request_options[RequestOptions::JSON] = ['unrelated' => 'key'];
+    $request_options[RequestOptions::HEADERS]['X-NO-OPENAPI-VALIDATION'] = 'TRUE';
+    $body = $this->assertExpectedResponse('PATCH', $settings_url, $request_options, 400, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => ['Missing default_page_variant.'],
+    ], $body);
+    unset($request_options[RequestOptions::HEADERS]['X-NO-OPENAPI-VALIDATION']);
+
+    // PATCHing the default to the created variant persists it.
+    $request_options[RequestOptions::JSON] = ['default_page_variant' => 'homepage'];
+    $body = $this->assertExpectedResponse('PATCH', $settings_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    self::assertSame(['default_page_variant' => 'homepage'], $body);
+
+    // The site default variant cannot be deleted.
+    // @see \Drupal\canvas\EntityHandlers\PageVariantAccessControlHandler
+    $response = $this->makeApiRequest('DELETE', $individual_url, [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+        'X-CSRF-Token' => $this->drupalGet('session/token'),
+      ],
+    ]);
+    $this->assertSame(403, $response->getStatusCode());
+
+    // The site default variant cannot be disabled either.
+    // @see \Drupal\canvas\Plugin\Validation\Constraint\SiteDefaultPageVariantEnabledConstraint
+    $request_options[RequestOptions::JSON] = ['status' => FALSE];
+    $body = $this->assertExpectedResponse('PATCH', $individual_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => [
+        [
+          'detail' => 'The site default page variant cannot be disabled. Set another variant as the default first.',
+          'source' => ['pointer' => 'status'],
+        ],
+      ],
+    ], $body);
+
+    // After clearing the default, the variant can be disabled. Disabled
+    // variants remain visible to the management UI.
+    $request_options[RequestOptions::JSON] = ['default_page_variant' => NULL];
+    $body = $this->assertExpectedResponse('PATCH', $settings_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    self::assertSame(['default_page_variant' => NULL], $body);
+    $request_options[RequestOptions::JSON] = ['status' => FALSE];
+    $body = $this->assertExpectedResponse('PATCH', $individual_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    self::assertIsArray($body);
+    self::assertFalse($body['status']);
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], [
+      'config:page_variant_list',
+      'http_response',
+    ], 'UNCACHEABLE (request policy)', 'MISS');
+    self::assertIsArray($body);
+    self::assertArrayHasKey('homepage', $body);
+
+    // A disabled variant cannot become the site default: 422.
+    $request_options[RequestOptions::JSON] = ['default_page_variant' => 'homepage'];
+    $body = $this->assertExpectedResponse('PATCH', $settings_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    self::assertSame([
+      'errors' => ['The page variant "homepage" is disabled and cannot be the site default.'],
+    ], $body);
+
+    // A disabled non-default variant can be deleted.
+    $this->assertExpectedResponse('DELETE', $individual_url, [], 204, NULL, NULL, NULL, NULL);
+
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], [
+      'config:page_variant_list',
+      'http_response',
+    ], 'UNCACHEABLE (request policy)', 'MISS');
+    self::assertSame([], $body);
+
+    // The settings endpoints require authentication and the `administer page
+    // variants` permission.
+    $this->drupalLogout();
+    $response = $this->makeApiRequest('GET', $settings_url, []);
+    $this->assertSame(401, $response->getStatusCode());
+    $this->drupalLogin($this->limitedPermissionsUser);
+    $response = $this->makeApiRequest('GET', $settings_url, []);
+    $this->assertSame(403, $response->getStatusCode());
+  }
+
+  /**
    * Asserts the presence of a preview for a code component.
    *
    * Details of the preview are tested elsewhere.
@@ -763,6 +1147,36 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertSame($expected_disabled_js_component_normalization, $body_without_preview);
     $jsComponent->delete();
 
+    // External code components contain metadata only: their implementation is
+    // owned by the configured external application.
+    $external_component = [
+      'machineName' => 'external_component',
+      'name' => 'External component',
+      'status' => FALSE,
+      'type' => 'external',
+      'required' => [],
+      'props' => [],
+      'slots' => [],
+      'importedJsComponents' => [],
+      'dataDependencies' => [],
+    ];
+    $request_options[RequestOptions::JSON] = $external_component;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 201, NULL, NULL, NULL, NULL);
+    self::assertIsArray($body);
+    self::assertSame([
+      'machineName' => 'external_component',
+      'name' => 'External component',
+      'status' => FALSE,
+      'type' => 'external',
+      'props' => [],
+      'required' => [],
+      'slots' => [],
+      'dataDependencies' => [],
+      'links' => [],
+    ], $body);
+    self::assertArrayNotHasKey('default_markup', $body);
+    JavaScriptComponent::load('external_component')?->delete();
+
     // Create a Code Component via the Canvas HTTP API, but forget crucial data: 500, courtesy of OpenAPI.
     $code_component_to_send = [];
     $request_options[RequestOptions::JSON] = $code_component_to_send;
@@ -827,14 +1241,20 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'message' => 'Body does not match schema for content-type "application/json" for Request [post /canvas/api/v0/config/js_component]. [Keyword validation failed: Required property \'title\' must be present in the object in slots->test-slot->title]',
     ], $body, 'Fails with invalid shape.');
 
-    // Create a Code Component via the Canvas HTTP API, but forget 'importedJsComponents': 500, courtesy of OpenAPI.
+    // Create a Code Component via the Canvas HTTP API, but forget
+    // 'importedJsComponents' while sending JS source code: 422.
     $code_component_to_send['slots']['test-slot']['title'] = 'Test';
     unset($code_component_to_send['importedJsComponents']);
     $request_options[RequestOptions::JSON] = $code_component_to_send;
-    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 500, NULL, NULL, NULL, NULL);
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
     $this->assertSame([
-      'message' => 'Body does not match schema for content-type "application/json" for Request [post /canvas/api/v0/config/js_component]. [Keyword validation failed: Required property \'importedJsComponents\' must be present in the object in importedJsComponents]',
-    ], $body, 'Fails with invalid shape.');
+      'errors' => [
+        [
+          'detail' => "The 'importedJsComponents' field is required when 'sourceCodeJs' or 'compiledJs' is provided",
+          'source' => ['pointer' => 'importedJsComponents'],
+        ],
+      ],
+    ], $body, 'Fails backend validation.');
 
     // Meet data shape requirements, but violate internal consistency for
     // `props`: 422 (i.e. validation constraint violation).
@@ -870,11 +1290,6 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
         ],
       ],
     ];
-    // Strip out the prefix added by https://www.drupal.org/node/3549909. This
-    // can be removed when 11.3 is the minimum supported version of core.
-    if (version_compare(\Drupal::VERSION, '11.3', '<')) {
-      $expected_body['errors'][0]['detail'] = substr($expected_body['errors'][0]['detail'], 26);
-    }
     $this->assertSame($expected_body, $body);
 
     // Meet data shape requirements, but provide missing component as a
@@ -968,7 +1383,6 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
           'title' => 'Number',
           'examples' => [3.14, 42],
         ],
-        // Enum with meta-enum, as this is not mandatory in SDC < 11.2, but it is in Canvas.
         'enum' => [
           'type' => 'string',
           'enum' => ['primary', 'secondary'],
@@ -1398,6 +1812,19 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     $page->delete();
 
+    // Deleting a Code Component removes it from any Folder that references it.
+    // Verify that a Folder referencing 'test' has the item removed when the
+    // component is deleted via the Canvas HTTP API, so the Folder does not
+    // retain a stale/invalid reference to a now-missing config entity.
+    $folder_for_delete_test = Folder::create([
+      'name' => 'Delete test folder',
+      'configEntityTypeId' => JavaScriptComponent::ENTITY_TYPE_ID,
+      'weight' => 0,
+      'items' => ['test'],
+    ]);
+    $folder_for_delete_test->save();
+    $this->assertSame(['test'], $folder_for_delete_test->get('items'));
+
     // We can delete the 'test' Code Component via the Canvas HTTP API. As it isn't
     // in use it will cascade delete the component as well.
     $component_storage = \Drupal::entityTypeManager()->getStorage(Component::ENTITY_TYPE_ID);
@@ -1408,6 +1835,11 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertNull($body);
     $component = $component_storage->loadUnchanged('js.test');
     self::assertNull($component);
+    // The Folder must no longer contain 'test' after the Code Component was deleted.
+    $folder_for_delete_test = Folder::load($folder_for_delete_test->id());
+    \assert($folder_for_delete_test instanceof Folder);
+    $this->assertSame([], $folder_for_delete_test->get('items'));
+    $folder_for_delete_test->delete();
 
     // Delete the 'another_component' Code Component via the Canvas HTTP API: 204.
     $body = $this->assertExpectedResponse('DELETE', Url::fromUri('base:/canvas/api/v0/config/js_component/another_component'), [], 204, NULL, NULL, NULL, NULL);
@@ -1424,7 +1856,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     // Re-retrieve list: 200, empty list. Dynamic Page Cache miss.
     $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], ['config:js_component_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertSame([], $body);
-    $individual_body = $this->assertExpectedResponse('GET', Url::fromUri('base:/canvas/api/v0/config/js_component/test'), [], 404, NULL, NULL, 'UNCACHEABLE (request policy)', 'UNCACHEABLE (no cacheability)');
+    $individual_body = $this->assertExpectedResponse('GET', Url::fromUri('base:/canvas/api/v0/config/js_component/test'), [], 404, NULL, NULL, 'UNCACHEABLE (request policy)', 'UNCACHEABLE (404)');
     $this->assertSame([], $individual_body);
   }
 
@@ -1469,7 +1901,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertSame([], $body);
 
     // Admin should not be able to get disabled Asset Library from the Canvas HTTP API.
-    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 403, ['user.permissions'], ['4xx-response', 'config:canvas.asset_library.global', 'http_response'], 'UNCACHEABLE (request policy)', NULL);
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 403, ['user.permissions'], ['4xx-response', 'config:canvas.asset_library.global', 'http_response'], 'UNCACHEABLE (request policy)', 'UNCACHEABLE (403)');
     $this->assertSame([
       'errors' => [''],
     ], $body);
@@ -1485,6 +1917,8 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'imports' => NULL,
       'assets' => NULL,
       'shared' => NULL,
+      'bundledSources' => NULL,
+      'packageJson' => NULL,
     ];
     $request_options[RequestOptions::JSON] = $asset_library_to_send;
     $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 500, NULL, NULL, NULL, NULL);
@@ -1629,7 +2063,17 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
           'shared' => [$shared_entry],
         ],
         'expected_imports' => [$imports_entry],
-        'expected_assets' => [$assets_entry],
+        // The normalized `assets` entries expose a generated `url` alongside
+        // the stored `uri` for client-side fetching. The public files path is
+        // randomized per test run, so compute it the same way the source does.
+        // @see \Drupal\canvas\Entity\AssetLibrary::normalizeAssetsForClientSide()
+        'expected_assets' => [
+          [
+            ...$assets_entry,
+            'url' => \Drupal::service(FileUrlGeneratorInterface::class)
+              ->generateString($assets_entry['uri']),
+          ],
+        ],
         'expected_shared' => [$shared_entry],
       ],
     ];
@@ -1669,7 +2113,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     // Insufficient permissions: 403.
     $this->drupalLogin($this->limitedPermissionsUser);
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 403, ['user.permissions'], ['4xx-response', 'http_response'], 'UNCACHEABLE (request policy)', NULL);
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 403, ['user.permissions'], ['4xx-response', 'http_response'], 'UNCACHEABLE (request policy)', 'UNCACHEABLE (403)');
     $this->assertSame([
       'errors' => [
         'Requires >=1 content entity type with a Canvas field that can be created or edited.',
@@ -1678,7 +2122,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     // Authenticated and authorized: list returns the default global brand kit.
     $this->drupalLogin($this->httpApiUser);
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], ['config:brand_kit_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], ['config:brand_kit_list', 'config:color_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertIsArray($body);
     $this->assertArrayHasKey(BrandKit::GLOBAL_ID, $body);
     $brand_kit_from_list = $body[BrandKit::GLOBAL_ID];
@@ -1702,7 +2146,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     ], $body);
 
     // GET canonical: 200.
-    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ['config:canvas.brand_kit.global', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ['config:canvas.brand_kit.global', 'config:color_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertIsArray($body);
     $this->assertArrayHasKey('id', $body);
     $this->assertArrayHasKey('label', $body);
@@ -1721,7 +2165,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertArrayHasKey('fonts', $body);
 
     // GET canonical again: 200 with updated data (cache miss after PATCH).
-    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ['config:canvas.brand_kit.global', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ['config:canvas.brand_kit.global', 'config:color_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertIsArray($body);
     $this->assertArrayHasKey('label', $body);
     $this->assertSame($updated_label, $body['label']);
@@ -1733,14 +2177,14 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertExpectedResponse('DELETE', $canonical_url, [], 403, NULL, NULL, NULL, NULL);
   }
 
-  private function assertAuthenticationAndAuthorization(string $entity_type_id, bool $delete_allowed = TRUE, array $initial_items = [], array $initial_cache_tags = ['http_response']): void {
+  private function assertAuthenticationAndAuthorization(string $entity_type_id, bool $delete_allowed = TRUE, array $initial_items = [], array $initial_cache_tags = ['http_response'], array $initial_cache_contexts = ['user.permissions']): void {
     if (!\in_array("config:{$entity_type_id}_list", $initial_cache_tags, TRUE)) {
       $initial_cache_tags[] = "config:{$entity_type_id}_list";
     }
     $list_url = Url::fromUri("base:/canvas/api/v0/config/$entity_type_id");
 
     // Insufficient Permissions: 403.
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 403, ['user.permissions'], ['4xx-response', 'http_response'], 'UNCACHEABLE (request policy)', NULL);
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 403, ['user.permissions'], ['4xx-response', 'http_response'], 'UNCACHEABLE (request policy)', 'UNCACHEABLE (403)');
     $this->assertSame([
       'errors' => [
         'Requires >=1 content entity type with a Canvas field that can be created or edited.',
@@ -1749,7 +2193,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     // Authenticated & authorized: 200, but empty list.
     $this->drupalLogin($this->httpApiUser);
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], $initial_cache_tags, 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, $initial_cache_contexts, $initial_cache_tags, 'UNCACHEABLE (request policy)', 'MISS');
     if (empty($initial_items)) {
       $this->assertSame([], $body);
     }
@@ -1784,7 +2228,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     ];
     $request_options[RequestOptions::JSON] = $this->getConfigRequestPostExample($entity_type_id);
     $response = $this->makeApiRequest('POST', $list_url, $request_options);
-    self::assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+    self::assertEquals(Response::HTTP_CREATED, $response->getStatusCode(), $response->getBody()->getContents());
     $body = json_decode((string) $response->getBody(), TRUE);
     $config_entity_type_definition = $this->container->get(EntityTypeManagerInterface::class)->getDefinition($entity_type_id);
     \assert($config_entity_type_definition instanceof ConfigEntityType);
@@ -1824,7 +2268,11 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     if (empty($examples)) {
       throw new \Exception('We require to define at least one example for POST "/canvas/api/v0/config/' . $entity_type_id . '" request in openapi.yml.');
     }
-    return (array) reset($examples);
+    $example = reset($examples);
+    if (\is_object($example) && \property_exists($example, 'value')) {
+      $example = $example->value;
+    }
+    return (array) $example;
   }
 
   private function assertExposedCodeComponents(array $expected, string $expected_dynamic_page_cache, array $request_options, array $additional_expected_cache_tags = []): void {
@@ -1846,6 +2294,9 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'http_response',
       // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\SingleDirectoryComponent::rewriteExampleUrl()
       'component_plugins',
+      // A processed-text example prop bubbles its text format's cache tag.
+      // @see \Drupal\text\TextProcessed::getCacheTags()
+      'config:filter.format.canvas_html_block',
     ];
     // If expected adds new components, those components add additional cache tags. If those cache tags are not
     // present, the test will fail. This array is used to add those additional expected cache tags.
@@ -1860,7 +2311,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
   }
 
   public function testComponent(): void {
-    $this->container->get('theme_installer')->install(['stark', 'test_theme_child']);
+    $this->container->get(ThemeInstallerInterface::class)->install(['stark', 'test_theme_child']);
     // TRICKY: On an actual site, the theme installer would trigger
     // `hook_rebuild()`, but we cannot do that in `hook_themes_installed()`, as
     // Stark is installed early in tests, which results in Components being
@@ -1898,6 +2349,9 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'config:component_list',
       'config:core.extension',
       'config:canvas.js_component.my-cta',
+      // A processed-text example prop bubbles its text format's cache tag.
+      // @see \Drupal\text\TextProcessed::getCacheTags()
+      'config:filter.format.canvas_html_block',
       'config:system.menu.main',
       'config:system.site',
       'config:system.theme',
@@ -1949,7 +2403,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     $this->assertSame('test_theme_child', Component::load('sdc.test_theme_child.test-child')->get('provider'));
     // Change the default theme from Stark to Test Theme Child, and observe the
     // impact on the list of Components returned.
-    $this->container->get('config.factory')->getEditable('system.theme')->set('default', 'test_theme_child')->save();
+    $this->container->get(ConfigFactoryInterface::class)->getEditable('system.theme')->set('default', 'test_theme_child')->save();
     $this->rebuildAll();
     $this->drupalGet('canvas/api/v0/config/component');
     $this->assertDynamicPageCacheAccelerated(maxAge: '-1 (Permanent)');
@@ -2289,16 +2743,17 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'status' => FALSE,
       'id' => 'node.bunny.full',
       'suggestedPreviewEntityId' => NULL,
+      'pageVariant' => NULL,
       'component_tree' => [],
     ];
 
     // The list response MUST contain unpublished ContentTemplates.
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions', 'user.node_grants:view'], ['config:core.extension', 'config:content_template_list', 'http_response', 'entity_bundles', 'config:node_type_list', 'node_list:bunny', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions', 'user.node_grants:view'], ['config:core.extension', 'config:content_template_list', 'http_response', 'entity_bundles', 'config:node_type_list', 'node_list:bunny'], 'UNCACHEABLE (request policy)', 'MISS');
     $expected_list_normalization = $expected_empty_list_normalization;
     $expected_list_normalization['node']['bundles']['bunny']['viewModes']['full'] = $expected_full_bunny_normalization;
     $this->assertSame($expected_list_normalization, $body);
     $canonical_url = Url::fromUri('base:/canvas/api/v0/config/content_template/node.bunny.full');
-    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:canvas.content_template.node.bunny.full', 'http_response', 'node_list:bunny', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:canvas.content_template.node.bunny.full', 'http_response', 'node_list:bunny'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertSame($expected_full_bunny_normalization, $body);
 
     // Create a ContentTemplate via the Canvas HTTP API, but forget crucial data
@@ -2352,7 +2807,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     ], $body);
 
     // Re-retrieve list: 200, unchanged, but now is a Dynamic Page Cache hit.
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions', 'user.node_grants:view'], ['config:core.extension', 'config:content_template_list', 'http_response', 'entity_bundles', 'config:node_type_list', 'node_list:bunny', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'HIT');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions', 'user.node_grants:view'], ['config:core.extension', 'config:content_template_list', 'http_response', 'entity_bundles', 'config:node_type_list', 'node_list:bunny'], 'UNCACHEABLE (request policy)', 'HIT');
     $this->assertSame($expected_list_normalization, $body);
 
     // Create a ContentTemplate via the Canvas HTTP API, correctly: 201.
@@ -2372,11 +2827,12 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'status' => FALSE,
       'id' => 'node.llama.full',
       'suggestedPreviewEntityId' => NULL,
+      'pageVariant' => NULL,
       'component_tree' => [],
     ];
     $this->assertSame($expected_full_llama_normalization, $body);
     // The same normalization should be present when GETting the `Location`.
-    $body = $this->assertExpectedResponse('GET', Url::fromUri("base:/canvas/api/v0/config/content_template/node.llama.full"), [], 200, ['user.permissions', 'user.node_grants:view'], ['config:canvas.content_template.node.llama.full', 'http_response', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', Url::fromUri("base:/canvas/api/v0/config/content_template/node.llama.full"), [], 200, ['user.permissions', 'user.node_grants:view'], ['config:canvas.content_template.node.llama.full', 'http_response', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertSame($expected_full_llama_normalization, $body);
 
     // Re-retrieve list: 200, changed, Dynamic Page Cache miss.
@@ -2388,11 +2844,11 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'deleteUrl' => NULL,
       'editFieldsUrl' => NULL,
     ];
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node_list:bunny', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node_list:bunny', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertSame($expected_list_normalization, $body);
 
     // Re-retrieve list: 200, unchanged, but now is a Dynamic Page Cache hit.
-    $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node_list:bunny', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'HIT');
+    $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node_list:bunny', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'HIT');
     // @phpstan-ignore-next-line method.alreadyNarrowedType
     $this->assertSame($expected_list_normalization, $body);
 
@@ -2408,7 +2864,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
     // Re-retrieve list: 200, now has suggested preview entity, Dynamic Page
     // Cache miss. Note the presence of the suggested preview entity's
     // individual cache tag: this is because it had its "view" access checked.
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:bunny', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:bunny', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'MISS');
     // Change the expectation from `NULL` to the entity ID.
     $expected_list_normalization['node']['bundles']['llama']['viewModes']['full']['suggestedPreviewEntityId'] = (int) $node->id();
     $this->assertSame($expected_list_normalization, $body);
@@ -2424,7 +2880,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     // Re-retrieve empty list: 200. Dynamic Page Cache miss. Note that the cache
     // tag related to the `bunny` NodeType has disappeared.
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'MISS');
     unset($expected_list_normalization['node']['bundles']['bunny']['viewModes']['full']);
     $this->assertSame($expected_list_normalization, $body);
 
@@ -2441,7 +2897,7 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
       'editFieldsUrl' => NULL,
     ];
     ksort($expected_list_normalization['node']['bundles']);
-    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:llama', 'user.node_grants:view'], 'UNCACHEABLE (request policy)', 'MISS');
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.node_grants:view', 'user.permissions'], ['config:core.extension', 'config:content_template_list', 'entity_bundles', 'config:node_type_list', 'http_response', 'node:1', 'node_list:llama'], 'UNCACHEABLE (request policy)', 'MISS');
     $this->assertSame($expected_list_normalization, $body);
 
     // PATCH the existing llama template (CLI push path).
@@ -2475,6 +2931,192 @@ class CanvasConfigEntityHttpApiTest extends HttpApiTestBase {
 
     // Clean up the templates we just created/mutated.
     $this->assertExpectedResponse('DELETE', Url::fromUri('base:/canvas/api/v0/config/content_template/node.cat.full'), [], 204, NULL, NULL, NULL, NULL);
+  }
+
+  public function testColor(): void {
+    $this->drupalLogin($this->httpApiUser);
+    $list_url = Url::fromUri("base:/canvas/api/v0/config/color");
+
+    $request_options = [
+      RequestOptions::HEADERS => [
+        'Content-Type' => 'application/json',
+      ],
+    ];
+
+    // POST with missing required field (name) → 500 (OpenAPI schema mismatch).
+    $color_to_send = [
+      'name' => NULL,
+      'cssVariable' => '--color-test',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [1.0, 0.0, 0.0],
+        'hex' => '#ff0000',
+      ],
+      'weight' => 0,
+    ];
+    $request_options[RequestOptions::JSON] = $color_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 500, NULL, NULL, NULL, NULL);
+    $this->assertSame([
+      'message' => 'Body does not match schema for content-type "application/json" for Request [post /canvas/api/v0/config/color]. [Keyword validation failed: Value cannot be null in name]',
+    ], $body);
+
+    // POST with invalid cssVariable (no -- prefix) → 422 (validation).
+    $color_to_send = [
+      'name' => 'Test Color',
+      'cssVariable' => 'invalid-css-var',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [1.0, 0.0, 0.0],
+        'hex' => '#ff0000',
+      ],
+      'weight' => 0,
+    ];
+    $request_options[RequestOptions::JSON] = $color_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    $this->assertSame([
+      'errors' => [
+        [
+          'detail' => 'The <em class="placeholder">&quot;invalid-css-var&quot;</em> is not a valid CSS custom property name.',
+          'source' => ['pointer' => 'cssVariable'],
+        ],
+      ],
+    ], $body);
+
+    // POST with invalid hex format → 422.
+    $color_to_send = [
+      'name' => 'Test Color',
+      'cssVariable' => '--color-test',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [1.0, 0.0, 0.0],
+        'hex' => 'ff0000',
+      ],
+      'weight' => 0,
+    ];
+    $request_options[RequestOptions::JSON] = $color_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    $this->assertSame([
+      'errors' => [
+        [
+          'detail' => 'The <em class="placeholder">&quot;ff0000&quot;</em> is not a valid 6-digit hex color.',
+          'source' => ['pointer' => 'value.hex'],
+        ],
+      ],
+    ], $body);
+
+    // POST with valid data → 201 + Location header with UUID-based URL.
+    $color_to_send = [
+      'name' => 'Test Red',
+      'cssVariable' => '--color-test-red',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [0.8, 0.0, 0.0],
+        'alpha' => NULL,
+        'hex' => '#cc0000',
+      ],
+      'weight' => 0,
+    ];
+    $request_options[RequestOptions::JSON] = $color_to_send;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 201, NULL, NULL, NULL, NULL);
+    $this->assertIsArray($body);
+    $this->assertArrayHasKey('id', $body);
+    $this->assertArrayHasKey('name', $body);
+    $this->assertSame('Test Red', $body['name']);
+    $this->assertSame('--color-test-red', $body['cssVariable']);
+    $this->assertSame('srgb', $body['value']['colorSpace']);
+    $this->assertSame([0.8, 0, 0], $body['value']['components']);
+    $this->assertSame('#cc0000', $body['value']['hex']);
+    $this->assertNull($body['value']['alpha']);
+    $this->assertSame(0, $body['weight']);
+    $uuid = $body['id'];
+    $this->assertTrue(Uuid::isValid($uuid), 'ID should be a valid UUID');
+
+    // Verify the global BrandKit now contains this Color's UUID.
+    $brand_kit = BrandKit::load('global');
+    self::assertNotNull($brand_kit);
+    $this->assertContains($uuid, $brand_kit->getColors(), 'Color should be visible in BrandKit after creation via HTTP API');
+
+    // GET list → 200, contains the Color keyed by UUID.
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], ['config:color_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertIsArray($body);
+    $this->assertArrayHasKey($uuid, $body);
+    $this->assertSame('Test Red', $body[$uuid]['name']);
+
+    // GET individual by UUID → 200, matches normalization.
+    $canonical_url = Url::fromUri("base:/canvas/api/v0/config/color/$uuid");
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ["config:canvas.color.$uuid", 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertIsArray($body);
+    $this->assertSame($uuid, $body['id']);
+    $this->assertSame('Test Red', $body['name']);
+    $this->assertSame('--color-test-red', $body['cssVariable']);
+    $this->assertSame('srgb', $body['value']['colorSpace']);
+    $this->assertSame([0.8, 0, 0], $body['value']['components']);
+    $this->assertSame('#cc0000', $body['value']['hex']);
+    $this->assertSame(0, $body['weight']);
+    $this->assertNull($body['value']['alpha']);
+
+    // POST with duplicate cssVariable → 422.
+    $duplicate_color = [
+      'name' => 'Duplicate CSS Var',
+      'cssVariable' => '--color-test-red',
+      'value' => [
+        'colorSpace' => 'srgb',
+        'components' => [0, 0.8, 0],
+        'hex' => '#00cc00',
+      ],
+      'weight' => 1,
+    ];
+    $request_options[RequestOptions::JSON] = $duplicate_color;
+    $body = $this->assertExpectedResponse('POST', $list_url, $request_options, 422, NULL, NULL, NULL, NULL);
+    $this->assertSame([
+      'errors' => [
+        [
+          'detail' => 'CSS variable <em class="placeholder">--color-test-red</em> is already in use by another color.',
+          'source' => ['pointer' => 'cssVariable'],
+        ],
+      ],
+    ], $body);
+
+    // PATCH to update name → 200 with updated data.
+    $updated_name = 'Updated Red';
+    $request_options[RequestOptions::JSON] = ['name' => $updated_name];
+    $body = $this->assertExpectedResponse('PATCH', $canonical_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    $this->assertIsArray($body);
+    $this->assertSame($uuid, $body['id']);
+    $this->assertSame($updated_name, $body['name']);
+    // Other fields unchanged.
+    $this->assertSame('--color-test-red', $body['cssVariable']);
+    $this->assertSame('#cc0000', $body['value']['hex']);
+
+    // PATCH to add alpha → 200 with updated data.
+    $request_options[RequestOptions::JSON] = ['value' => ['alpha' => 0.75]];
+    $body = $this->assertExpectedResponse('PATCH', $canonical_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    $this->assertIsArray($body);
+    $this->assertSame(0.75, $body['value']['alpha']);
+
+    // Verify GET reflects changes.
+    $body = $this->assertExpectedResponse('GET', $canonical_url, [], 200, ['user.permissions'], ["config:canvas.color.$uuid", 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertSame($updated_name, $body['name'] ?? []);
+    $this->assertSame(0.75, $body['value']['alpha'] ?? []);
+
+    // PATCH id (UUID) field → silently ignored, UUID stays the same.
+    $new_uuid = \Drupal::service('uuid')->generate();
+    $request_options[RequestOptions::JSON] = ['id' => $new_uuid];
+    $body = $this->assertExpectedResponse('PATCH', $canonical_url, $request_options, 200, NULL, NULL, NULL, NULL);
+    $this->assertIsArray($body);
+    $this->assertSame($uuid, $body['id'], 'UUID should be immutable via PATCH');
+
+    // DELETE → 204.
+    $this->assertExpectedResponse('DELETE', $canonical_url, [], 204, NULL, NULL, NULL, NULL);
+
+    // GET list after delete → 200, empty.
+    $body = $this->assertExpectedResponse('GET', $list_url, [], 200, ['user.permissions'], ['config:color_list', 'http_response'], 'UNCACHEABLE (request policy)', 'MISS');
+    $this->assertSame([], $body);
+
+    // Verify BrandKit no longer contains the deleted Color's UUID.
+    $brand_kit = BrandKit::load('global');
+    self::assertNotNull($brand_kit);
+    $this->assertNotContains($uuid, $brand_kit->getColors(), 'Color should be absent from BrandKit after deletion');
   }
 
 }

@@ -104,7 +104,7 @@ final class ListAdapter extends TypedDataAdapterBase {
     }
 
     // Fill remaining slots with empty items up to items_count.
-    $max_items = $list_definition->getSetting('max_items') ?? NULL;
+    $max_items = $list_definition->getSetting('max_items');
     while ($delta < $items_count && ($max_items === NULL || $delta < $max_items)) {
       $new_item = $item_definition->getClass()::createInstance($item_definition);
       $values[$delta] = $new_item;

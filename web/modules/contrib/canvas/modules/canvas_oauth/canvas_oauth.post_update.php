@@ -183,7 +183,7 @@ function canvas_oauth_post_update_0002_canvas_brand_kit_scope(array &$sandbox): 
  * Install scopes for media types with the image source plugin.
  */
 function canvas_oauth_post_update_0003_media_image_scopes(array &$sandbox): void {
-  \Drupal::classResolver(MediaScopesHelper::class)->ensureMediaImageScopes();
+  \Drupal::classResolver(MediaScopesHelper::class)->ensureMediaScopes();
 }
 
 /**
@@ -266,4 +266,93 @@ function canvas_oauth_post_update_0005_canvas_content_template_scope(array &$san
       ],
     ])->save();
   }
+}
+
+/**
+ * Install the canvas:page_region scope.
+ */
+function canvas_oauth_post_update_0006_page_region_scope(array &$sandbox): void {
+  $scope = Oauth2Scope::load('canvas_page_region');
+  if (!$scope) {
+    Oauth2Scope::create([
+      'id' => 'canvas_page_region',
+      'name' => 'canvas:page_region',
+      'description' => 'Drupal Canvas: Full access to global regions (page regions)',
+      'status' => TRUE,
+      'grant_types' => [
+        'authorization_code' => [
+          'status' => TRUE,
+          'description' => 'Authorization code access for global regions',
+        ],
+        'refresh_token' => [
+          'status' => TRUE,
+          'description' => 'Refresh token access for global regions',
+        ],
+        'client_credentials' => [
+          'status' => TRUE,
+          'description' => 'Client credentials access for global regions',
+        ],
+      ],
+      'umbrella' => FALSE,
+      'granularity_id' => 'permission',
+      'granularity_configuration' => [
+        'permission' => 'administer page template',
+      ],
+      'dependencies' => [
+        'enforced' => [
+          'module' => [
+            'canvas_oauth',
+          ],
+        ],
+      ],
+    ])->save();
+  }
+}
+
+/**
+ * Install the canvas:page_variant scope.
+ */
+function canvas_oauth_post_update_0007_page_variant_scope(array &$sandbox): void {
+  $scope = Oauth2Scope::load('canvas_page_variant');
+  if (!$scope) {
+    Oauth2Scope::create([
+      'id' => 'canvas_page_variant',
+      'name' => 'canvas:page_variant',
+      'description' => 'Drupal Canvas: Full access to page variants',
+      'status' => TRUE,
+      'grant_types' => [
+        'authorization_code' => [
+          'status' => TRUE,
+          'description' => 'Authorization code access for page variants',
+        ],
+        'refresh_token' => [
+          'status' => TRUE,
+          'description' => 'Refresh token access for page variants',
+        ],
+        'client_credentials' => [
+          'status' => TRUE,
+          'description' => 'Client credentials access for page variants',
+        ],
+      ],
+      'umbrella' => FALSE,
+      'granularity_id' => 'permission',
+      'granularity_configuration' => [
+        'permission' => 'administer page template',
+      ],
+      'dependencies' => [
+        'enforced' => [
+          'module' => [
+            'canvas_oauth',
+          ],
+        ],
+      ],
+    ])->save();
+  }
+}
+
+/**
+ * Install scopes for media types with the file source plugin.
+ */
+function canvas_oauth_post_update_0008_media_document_scopes(array &$sandbox): void {
+  \Drupal::classResolver(MediaScopesHelper::class)->ensureMediaScopes();
 }

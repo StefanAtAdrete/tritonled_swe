@@ -115,8 +115,18 @@ window.WorkflowModeler.unregisterWidget('my_module_toggle');
 ## Panels
 
 Panels are larger content areas rendered alongside the canvas. They can be
-positioned on the left, right, or bottom of the modeler and support resize and
-collapse.
+positioned on the left, right, or bottom of the modeler, are resizable, and
+scroll vertically when their content outgrows the available height.
+
+A panel can also be registered as **floating**, in which case it is detached
+from the layout and the user can drag it around over the canvas. See
+[Floating panels](#floating-panels).
+
+!!! info "Showing and hiding a panel"
+    Panels have no built-in collapse control. Visibility belongs to the
+    plugin: call `registerPanel()` to show the panel and `unregisterPanel()`
+    to hide it again -- typically from a toolbar widget that toggles between
+    the two.
 
 ### Registering a panel
 
@@ -161,10 +171,11 @@ modeler.registerPanel({
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `id` | `string` | *required* | Unique identifier for the panel. |
-| `label` | `string` | *required* | Human-readable label shown in the collapsed tab. |
-| `position` | `'left' \| 'right' \| 'bottom'` | `'right'` | Where to render the panel. `right` places it after the property panel; `left` places it before the canvas; `bottom` places it below the canvas. |
+| `label` | `string` | *required* | Human-readable label shown in the panel header. |
+| `position` | `'left' \| 'right' \| 'bottom'` | `'right'` | Where to render the panel. `right` places it after the property panel; `left` places it before the canvas; `bottom` places it below the canvas. For a floating panel this only seeds the corner it first appears in. |
 | `weight` | `number` | `0` | Ordering weight within the position. Lower values appear first. |
 | `width` | `number` | `320` | Initial width in pixels (min: 200, max: 600). |
+| `floating` | `boolean` | `false` | Detach the panel from the layout so it floats over the canvas and can be dragged by the user. See [Floating panels](#floating-panels). |
 | `render` | `(container, api) => void` | *required* | Called once when the panel mounts. Receives a DOM element to render into and the [public API](#public-api-reference). |
 | `destroy` | `(container) => void` | -- | Optional cleanup callback called before the panel is removed. |
 | `onResize` | `(width, height) => void` | -- | Optional callback fired after the user finishes resizing the panel. |
@@ -173,11 +184,55 @@ modeler.registerPanel({
 
 Each registered panel automatically receives:
 
-- **Collapse/expand toggle** -- a button in the panel header that collapses the
-  panel to a narrow vertical tab with a rotated label.
-- **Resize handle** -- drag the panel edge to adjust its width.
+- **Header** -- a strip showing the panel label. For a floating panel it is
+  also the drag surface.
+- **Resize handles** -- drag the side edge to adjust width. Floating panels
+  also have a bottom-edge handle for height; focus it and press Up or Down to
+  resize (hold Shift for a larger step). Docked panels remain automatically
+  sized vertically.
+- **Vertical scrolling** -- when the content is taller than the space
+  available, the content area scrolls instead of being clipped. Your
+  `render()` container is the scroll container, so you do not need to manage
+  overflow yourself.
 - **Error boundary** -- if the panel's render function throws, only that panel
   shows an error; the rest of the modeler continues working.
+
+### Floating panels
+
+Set `floating: true` to lift a panel out of the layout. A floating panel:
+
+- reserves no space beside the canvas, so the canvas keeps its full width;
+- is drawn above the canvas with a drop shadow;
+- can be moved by dragging its header, or by focusing the move handle in the
+  header and pressing the arrow keys (hold Shift for a larger step);
+- keeps its content-driven automatic height until the first bottom-edge resize,
+  then constrains height between 120 pixels and the space below the panel,
+  including a 16-pixel modeler margin;
+- scrolls the plugin content container when a manually constrained height is
+  smaller than its content;
+- is kept inside the modeler's bounds, including when the window is resized,
+  so it can never be dragged out of reach;
+- remembers where the user put it for the rest of the page session, so hiding
+  the panel with `unregisterPanel()` and showing it again later does not reset
+  its position. A page reload returns it to its default corner.
+
+```javascript
+modeler.registerPanel({
+  id: 'my_module_inspector',
+  label: 'Inspector',
+  position: 'right',
+  floating: true,
+  width: 280,
+  render(container, api) {
+    container.textContent = api.getModelData()?.metadata?.label || '';
+  },
+});
+```
+
+`floating` is a registration-time choice. There is no user-facing control to
+switch a panel between docked and floating, so pick the mode that suits your
+content: floating suits small, occasional inspectors, while docked suits
+panels the user keeps open while working.
 
 ### Removing a panel
 
@@ -215,8 +270,10 @@ mounts. It is also passed as the second argument to every `render()` callback.
 | `getEdges()` | `PluginEdge[]` | All current edges (id, source, target, type, data). |
 | `getNodeById(nodeId)` | `PluginNode \| null` | A single node by ID, or `null` if not found. |
 | `getEdgeById(edgeId)` | `PluginEdge \| null` | A single edge by ID, or `null` if not found. |
-| `getSelectedNode()` | `PluginNode \| null` | The currently selected node, or `null`. |
-| `getSelectedEdge()` | `PluginEdge \| null` | The currently selected edge, or `null`. |
+| `getSelectedNode()` | `PluginNode \| null` | The first selected node (the primary selection), or `null`. |
+| `getSelectedEdge()` | `PluginEdge \| null` | The first selected edge (the primary selection), or `null`. |
+| `getSelectedNodes()` | `PluginNode[]` | Every selected node, in selection order. A single selection returns a one-element array. |
+| `getSelectedEdges()` | `PluginEdge[]` | Every selected edge, in selection order. A single selection returns a one-element array. |
 | `getModelData()` | `PluginModelData \| null` | Model metadata (id, version, label, description, tags). |
 
 #### State information
@@ -247,7 +304,7 @@ receiving updates.
 
 | Method | Callback signature | Description |
 |--------|-------------------|-------------|
-| `onSelectionChange(cb)` | `(node, edge) => void` | Fires when the selected node or edge changes. |
+| `onSelectionChange(cb)` | `(node, edge) => void` | Fires when the primary selection or any multi-selection member changes. The callback receives only the first selected node and edge. |
 | `onNodesChange(cb)` | `(nodes) => void` | Fires when nodes are added, removed, or reordered. |
 | `onEdgesChange(cb)` | `(edges) => void` | Fires when edges are added, removed, or reordered. |
 | `onModelDataChange(cb)` | `(data) => void` | Fires when model metadata changes. |
@@ -335,14 +392,14 @@ api.removeNode(nodeId);
 | `addEdge(sourceNodeId, targetNodeId)` | `string \| null` | Connect two nodes. Returns the generated edge ID, or `null` in read-only mode or if either node does not exist. |
 | `updateEdge(edgeId, updates)` | `boolean` | Update an edge's data. Returns `true` on success. |
 | `removeEdge(edgeId)` | `boolean` | Remove an edge. Returns `true` on success. |
-| `setCondition(edgeId, condition)` | `boolean` | Attach a condition to an edge (converts it to a condition edge). Returns `true` on success. |
-| `removeCondition(edgeId)` | `boolean` | Remove the condition from an edge (converts it back to a default edge). Returns `true` on success. |
+| `setCondition(edgeId, condition)` | `boolean` | Insert a condition node on an edge (splitting the edge into two segments with a condition node in between). Returns `true` on success. |
+| `removeCondition(edgeId)` | `boolean` | Remove the condition node from an edge (reconnecting the source and target directly). Returns `true` on success. |
 
 #### UpdateEdgeDescriptor
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `annotation` | `string` | Annotation text (only meaningful for condition edges). |
+| `annotation` | `string` | Annotation text for the connection. |
 
 #### SetConditionDescriptor
 
@@ -356,7 +413,7 @@ api.removeNode(nodeId);
 // Connect two nodes
 const edgeId = api.addEdge('event_1', 'action_1');
 
-// Attach a condition
+// Insert a condition node on that edge
 if (edgeId) {
   api.setCondition(edgeId, {
     plugin: 'eca_base:eca_scalar_comparison',
@@ -365,7 +422,7 @@ if (edgeId) {
   });
 }
 
-// Remove the condition (edge remains)
+// Remove the condition node (edge reconnects directly)
 api.removeCondition(edgeId);
 
 // Remove the edge entirely
@@ -796,12 +853,12 @@ and lets the user click to add them with a default configuration.
 
           container.appendChild(list);
 
-          // Add a "Connect selected" button
+          // Add a "Connect primary selection" button
           var connectBtn = document.createElement('button');
           connectBtn.className = 'toolbar-btn';
           connectBtn.style.width = '100%';
           connectBtn.style.marginTop = '12px';
-          connectBtn.textContent = 'Connect selected to last added';
+          connectBtn.textContent = 'Connect primary selection to last added';
           connectBtn.disabled = true;
 
           var lastAddedId = null;

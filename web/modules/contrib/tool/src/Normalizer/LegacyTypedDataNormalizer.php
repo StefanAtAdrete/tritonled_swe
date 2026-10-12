@@ -5,7 +5,9 @@ namespace Drupal\tool\Normalizer;
 use Drupal\Core\TypedData\Plugin\DataType\Email;
 use Drupal\Core\TypedData\Plugin\DataType\FloatData;
 use Drupal\Core\TypedData\Plugin\DataType\IntegerData;
+use Drupal\Core\TypedData\Plugin\DataType\Timestamp;
 use Drupal\Core\TypedData\Type\BooleanInterface;
+use Drupal\Core\TypedData\Type\DateTimeInterface;
 use Drupal\Core\TypedData\Type\DecimalInterface;
 use Drupal\Core\TypedData\Type\DurationInterface;
 use Drupal\Core\TypedData\Type\StringInterface;
@@ -21,7 +23,7 @@ class LegacyTypedDataNormalizer extends ComplexDataNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $context = []): array|string|int|float|bool|\ArrayObject|NULL {
+  public function normalize($object, $format = NULL, array $context = []): array {
     if ($format === 'json_schema') {
       return $this->getNormalizationSchema($object, $context);
     }
@@ -31,8 +33,8 @@ class LegacyTypedDataNormalizer extends ComplexDataNormalizer {
   /**
    * {@inheritdoc}
    */
-  protected function doNormalize($object, $format = NULL, array $context = []): array|string|int|float|bool|\ArrayObject|null {
-    return NULL;
+  protected function doNormalize($object, $format = NULL, array $context = []): array {
+    return [];
   }
 
   /**
@@ -43,9 +45,18 @@ class LegacyTypedDataNormalizer extends ComplexDataNormalizer {
       $object instanceof BooleanInterface => [
         'type' => 'boolean',
       ],
+      // Timestamp extends IntegerData and DateTimeIso8601 extends StringData,
+      // so the datetime arms must precede the integer/string arms.
+      $object instanceof Timestamp => [
+        'type' => 'integer',
+      ],
+      $object instanceof DateTimeInterface => [
+        'type' => 'string',
+        'format' => 'date-time',
+      ],
       $object instanceof DecimalInterface => [
         'type' => 'string',
-        'format' => 'number',
+        'pattern' => ContextDefinitionNormalizer::DECIMAL_PATTERN,
       ],
       $object instanceof DurationInterface => [
         'type' => 'string',
@@ -82,9 +93,14 @@ class LegacyTypedDataNormalizer extends ComplexDataNormalizer {
     if ($format !== 'json_schema') {
       return [];
     }
-    if (!class_exists("Drupal\Core\Serialization\Attribute\JsonSchema")) {
-      return ['*' => TRUE];
-    }
+    // On cores with native json_schema support (11.1+),
+    // NormalizerBase::checkFormat() denies the format to normalizers without
+    // explicit format support, so supportsNormalization() returns FALSE and
+    // core's schema normalizers win. On older cores checkFormat() is
+    // permissive and this normalizer is selected. The interface must be
+    // declared concretely: a '*' wildcard never matches NormalizerBase's
+    // instanceof-based supportsNormalization() filter, which left this
+    // normalizer unselectable on the old cores it exists for.
     return [TypedDataInterface::class => TRUE];
   }
 

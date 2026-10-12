@@ -1,7 +1,6 @@
 anker
 Initialises
 lightbox
-photoswipeplugin
 pinterest
 pswp
 testfunction

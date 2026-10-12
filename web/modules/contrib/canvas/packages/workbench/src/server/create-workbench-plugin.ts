@@ -1,18 +1,33 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import {
+  BRAND_KIT_CONFIG_FILENAME,
+  buildBrandKitColorCss,
+  ComponentMetadataValidationError,
   discoverCanvasProject,
+  loadComponentMetadata,
   loadComponentsMetadata,
+  readBrandKitColors,
 } from '@drupal-canvas/discovery';
 import {
   ensureHostGlobalCssExists,
   extractComponentPreviewMetadataFromComponentYaml,
   getWorkbenchHostGlobalCssVirtualUrl,
+  resolvePageColorPropsForPreview,
 } from '@drupal-canvas/vite-compat';
 
+import { isComponentMetadataPath } from '../lib/component-metadata-path';
 import { isTopLevelContentTemplateSpecPath } from '../lib/content-template-spec-path';
-import { isTopLevelPageSpecPath } from '../lib/page-spec-path';
-import { buildPreviewManifest } from '../lib/preview-contract';
+import { isMockSpecPath } from '../lib/mock-spec-path';
+import {
+  isTopLevelPageSpecPath,
+  isTopLevelPageTemplateSpecPath,
+} from '../lib/page-spec-path';
+import { parsePageTemplateSpec } from '../lib/page-template-spec';
+import {
+  buildPreviewManifest,
+  markPreviewManifestComponentMetadataInvalid,
+} from '../lib/preview-contract';
 import {
   toDiscoveredContentTemplateName,
   toDiscoveredPageName,
@@ -22,35 +37,23 @@ import {
 } from '../lib/spec-discovery';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { DiscoveryResult } from '@drupal-canvas/discovery';
+import type {
+  ComponentMetadata,
+  DiscoveryResult,
+} from '@drupal-canvas/discovery';
 import type { Plugin } from 'vite';
 import type { EnrichedDiscoveredPage } from '../lib/discovery-client';
 import type {
+  PreviewManifest,
   PreviewManifestComponent,
   PreviewManifestComponentMock,
   PreviewWarning,
 } from '../lib/preview-contract';
 import type { WorkbenchPaths } from './paths';
 
-function isComponentMetadataPath(filePath: string): boolean {
-  const normalizedPath = filePath.replaceAll('\\', '/');
-  return (
-    /(^|\/)component\.yml$/.test(normalizedPath) ||
-    /(^|\/)[^/]+\.component\.yml$/.test(normalizedPath)
-  );
-}
-
 function isPreviewSourcePath(filePath: string): boolean {
   const normalizedPath = filePath.replaceAll('\\', '/');
   return /\.(js|jsx|ts|tsx|css)$/.test(normalizedPath);
-}
-
-function isMockSpecPath(filePath: string): boolean {
-  const normalizedPath = filePath.replaceAll('\\', '/');
-  return (
-    /(^|\/)mocks\.json$/.test(normalizedPath) ||
-    /(^|\/)[^/]+\.mocks\.json$/.test(normalizedPath)
-  );
 }
 
 /**
@@ -246,6 +249,7 @@ async function loadPreviewPageSpec(
   slug: string,
 ): Promise<{
   spec: unknown | null;
+  pageVariant: string | null;
   status: number;
   error: string | null;
 }> {
@@ -255,6 +259,7 @@ async function loadPreviewPageSpec(
   if (!page) {
     return {
       spec: null,
+      pageVariant: null,
       status: 404,
       error: `No page found for slug "${slug}".`,
     };
@@ -266,6 +271,7 @@ async function loadPreviewPageSpec(
   } catch {
     return {
       spec: null,
+      pageVariant: null,
       status: 404,
       error: `Failed to read page file: ${page.path}`,
     };
@@ -277,6 +283,7 @@ async function loadPreviewPageSpec(
   } catch {
     return {
       spec: null,
+      pageVariant: null,
       status: 400,
       error: `Failed to parse page JSON file: ${page.path}`,
     };
@@ -291,6 +298,7 @@ async function loadPreviewPageSpec(
   if (!parsedPage.spec) {
     return {
       spec: null,
+      pageVariant: null,
       status: 400,
       error:
         parsedPage.issues[0]?.message ?? `Page spec is invalid: ${page.path}`,
@@ -298,7 +306,12 @@ async function loadPreviewPageSpec(
   }
 
   return {
-    spec: parsedPage.spec,
+    spec: resolvePageColorPropsForPreview(
+      parsedPage.spec,
+      readBrandKitColors(discoveryResult.projectRoot),
+      discoveryResult.componentSchemas,
+    ),
+    pageVariant: parsedPage.pageVariant,
     status: 200,
     error: null,
   };
@@ -314,6 +327,7 @@ async function loadPreviewContentTemplateSpec(
     entityTypeId: string;
     bundle: string;
     viewMode: string;
+    pageVariant: string | null;
   } | null;
   status: number;
   error: string | null;
@@ -372,10 +386,107 @@ async function loadPreviewContentTemplateSpec(
   }
 
   return {
-    spec: parsedTemplate.spec,
+    spec: resolvePageColorPropsForPreview(
+      parsedTemplate.spec,
+      readBrandKitColors(discoveryResult.projectRoot),
+      discoveryResult.componentSchemas,
+    ),
     metadata: parsedTemplate.metadata,
     status: 200,
     error: null,
+  };
+}
+
+async function loadPreviewPageTemplateSpec(
+  discoveryResult: DiscoveryResult,
+  id: string,
+): Promise<{
+  spec: unknown | null;
+  status: number;
+  error: string | null;
+  enabled: boolean;
+  label: string;
+  description: string;
+  isDefault: boolean;
+}> {
+  const pageTemplate = discoveryResult.pageTemplates.find(
+    (candidate) => candidate.id === id,
+  );
+  if (!pageTemplate) {
+    return {
+      spec: null,
+      status: 404,
+      error: `No page template found for id "${id}".`,
+      enabled: true,
+      label: id,
+      description: '',
+      isDefault: false,
+    };
+  }
+
+  let fileContent: string;
+  try {
+    fileContent = await fs.readFile(pageTemplate.path, 'utf-8');
+  } catch {
+    return {
+      spec: null,
+      status: 404,
+      error: `Failed to read page template file: ${pageTemplate.path}`,
+      enabled: true,
+      label: id,
+      description: '',
+      isDefault: false,
+    };
+  }
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(fileContent);
+  } catch {
+    return {
+      spec: null,
+      status: 400,
+      error: `Failed to parse page template JSON file: ${pageTemplate.path}`,
+      enabled: true,
+      label: id,
+      description: '',
+      isDefault: false,
+    };
+  }
+
+  const parsedPageTemplate = parsePageTemplateSpec(
+    parsedJson,
+    pageTemplate.path,
+    {
+      componentNames: discoveryResult.components.map((c) => c.name),
+    },
+  );
+  if (!parsedPageTemplate.pageTemplate) {
+    return {
+      spec: null,
+      status: 400,
+      error:
+        parsedPageTemplate.issues[0]?.message ??
+        `Page template spec is invalid: ${pageTemplate.path}`,
+      enabled: true,
+      label: id,
+      description: '',
+      isDefault: false,
+    };
+  }
+
+  return {
+    spec: resolvePageColorPropsForPreview(
+      parsedPageTemplate.pageTemplate.spec,
+      readBrandKitColors(discoveryResult.projectRoot),
+      discoveryResult.componentSchemas,
+    ),
+    status: 200,
+    error: null,
+    enabled: parsedPageTemplate.pageTemplate.status,
+    label: parsedPageTemplate.pageTemplate.label,
+    description: parsedPageTemplate.pageTemplate.description,
+    isDefault: parsedPageTemplate.pageTemplate.isDefault,
   };
 }
 
@@ -388,12 +499,91 @@ async function loadWorkbenchHtmlTemplate(
   return transformIndexHtml(url, html);
 }
 
+export async function buildWorkbenchPreviewManifest(
+  discoveryResult: DiscoveryResult,
+): Promise<PreviewManifest> {
+  const manifest = buildPreviewManifest(discoveryResult);
+  const discoveredComponentNames = manifest.components.map(
+    (component) => component.name,
+  );
+  const componentMocksAndExamples = await Promise.all(
+    manifest.components.map(async (component, index) => {
+      const discoveredComponent = discoveryResult.components[index];
+      if (!discoveredComponent) {
+        throw new Error(
+          `Missing discovery result for ${component.metadataPath}.`,
+        );
+      }
+
+      let metadata: ComponentMetadata;
+      try {
+        metadata = await loadComponentMetadata(
+          discoveredComponent,
+          discoveryResult.projectRoot,
+        );
+      } catch (error) {
+        if (error instanceof ComponentMetadataValidationError) {
+          return {
+            component: {
+              ...markPreviewManifestComponentMetadataInvalid(
+                component,
+                error.sourcePath,
+                error.diagnostics,
+              ),
+              label: error.authoredName ?? component.label,
+            },
+            warnings: [],
+          };
+        }
+        throw error;
+      }
+
+      const componentPreviewMetadata =
+        await extractComponentPreviewMetadataFromComponentYaml(
+          component.metadataPath,
+          readBrandKitColors(discoveryResult.projectRoot),
+        );
+      const exampleProps = componentPreviewMetadata.exampleProps;
+      const { mocks, warnings } = await loadComponentMocks(
+        component,
+        manifest.componentRoot,
+        discoveredComponentNames,
+        exampleProps,
+        componentPreviewMetadata.requiredPropNames,
+      );
+      return {
+        component: {
+          ...component,
+          label: componentPreviewMetadata.label ?? component.label,
+          exampleProps,
+          props: metadata.props.properties ?? {},
+          dataDependencies: metadata.dataDependencies ?? {},
+          mocks,
+        },
+        warnings,
+      };
+    }),
+  );
+
+  manifest.components = componentMocksAndExamples.map(
+    ({ component }) => component,
+  );
+  manifest.warnings = [
+    ...manifest.warnings,
+    ...componentMocksAndExamples.flatMap(({ warnings }) => warnings),
+  ];
+  return manifest;
+}
+
 export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
   let cachedResult: DiscoveryResult | null = null;
   let refreshTask: Promise<void> | null = null;
   let hostGlobalCssPath: string | null = null;
   const virtualHostGlobalCssId = 'virtual:canvas-host-global.css';
   const resolvedVirtualHostGlobalCssId = '\0virtual:canvas-host-global.css';
+  const virtualBrandKitCssId = 'virtual:canvas-brand-kit.css';
+  const resolvedVirtualBrandKitCssId = '\0virtual:canvas-brand-kit.css';
+  const brandKitCssVirtualUrl = '/@id/virtual:canvas-brand-kit.css';
 
   const refresh = async () => {
     if (refreshTask) {
@@ -406,6 +596,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
         componentRoot: paths.componentDiscoveryRoot,
         pagesRoot: paths.pagesDiscoveryRoot,
         contentTemplatesRoot: paths.contentTemplatesDiscoveryRoot,
+        pageTemplatesRoot: paths.pageTemplatesDiscoveryRoot,
         projectRoot: paths.hostProjectRoot,
       });
     })();
@@ -425,9 +616,19 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
         return resolvedVirtualHostGlobalCssId;
       }
 
+      if (source === virtualBrandKitCssId) {
+        return resolvedVirtualBrandKitCssId;
+      }
+
       return null;
     },
     load(id) {
+      if (id === resolvedVirtualBrandKitCssId) {
+        // Lenient by design: a missing or malformed brand kit file yields an
+        // empty stylesheet rather than a dev-server error.
+        return buildBrandKitColorCss(readBrandKitColors(paths.hostProjectRoot));
+      }
+
       if (id !== resolvedVirtualHostGlobalCssId || !hostGlobalCssPath) {
         return null;
       }
@@ -551,43 +752,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
         void (async () => {
           await refresh();
 
-          const manifest = buildPreviewManifest(cachedResult!);
-          const discoveredComponentNames = manifest.components.map(
-            (component) => component.name,
-          );
-          const componentMocksAndExamples = await Promise.all(
-            manifest.components.map(async (component) => {
-              const componentPreviewMetadata =
-                await extractComponentPreviewMetadataFromComponentYaml(
-                  component.metadataPath,
-                );
-              const exampleProps = componentPreviewMetadata.exampleProps;
-              const { mocks, warnings } = await loadComponentMocks(
-                component,
-                manifest.componentRoot,
-                discoveredComponentNames,
-                exampleProps,
-                componentPreviewMetadata.requiredPropNames,
-              );
-              return {
-                component: {
-                  ...component,
-                  label: componentPreviewMetadata.label ?? component.label,
-                  exampleProps,
-                  mocks,
-                },
-                warnings,
-              };
-            }),
-          );
-
-          manifest.components = componentMocksAndExamples.map(
-            ({ component }) => component,
-          );
-          manifest.warnings = [
-            ...manifest.warnings,
-            ...componentMocksAndExamples.flatMap(({ warnings }) => warnings),
-          ];
+          const manifest = await buildWorkbenchPreviewManifest(cachedResult!);
 
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
@@ -597,6 +762,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
               globalCssUrl: hostGlobalCssPath
                 ? getWorkbenchHostGlobalCssVirtualUrl()
                 : null,
+              brandKitCssUrl: brandKitCssVirtualUrl,
             }),
           );
         })().catch((error) => {
@@ -609,6 +775,56 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
           );
         });
       });
+
+      server.middlewares.use(
+        '/__canvas/page-template-preview-spec',
+        (req, res, next) => {
+          if (req.method !== 'GET') {
+            next();
+            return;
+          }
+
+          void (async () => {
+            await refresh();
+
+            const requestUrl = new URL(req.url ?? '', 'http://localhost');
+            const id = requestUrl.searchParams.get('id');
+            if (!id) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(
+                JSON.stringify({ error: 'Missing required id parameter.' }),
+              );
+              return;
+            }
+
+            const result = await loadPreviewPageTemplateSpec(cachedResult!, id);
+            res.statusCode = result.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify(
+                result.error
+                  ? { error: result.error }
+                  : {
+                      spec: result.spec,
+                      label: result.label,
+                      description: result.description,
+                      status: result.enabled,
+                      isDefault: result.isDefault,
+                    },
+              ),
+            );
+          })().catch((error) => {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+              }),
+            );
+          });
+        },
+      );
 
       server.middlewares.use(
         '/__canvas/page-preview-spec',
@@ -639,7 +855,10 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
               JSON.stringify(
                 pageResult.error
                   ? { error: pageResult.error }
-                  : pageResult.spec,
+                  : {
+                      spec: pageResult.spec,
+                      pageVariant: pageResult.pageVariant,
+                    },
               ),
             );
           })().catch((error) => {
@@ -709,17 +928,50 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
           return;
         }
 
+        if (path.basename(filePath) === BRAND_KIT_CONFIG_FILENAME) {
+          // A brand kit edit affects both the generated stylesheet and the
+          // resolved color prop values (cssColorValue, cssVariable, colorName).
+          // Reload the CSS module first, then refresh the manifest to re-resolve
+          // color props with the updated brand kit colors.
+          const brandKitModule = server.moduleGraph.getModuleById(
+            resolvedVirtualBrandKitCssId,
+          );
+          if (brandKitModule) {
+            void server.reloadModule(brandKitModule);
+          }
+          void refresh()
+            .then(() => {
+              server.ws.send({
+                type: 'custom',
+                event: 'canvas:workbench:update',
+                data: {
+                  reloadFrameOnly: false,
+                  filePath,
+                  event,
+                },
+              });
+            })
+            .catch((error) => {
+              server.config.logger.error(
+                `Failed to refresh discovery after brand kit change: ${String(error)}`,
+              );
+            });
+          return;
+        }
+
         const metadataChanged = isComponentMetadataPath(filePath);
         const sourceChanged = isPreviewSourcePath(filePath);
         const pageChanged = isTopLevelPageSpecPath(filePath);
         const contentTemplateChanged =
           isTopLevelContentTemplateSpecPath(filePath);
+        const pageTemplateChanged = isTopLevelPageTemplateSpecPath(filePath);
         const mockChanged = isMockSpecPath(filePath);
         if (
           !metadataChanged &&
           !sourceChanged &&
           !pageChanged &&
           !contentTemplateChanged &&
+          !pageTemplateChanged &&
           !mockChanged
         ) {
           return;
@@ -730,6 +982,7 @@ export function createWorkbenchPlugin(paths: WorkbenchPaths): Plugin {
           mockChanged ||
           pageChanged ||
           contentTemplateChanged ||
+          pageTemplateChanged ||
           (sourceChanged && event !== 'change');
         if (!requiresManifestRefresh) {
           server.ws.send({

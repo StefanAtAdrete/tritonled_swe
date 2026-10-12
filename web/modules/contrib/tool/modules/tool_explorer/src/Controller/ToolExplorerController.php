@@ -7,13 +7,15 @@ namespace Drupal\tool_explorer\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Extension\ModuleExtensionList;
 use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\Theme\Icon\IconDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\tool\Tool\ToolManager;
 use Drupal\tool\TypedData\Adapter\TypedDataAdapterTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Yaml\Yaml;
+use Drupal\Component\Serialization\Yaml;
+use Drupal\tool\TypedData\EffectiveDataDefinition;
 
 /**
  * Controller for Tool Explorer pages.
@@ -51,6 +53,31 @@ class ToolExplorerController extends ControllerBase {
   }
 
   /**
+   * Builds the render array for a tool's icon reference.
+   *
+   * A tool that declares no icon of its own falls back to the operation
+   * icon from the module's own icon pack, so every row carries a meaningful
+   * visual. The fallback is presentation-only: it never appears on the
+   * definition, so other consumers (e.g. the MCP bridge) see NULL and apply
+   * their own defaults.
+   *
+   * @param \Drupal\tool\Tool\ToolDefinition $definition
+   *   The tool definition.
+   *
+   * @return array
+   *   An icon render array, or an empty array when the core Icon API is
+   *   unavailable (<11.1). The icon element itself renders nothing for a
+   *   reference that does not resolve.
+   */
+  protected function buildIcon($definition): array {
+    if (!class_exists(IconDefinition::class)) {
+      return [];
+    }
+    $reference = $definition->getIcon() ?? 'tool:operation-' . $definition->getOperation()->value;
+    return IconDefinition::getRenderable($reference) ?? [];
+  }
+
+  /**
    * Lists all available tools.
    *
    * @return array
@@ -61,21 +88,26 @@ class ToolExplorerController extends ControllerBase {
 
     $rows = [];
     foreach ($definitions as $plugin_id => $definition) {
-      $operations = [
-        '#type' => 'dropbutton',
-        '#links' => [
-          'view' => [
-            'title' => $this->t('View'),
-            'url' => Url::fromRoute('tool_explorer.view', ['plugin_id' => $plugin_id]),
-          ],
-          'execute' => [
-            'title' => $this->t('Execute'),
-            'url' => Url::fromRoute('tool_explorer.execute', ['plugin_id' => $plugin_id]),
-          ],
+      $links = [
+        'view' => [
+          'title' => $this->t('View'),
+          'url' => Url::fromRoute('tool_explorer.view', ['plugin_id' => $plugin_id]),
         ],
       ];
+      if ($this->currentUser()->hasPermission('administer tool')) {
+        $links['execute'] = [
+          'title' => $this->t('Execute'),
+          'url' => Url::fromRoute('tool_explorer.execute', ['plugin_id' => $plugin_id]),
+        ];
+      }
+      $operations = [
+        '#type' => 'dropbutton',
+        '#links' => $links,
+      ];
 
+      $icon = $this->buildIcon($definition);
       $rows[] = [
+        'icon' => $icon ? $this->renderer->render($icon) : '',
         'label' => $definition->getLabel(),
         'id' => $plugin_id,
         'description' => $definition->getDescription(),
@@ -87,6 +119,7 @@ class ToolExplorerController extends ControllerBase {
     $build['tools_table'] = [
       '#type' => 'table',
       '#header' => [
+        $this->t('Icon'),
         $this->t('Label'),
 
         $this->t('ID'),
@@ -98,6 +131,7 @@ class ToolExplorerController extends ControllerBase {
       '#empty' => $this->t('No tools available.'),
       '#cache' => [
         'tags' => ['tool_list'],
+        'contexts' => ['user.permissions'],
       ],
     ];
 
@@ -144,6 +178,10 @@ class ToolExplorerController extends ControllerBase {
         [
           ['data' => $this->t('Class'), 'header' => TRUE],
           $definition->getClass(),
+        ],
+        [
+          ['data' => $this->t('Permission'), 'header' => TRUE],
+          $definition->getPermission() ?? $this->t('None'),
         ],
       ],
     ];
@@ -205,12 +243,12 @@ class ToolExplorerController extends ControllerBase {
           ];
 
           // Parse and display the actual schema.
-          $all_schemas = Yaml::parse($schema_content);
+          $all_schemas = Yaml::decode($schema_content);
           if (isset($all_schemas[$schema_key])) {
             $build['config_schema']['actual'] = [
               '#type' => 'item',
               '#title' => $this->t('Actual Schema'),
-              '#markup' => '<pre>' . Yaml::dump([$schema_key => $all_schemas[$schema_key]], 10, 2) . '</pre>',
+              '#markup' => '<pre>' . Yaml::encode([$schema_key => $all_schemas[$schema_key]]) . '</pre>',
             ];
           }
         }
@@ -227,7 +265,7 @@ class ToolExplorerController extends ControllerBase {
           $build['config_schema']['suggested'] = [
             '#type' => 'item',
             '#title' => $this->t('Suggested Schema to Add'),
-            '#markup' => '<pre>' . Yaml::dump([$schema_key => $suggested_schema], 10, 2) . '</pre>',
+            '#markup' => '<pre>' . Yaml::encode([$schema_key => $suggested_schema]) . '</pre>',
           ];
         }
       }
@@ -245,7 +283,7 @@ class ToolExplorerController extends ControllerBase {
         $build['config_schema']['suggested'] = [
           '#type' => 'item',
           '#title' => $this->t('Suggested Schema'),
-          '#markup' => '<pre>' . Yaml::dump([$schema_key => $suggested_schema], 10, 2) . '</pre>',
+          '#markup' => '<pre>' . Yaml::encode([$schema_key => $suggested_schema]) . '</pre>',
         ];
       }
     }
@@ -335,7 +373,7 @@ class ToolExplorerController extends ControllerBase {
     ];
 
     foreach ($input_definitions as $name => $input_definition) {
-      $data_definition = $input_definition->getDataDefinition();
+      $data_definition = EffectiveDataDefinition::createFrom($input_definition);
       $adapter = $this->getAdapterInstance($data_definition, $name);
       $schema['mapping'][$name] = $adapter->getSchemaDefinition($data_definition);
     }

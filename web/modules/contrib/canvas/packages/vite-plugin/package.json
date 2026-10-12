@@ -1,6 +1,9 @@
 {
   "name": "@drupal-canvas/vite-plugin",
-  "version": "0.1.1",
+  "version": "0.3.0",
+  "engines": {
+    "node": ">=22.19.0 <23 || >=24.5.0"
+  },
   "description": "Vite plugin for developing Drupal Canvas Code Components",
   "license": "MIT",
   "repository": {
@@ -31,12 +34,14 @@
   },
   "devDependencies": {
     "@drupal-canvas/auth": "*",
-    "tsdown": "^0.17.0-beta.5",
-    "typescript": "^5.9.3"
+    "tsdown": "^0.22.12",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "scripts": {
     "build": "NODE_ENV=production tsdown",
     "dev": "NODE_ENV=development tsdown --watch",
-    "type-check": "tsc --noEmit --pretty"
+    "type-check": "tsc --noEmit --pretty",
+    "test": "vitest run"
   }
 }

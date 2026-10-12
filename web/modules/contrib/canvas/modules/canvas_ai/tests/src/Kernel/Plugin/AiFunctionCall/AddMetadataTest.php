@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall;
 
-use PHPUnit\Framework\Attributes\Group;
 use Drupal\canvas_ai\Plugin\AiFunctionCall\AddMetadata;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests for the AddMetadata function call plugin.
+ *
+ * This test will be deleted once set_page_value replaces this tool.
+ *
+ * @see \Drupal\canvas_ai\Plugin\AiFunctionCall\SetPageValue
+ * @see \Drupal\Tests\canvas_ai\Kernel\Plugin\AiFunctionCall\SetPageValueTest
  */
 #[Group('canvas_ai')]
 class AddMetadataTest extends CanvasKernelTestBase {

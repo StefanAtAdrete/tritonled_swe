@@ -14,6 +14,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { readFileSync, existsSync } from 'fs';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { metadataForm, newModelMetadataForm } from '../../src/components/__fixtures__/metadataForm';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -165,7 +166,10 @@ function generateTestPage(modelId: string): string {
       modeler: {
         components: mockComponents,
         typeMap: { 1: 'start', 2: 'subprocess', 3: 'swimlane', 4: 'element', 5: 'link', 6: 'gateway', 7: 'annotation' },
-        modelData: mockModelData
+        modelData: mockModelData,
+        // The metadata dialog renders the form the backend converts from the
+        // model owner's Drupal form; without it there is nothing to render.
+        metadataForm: ${JSON.stringify(isNewModel ? newModelMetadataForm : metadataForm)}
       },
       modeler_api: {
         isNew: ${isNewModel},

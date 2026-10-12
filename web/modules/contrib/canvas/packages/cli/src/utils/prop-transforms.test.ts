@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  collapseColorPropsInElements,
+  collectUnreconciledColorProps,
   collectUnreconciledMediaProps,
   getUnreconciledMedia,
   serializeElementMapForServer,
@@ -105,6 +107,60 @@ describe('serializePropsForServer — passthrough', () => {
   });
 });
 
+describe('serializePropsForServer - color transformer', () => {
+  it('serializes canvas-color cssVarKey refs to UUID refs', () => {
+    const schemas: Record<string, CodeComponentPropSerialized> = {
+      accent: {
+        title: 'Accent',
+        type: 'string',
+        $ref: 'json-schema-definitions://canvas.module/color',
+      },
+    };
+    const colorsByCssVariable = new Map([
+      [
+        '--baguette-legs',
+        {
+          id: '88888888-8888-4888-8888-888888888888',
+          name: 'Baguette Legs',
+          cssVariable: '--baguette-legs',
+          value: {
+            colorSpace: 'srgb' as const,
+            components: [0, 0, 1],
+            alpha: null,
+            hex: '#0000ff',
+          },
+          weight: 0,
+        },
+      ],
+    ]);
+
+    expect(
+      serializePropsForServer(
+        { accent: 'canvas-color:baguette-legs' },
+        schemas,
+        {},
+        colorsByCssVariable,
+      ),
+    ).toEqual({
+      accent: 'canvas-color:88888888-8888-4888-8888-888888888888',
+    });
+  });
+
+  it('passes through free-pick CSS strings for color props', () => {
+    const schemas: Record<string, CodeComponentPropSerialized> = {
+      accent: {
+        title: 'Accent',
+        type: 'string',
+        $ref: 'json-schema-definitions://canvas.module/color',
+      },
+    };
+
+    expect(serializePropsForServer({ accent: '#687df7e3' }, schemas)).toEqual({
+      accent: '#687df7e3',
+    });
+  });
+});
+
 describe('serializePropsForServer — link transformer', () => {
   it('wraps absolute URI into { uri, options }', () => {
     const schemas: Record<string, CodeComponentPropSerialized> = {
@@ -125,6 +181,38 @@ describe('serializePropsForServer — link transformer', () => {
 
     expect(serializePropsForServer({ link: '/about-us' }, schemas)).toEqual({
       link: { uri: 'internal:/about-us', options: [] },
+    });
+  });
+
+  // Must stay in sync with \Drupal\canvas\TypedData\LinkUrl::getValue(): a
+  // value pushed by the CLI must be stored the same way as when authored in
+  // the Canvas UI. Every input is a valid `format: uri-reference` string.
+  it.each([
+    // Scheme-less, root-relative: `internal:` scheme.
+    ['/foo', 'internal:/foo'],
+    ['/foo?x=1#frag', 'internal:/foo?x=1#frag'],
+    ['/', 'internal:/'],
+    // Scheme-less, not root-relative: unchanged. `internal:` requires a
+    // leading slash, so `internal:foo` would be rejected by the server.
+    ['foo', 'foo'],
+    ['foo.html?x=1', 'foo.html?x=1'],
+    ['?x=1', '?x=1'],
+    ['#frag', '#frag'],
+    // Anything with a scheme: unchanged.
+    ['https://example.com/', 'https://example.com/'],
+    ['HTTPS://example.com/', 'HTTPS://example.com/'],
+    ['entity:node/1', 'entity:node/1'],
+    ['internal:/already', 'internal:/already'],
+    ['mailto:a@example.com', 'mailto:a@example.com'],
+    // Empty: unchanged.
+    ['', ''],
+  ])('normalizes %j to %j like LinkUrl::getValue()', (authored, stored) => {
+    const schemas: Record<string, CodeComponentPropSerialized> = {
+      link: { title: 'Link', type: 'string', format: 'uri-reference' },
+    };
+
+    expect(serializePropsForServer({ link: authored }, schemas)).toEqual({
+      link: { uri: stored, options: [] },
     });
   });
 
@@ -252,6 +340,60 @@ describe('serializeElementMapForServer', () => {
       },
     });
   });
+
+  it('serializes color props in elements to UUID refs', () => {
+    const colorMetadata: ComponentMetadata[] = [
+      {
+        name: 'Color Card',
+        machineName: 'color-card',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            accent: {
+              title: 'Accent',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+          },
+        },
+      },
+    ];
+    const elements: AuthoredSpecElementMap = {
+      node: {
+        type: 'js.color-card',
+        props: {
+          accent: 'canvas-color:baguette-legs',
+        },
+      },
+    };
+    const remoteColors = [
+      {
+        id: '88888888-8888-4888-8888-888888888888',
+        name: 'Baguette Legs',
+        cssVariable: '--baguette-legs',
+        value: {
+          colorSpace: 'srgb' as const,
+          components: [0, 0, 1],
+          alpha: null,
+          hex: '#0000ff',
+        },
+        weight: 0,
+      },
+    ];
+
+    expect(
+      serializeElementMapForServer(elements, colorMetadata, remoteColors),
+    ).toEqual({
+      node: {
+        type: 'js.color-card',
+        props: {
+          accent: 'canvas-color:88888888-8888-4888-8888-888888888888',
+        },
+      },
+    });
+  });
 });
 
 describe('getUnreconciledMedia', () => {
@@ -277,6 +419,29 @@ describe('getUnreconciledMedia', () => {
   it('rejects empty src', () => {
     const value = { src: '' };
     expect(getUnreconciledMedia(value, imageSchema)).toBeNull();
+  });
+
+  it('matches external document URLs with the document media type', () => {
+    const documentSchema = {
+      title: 'Document',
+      type: 'object' as const,
+      $ref: 'json-schema-definitions://canvas.module/document',
+    };
+    const value = { src: 'https://example.com/spec.pdf', filename: 'spec.pdf' };
+    expect(getUnreconciledMedia(value, documentSchema)).toEqual({
+      url: 'https://example.com/spec.pdf',
+      mediaType: 'document',
+    });
+  });
+
+  it('rejects relative document URLs', () => {
+    const documentSchema = {
+      title: 'Document',
+      type: 'object' as const,
+      $ref: 'json-schema-definitions://canvas.module/document',
+    };
+    const value = { src: '/ui/assets/documents/sample.pdf' };
+    expect(getUnreconciledMedia(value, documentSchema)).toBeNull();
   });
 });
 
@@ -330,5 +495,183 @@ describe('collectUnreconciledMediaProps', () => {
         mediaType: 'image',
       },
     ]);
+  });
+});
+
+describe('collectUnreconciledColorProps', () => {
+  it('flags color refs that do not exist on the remote brand kit', () => {
+    const colorMetadata: ComponentMetadata[] = [
+      {
+        name: 'Color Card',
+        machineName: 'color-card',
+        status: true,
+        required: [],
+        slots: {},
+        props: {
+          properties: {
+            accent: {
+              title: 'Accent',
+              type: 'string',
+              $ref: 'json-schema-definitions://canvas.module/color',
+            },
+          },
+        },
+      },
+    ];
+    const elements: AuthoredSpecElementMap = {
+      node: {
+        type: 'js.color-card',
+        props: {
+          accent: 'canvas-color:missing-color',
+        },
+      },
+    };
+
+    expect(collectUnreconciledColorProps(elements, colorMetadata, [])).toEqual([
+      {
+        elementId: 'node',
+        propName: 'accent',
+        key: 'missing-color',
+      },
+    ]);
+  });
+});
+
+describe('collapseColorPropsInElements', () => {
+  const colorMetadata: ComponentMetadata[] = [
+    {
+      name: 'Color Card',
+      machineName: 'color-card',
+      status: true,
+      required: [],
+      slots: {},
+      props: {
+        properties: {
+          accent: {
+            title: 'Accent',
+            type: 'string',
+            $ref: 'json-schema-definitions://canvas.module/color',
+          },
+          label: {
+            title: 'Label',
+            type: 'string',
+          },
+        },
+      },
+    },
+  ];
+
+  it('collapses a resolved brand kit color to a canvas-color token ref', () => {
+    const elements: AuthoredSpecElementMap = {
+      card: {
+        type: 'js.color-card',
+        props: {
+          accent: {
+            value: {
+              colorSpace: 'srgb',
+              components: [0.8, 0.1, 0.1],
+              hex: '#cc1a1a',
+            },
+            cssVariable: '--brand-red',
+          },
+        },
+      },
+    };
+
+    const result = collapseColorPropsInElements(elements, colorMetadata);
+    expect((result.card.props as Record<string, unknown>).accent).toBe(
+      'canvas-color:brand-red',
+    );
+  });
+
+  it('collapses a resolved free-pick color with no cssVariable to a hex string', () => {
+    const elements: AuthoredSpecElementMap = {
+      card: {
+        type: 'js.color-card',
+        props: {
+          accent: {
+            value: {
+              colorSpace: 'srgb',
+              components: [0.4, 0.78, 0.5],
+              hex: '#66c880',
+            },
+            cssVariable: null,
+          },
+        },
+      },
+    };
+
+    const result = collapseColorPropsInElements(elements, colorMetadata);
+    expect((result.card.props as Record<string, unknown>).accent).toBe(
+      '#66c880',
+    );
+  });
+
+  it('collapses a resolved color with alpha to a hex+alpha string', () => {
+    const elements: AuthoredSpecElementMap = {
+      card: {
+        type: 'js.color-card',
+        props: {
+          accent: {
+            value: {
+              colorSpace: 'srgb',
+              components: [0.4, 0.78, 0.5],
+              hex: '#66c880',
+              alpha: 0.5,
+            },
+            cssVariable: null,
+          },
+        },
+      },
+    };
+
+    const result = collapseColorPropsInElements(elements, colorMetadata);
+    // alpha 0.5 → Math.round(0.5 * 255) = 128 = 0x80
+    expect((result.card.props as Record<string, unknown>).accent).toBe(
+      '#66c88080',
+    );
+  });
+
+  it('passes through non-color props unchanged', () => {
+    const elements: AuthoredSpecElementMap = {
+      card: {
+        type: 'js.color-card',
+        props: {
+          label: 'Hello',
+          accent: {
+            value: {
+              colorSpace: 'srgb',
+              components: [0.8, 0.1, 0.1],
+              hex: '#cc1a1a',
+            },
+            cssVariable: '--brand-red',
+          },
+        },
+      },
+    };
+
+    const result = collapseColorPropsInElements(elements, colorMetadata);
+    expect((result.card.props as Record<string, unknown>).label).toBe('Hello');
+  });
+
+  it('passes through elements with no matching component metadata unchanged', () => {
+    const elements: AuthoredSpecElementMap = {
+      unknown: {
+        type: 'js.unknown-component',
+        props: {
+          accent: {
+            value: {
+              colorSpace: 'srgb',
+              components: [0, 0, 0],
+              hex: '#000000',
+            },
+            cssVariable: '--some-color',
+          },
+        },
+      },
+    };
+
+    const result = collapseColorPropsInElements(elements, colorMetadata);
+    expect(result).toBe(elements);
   });
 });

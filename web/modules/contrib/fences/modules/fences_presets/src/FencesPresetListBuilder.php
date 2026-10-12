@@ -35,4 +35,21 @@ final class FencesPresetListBuilder extends ConfigEntityListBuilder {
     return $row + parent::buildRow($entity);
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getDefaultOperations(EntityInterface $entity) {
+    /** @var \Drupal\Core\Config\Entity\ConfigEntityInterface $entity */
+    $operations = parent::getDefaultOperations($entity);
+    if (!$entity->hasLinkTemplate('duplicate-form')) {
+      return $operations;
+    }
+    $operations['duplicate'] = [
+      'title' => $this->t('Duplicate'),
+      'weight' => 1,
+      'url' => $this->ensureDestination($entity->toUrl('duplicate-form')),
+    ];
+    return $operations;
+  }
+
 }

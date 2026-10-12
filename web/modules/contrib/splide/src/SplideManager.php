@@ -2,7 +2,6 @@
 
 namespace Drupal\splide;
 
-use Drupal\blazy\Blazy;
 use Drupal\blazy\BlazyManagerBase;
 use Drupal\splide\Entity\Splide;
 
@@ -361,7 +360,7 @@ class SplideManager extends BlazyManagerBase implements SplideManagerInterface {
     $attributes = $this->toHashtag($build, 'attributes');
 
     if ($settings['display'] == 'main') {
-      Blazy::containerAttributes($attributes, $settings);
+      $this->containerAttributes($attributes, $settings);
     }
     return $attributes;
   }
@@ -430,9 +429,8 @@ class SplideManager extends BlazyManagerBase implements SplideManagerInterface {
    * Prepare settings for the known module features, not necessarily users'.
    */
   protected function prepareSettings(array &$element, array &$build): array {
-    $this->hashtag($build);
-    $this->hashtag($build, 'options');
-
+    // @todo remove $this->hashtag($build);.
+    // @todo remove $this->hashtag($build, 'options');.
     $settings = &$build['#settings'];
     $this->verifySafely($settings);
 

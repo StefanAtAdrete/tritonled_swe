@@ -3,16 +3,13 @@
  * Manages mouse events to allow users to reposition the bezier curve
  * control point by converting screen coordinates to flow coordinates.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseControlPointDragProps {
   id: string;
   edgeCenterX: number;
   edgeCenterY: number;
   isLocked: boolean;
-  hasCondition: boolean;
-  label: string | undefined | React.ReactNode;
-  controlOffset: { x: number; y: number };
   onEdgeUpdate?: (id: string, updates: { controlOffset: { x: number; y: number } }) => void;
 }
 
@@ -21,12 +18,14 @@ export function useControlPointDrag({
   edgeCenterX,
   edgeCenterY,
   isLocked,
-  hasCondition,
-  label,
-  controlOffset,
   onEdgeUpdate,
 }: UseControlPointDragProps) {
   const [isDragging, setIsDragging] = useState(false);
+
+  // Track the active document listeners so they can be removed if the component
+  // unmounts mid-drag (handleMouseUp would otherwise never fire).
+  const mouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const mouseUpRef = useRef<((e: MouseEvent) => void) | null>(null);
 
   const handleControlPointDrag = useCallback((event: React.MouseEvent) => {
     if (isLocked || !onEdgeUpdate) return;
@@ -52,9 +51,6 @@ export function useControlPointDrag({
       scale = parseFloat(transformMatch[3]);
     }
 
-    // Account for initial offset if condition label exists
-    const initialYOffset = hasCondition && label && (controlOffset.x === 0 && controlOffset.y === 0) ? -25 : 0;
-
     const handleMouseMove = (e: MouseEvent) => {
       // Get mouse position relative to the ReactFlow wrapper
       const rect = reactFlowWrapper.getBoundingClientRect();
@@ -68,7 +64,7 @@ export function useControlPointDrag({
       // Calculate offset from edge center
       const newOffset = {
         x: flowX - edgeCenterX,
-        y: flowY - edgeCenterY - initialYOffset
+        y: flowY - edgeCenterY
       };
 
       onEdgeUpdate(id, { controlOffset: newOffset });
@@ -78,11 +74,30 @@ export function useControlPointDrag({
       setIsDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      mouseMoveRef.current = null;
+      mouseUpRef.current = null;
     };
 
+    mouseMoveRef.current = handleMouseMove;
+    mouseUpRef.current = handleMouseUp;
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [id, edgeCenterX, edgeCenterY, isLocked, onEdgeUpdate, hasCondition, label, controlOffset]);
+  }, [id, edgeCenterX, edgeCenterY, isLocked, onEdgeUpdate]);
+
+  // Remove any still-attached document listeners on unmount (e.g. if the
+  // component unmounts while a drag is in progress).
+  useEffect(() => {
+    return () => {
+      if (mouseMoveRef.current) {
+        document.removeEventListener('mousemove', mouseMoveRef.current);
+        mouseMoveRef.current = null;
+      }
+      if (mouseUpRef.current) {
+        document.removeEventListener('mouseup', mouseUpRef.current);
+        mouseUpRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     isDragging,

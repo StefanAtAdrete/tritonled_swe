@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Hook;
 
+use Drupal\canvas\Entity\Page;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -13,10 +14,11 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\canvas\Entity\Page;
 use Drupal\pathauto\PathautoItem;
 use Drupal\pathauto\PathautoState;
 
@@ -123,10 +125,37 @@ final class PageHooks {
   #[Hook('canvas_page_presave')]
   public function ensurePathautoSkipped(Page $page): void {
     if ($this->moduleHandler->moduleExists('pathauto')) {
-      $pathauto_item = $page->get('path')->first();
+      // Path items with an explicit empty alias are filtered out as empty
+      // before presave hooks run, so pages without an alias need a fresh item
+      // here.
+      // @see \Drupal\Core\Entity\ContentEntityStorageBase::invokeHook()
+      // @see \Drupal\Core\Field\FieldItemList::preSave()
+      $pathauto_item = $page->get('path')->first() ?? $page->get('path')->appendItem();
       \assert($pathauto_item instanceof PathautoItem);
       $pathauto_item->set('pathauto', PathautoState::SKIP);
     }
+  }
+
+  /**
+   * Implements hook_field_widget_single_element_WIDGET_TYPE_form_alter().
+   *
+   * An empty `page_variant` selection means "follow the site default": the
+   * page re-resolves whenever the default changes, instead of pinning the
+   * current default's id. Present that as "Site default" instead of the
+   * widget's "- None -".
+   *
+   * @see \Drupal\canvas\PageVariantResolver
+   */
+  #[Hook('field_widget_single_element_options_select_form_alter')]
+  public static function pageVariantSelectionEmptyOption(array &$element, FormStateInterface $form_state, array $context): void {
+    $items = $context['items'] ?? NULL;
+    if (!$items instanceof FieldItemListInterface
+      || $items->getEntity()->getEntityTypeId() !== Page::ENTITY_TYPE_ID
+      || $items->getFieldDefinition()->getName() !== 'page_variant'
+      || !isset($element['#options']['_none'])) {
+      return;
+    }
+    $element['#options']['_none'] = new TranslatableMarkup('Site default');
   }
 
   /**

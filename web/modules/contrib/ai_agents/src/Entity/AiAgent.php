@@ -52,6 +52,7 @@ use Drupal\ai_agents\AiAgentInterface;
  *     "exclude_users_role",
  *     "structured_output_enabled",
  *     "structured_output_schema",
+ *     "guardrail_set",
  *     "hostname_filter_disabled",
  *   },
  * )
@@ -120,12 +121,12 @@ final class AiAgent extends ConfigEntityBase implements AiAgentInterface {
   /**
    * Is this an orchestration agent.
    */
-  protected bool $orchestration_agent;
+  protected ?bool $orchestration_agent = NULL;
 
   /**
    * Is this a triage agent.
    */
-  protected bool $triage_agent;
+  protected ?bool $triage_agent = NULL;
 
   /**
    * The max amount of loops.
@@ -158,8 +159,36 @@ final class AiAgent extends ConfigEntityBase implements AiAgentInterface {
   protected ?string $structured_output_schema = NULL;
 
   /**
+   * The guardrail set.
+   */
+  protected ?string $guardrail_set = NULL;
+
+  /**
    * The possibility to turn off hostname whitelisting.
    */
   protected ?bool $hostname_filter_disabled = NULL;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    parent::calculateDependencies();
+
+    $tool_definitions = \Drupal::service('plugin.manager.ai.function_calls')->getDefinitions();
+    foreach (array_keys($this->tools) as $tool_id) {
+      if (!isset($tool_definitions[$tool_id])) {
+        continue;
+      }
+
+      if (isset($tool_definitions[$tool_id]['provider'])) {
+        $this->addDependency('module', $tool_definitions[$tool_id]['provider']);
+      }
+      foreach ($tool_definitions[$tool_id]['module_dependencies'] ?? [] as $module) {
+        $this->addDependency('module', $module);
+      }
+    }
+
+    return $this;
+  }
 
 }

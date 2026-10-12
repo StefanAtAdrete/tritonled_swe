@@ -1,5 +1,12 @@
 <ruleset name="tool">
-  <rule ref="Drupal"/>
+  <rule ref="Drupal">
+    <!-- This project's issues are GitLab work items; drupal.org issue URLs
+      404, so deprecation pointers reference
+      https://git.drupalcode.org/project/tool/-/work_items/NNN instead of the
+      drupal.org URLs these sniffs require. -->
+    <exclude name="Drupal.Commenting.Deprecated.DeprecatedWrongSeeUrlFormat"/>
+    <exclude name="Drupal.Semantics.FunctionTriggerError.TriggerErrorSeeUrlFormat"/>
+  </rule>
   <rule ref="DrupalPractice"/>
   <arg name="extensions" value="engine,inc,info,install,module,php,profile,test,theme,yml"/>
 </ruleset>

@@ -6,16 +6,6 @@ namespace Drupal\canvas\Hook;
 
 use Drupal\canvas\JsonSchemaInterpreter\JsonSchemaObjectRef;
 use Drupal\canvas\JsonSchemaInterpreter\JsonSchemaStringFormat;
-use Drupal\canvas\PropExpressions\StructuredData\FieldObjectPropsExpression;
-use Drupal\canvas\Plugin\Field\FieldTypeOverride\ListStringItemOverride;
-use Drupal\canvas\PropExpressions\StructuredData\ReferencedBundleSpecificBranches;
-use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Hook\Attribute\Hook;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
-use Drupal\editor\EditorInterface;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\DateRangeItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\DateTimeItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\EntityReferenceItemOverride;
@@ -25,6 +15,7 @@ use Drupal\canvas\Plugin\Field\FieldTypeOverride\FloatItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\ImageItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\LinkItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\ListIntegerItemOverride;
+use Drupal\canvas\Plugin\Field\FieldTypeOverride\ListStringItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\StringItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\StringLongItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\TextItemOverride;
@@ -33,18 +24,25 @@ use Drupal\canvas\Plugin\Field\FieldTypeOverride\TextWithSummaryItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\UriItemOverride;
 use Drupal\canvas\Plugin\Field\FieldTypeOverride\UuidItemOverride;
 use Drupal\canvas\Plugin\Validation\Constraint\StringSemanticsConstraint;
+use Drupal\canvas\PropExpressions\StructuredData\FieldObjectPropsExpression;
 use Drupal\canvas\PropExpressions\StructuredData\FieldPropExpression;
 use Drupal\canvas\PropExpressions\StructuredData\FieldTypeObjectPropsExpression;
 use Drupal\canvas\PropExpressions\StructuredData\FieldTypePropExpression;
+use Drupal\canvas\PropExpressions\StructuredData\ReferencedBundleSpecificBranches;
 use Drupal\canvas\PropExpressions\StructuredData\ReferenceFieldPropExpression;
 use Drupal\canvas\PropExpressions\StructuredData\ReferenceFieldTypePropExpression;
 use Drupal\canvas\PropShape\CandidateStorablePropShape;
+use Drupal\canvas\ShapeMatcher\MediaSourceObjectShapes;
 use Drupal\canvas\TypedData\BetterEntityDataDefinition;
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
+use Drupal\editor\EditorInterface;
 use Drupal\filter\FilterFormatInterface;
-use Drupal\media\Entity\MediaType;
 use Drupal\media\MediaTypeInterface;
-use Drupal\media\Plugin\media\Source\Image;
-use Drupal\media\Plugin\media\Source\VideoFile;
 use Symfony\Component\Validator\Constraints\Hostname;
 use Symfony\Component\Validator\Constraints\Ip;
 
@@ -56,13 +54,6 @@ use Symfony\Component\Validator\Constraints\Ip;
  * @see docs/shape-matching-into-field-types.md, section 3.1.2.b
  */
 class ShapeMatchingHooks {
-
-  const SCHEMA_TO_MEDIA_SOURCE = [
-    // @see \Drupal\media\Plugin\media\Source\Image
-    JsonSchemaObjectRef::Image->value => Image::class,
-    // @see \Drupal\media\Plugin\media\Source\VideoFile
-    JsonSchemaObjectRef::Video->value => VideoFile::class,
-  ];
 
   /**
    * Implements hook_validation_constraint_alter().
@@ -125,9 +116,6 @@ class ShapeMatchingHooks {
         $info[$plugin_id]['class'] = $class;
       }
     }
-
-    // @todo Remove this forward port of https://www.drupal.org/project/drupal/issues/3521088 once Canvas requires Drupal >=11.3
-    $info['changed']['constraints'] = $info['created']['constraints'] = $info['timestamp']['constraints'];
   }
 
   /**
@@ -290,7 +278,7 @@ class ShapeMatchingHooks {
       // changes, this hook should be called again (for this shape).
       $storable_prop_shape->addCacheTags(['config:media_type_list']);
 
-      $media_types = self::getMediaTypesForSource(Image::class);
+      $media_types = MediaSourceObjectShapes::getMediaTypesForSchemaObject(JsonSchemaObjectRef::Image);
       if (!empty($media_types)) {
         $source_field_names = \array_map(
           // @phpstan-ignore method.nonObject
@@ -322,15 +310,15 @@ class ShapeMatchingHooks {
 
     if ($storable_prop_shape->shape->schema['type'] === 'object' &&
       isset($storable_prop_shape->shape->schema['$ref']) &&
-      \array_key_exists($storable_prop_shape->shape->schema['$ref'], self::SCHEMA_TO_MEDIA_SOURCE)
+      \array_key_exists($storable_prop_shape->shape->schema['$ref'], MediaSourceObjectShapes::SCHEMA_TO_MEDIA_SOURCE)
     ) {
       // This alter hook won't have any effect unless MediaTypes exist that use
       // a particular MediaSource plugin. So, whenever the list of MediaTypes
       // changes, this hook should be called again (for this shape).
       $storable_prop_shape->addCacheTags(['config:media_type_list']);
 
-      $media_source_class = self::SCHEMA_TO_MEDIA_SOURCE[$storable_prop_shape->shape->schema['$ref']];
-      $media_types = self::getMediaTypesForSource($media_source_class);
+      $media_source_class = MediaSourceObjectShapes::SCHEMA_TO_MEDIA_SOURCE[$storable_prop_shape->shape->schema['$ref']];
+      $media_types = MediaSourceObjectShapes::getMediaTypesForSchemaObject(JsonSchemaObjectRef::from($storable_prop_shape->shape->schema['$ref']));
 
       // For each media type (i.e. bundle), create a "branch" of this prop
       // expression that specifically targets the source field of the media
@@ -340,13 +328,16 @@ class ShapeMatchingHooks {
       if (!empty($media_types)) {
         $branches = [];
         foreach ($media_types as $media_type_id => $media_type) {
-          $source_field_name = $media_type->getSource()->getSourceFieldDefinition($media_type)->getName();
+          $source_field_definition = $media_type->getSource()->getSourceFieldDefinition($media_type);
+          // Loaded media types always have a configured source field.
+          \assert($source_field_definition !== NULL);
+          $source_field_name = $source_field_definition->getName();
           $media_entity_type_and_bundle = BetterEntityDataDefinition::create('media', $media_type_id);
           $branches["entity:media:$media_type_id"] = new FieldObjectPropsExpression(
             entityType: $media_entity_type_and_bundle,
             fieldName: $source_field_name,
             delta: NULL,
-            objectPropsToFieldProps: self::getObjectProps($media_source_class, $media_entity_type_and_bundle, $source_field_name),
+            objectPropsToFieldProps: MediaSourceObjectShapes::getObjectProps($media_source_class, $media_entity_type_and_bundle, $source_field_name),
           );
         }
         // Comply with the order requirements of
@@ -401,60 +392,6 @@ class ShapeMatchingHooks {
       $storable_prop_shape->fieldStorageSettings = ['datetime_type' => DateTimeItem::DATETIME_TYPE_DATE];
       $storable_prop_shape->fieldWidget = 'daterange_default';
     }
-  }
-
-  /**
-   * @param class-string $media_source_class
-   *
-   * @return array
-   */
-  private static function getMediaTypesForSource(string $media_source_class) : array {
-    // Allow all MediaTypes that use the "image" MediaSource, for example.
-    // @see \Drupal\media\Plugin\media\Source\Image
-    $media_types = array_filter(
-      MediaType::loadMultiple(),
-      fn (MediaTypeInterface $type): bool => is_a($type->getSource(), $media_source_class)
-    );
-    ksort($media_types);
-    $media_type_ids = \array_map(
-    // @phpstan-ignore-next-line
-      fn (MediaTypeInterface $type): string => $type->id(),
-      $media_types
-    );
-    return array_combine($media_type_ids, $media_types);
-  }
-
-  /**
-   * Returns FieldObjectProp for the given MediaSource.
-   *
-   * @param class-string $media_source_class
-   *   A MediaSource plugin class.
-   * @param \Drupal\canvas\TypedData\BetterEntityDataDefinition $media_entity_type_and_bundle
-   * @param string $source_field_name
-   *
-   * @return non-empty-array<string, \Drupal\canvas\PropExpressions\StructuredData\FieldPropExpression|\Drupal\canvas\PropExpressions\StructuredData\ReferenceFieldPropExpression>
-   */
-  protected static function getObjectProps(string $media_source_class, BetterEntityDataDefinition $media_entity_type_and_bundle, string $source_field_name): array {
-    return match ($media_source_class) {
-      Image::class => [
-        // TRICKY: Additional computed property on image fields added by
-        // Drupal Canvas.
-        // @see \Drupal\canvas\Plugin\Field\FieldTypeOverride\ImageItemOverride
-        // @phpcs:disable Drupal.Files.LineLength.TooLong
-        'src' => new FieldPropExpression($media_entity_type_and_bundle, $source_field_name, \NULL, 'src_with_alternate_widths'),
-        // @phpcs:enable
-        'alt' => new FieldPropExpression($media_entity_type_and_bundle, $source_field_name, \NULL, 'alt'),
-        'width' => new FieldPropExpression($media_entity_type_and_bundle, $source_field_name, \NULL, 'width'),
-        'height' => new FieldPropExpression($media_entity_type_and_bundle, $source_field_name, \NULL, 'height'),
-      ],
-      VideoFile::class => [
-        'src' => new ReferenceFieldPropExpression(
-          new FieldPropExpression($media_entity_type_and_bundle, $source_field_name, \NULL, 'entity'),
-          new FieldPropExpression(BetterEntityDataDefinition::create('file'), 'uri', \NULL, 'url')
-        ),
-      ],
-      default => throw new \InvalidArgumentException(\sprintf('%s is not a supported Media Source class for shape matching.', $media_source_class)),
-    };
   }
 
 }

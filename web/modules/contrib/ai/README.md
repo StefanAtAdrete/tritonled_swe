@@ -25,4 +25,3 @@ build your own local version of the documentation please follow these steps:
     mkdocs serve
     ```
 3. Open `http://localhost:8000` in your browser
-

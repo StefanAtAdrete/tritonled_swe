@@ -3,12 +3,14 @@
 namespace Drupal\Tests\photoswipe_dynamic_caption\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests photoswipe_dynamic_caption_requirements().
- *
- * @group photoswipe
  */
+#[Group('photoswipe')]
+#[RunTestsInSeparateProcesses]
 class RequirementsTest extends KernelTestBase {
 
   /**

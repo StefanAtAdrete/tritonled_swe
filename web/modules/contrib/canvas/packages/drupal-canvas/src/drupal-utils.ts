@@ -1,3 +1,11 @@
+import { assertLegacyRuntime } from './migration.js';
+
+export type {
+  CanvasContext,
+  PageContext,
+  SiteContext,
+} from './context-types.js';
+
 interface Linkset {
   linkset: LinksetItem[];
 }
@@ -62,30 +70,59 @@ export function sortMenu(linkset: Linkset) {
   return menu;
 }
 
-interface BreadcrumbLink {
+export interface BreadcrumbLink {
   key: string;
   text: string;
   url: string;
 }
 
-interface EntityMetadata {
+export interface EntityMetadata {
   bundle: string;
   entityTypeId: string;
   uuid: string;
+  // The language requested via the URL (the negotiated content language).
+  requestedLanguage: string;
+  // The language actually rendered. This can differ from `requestedLanguage` as
+  // the default translation is used when the requested language is unavailable.
+  renderedLanguage: string;
+  /**
+   * All enabled site languages for building a language switcher.
+   *
+   * Includes default and untranslated languages
+   * (`translationAvailable: false`). Untranslated entries still include a URL
+   * that resolves to the fallback translation. Empty when the entity type does
+   * not support translation or the site is monolingual.
+   */
+  translations: TranslationMetadata[];
 }
 
-interface PageData {
+export interface TranslationMetadata {
+  langcode: string;
+  // The language name in the current display language (e.g. "German").
+  name: string;
+  // The language's own native name (e.g. "Deutsch").
+  nativeName: string;
+  url: string;
+  // Whether the entity has a translation in this language that the current
+  // user may view.
+  translationAvailable: boolean;
+  // Whether this is the requested language (the URL/content language), even
+  // when its content falls back to the default translation.
+  current: boolean;
+}
+
+export interface PageData {
   pageTitle: string;
   breadcrumbs: Array<BreadcrumbLink>;
   mainEntity: EntityMetadata | null;
 }
 
-interface ThemeAssets {
+export interface ThemeAssets {
   logo: { url: string };
   favicon: { url: string; mimeType: string };
 }
 
-interface SiteData {
+export interface SiteData {
   branding: {
     homeUrl: string;
     siteName: string;
@@ -95,13 +132,24 @@ interface SiteData {
   themeAssets: ThemeAssets;
 }
 
+/**
+ * Reads the current page data from `drupalSettings`.
+ *
+ * Supported in Drupal-rendered Code Components and Canvas Workbench previews
+ * only; elsewhere it throws an actionable migration error.
+ *
+ * @deprecated Use `usePageContext()` in React Code Components, or read
+ *   `page.context.page` from the Headless SDK's page response outside
+ *   components.
+ */
 export const getPageData = (): PageData => {
+  assertLegacyRuntime('getPageData()');
   const pageData = {
-    pageTitle: window.drupalSettings?.canvasData?.v0?.pageTitle || '',
-    breadcrumbs: window.drupalSettings?.canvasData?.v0?.breadcrumbs || [],
-    mainEntity: window.drupalSettings?.canvasData?.v0?.mainEntity || null,
+    pageTitle: globalThis?.drupalSettings?.canvasData?.v0?.pageTitle || '',
+    breadcrumbs: globalThis?.drupalSettings?.canvasData?.v0?.breadcrumbs || [],
+    mainEntity: globalThis?.drupalSettings?.canvasData?.v0?.mainEntity || null,
   };
-  window.parent.postMessage({
+  globalThis?.window?.parent.postMessage({
     type: '_canvas_useswr_data_fetch',
     id: 'getPageData()',
     data: pageData,
@@ -109,20 +157,31 @@ export const getPageData = (): PageData => {
   return pageData;
 };
 
+/**
+ * Reads the site data from `drupalSettings`.
+ *
+ * Supported in Drupal-rendered Code Components and Canvas Workbench previews
+ * only; elsewhere it throws an actionable migration error.
+ *
+ * @deprecated Use `useSiteContext()` in React Code Components, or read
+ *   `page.context.site` from the Headless SDK's page response outside
+ *   components.
+ */
 export const getSiteData = (): SiteData => {
+  assertLegacyRuntime('getSiteData()');
   const siteData = {
-    branding: window.drupalSettings?.canvasData?.v0?.branding || {
+    branding: globalThis?.drupalSettings?.canvasData?.v0?.branding || {
       homeUrl: '',
       siteName: '',
       siteSlogan: '',
     },
-    baseUrl: window.drupalSettings?.canvasData?.v0?.baseUrl || '/',
-    themeAssets: window.drupalSettings?.canvasData?.v0?.themeAssets || {
+    baseUrl: globalThis?.drupalSettings?.canvasData?.v0?.baseUrl || '/',
+    themeAssets: globalThis?.drupalSettings?.canvasData?.v0?.themeAssets || {
       logo: { url: '' },
       favicon: { url: '', mimeType: '' },
     },
   };
-  window.parent.postMessage({
+  globalThis?.window?.parent.postMessage({
     type: '_canvas_useswr_data_fetch',
     id: 'getSiteData()',
     data: siteData,

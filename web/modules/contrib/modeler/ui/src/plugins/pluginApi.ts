@@ -24,7 +24,6 @@ import { useGraphStore } from '../store/useGraphStore';
 import { useSelectionStore } from '../store/useSelectionStore';
 import { useModelStore } from '../store/useModelStore';
 import { useUISettingsStore } from '../store/useUISettingsStore';
-import { useViewportStore } from '../store/useViewportStore';
 import { useComponentStore } from '../store/useComponentStore';
 import { useContextStore } from '../store/useContextStore';
 import { useFilterStore } from '../store/useFilterStore';
@@ -32,6 +31,7 @@ import { useLabelStore } from '../store/useLabelStore';
 import { useHistoryStore } from '../store/useHistoryStore';
 import { useErrorStore } from '../store/useErrorStore';
 import type { StoreNode as Node, StoreEdge as Edge } from '../types/settings';
+import { routeParallelEdge } from '../utils/parallelEdgeRouter';
 import type {
   ModelerPluginApi,
   PluginNode,
@@ -58,8 +58,15 @@ import type {
 } from '../types/pluginApi';
 import { resolveNodeType } from '../utils/componentUtils';
 import { generateNodeId, generateEdgeId } from '../utils/clipboardUtils';
-import { LAYOUT, NODE_DIMENSIONS } from '../constants/dimensions';
-import { findFreePosition } from '../utils/positionUtils';
+import { NODE_DIMENSIONS } from '../constants/dimensions';
+import {
+  applyFlowShifts,
+  buildConditionInsertion,
+  computeNewEventPosition,
+  computeSuccessorPosition,
+  isConditionNode,
+  placeChainOnEdge,
+} from '../utils/incrementalLayout';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -73,6 +80,26 @@ function deepClone<T>(value: T): T {
   } catch {
     return JSON.parse(JSON.stringify(value));
   }
+}
+
+/**
+ * Collision-avoidance footprint for a node of the given resolved type.
+ *
+ * Gateways render as compact cards, so feeding the standard card height
+ * into the placement primitives would reserve more vertical room than a
+ * gateway actually occupies.  Every other type uses the uniform card box.
+ */
+function nodeFootprint(nodeType: string): { width: number; height: number } {
+  if (nodeType === 'gateway') {
+    return { width: NODE_DIMENSIONS.CARD_WIDTH, height: NODE_DIMENSIONS.GATEWAY_HEIGHT };
+  }
+  if (nodeType === 'start') {
+    return {
+      width: NODE_DIMENSIONS.START_NODE_WIDTH,
+      height: NODE_DIMENSIONS.START_NODE_HEIGHT,
+    };
+  }
+  return { width: NODE_DIMENSIONS.CARD_WIDTH, height: NODE_DIMENSIONS.CARD_HEIGHT };
 }
 
 /**
@@ -157,6 +184,34 @@ export function clearMutationHooks(): void {
   autoLayoutHook = null;
 }
 
+// ── Viewport hooks ───────────────────────────────────────────────────
+// Flow.tsx registers viewport action callbacks so the plugin API can
+// pan/zoom without importing React hooks directly.
+
+type ViewportHookFocusNode = (nodeId: string) => void;
+type ViewportHookFitView = () => void;
+let viewportFocusNodeHook: ViewportHookFocusNode | null = null;
+let viewportFitViewHook: ViewportHookFitView | null = null;
+
+/**
+ * Register viewport action callbacks.  Called once by Flow.tsx on mount.
+ */
+export function setViewportHooks(hooks: {
+  focusNode: ViewportHookFocusNode;
+  fitView: ViewportHookFitView;
+}): void {
+  viewportFocusNodeHook = hooks.focusNode;
+  viewportFitViewHook = hooks.fitView;
+}
+
+/**
+ * Clear viewport hooks (called on unmount).
+ */
+export function clearViewportHooks(): void {
+  viewportFocusNodeHook = null;
+  viewportFitViewHook = null;
+}
+
 /**
  * Save a history snapshot before a mutation.
  */
@@ -208,6 +263,28 @@ export function createPluginApi(): ModelerPluginApi {
     getSelectedEdge(): PluginEdge | null {
       const edge = useSelectionStore.getState().selectedEdge;
       return edge ? toPluginEdge(edge) : null;
+    },
+
+    getSelectedNodes(): PluginNode[] {
+      const { selectedNodes } = useSelectionStore.getState();
+      const { nodes } = useGraphStore.getState();
+      const result: PluginNode[] = [];
+      for (const nodeId of selectedNodes) {
+        const node = nodes.find((candidate) => candidate.id === nodeId);
+        if (node) result.push(toPluginNode(node));
+      }
+      return result;
+    },
+
+    getSelectedEdges(): PluginEdge[] {
+      const { selectedEdges } = useSelectionStore.getState();
+      const { edges } = useGraphStore.getState();
+      const result: PluginEdge[] = [];
+      for (const edgeId of selectedEdges) {
+        const edge = edges.find((candidate) => candidate.id === edgeId);
+        if (edge) result.push(toPluginEdge(edge));
+      }
+      return result;
     },
 
     getModelData(): PluginModelData | null {
@@ -285,14 +362,31 @@ export function createPluginApi(): ModelerPluginApi {
     onSelectionChange(callback: SelectionChangeCallback): Unsubscribe {
       let prevNodeId: string | null = null;
       let prevEdgeId: string | null = null;
+      let prevSelectedNodeIds: string[] = [];
+      let prevSelectedEdgeIds: string[] = [];
 
       return useSelectionStore.subscribe((state) => {
         const nodeId = state.selectedNode?.id ?? null;
         const edgeId = state.selectedEdge?.id ?? null;
+        // Element comparison preserves selection order without allocating a
+        // joined key or risking delimiter collisions on every notification.
+        const selectedNodesChanged =
+          state.selectedNodes.length !== prevSelectedNodeIds.length ||
+          state.selectedNodes.some((id, index) => id !== prevSelectedNodeIds[index]);
+        const selectedEdgesChanged =
+          state.selectedEdges.length !== prevSelectedEdgeIds.length ||
+          state.selectedEdges.some((id, index) => id !== prevSelectedEdgeIds[index]);
 
-        if (nodeId !== prevNodeId || edgeId !== prevEdgeId) {
+        if (
+          nodeId !== prevNodeId ||
+          edgeId !== prevEdgeId ||
+          selectedNodesChanged ||
+          selectedEdgesChanged
+        ) {
           prevNodeId = nodeId;
           prevEdgeId = edgeId;
+          prevSelectedNodeIds = [...state.selectedNodes];
+          prevSelectedEdgeIds = [...state.selectedEdges];
           try {
             callback(
               state.selectedNode ? toPluginNode(state.selectedNode) : null,
@@ -445,53 +539,59 @@ export function createPluginApi(): ModelerPluginApi {
 
     focusNode(nodeId: string): void {
       const node = useGraphStore.getState().nodes.find((n) => n.id === nodeId);
-      if (node) {
-        useViewportStore.getState().setViewportTarget({
-          type: 'center',
-          nodeId,
-          options: { duration: 800 },
-        });
+      if (node && viewportFocusNodeHook) {
+        viewportFocusNodeHook(nodeId);
       }
     },
 
     fitView(): void {
-      useViewportStore.getState().setViewportTarget({
-        type: 'fit',
-        options: { padding: 0.1, duration: 800 },
-      });
+      if (viewportFitViewHook) {
+        viewportFitViewHook();
+      }
     },
 
     // ── Node mutations ──────────────────────────────────────────────
     addNode(descriptor: AddNodeDescriptor): string | null {
       if (currentReadOnly) return null;
 
+      const nodeType = resolveNodeType(descriptor.componentType);
+      const { nodes, edges } = useGraphStore.getState();
+
+      // Resolve placement BEFORE any mutation so that a rejected descriptor
+      // (unknown sourceNodeId) leaves no history entry behind — the same
+      // validate-then-mutate ordering addEdge() uses for unknown endpoints.
+      let position = descriptor.position;
+      let shiftNodeIds: Set<string> | null = null;
+      let shiftAmount = 0;
+
+      if (!position) {
+        if (descriptor.sourceNodeId !== undefined) {
+          // Successor placement. Reject an unknown parent rather than lean on
+          // computeSuccessorPosition's silent fallback, which would strand the
+          // node at the legacy default corner with no hint anything went wrong.
+          if (!nodes.some((n) => n.id === descriptor.sourceNodeId)) return null;
+
+          // No siblingIndex / totalSiblings: the plugin API adds one node per
+          // call and has no fan-out context, exactly like quick-add's
+          // addSuccessorNode. Passing neither keeps both paths byte-identical.
+          const placement = computeSuccessorPosition({
+            nodes,
+            edges,
+            sourceNodeId: descriptor.sourceNodeId,
+          });
+          position = placement.position;
+          shiftNodeIds = placement.shiftNodeIds;
+          shiftAmount = placement.shiftAmount;
+        } else {
+          // Fresh event flow, to the right of everything already on canvas.
+          position = computeNewEventPosition({ nodes, ...nodeFootprint(nodeType) });
+        }
+      }
+
       beforeMutation();
 
-      const nodeType = resolveNodeType(descriptor.componentType);
       const label = descriptor.label || descriptor.plugin.split('.').pop() || 'New Node';
       const newNodeId = generateNodeId(label, nodeType);
-
-      // Determine position: use provided or find an automatic one.
-      let position = descriptor.position;
-      if (!position) {
-        const nodes = useGraphStore.getState().nodes;
-        let candidateX: number = LAYOUT.DEFAULT_POSITION_X;
-        let candidateY: number = LAYOUT.DEFAULT_POSITION_Y;
-
-        if (nodes.length > 0) {
-          const maxX = Math.max(...nodes.map((n) => n.position.x));
-          const minY = Math.min(...nodes.map((n) => n.position.y));
-          candidateX = maxX + LAYOUT.NODE_SPACING_X;
-          candidateY = minY;
-        }
-
-        position = findFreePosition(
-          { x: candidateX, y: candidateY },
-          nodes,
-          NODE_DIMENSIONS.DEFAULT_WIDTH,
-          NODE_DIMENSIONS.DEFAULT_HEIGHT,
-        );
-      }
 
       const newNode: Node = {
         id: newNodeId,
@@ -506,6 +606,18 @@ export function createPluginApi(): ModelerPluginApi {
           documentationUrl: descriptor.documentationUrl,
         },
       };
+
+      // Make horizontal room by pushing neighboring flows aside, if the
+      // placement primitive asked for it.  Unlike quick-add we do NOT
+      // deselect: quick-add deselects because it immediately selects the
+      // node the user just asked for, whereas a plugin adding a node in the
+      // background must not silently clobber the user's current selection.
+      if (shiftNodeIds && shiftAmount > 0) {
+        const ids = shiftNodeIds;
+        useGraphStore
+          .getState()
+          .setNodes((prev) => applyFlowShifts(prev, ids, shiftAmount, { deselectAll: false }));
+      }
 
       useGraphStore.getState().addNode(newNode);
       afterMutation();
@@ -575,7 +687,7 @@ export function createPluginApi(): ModelerPluginApi {
     addEdge(sourceNodeId: string, targetNodeId: string): string | null {
       if (currentReadOnly) return null;
 
-      const { nodes } = useGraphStore.getState();
+      const { nodes, edges } = useGraphStore.getState();
       const sourceExists = nodes.some((n) => n.id === sourceNodeId);
       const targetExists = nodes.some((n) => n.id === targetNodeId);
       if (!sourceExists || !targetExists) return null;
@@ -591,7 +703,41 @@ export function createPluginApi(): ModelerPluginApi {
         data: {},
       };
 
-      useGraphStore.getState().addEdge(newEdge);
+      // Route around any existing connection between the same endpoints,
+      // mirroring the behavior of user-drag-to-connect (onConnect). The
+      // router seeds controlOffset on the new edge and may rebalance
+      // existing siblings whose offsets are still at the default zero.
+      const route = routeParallelEdge({
+        newEdge,
+        edges: [...edges, newEdge],
+        nodes,
+      });
+
+      const offsetUpdates = new Map<string, { x: number; y: number }>();
+      for (const update of route.updates) {
+        offsetUpdates.set(update.edgeId, update.controlOffset);
+      }
+      const newEdgeOffset = offsetUpdates.get(newEdgeId);
+      if (newEdgeOffset) {
+        newEdge.data = { ...newEdge.data, controlOffset: newEdgeOffset };
+        offsetUpdates.delete(newEdgeId);
+      }
+
+      // Apply offset updates to existing siblings, then append the new edge.
+      const store = useGraphStore.getState();
+      if (offsetUpdates.size > 0) {
+        store.setEdges((prev) =>
+          prev.map((edge) => {
+            const offset = offsetUpdates.get(edge.id);
+            if (!offset) return edge;
+            return {
+              ...edge,
+              data: { ...(edge.data || {}), controlOffset: offset },
+            };
+          }),
+        );
+      }
+      store.addEdge(newEdge);
       afterMutation();
       return newEdgeId;
     },
@@ -639,52 +785,158 @@ export function createPluginApi(): ModelerPluginApi {
       return true;
     },
 
+    /**
+     * Insert a condition NODE on an existing edge.
+     *
+     * Conditions are first-class nodes (issue #3589093).  Rather than
+     * mutating the edge (the old model, which only became a node after a
+     * reload), this splits the target edge into source→condNode and
+     * condNode→target — mirroring `handleAddCondition` in
+     * `src/hooks/useNodeEdgeActions.ts`, the canonical implementation.
+     *
+     * The public signature and boolean contract are unchanged: `edgeId`
+     * still identifies the edge to attach the condition to.  Returns
+     * `false` when the edge is missing or the modeler is read-only.
+     */
     setCondition(edgeId: string, condition: SetConditionDescriptor): boolean {
       if (currentReadOnly) return false;
 
-      const { edges } = useGraphStore.getState();
+      const { nodes, edges } = useGraphStore.getState();
       const edge = edges.find((e) => e.id === edgeId);
       if (!edge) return false;
 
       beforeMutation();
 
-      const conditionLabel = condition.label || condition.plugin.split('.').pop() || condition.plugin;
+      const sourceNodeId = edge.source;
+      const targetNodeId = edge.target;
 
-      useGraphStore.getState().updateEdge(edgeId, {
+      const conditionLabel = condition.label || condition.plugin.split('.').pop() || condition.plugin;
+      const newNodeId = generateNodeId(conditionLabel, 'condition');
+
+      const newNode: Node = {
+        id: newNodeId,
         type: 'condition',
-        label: conditionLabel,
+        // Temporary position — placeChainOnEdge will replace it.
+        position: { x: 0, y: 0 },
         data: {
-          ...(edge.data || {}),
-          condition: condition.plugin,
-          conditionLabel,
-          conditionConfiguration: condition.configuration || {},
+          label: conditionLabel,
+          plugin: condition.plugin,
+          configuration: condition.configuration || {},
+          // New condition — export mints a UUID when conditionId is empty.
+          conditionId: '',
+          componentType: 5,
+          __isConditionNode: true,
         },
+      };
+
+      // Enforce the "no two adjacent conditions" invariant (issue #3589093):
+      // route through a gateway when either end of the edge is a condition
+      // node, mirroring handleAddCondition in useNodeEdgeActions.
+      const sourceNode = nodes.find((n) => n.id === sourceNodeId);
+      const targetNode = nodes.find((n) => n.id === targetNodeId);
+      const { nodesToAdd, edgesToAdd } = buildConditionInsertion({
+        sourceNodeId,
+        targetNodeId,
+        conditionNode: newNode,
+        sourceIsCondition: isConditionNode(sourceNode),
+        targetIsCondition: isConditionNode(targetNode),
       });
+
+      const allEdges = [
+        ...edges.filter((e) => e.id !== edgeId),
+        ...edgesToAdd,
+      ];
+
+      const positionedNodes = placeChainOnEdge(
+        nodes,
+        allEdges,
+        nodesToAdd,
+        sourceNodeId,
+        targetNodeId,
+      );
+
+      const store = useGraphStore.getState();
+      store.setNodes(positionedNodes);
+      store.setEdges(allEdges);
 
       afterMutation();
       return true;
     },
 
+    /**
+     * Remove the condition associated with `edgeId`, collapsing the
+     * condition node back into a single plain edge (the inverse of
+     * `setCondition`).
+     *
+     * Conditions are nodes now, so the historic `edgeId` parameter is
+     * interpreted as follows (in order):
+     *   1. `edgeId` IS a condition node id → collapse that node.
+     *   2. `edgeId` is an edge pointing INTO or OUT OF a condition node →
+     *      collapse that adjacent condition node.
+     *
+     * Collapsing removes the condition node and its two split edges, then
+     * adds one plain `default` edge from the condition's predecessor to its
+     * successor.  Returns `false` when no condition can be resolved from
+     * `edgeId` or the modeler is read-only.
+     */
     removeCondition(edgeId: string): boolean {
       if (currentReadOnly) return false;
 
-      const { edges } = useGraphStore.getState();
-      const edge = edges.find((e) => e.id === edgeId);
-      if (!edge) return false;
+      const { nodes, edges } = useGraphStore.getState();
+
+      const isConditionNode = (id: string): boolean => {
+        const node = nodes.find((n) => n.id === id);
+        return !!node && (node.type === 'condition' || node.data?.__isConditionNode === true);
+      };
+
+      // Resolve the condition node id from the supplied identifier.
+      let condNodeId: string | null = null;
+      if (isConditionNode(edgeId)) {
+        condNodeId = edgeId;
+      } else {
+        const edge = edges.find((e) => e.id === edgeId);
+        if (edge) {
+          if (isConditionNode(edge.target)) {
+            condNodeId = edge.target;
+          } else if (isConditionNode(edge.source)) {
+            condNodeId = edge.source;
+          }
+        }
+      }
+
+      if (!condNodeId) return false;
+
+      // A condition node is created with exactly one inbound and one
+      // outbound edge.  Resolve them to reconnect predecessor → successor.
+      const inboundEdge = edges.find((e) => e.target === condNodeId);
+      const outboundEdge = edges.find((e) => e.source === condNodeId);
+      if (!inboundEdge || !outboundEdge) return false;
+
+      const predecessorId = inboundEdge.source;
+      const successorId = outboundEdge.target;
 
       beforeMutation();
 
-      useGraphStore.getState().updateEdge(edgeId, {
+      const reconnectEdge: Edge = {
+        id: generateEdgeId(predecessorId, successorId),
+        source: predecessorId,
+        target: successorId,
         type: 'default',
-        label: '',
-        data: {
-          ...(edge.data || {}),
-          condition: null,
-          conditionLabel: null,
-          conditionConfiguration: null,
-          annotation: null,
-        },
-      });
+        data: {},
+      };
+
+      const store = useGraphStore.getState();
+      store.setEdges((prev) => [
+        ...prev.filter((e) => e.source !== condNodeId && e.target !== condNodeId),
+        reconnectEdge,
+      ]);
+      store.setNodes((prev) => prev.filter((n) => n.id !== condNodeId));
+
+      // Clear selection if the collapsed condition node was selected.
+      const selection = useSelectionStore.getState();
+      if (selection.selectedNode?.id === condNodeId) {
+        selection.clearSelection();
+      }
 
       afterMutation();
       return true;

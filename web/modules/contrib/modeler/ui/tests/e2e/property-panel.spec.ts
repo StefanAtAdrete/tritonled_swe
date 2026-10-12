@@ -96,20 +96,23 @@ test.describe.skip('Workflow Modeler - Property Panel', () => {
       await expect(edgeLabelInput).toBeVisible();
     });
 
-    test('should show condition configuration for condition edges', async ({ page }) => {
-      // This test assumes condition edges exist or can be created
-      // Add a condition component first
-      await modeler.dragComponentToCanvas('Entity is New', 300, 300);
-      await page.waitForTimeout(500);
+    test('should show condition properties in the node panel for the promoted condition node', async ({ page }) => {
+      // Conditions are first-class NODES now (issue #3589093).  The loaded
+      // model's condition edge is promoted to a condition node (cond__edge_1),
+      // edited via the NODE properties panel like any other node.
+      await modeler.selectConditionNode('cond__edge_1');
+      await page.waitForTimeout(300);
 
-      // Select the condition edge that was created
-      const conditionEdge = page.locator('.react-flow__edge[data-edge-type="condition"]');
-      if (await conditionEdge.count() > 0) {
-        await conditionEdge.first().click();
+      await expect(modeler.propertyPanel).toBeVisible();
 
-        const conditionConfig = page.locator('[data-testid="condition-config"]');
-        await expect(conditionConfig).toBeVisible();
-      }
+      // The panel reports the element type as a Condition (the 'link' label).
+      const title = await modeler.getPropertyPanelTitle();
+      expect(title).toContain('Condition');
+
+      // The condition's label is shown in the node label input.
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible();
+      await expect(labelInput).toHaveValue('Entity is New');
     });
   });
 

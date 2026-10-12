@@ -2,3 +2,16 @@ michaellander
 marcus_johansson
 yautja_cetanu
 jurgenhaas
+tinfo
+trun
+tsearch
+nonexistentkeyword
+tlist
+invoker
+invokers
+agentic
+deriver
+flowdrop
+pymdownx
+superfences
+analyse

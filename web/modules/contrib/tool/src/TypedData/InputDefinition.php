@@ -6,30 +6,31 @@ use Drupal\Core\Config\Schema\SequenceDataDefinition;
 use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\Attribute\DataType;
+use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataDefinitionInterface;
-use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\TypedData\ListDataDefinitionInterface;
 use Drupal\Core\TypedData\MapDataDefinition;
 
 /**
- * Defines a context definition for input data types.
+ * Defines an input definition.
  */
-class InputDefinition extends ContextDefinition implements InputDefinitionInterface {
+class InputDefinition extends DataDefinition implements InputDefinitionInterface {
+  use ToolDataDefinitionTrait;
   use InputDefinitionTrait;
 
   /**
-   * Constructs a new context definition object.
+   * Constructs a new input definition object.
    *
    * @param string $data_type
    *   The required data type.
    * @param string|\Drupal\Core\StringTranslation\TranslatableMarkup $label
-   *   The label of this context definition for the UI.
+   *   The label of this input definition for the UI.
    * @param string|\Drupal\Core\StringTranslation\TranslatableMarkup $description
-   *   The description of this context definition for the UI.
+   *   The description of this input definition for the UI.
    * @param bool $required
-   *   Whether the context definition is required.
+   *   Whether the input definition is required.
    * @param bool $multiple
-   *   Whether the context definition is multivalue.
+   *   Whether the input definition is multivalue.
    * @param mixed $default_value
    *   The default value of this definition.
    * @param array<string, mixed> $constraints
@@ -38,25 +39,37 @@ class InputDefinition extends ContextDefinition implements InputDefinitionInterf
    * @param bool $locked
    *   Whether the input is locked, meaning it cannot be changed by context or
    *   configuration.
+   * @param array $examples
+   *   Illustrative example values emitted as the JSON Schema examples
+   *   keyword.
    */
-  public function __construct($data_type, string|TranslatableMarkup $label, string|TranslatableMarkup $description, $required = TRUE, $multiple = FALSE, $default_value = NULL, ?array $constraints = [], bool $locked = FALSE) {
-    parent::__construct($data_type, $label, $required, $multiple, $description, $default_value, $constraints);
+  public function __construct($data_type, string|TranslatableMarkup $label, string|TranslatableMarkup $description, $required = TRUE, $multiple = FALSE, $default_value = NULL, ?array $constraints = [], bool $locked = FALSE, array $examples = []) {
+    parent::__construct(['type' => $data_type]);
+    $this->initializeDefinition($label, $description, $required, $multiple, $default_value, $constraints ?? []);
     $this->isLocked = $locked;
+    $this->examples = $examples;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * Overridden because the inherited factory neither satisfies this class's
+   * required label and description nor returns an InputDefinitionInterface
+   * for entity data types (#3582962).
    */
-  public function getDataDefinition() {
-    $definition = parent::getDataDefinition();
-    // @todo Fix upstream.
-    if ($this->isMultiple() && $definition instanceof ListDataDefinitionInterface) {
-      $item_definition = $definition->getItemDefinition();
-      foreach ($this->getConstraints() as $name => $options) {
-        $item_definition->addConstraint($name, $options);
-      }
+  public static function create($data_type = 'any') {
+    if (str_starts_with($data_type, 'entity:')) {
+      // The entity branch cannot return static: EntityInputDefinition
+      // extends core's EntityDataDefinition, not this class - the same
+      // shape as core's ContextDefinition::create().
+      // @phpstan-ignore return.type
+      return EntityInputDefinition::create($data_type);
     }
-    return $definition;
+    return new static(
+      $data_type,
+      new TranslatableMarkup('Input'),
+      new TranslatableMarkup('A @type input.', ['@type' => $data_type]),
+    );
   }
 
   /**
@@ -78,17 +91,22 @@ class InputDefinition extends ContextDefinition implements InputDefinitionInterf
    *   The data definition.
    */
   public static function fromDataDefinition(DataDefinitionInterface $definition): InputDefinitionInterface {
-    $description = $definition->getDescription() ?? new TranslatableMarkup('The input definition for @label', ['@label' => $definition->getLabel()]);
     // @phpstan-ignore-next-line
     $definition_array = $definition->toArray();
     // @phpstan-ignore-next-line
     $is_config_based = $definition->getTypedDataManager() instanceof TypedConfigManagerInterface;
-    $data_type = $definition_array['type'];
+    // Plain typed-data definitions (notably list item definitions) may omit
+    // the 'type' key from toArray(); the definition object itself always
+    // knows its type.
+    $data_type = $definition_array['type'] ?? $definition->getDataType();
+    // Typed-data labels are optional, but input definitions require one.
+    $label = $definition->getLabel() ?? new TranslatableMarkup('@type input', ['@type' => $data_type]);
+    $description = $definition->getDescription() ?? new TranslatableMarkup('The input definition for @label', ['@label' => $label]);
 
     // @todo Allow hook_alter here to modify the created InputDefinition.
     if ($definition instanceof MapDataDefinition) {
       $map_definition = new MapInputDefinition(
-        label: $definition->getLabel(),
+        label: $label,
         description: $description,
         required: $definition->isRequired(),
       );
@@ -118,7 +136,7 @@ class InputDefinition extends ContextDefinition implements InputDefinitionInterf
       // @todo A sequence is more like a map with dynamic properties, but we
       // we don't have a DynamicMapInputDefinition option.
       $list_definition = new ListInputDefinition(
-        label: $definition->getLabel(),
+        label: $label,
         description: $description,
         required: $definition->isRequired(),
         default_value: $definition_array['default_value'] ?? NULL,
@@ -134,7 +152,7 @@ class InputDefinition extends ContextDefinition implements InputDefinitionInterf
     }
     elseif ($definition instanceof ListDataDefinitionInterface) {
       $list_definition = new ListInputDefinition(
-        label: $definition->getLabel(),
+        label: $label,
         description: $description,
         required: $definition->isRequired(),
         default_value: $definition_array['default_value'] ?? NULL,
@@ -161,7 +179,7 @@ class InputDefinition extends ContextDefinition implements InputDefinitionInterf
     $default_value = $is_config_based && isset($definition_array['default_value']) ? $definition_array['default_value'] : NULL;
     return new InputDefinition(
       data_type: $data_type,
-      label: $definition->getLabel(),
+      label: $label,
       description: $description,
       required: $definition->isRequired(),
       default_value: $default_value,

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ModelerPage } from './pages/ModelerPage';
-import { setupMocks, mockReplayEntries, mockTestReplayData } from './fixtures/mocks';
+import { setupMocks, mockReplayEntries, mockTestReplayData, mockOrphanConstraints } from './fixtures/mocks';
 
 test.describe('Workflow Modeler - Replay System', () => {
   let modeler: ModelerPage;
@@ -22,14 +22,48 @@ test.describe('Workflow Modeler - Replay System', () => {
       await expect(replayBtn).toBeVisible();
     });
 
-    test('should not show replay load button for action nodes', async () => {
-      // Select the action node (not an event)
+    test('should show the Review button ENABLED for an action node with a structural owning event (no session yet)', async () => {
+      // Unified panel (#3576269): with replay capability present, the Review
+      // button is ALWAYS rendered for footprint stability. Its enablement was
+      // intentionally broadened (see PropertyPanel.test.tsx) to
+      //   !isStartNode && reviewAvailable && (reviewableEventId || pickerOwningEventIdProp)
+      // i.e. the button is ENABLED whenever the node has EITHER an active review
+      // session OR merely a STRUCTURAL path to an owning event — even before any
+      // session exists. `action_1` is structurally owned by `event_1`
+      // (event_1 -> action_1 -> action_2 in the default mock model), so it is
+      // correctly ENABLED here. The button is only DISABLED for a node with NO
+      // owning event at all — see the dedicated orphan-node test below.
       await modeler.selectNode('action_1');
       await modeler.page.waitForTimeout(300);
 
-      // The replay load button should NOT be visible
       const replayBtn = modeler.getReplayLoadButton();
-      await expect(replayBtn).not.toBeVisible();
+      await expect(replayBtn).toBeVisible();
+      await expect(replayBtn).toBeEnabled();
+    });
+
+    test('should show the Review button DISABLED for an orphan action node with NO owning event', async ({ page }) => {
+      // This preserves coverage for the true "not an event flow" case that
+      // `action_1` no longer represents: a genuinely DISCONNECTED action node
+      // with no edges to/from any event has no structural owning event and no
+      // review session, so `reviewableEventId` and `pickerOwningEventIdProp` are
+      // both empty and the Review button is DISABLED.
+      //
+      // The default mock model has no orphaned node, and adding one to the
+      // shared model would break the exact node/edge count assertions in
+      // modeler.spec.ts ("should display existing nodes/edges from model"). So
+      // this test swaps in an isolated single-test model (mockOrphanModel) via
+      // the `orphanNode` setupMocks flag — mirroring how the condition-reuse
+      // tests inject `mockReuseModel` — without touching the shared fixture.
+      await setupMocks(page, { orphanNode: true, modelConstraints: mockOrphanConstraints });
+      const orphanModeler = new ModelerPage(page);
+      await orphanModeler.goto();
+
+      await orphanModeler.selectNode('action_orphan');
+      await orphanModeler.page.waitForTimeout(300);
+
+      const replayBtn = orphanModeler.getReplayLoadButton();
+      await expect(replayBtn).toBeVisible();
+      await expect(replayBtn).toBeDisabled();
     });
 
     test('should load replay data and show replay panel when button is clicked', async ({ page }) => {
@@ -133,8 +167,10 @@ test.describe('Workflow Modeler - Replay System', () => {
       const dropdownList = modeler.replayPanel.locator('.replay-entry-list');
       await expect(dropdownList).toBeVisible();
 
-      // Click on the panel header (outside the dropdown) to trigger outside-click handler
-      const panelHeader = modeler.replayPanel.locator('.replay-panel-header');
+      // Click on the unified panel header (outside the dropdown) to trigger the
+      // outside-click handler. Unified panel (#3576269): the old standalone
+      // `.replay-panel-header` was removed; the panel header is now `.panel-header`.
+      const panelHeader = modeler.replayPanel.locator('.panel-header');
       await panelHeader.dispatchEvent('mousedown');
       await page.waitForTimeout(300);
 
@@ -165,16 +201,28 @@ test.describe('Workflow Modeler - Replay System', () => {
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
     });
 
-    test('should display the Execution Replay header', async () => {
-      const header = modeler.replayPanel.locator('.replay-panel-header h3');
-      await expect(header).toContainText('Execution Replay');
+    test('should display the review-mode back control and the execution-replay entry selector', async () => {
+      // Unified panel (#3576269): the standalone ".replay-panel-header h3"
+      // ("Execution Replay") bar was removed. Since #3589103 the Review header
+      // is emptied down to a SINGLE control - a left arrow plus "Back" - and
+      // carries no component-type label; the execution-replay entry selector is
+      // rendered in the body.
+      const header = modeler.replayPanel.locator('.panel-header');
+      await expect(header.locator('.component-type')).toHaveCount(0);
+      await expect(header.locator('.panel-header-back')).toHaveCount(1);
+
+      const back = modeler.getBackToPropertiesButton();
+      await expect(back).toBeVisible();
+      await expect(back).toContainText('Back');
+      await expect(modeler.getReplayEntryToggle()).toBeVisible();
     });
 
-    test('should show step count in header', async () => {
-      const stepCount = modeler.replayPanel.locator('.replay-count');
-      await expect(stepCount).toBeVisible();
-      // First entry has 3 steps — rendered as "(3 steps)" by Drupal.t()
-      await expect(stepCount).toContainText('3 steps');
+    test('should show the loaded step count via the step list', async () => {
+      // The old ".replay-count" header was removed; the step count is now
+      // reflected by the rendered step list (and the "Step X of N" progress
+      // label). The first entry has 3 steps.
+      const steps = modeler.getReplaySteps();
+      await expect(steps).toHaveCount(3);
     });
 
     test('should display replay steps', async () => {
@@ -205,9 +253,13 @@ test.describe('Workflow Modeler - Replay System', () => {
       await expect(progressBar).toBeVisible();
     });
 
-    test('should show "Ready" in progress label initially', async () => {
+    test('should show "Step 1 of 3" initially (event node auto-syncs to its replay step)', async () => {
+      // Unified panel (#3576269): selecting the event node and entering Review
+      // auto-syncs the canvas selection to its matching replay step (the
+      // "started" event = step 0), so the progress label starts at "Step 1 of 3"
+      // rather than the old standalone-panel "Ready" (step -1).
       const label = modeler.getProgressLabel();
-      await expect(label).toHaveText('Ready');
+      await expect(label).toHaveText('Step 1 of 3');
     });
   });
 
@@ -217,6 +269,9 @@ test.describe('Workflow Modeler - Replay System', () => {
       await page.waitForTimeout(300);
       await modeler.loadReplayData();
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
+      // Entry auto-syncs to step 0 ("Step 1 of 3"); wait for it to settle so
+      // navigation starts from a deterministic point.
+      await expect(modeler.getProgressLabel()).toHaveText('Step 1 of 3', { timeout: 5000 });
     });
 
     test('should navigate to next step', async ({ page }) => {
@@ -224,56 +279,58 @@ test.describe('Workflow Modeler - Replay System', () => {
       await page.waitForTimeout(200);
 
       const label = modeler.getProgressLabel();
-      await expect(label).toHaveText('Step 1 of 3');
+      await expect(label).toHaveText('Step 2 of 3');
     });
 
     test('should navigate through all steps with next button', async ({ page }) => {
-      // Step to first
+      // From the auto-synced "Step 1 of 3", step forward twice.
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
-      await expect(modeler.getProgressLabel()).toHaveText('Step 1 of 3');
+      await expect(modeler.getProgressLabel()).toHaveText('Step 2 of 3');
 
-      // Step to second
       await modeler.nextReplayStep();
+      await page.waitForTimeout(200);
+      await expect(modeler.getProgressLabel()).toHaveText('Step 3 of 3');
+    });
+
+    test('should navigate back with previous button', async ({ page }) => {
+      // Go forward to step 3, then back to step 2.
+      await modeler.nextReplayStep();
+      await page.waitForTimeout(200);
+      await modeler.nextReplayStep();
+      await page.waitForTimeout(200);
+      await expect(modeler.getProgressLabel()).toHaveText('Step 3 of 3');
+
+      await modeler.previousReplayStep();
       await page.waitForTimeout(200);
       await expect(modeler.getProgressLabel()).toHaveText('Step 2 of 3');
     });
 
-    test('should navigate back with previous button', async ({ page }) => {
-      // Go forward two steps
-      await modeler.nextReplayStep();
-      await page.waitForTimeout(200);
-      await modeler.nextReplayStep();
-      await page.waitForTimeout(200);
-
-      // Now go back
-      await modeler.previousReplayStep();
-      await page.waitForTimeout(200);
-      await expect(modeler.getProgressLabel()).toHaveText('Step 1 of 3');
-    });
-
     test('should highlight current step in step list', async ({ page }) => {
+      // Already on step 1 (index 0) after auto-sync; advance to step 2 (index 1).
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
 
-      const firstStep = modeler.getReplaySteps().first();
-      await expect(firstStep).toHaveClass(/current/);
+      const secondStep = modeler.getReplaySteps().nth(1);
+      await expect(secondStep).toHaveClass(/current/);
     });
 
     test('should mark earlier steps as completed', async ({ page }) => {
-      // Navigate to second step
+      // From step 1 (index 0), advance to step 3 (index 2).
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
 
-      // First step should be marked as completed
+      // Earlier steps (index 0 and 1) should be marked completed.
       const firstStep = modeler.getReplaySteps().first();
       await expect(firstStep).toHaveClass(/completed/);
-
-      // Second step should be current
       const secondStep = modeler.getReplaySteps().nth(1);
-      await expect(secondStep).toHaveClass(/current/);
+      await expect(secondStep).toHaveClass(/completed/);
+
+      // Third step (index 2) should be current.
+      const thirdStep = modeler.getReplaySteps().nth(2);
+      await expect(thirdStep).toHaveClass(/current/);
     });
 
     test('should jump to step when step is clicked', async ({ page }) => {
@@ -350,7 +407,7 @@ test.describe('Workflow Modeler - Replay System', () => {
     });
   });
 
-  test.describe('Step Data Display', () => {
+  test.describe('Inline Step Data', () => {
     test.beforeEach(async ({ page }) => {
       await modeler.selectNode('event_1');
       await page.waitForTimeout(300);
@@ -358,57 +415,70 @@ test.describe('Workflow Modeler - Replay System', () => {
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
     });
 
-    test('should show "Select a step" message when no step is selected', async () => {
-      const noData = modeler.replayPanel.locator('.no-data');
-      await expect(noData).toContainText('Select a step');
+    test('should auto-select a step on entry so its data renders inline under that step row', async () => {
+      // Unified panel (#3576269): entering Review on an event node auto-syncs
+      // the canvas selection to its matching replay step (step 0 = "Step 1 of
+      // 3"), so a step is always selected. Since #3589103 the selected step's
+      // data is rendered INLINE underneath its own row in the single step list,
+      // so the inline region exists as soon as review opens.
+      await expect(modeler.getProgressLabel()).toHaveText('Step 1 of 3', { timeout: 5000 });
+
+      const inlineData = modeler.replayPanel.locator('.replay-steps .replay-step-data');
+      await expect(inlineData).toHaveCount(1);
+      await expect(inlineData).toBeVisible();
     });
 
-    test('should show step data section header', async () => {
-      const dataHeader = modeler.replayPanel.locator('.data-header');
-      await expect(dataHeader).toContainText('Step Data');
+    test('should render the inline data as a labeled region inside the selected step row', async () => {
+      const inlineData = modeler.replayPanel.locator('.replay-steps .replay-step-data[aria-label="Step data"]');
+      await expect(inlineData).toBeVisible();
+
+      // The inline block belongs to the CURRENT step row, and that row is the
+      // one advertising it via aria-expanded.
+      const currentItem = modeler.replayPanel.locator('.replay-step-item:has(> .replay-step.current)');
+      await expect(currentItem.locator('.replay-step-data')).toHaveCount(1);
+      await expect(currentItem.locator('.replay-step[aria-expanded="true"]')).toHaveCount(1);
     });
 
-    test('should show step data when a step with data is selected', async ({ page }) => {
-      // Navigate to second step (action_1 which has entity data)
+    test('should move the inline data along when a different step is selected', async ({ page }) => {
+      // Navigate to the action step (action_1 carries entity data).
+      await expect(modeler.getProgressLabel()).toHaveText('Step 1 of 3', { timeout: 5000 });
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
       await modeler.nextReplayStep();
       await page.waitForTimeout(200);
 
-      // The data content section should show the step data
-      const dataContent = modeler.replayPanel.locator('.data-content');
-      await expect(dataContent).toBeVisible();
+      // Still exactly ONE inline block, now under the newly selected row.
+      const inlineData = modeler.replayPanel.locator('.replay-steps .replay-step-data');
+      await expect(inlineData).toHaveCount(1);
+      await expect(modeler.getProgressLabel()).toHaveText('Step 3 of 3');
+      const currentItem = modeler.replayPanel.locator('.replay-step-item:has(> .replay-step.current)');
+      await expect(currentItem.locator('.replay-step-data')).toHaveCount(1);
     });
   });
 
-  test.describe('Replay Panel Info Popup', () => {
+  test.describe('Property Panel Info Popup', () => {
+    // Unified panel (#3576269): the metadata "info" button and popup are a
+    // PROPERTIES-view feature (PropertyPanel header zone 3, gated on
+    // `!isReviewMode`). The old standalone replay-panel info button was removed.
+    // These tests verify the metadata popup in its actual current home: the
+    // Properties view of a selected node.
     test.beforeEach(async ({ page }) => {
       await modeler.selectNode('event_1');
       await page.waitForTimeout(300);
-      await modeler.loadReplayData();
-      await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
+      await expect(modeler.propertyPanel).toBeVisible({ timeout: 5000 });
     });
 
-    test('should show info button when a step is selected', async ({ page }) => {
-      // Navigate to a step
-      await modeler.nextReplayStep();
-      await page.waitForTimeout(200);
-
-      const infoBtn = modeler.replayPanel.locator('button[aria-label="Show metadata"]');
+    test('should show the metadata info button in the Properties view of a selected node', async () => {
+      const infoBtn = modeler.propertyPanel.locator('button[aria-label="Show metadata"]');
       await expect(infoBtn).toBeVisible();
     });
 
-    test('should open info popup when info button is clicked', async ({ page }) => {
-      // Navigate to a step
-      await modeler.nextReplayStep();
-      await page.waitForTimeout(200);
-
-      // Click the info button
-      const infoBtn = modeler.replayPanel.locator('button[aria-label="Show metadata"]');
+    test('should open the info popup when the metadata button is clicked', async () => {
+      const infoBtn = modeler.propertyPanel.locator('button[aria-label="Show metadata"]');
       await infoBtn.click();
 
-      // Info popup should appear
-      const infoPopup = modeler.replayPanel.locator('.info-popup');
+      // Info popup should appear.
+      const infoPopup = modeler.propertyPanel.locator('.info-popup');
       await expect(infoPopup).toBeVisible();
     });
   });
@@ -421,30 +491,41 @@ test.describe('Workflow Modeler - Replay System', () => {
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
     });
 
-    test('should select edge in canvas when condition step is clicked', async ({ page }) => {
-      // The second step (index 1) is an "add successor" with conditionId
+    test('should select the condition node in the canvas when a condition step is clicked', async ({ page }) => {
+      // Conditions are first-class NODES now (issue #3589093).  The second
+      // step (index 1) is an "add successor" carrying conditionId
+      // 'eca_entity_is_new_10j5tps', which resolves to the promoted condition
+      // node (cond__edge_1) — it is selected/highlighted, not an edge.
       const conditionStep = modeler.getReplaySteps().nth(1);
       await conditionStep.click();
       await page.waitForTimeout(500);
 
-      // The edge should have replay highlight styling (animated green/red path)
-      const replayPath = page.locator('path.replay-highlighted');
-      await expect(replayPath).toBeVisible({ timeout: 5000 });
+      // The condition node is selected on the canvas.
+      const conditionNode = modeler.getConditionNode('cond__edge_1');
+      await expect(conditionNode).toHaveClass(/selected/, { timeout: 5000 });
     });
 
-    test('should show condition in property panel when condition step is clicked', async ({ page }) => {
-      // Click the condition step
+    test('should show the condition node label in the property panel when a condition step is clicked', async ({ page }) => {
+      // Click the condition step — this selects the condition node on the canvas
+      // while the unified panel stays in Review mode.
       const conditionStep = modeler.getReplaySteps().nth(1);
       await conditionStep.click();
       await page.waitForTimeout(500);
 
-      // The property panel should show the condition label field
-      const conditionLabel = modeler.propertyPanel.locator('#modeler-condition-label');
-      await expect(conditionLabel).toBeVisible({ timeout: 5000 });
+      // Unified panel (#3576269): node properties are edited in the Properties
+      // view, so switch from Review to Properties for the now-selected node.
+      await modeler.getBackToPropertiesButton().click();
+      await page.waitForTimeout(300);
+
+      // The condition is edited via the NODE properties panel now, so the
+      // node label input is shown (no `#modeler-condition-label` edge field).
+      const labelInput = modeler.getNodeLabelInput();
+      await expect(labelInput).toBeVisible({ timeout: 5000 });
+      await expect(labelInput).toHaveValue('Entity is New');
     });
 
-    test('should select node when action step is clicked after condition step', async ({ page }) => {
-      // First click the condition step
+    test('should select the action node when an action step is clicked after a condition step', async ({ page }) => {
+      // First click the condition step (selects the condition node).
       const conditionStep = modeler.getReplaySteps().nth(1);
       await conditionStep.click();
       await page.waitForTimeout(500);
@@ -454,13 +535,13 @@ test.describe('Workflow Modeler - Replay System', () => {
       await actionStep.click();
       await page.waitForTimeout(500);
 
-      // The action node should be selected (not the edge)
+      // The action node should now be selected.
       const actionNode = modeler.getNode('action_1');
       await expect(actionNode).toHaveClass(/selected/);
 
-      // The edge should no longer have replay highlight
-      const replayPath = page.locator('.react-flow__edge[data-id="edge_1"] path.replay-highlighted');
-      await expect(replayPath).not.toBeVisible();
+      // The condition node should no longer be selected.
+      const conditionNode = modeler.getConditionNode('cond__edge_1');
+      await expect(conditionNode).not.toHaveClass(/selected/);
     });
   });
 });
@@ -468,30 +549,40 @@ test.describe('Workflow Modeler - Replay System', () => {
 test.describe('Workflow Modeler - Test Feature', () => {
   let modeler: ModelerPage;
 
-  test.describe('Test Button Visibility', () => {
-    test('should show Test button when test_url is configured and event is auto-detected', async ({ page }) => {
+  test.describe('Test Affordance Visibility', () => {
+    // Unified panel (#3576269): there is NO standalone Test button. The Test
+    // affordance is the "listen" item reached from within Review mode, and the
+    // single gate to it is the "Review flow" button.
+    test('should expose the Test affordance when test_url is configured for an event node', async ({ page }) => {
       await setupMocks(page, { withTestUrl: true });
       modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // The model has exactly one event node (event_1) so it should be auto-detected.
-      // The replay panel should appear (because test_url is configured = hasAnyReplayCapability).
+      // Unified panel is always present.
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-      // The Test button should be visible
-      const testBtn = modeler.getTestButton();
-      await expect(testBtn).toBeVisible();
+      // Selecting the event node surfaces the Review gate, through which the
+      // listen-to-test item is reachable.
+      await modeler.selectNode('event_1');
+      await page.waitForTimeout(300);
+      await expect(modeler.getTestAffordanceGate()).toBeVisible();
+
+      await modeler.enterReviewMode();
+      await modeler.openReplayEntryDropdown();
+      await expect(modeler.getTestButton()).toBeVisible();
     });
 
-    test('should not show Test button when test_url is not configured', async ({ page }) => {
-      await setupMocks(page); // no withTestUrl
+    test('should still expose the Review affordance (replay) when test_url is not configured', async ({ page }) => {
+      await setupMocks(page); // no withTestUrl, replay_url still present
       modeler = new ModelerPage(page);
       await modeler.goto();
 
-      // The replay panel may or may not be visible (depends on replay_url).
-      // But the Test button should not be visible.
-      const testBtn = modeler.getTestButton();
-      await expect(testBtn).not.toBeVisible();
+      // Replay capability (replay_url) is present, so the Review affordance is
+      // available for the event node — but without test_url, entering Review
+      // does not auto-start a test listener (no waiting state).
+      await modeler.selectNode('event_1');
+      await page.waitForTimeout(300);
+      await expect(modeler.getReviewModeButton()).toBeVisible();
     });
   });
 
@@ -504,26 +595,23 @@ test.describe('Workflow Modeler - Test Feature', () => {
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
     });
 
-    test('should show waiting state after clicking Test', async ({ page }) => {
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+    test('should show waiting state after starting a test (entering Review auto-starts the listener)', async () => {
+      await modeler.startTest();
 
       // Should show the waiting/polling state
       const waitingState = modeler.getTestWaitingState();
       await expect(waitingState).toBeVisible({ timeout: 5000 });
     });
 
-    test('should show cancel button during test polling', async ({ page }) => {
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+    test('should show cancel button during test polling', async () => {
+      await modeler.startTest();
 
       const cancelBtn = modeler.getTestCancelButton();
       await expect(cancelBtn).toBeVisible({ timeout: 5000 });
     });
 
-    test('should load replay data after test completes', async ({ page }) => {
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+    test('should load replay data after test completes', async () => {
+      await modeler.startTest();
 
       // Wait for test to complete (1 poll wait then data returns)
       // The replay steps should appear with the test replay data
@@ -538,8 +626,7 @@ test.describe('Workflow Modeler - Test Feature', () => {
       await modeler.goto();
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+      await modeler.startTest();
 
       // Wait for waiting state to appear
       const waitingState = modeler.getTestWaitingState();
@@ -554,38 +641,40 @@ test.describe('Workflow Modeler - Test Feature', () => {
   });
 
   test.describe('Test Error Handling', () => {
-    test('should show error when test initiation fails', async ({ page }) => {
+    // Unified panel (#3576269): entering Review auto-starts the listener and the
+    // waiting state shows immediately (listen item selected). On a test error
+    // the error is surfaced as a Drupal message and the listener simply does NOT
+    // produce replay data — the panel stays in the waiting/listening state with
+    // a Cancel option (it does not silently fabricate steps). The non-weakened
+    // contract here is: an error never yields bogus replay step data.
+    test('should not produce replay data when test initiation fails', async ({ page }) => {
       await setupMocks(page, { withTestUrl: true, testInitError: 'Event not supported' });
       modeler = new ModelerPage(page);
       await modeler.goto();
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+      await modeler.startTest();
 
-      // Wait a moment for the error to be processed
+      // Wait for the error to be processed.
       await page.waitForTimeout(1000);
 
-      // The test should not enter the waiting/polling state
-      const waitingState = modeler.getTestWaitingState();
-      await expect(waitingState).not.toBeVisible();
+      // No replay steps should have been produced by the failed test.
+      await expect(modeler.getReplaySteps()).toHaveCount(0);
     });
 
-    test('should show error when polling fails', async ({ page }) => {
+    test('should not produce replay data when polling fails', async ({ page }) => {
       await setupMocks(page, { withTestUrl: true, testPollError: 'Execution timed out' });
       modeler = new ModelerPage(page);
       await modeler.goto();
       await expect(modeler.replayPanel).toBeVisible({ timeout: 5000 });
 
-      const testBtn = modeler.getTestButton();
-      await testBtn.click();
+      await modeler.startTest();
 
-      // Wait for the poll to happen and return error
+      // Wait for the poll to happen and return the error.
       await page.waitForTimeout(3000);
 
-      // The waiting state should disappear once the error is received
-      const waitingState = modeler.getTestWaitingState();
-      await expect(waitingState).not.toBeVisible({ timeout: 5000 });
+      // No replay steps should have been produced by the failed poll.
+      await expect(modeler.getReplaySteps()).toHaveCount(0);
     });
   });
 });

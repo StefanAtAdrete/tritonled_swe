@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Drupal\canvas_oauth\Authentication\Provider;
 
-use Drupal\Core\Authentication\AuthenticationProviderInterface;
-use Drupal\Core\Routing\RouteMatch;
 use Drupal\canvas\Entity\AssetLibrary;
 use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\Color;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\ContentTemplate;
+use Drupal\canvas\Entity\Folder;
 use Drupal\canvas\Entity\JavaScriptComponent;
+use Drupal\canvas\Entity\PageVariant;
+use Drupal\Core\Authentication\AuthenticationProviderInterface;
+use Drupal\Core\Routing\RouteMatch;
 use Drupal\simple_oauth\Authentication\Provider\SimpleOauthAuthenticationProvider;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,9 +30,8 @@ use Symfony\Component\HttpFoundation\Request;
  * marked as external API endpoints.
  * @see \Drupal\canvas_oauth\Routing\CanvasOauthRouteSubscriber
  *
- * It applies to artifact routes (upload and manifest sync) and to config entity
- * routes for specific entity types (JavaScript components, asset libraries, and
- * brand kits).
+ * It applies to named external API routes and to config entity routes for
+ * specific entity types.
  * @see \Drupal\canvas_oauth\Authentication\Provider\CanvasOauthAuthenticationProvider::applies()
  */
 class CanvasOauthAuthenticationProvider implements AuthenticationProviderInterface {
@@ -58,15 +60,20 @@ class CanvasOauthAuthenticationProvider implements AuthenticationProviderInterfa
     ];
     $route_match = RouteMatch::createFromRequest($request);
 
-    // Special case: artifact upload, push lifecycle routes
-    // and draft content-template preview.
+    // Special case: named external API routes that are not covered by the
+    // config or content entity checks below.
     $named_routes = [
       'canvas.api.artifacts.upload',
+      'canvas.api.code_component.validate',
+      'canvas.api.config.page_region.gone.collection',
+      'canvas.api.config.page_region.gone.item',
+      'canvas.api.settings.default_page_variant.get',
+      'canvas.api.settings.default_page_variant.set',
       'canvas.api.push.complete',
       'canvas.api.push.fail',
       'canvas.api.push.start',
       'canvas.api.layout.content_template_draft',
-      'canvas.api.site_data',
+      'canvas.api.ui.content_entity_reference.preview',
     ];
     if (\in_array($route_match->getRouteName(), $named_routes, TRUE)) {
       return $this->simpleOauthAuthenticationProvider->applies($request);
@@ -87,7 +94,10 @@ class CanvasOauthAuthenticationProvider implements AuthenticationProviderInterfa
       JavaScriptComponent::ENTITY_TYPE_ID,
       AssetLibrary::ENTITY_TYPE_ID,
       BrandKit::ENTITY_TYPE_ID,
+      Color::ENTITY_TYPE_ID,
       ContentTemplate::ENTITY_TYPE_ID,
+      Folder::ENTITY_TYPE_ID,
+      PageVariant::ENTITY_TYPE_ID,
     ];
 
     if ($entity_type_id !== NULL && \in_array($entity_type_id, $protected_config_entity_types, TRUE)) {

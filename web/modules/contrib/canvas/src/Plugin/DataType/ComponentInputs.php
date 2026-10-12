@@ -4,25 +4,28 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\DataType;
 
+use Drupal\canvas\ComponentSource\ComponentInstanceInputsConfigSchemaGeneratorInterface;
+use Drupal\canvas\Entity\Component;
+use Drupal\canvas\MissingComponentInputsException;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
+use Drupal\canvas\PropExpressions\StructuredData\ContentAwareDependentInterface;
 use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
 use Drupal\canvas\PropSource\AdaptedPropSource;
+use Drupal\canvas\PropSource\PropSource;
+use Drupal\canvas\PropSource\StaticPropSource;
+use Drupal\canvas\Utility\ColorPropReferences;
+use Drupal\canvas\Utility\ComponentMetadataHelper;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Config\Schema\Mapping;
 use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\Attribute\DataType;
 use Drupal\Core\TypedData\TypedData;
-use Drupal\canvas\MissingComponentInputsException;
-use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
-use Drupal\canvas\ComponentSource\ComponentInstanceInputsConfigSchemaGeneratorInterface;
-use Drupal\canvas\Entity\Component;
-use Drupal\Core\DependencyInjection\ClassResolverInterface;
-use Drupal\canvas\PropExpressions\StructuredData\ContentAwareDependentInterface;
-use Drupal\canvas\PropSource\PropSource;
-use Drupal\canvas\PropSource\StaticPropSource;
 
 /**
  * @phpstan-import-type PropSourceArray from \Drupal\canvas\PropSource\PropSourceBase
@@ -30,9 +33,9 @@ use Drupal\canvas\PropSource\StaticPropSource;
  * @phpstan-import-type DefaultRelativeUrlPropSourceArray from \Drupal\canvas\PropSource\PropSourceBase
  * @phpstan-type SingleComponentInputArray array<string, PropSourceArray|AdaptedPropSourceArray|DefaultRelativeUrlPropSourceArray>
  * @see \Drupal\canvas\ComponentSource\ComponentSourceInterface::optimizeExplicitInput()
- * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::optimizeExplicitInput()
- * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::collapse()
- * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::uncollapse()
+ * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::optimizeExplicitInput()
+ * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::collapse()
+ * @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::uncollapse()
  * @phpstan-type OptimizedExplicitInput bool|int|float|string|bool[]|int[]|float[]|string[]
  * @phpstan-type OptimizedSingleComponentInputArray array<string, PropSourceArray|AdaptedPropSourceArray|DefaultRelativeUrlPropSourceArray|OptimizedExplicitInput>
  */
@@ -75,7 +78,63 @@ final class ComponentInputs extends TypedData implements ContentAwareDependentIn
     foreach ($this->getPropSources() as $prop_source) {
       $dependencies = NestedArray::mergeDeep($dependencies, $prop_source->calculateDependencies($host_entity));
     }
+    // Some prop shapes reference config from their stored value rather than
+    // from their field type, so prop sources alone cannot report them.
+    $color_dependencies = ColorPropReferences::configDependencies($this);
+    if ($color_dependencies !== []) {
+      $dependencies = NestedArray::mergeDeep($dependencies, ['config' => $color_dependencies]);
+    }
     return $dependencies;
+  }
+
+  /**
+   * Lists the props whose JSON schema carries the given `$ref`.
+   *
+   * Matching on the schema rather than on stored values keeps a prop that
+   * merely looks like another shape from being treated as one.
+   *
+   * @param string $ref
+   *   A JSON schema `$ref` URI.
+   *
+   * @return string[]
+   *   Prop names, in stored order.
+   *
+   * @todo Resolve the component source at the instance's pinned `component_version` rather than its active one, so a prop whose `$ref` changed between versions is judged against the schema the instance was stored for; ::getPropSources() and ::getValues() make the same assumption, so fix all three together.
+   */
+  public function getPropNamesByRef(string $ref): array {
+    $item = $this->getParent();
+    \assert($item instanceof ComponentTreeItem);
+    $source = $item->getComponent()?->getComponentSource();
+    // Without prop schemas one string prop cannot be told apart from another.
+    // An unresolvable component instance is invalid and matches nothing,
+    // mirroring how the rest of this class treats one.
+    if (!$source instanceof JsonSchemaPropsComponentSourceBase) {
+      return [];
+    }
+    $prop_schemas = ComponentMetadataHelper::getNonAttributeComponentProperties($source->getMetadata());
+
+    return \array_values(\array_filter(
+      \array_keys($this->inputs),
+      static fn (string $prop_name): bool => ($prop_schemas[$prop_name]['$ref'] ?? NULL) === $ref,
+    ));
+  }
+
+  /**
+   * Reads a prop's stored value, when that value is a string.
+   *
+   * @param string $prop_name
+   *   A prop name.
+   *
+   * @return string|null
+   *   The stored value, or NULL if it is absent or not a string.
+   */
+  public function getScalarPropValue(string $prop_name): ?string {
+    $raw_prop_source = $this->inputs[$prop_name] ?? NULL;
+    // A prop is stored either collapsed (the bare value) or as a full
+    // StaticPropSource array.
+    // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::collapse()
+    $value = \is_array($raw_prop_source) ? ($raw_prop_source['value'] ?? NULL) : $raw_prop_source;
+    return \is_string($value) ? $value : NULL;
   }
 
   /**
@@ -196,8 +255,8 @@ final class ComponentInputs extends TypedData implements ContentAwareDependentIn
       if (!\is_array($raw_prop_source) || !\array_key_exists('sourceType', $raw_prop_source)) {
         // This is likely a *collapsed* StaticPropSource.
         /** @var OptimizedExplicitInput $raw_prop_source */
-        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::collapse()
-        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase::uncollapse()
+        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::collapse()
+        // @see \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase::uncollapse()
         try {
           $parsed_default_prop_source = \array_key_exists($name, $default_prop_sources) && \is_array($default_prop_sources[$name]) && \array_key_exists('sourceType', $default_prop_sources[$name])
             ? PropSource::parse($default_prop_sources[$name])
@@ -214,8 +273,8 @@ final class ComponentInputs extends TypedData implements ContentAwareDependentIn
         catch (\LogicException) {
         }
 
-        // This isn't a component source using \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase.
-        // @todo Move this logic into \Drupal\canvas\Plugin\Canvas\ComponentSource\GeneratedFieldExplicitInputUxComponentSourceBase.
+        // This isn't a component source using \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase.
+        // @todo Move this logic into \Drupal\canvas\Plugin\Canvas\ComponentSource\JsonSchemaPropsComponentSourceBase.
         // @see https://www.drupal.org/project/canvas/issues/3467954
         continue;
       }
@@ -388,7 +447,7 @@ final class ComponentInputs extends TypedData implements ContentAwareDependentIn
   private static function isTranslatableInputAccordingToConfigSchema(array $config_schema_definition_for_input, mixed $actual_input): bool {
     static $typed_config;
     if ($typed_config === NULL) {
-      $typed_config = \Drupal::service('config.typed');
+      $typed_config = \Drupal::service(TypedConfigManagerInterface::class);
       \assert($typed_config instanceof TypedConfigManagerInterface);
     }
 

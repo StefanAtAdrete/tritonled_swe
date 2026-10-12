@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Traits;
 
-use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\canvas\Config\Entity\BetterConfigDependencyManager;
+use Drupal\Core\Config\Entity\ConfigEntityInterface;
+use Drupal\Core\Config\StorageCacheInterface;
 
 /**
  * This exists because existing Configuration System infrastructure falls short.
@@ -43,7 +44,7 @@ trait BetterConfigDependencyManagerTrait {
   }
 
   private function getBetterConfigDependencyManager(): BetterConfigDependencyManager {
-    $active_storage = $this->container->get('config.storage');
+    $active_storage = $this->container->get(StorageCacheInterface::class);
 
     // @see \Drupal\Core\Config\ConfigManager::getConfigDependencyManager()
     $config_entity_data = array_filter(\array_map(function (array $data) {

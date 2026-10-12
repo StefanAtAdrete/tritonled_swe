@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas_oauth\Kernel;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
-use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\canvas\Entity\AssetLibrary;
+use Drupal\canvas\Entity\Color;
 use Drupal\canvas\Entity\Component;
 use Drupal\canvas\Entity\Folder;
 use Drupal\canvas\Entity\JavaScriptComponent;
 use Drupal\canvas\Entity\Pattern;
 use Drupal\canvas_oauth\Authentication\Provider\CanvasOauthAuthenticationProvider;
+use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Tests\canvas\Kernel\CanvasKernelTestBase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
@@ -84,17 +86,20 @@ class CanvasOauthAuthenticationProviderTest extends CanvasKernelTestBase {
       ['canvas.api.config.auto-save.get.css', [], FALSE],
       ['canvas.api.config.auto-save.get.js', [], FALSE],
       ['canvas.api.config.auto-save.patch', [], FALSE],
+      ['canvas.api.code_component.validate', [], TRUE],
       ['canvas.api.config.delete', [], FALSE],
       ['canvas.api.config.get', [], FALSE],
       ['canvas.api.config.list', [], FALSE],
+      ['canvas.api.config.page_region.gone.collection', [], TRUE],
+      ['canvas.api.config.page_region.gone.item', [], TRUE],
       ['canvas.api.config.patch', [], FALSE],
       ['canvas.api.config.post', [], FALSE],
       ...$generate_per_config_entity_type_test_case(Component::ENTITY_TYPE_ID, TRUE),
       ...$generate_per_config_entity_type_test_case(JavaScriptComponent::ENTITY_TYPE_ID, TRUE),
       ...$generate_per_config_entity_type_test_case(Pattern::ENTITY_TYPE_ID, FALSE),
-      ...$generate_per_config_entity_type_test_case(Folder::ENTITY_TYPE_ID, FALSE),
-      ...$generate_per_config_entity_type_test_case(Folder::ENTITY_TYPE_ID, FALSE),
+      ...$generate_per_config_entity_type_test_case(Folder::ENTITY_TYPE_ID, TRUE),
       ...$generate_per_config_entity_type_test_case(AssetLibrary::ENTITY_TYPE_ID, TRUE),
+      ...$generate_per_config_entity_type_test_case(Color::ENTITY_TYPE_ID, TRUE),
       ...$generate_per_config_entity_type_test_case('non-existent', FALSE),
       ['canvas.api.content.auto-save.patch', [], FALSE],
       ['canvas.api.content.create', [], TRUE],
@@ -116,6 +121,9 @@ class CanvasOauthAuthenticationProviderTest extends CanvasKernelTestBase {
       ['canvas.api.push.complete', [], TRUE],
       ['canvas.api.push.fail', [], TRUE],
       ['canvas.api.push.start', [], TRUE],
+      ['canvas.api.settings.default_page_variant.get', [], TRUE],
+      ['canvas.api.settings.default_page_variant.set', [], TRUE],
+      ['canvas.api.ui.content_entity_reference.preview', [], TRUE],
     ];
   }
 
@@ -126,7 +134,7 @@ class CanvasOauthAuthenticationProviderTest extends CanvasKernelTestBase {
    */
   #[DataProvider('dataProviderRoutes')]
   public function testApplies(string $route_name, array $parameters, bool $expected_apply): void {
-    $route = new Route($this->container->get('router.route_provider')->getRouteByName($route_name)->getPath());
+    $route = new Route($this->container->get(RouteProviderInterface::class)->getRouteByName($route_name)->getPath());
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, $route_name);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);

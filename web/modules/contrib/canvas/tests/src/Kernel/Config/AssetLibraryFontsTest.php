@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Drupal\Tests\canvas\Kernel\Config;
 
 // cspell:ignore Brien obrien
+
+use Drupal\canvas\Entity\BrandKit;
 use Drupal\Core\Asset\LibraryDiscoveryInterface;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\canvas\Entity\BrandKit;
+use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
 use Drupal\file\FileUsage\FileUsageInterface;
@@ -44,7 +46,7 @@ final class AssetLibraryFontsTest extends CanvasKernelTestBase {
 
   private function createManagedFontFile(string $filename = 'test-font.woff2'): FileInterface {
     $uri = $this->createFontFile($filename);
-    $file_system = \Drupal::service('file_system');
+    $file_system = \Drupal::service(FileSystemInterface::class);
     \assert($file_system instanceof FileSystemInterface);
     $directory = BrandKit::ARTIFACTS_DIRECTORY;
     self::assertTrue($file_system->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS));
@@ -144,7 +146,7 @@ final class AssetLibraryFontsTest extends CanvasKernelTestBase {
     $tracked_file = File::load($file->id());
     self::assertInstanceOf(FileInterface::class, $tracked_file);
     self::assertFalse($tracked_file->isTemporary());
-    $file_usage = \Drupal::service('file.usage');
+    $file_usage = \Drupal::service(FileUsageInterface::class);
     \assert($file_usage instanceof FileUsageInterface);
     self::assertSame([
       'canvas' => [
@@ -182,7 +184,7 @@ final class AssetLibraryFontsTest extends CanvasKernelTestBase {
     ]);
     $entity->save();
 
-    $file_usage = \Drupal::service('file.usage');
+    $file_usage = \Drupal::service(FileUsageInterface::class);
     \assert($file_usage instanceof FileUsageInterface);
     $tracked_file = File::load($file->id());
     self::assertInstanceOf(FileInterface::class, $tracked_file);
@@ -257,6 +259,7 @@ final class AssetLibraryFontsTest extends CanvasKernelTestBase {
 
     self::assertStringContainsString("@font-face {\n  font-family: 'Inter';", $entity->getCss());
     self::assertStringContainsString("format('woff2');", $entity->getCss());
+    self::assertStringContainsString('font-display: swap;', $entity->getCss(), 'Generated @font-face rules must swap to avoid invisible text while web fonts load.');
     self::assertStringContainsString(".example { font-family: 'Inter', sans-serif; }", $entity->getCss());
   }
 
@@ -314,7 +317,7 @@ final class AssetLibraryFontsTest extends CanvasKernelTestBase {
     $font_uri = $this->createFontFile('strip-url.woff2');
     $entity = BrandKit::load(BrandKit::GLOBAL_ID);
     self::assertNotNull($entity);
-    $file_url_generator = \Drupal::service('file_url_generator');
+    $file_url_generator = \Drupal::service(FileUrlGeneratorInterface::class);
     $font_url = $file_url_generator->generateString($font_uri);
     self::assertIsString($font_url);
 

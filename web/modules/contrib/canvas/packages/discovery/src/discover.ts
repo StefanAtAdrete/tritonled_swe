@@ -4,12 +4,16 @@ import path from 'node:path';
 import { glob } from 'glob';
 import ignore from 'ignore';
 
-import { findDuplicateMachineNames, loadComponentsMetadata } from './metadata';
+import { COLOR_PROP_SCHEMA_REF } from './brand-kit-colors';
+import { findDuplicateMachineNames, loadComponentMetadata } from './metadata';
+import { ComponentMetadataValidationError } from './metadata-validation';
 
 import type {
   DiscoveredComponent,
+  DiscoveredComponentSchema,
   DiscoveredContentTemplate,
   DiscoveredPage,
+  DiscoveredPageTemplate,
   DiscoveryOptions,
   DiscoveryResult,
   DiscoveryWarning,
@@ -108,6 +112,26 @@ async function getCandidateContentTemplateFiles(
   });
 }
 
+async function getCandidatePageTemplateFiles(
+  pageTemplatesRoot: string,
+): Promise<string[]> {
+  return glob('*.json', {
+    cwd: pageTemplatesRoot,
+    nodir: true,
+    dot: true,
+    posix: true,
+    ignore: [...ALWAYS_IGNORED_PATTERNS],
+  });
+}
+
+function parsePageTemplateFilename(filename: string): { id: string } | null {
+  const base = filename.replace(/\.json$/, '');
+  if (!/^[a-z0-9_]+$/.test(base) || base.length === 0) {
+    return null;
+  }
+  return { id: base };
+}
+
 /**
  * Discovers code components under a scan root by pairing metadata files with
  * JavaScript entries.
@@ -118,8 +142,9 @@ async function getCandidateContentTemplateFiles(
  * emitted.
  *
  * For each active metadata file, it resolves the JavaScript entry by extension
- * precedence (`.ts`, `.tsx`, `.js`, `.jsx`) and emits warnings for missing or
- * duplicate entries. It also attaches an optional `.css` entry when present.
+ * precedence (`.ts`, `.tsx`, `.js`, `.jsx` by default; see
+ * `entryExtensions`) and emits warnings for missing or duplicate entries.
+ * It also attaches an optional `.css` entry when present.
  *
  * Page discovery scans top-level `.json` files from `pagesRoot`, which defaults
  * to `<componentRoot>/pages`.
@@ -139,16 +164,24 @@ export async function discoverCanvasProject(
     options.contentTemplatesRoot ??
       path.join(componentRoot, 'content-templates'),
   );
+  const pageTemplatesRoot = path.resolve(
+    options.pageTemplatesRoot ?? path.join(componentRoot, 'page-templates'),
+  );
+  const entryExtensions = options.entryExtensions ?? JS_EXTENSIONS;
+  const requireJsEntry = options.requireJsEntry ?? true;
   const gitignoreMatcher = await readGitignore(projectRoot);
 
   const allCandidates = await getCandidateMetadataFiles(componentRoot);
   const pageCandidates = await getCandidatePageFiles(pagesRoot);
   const contentTemplateCandidates =
     await getCandidateContentTemplateFiles(contentTemplatesRoot);
+  const pageTemplateCandidates =
+    await getCandidatePageTemplateFiles(pageTemplatesRoot);
   const warnings: DiscoveryWarning[] = [];
   const components: DiscoveredComponent[] = [];
   const pages: DiscoveredPage[] = [];
   const contentTemplates: DiscoveredContentTemplate[] = [];
+  const pageTemplates: DiscoveredPageTemplate[] = [];
 
   let ignoredFiles = 0;
 
@@ -272,6 +305,72 @@ export async function discoverCanvasProject(
     });
   }
 
+  for (const pageTemplateRelativePath of pageTemplateCandidates) {
+    const normalizedRelativePath = toPosixPath(pageTemplateRelativePath);
+    const absolutePageTemplatePath = path.resolve(
+      pageTemplatesRoot,
+      normalizedRelativePath,
+    );
+    const projectRelativePath = toPosixPath(
+      path.relative(projectRoot, absolutePageTemplatePath),
+    );
+
+    if (
+      !projectRelativePath.startsWith('..') &&
+      gitignoreMatcher.ignores(projectRelativePath)
+    ) {
+      ignoredFiles += 1;
+      continue;
+    }
+
+    const filename = path.posix.basename(normalizedRelativePath);
+    const parsed = parsePageTemplateFilename(filename);
+    if (!parsed) {
+      // A silently skipped file would look like a sync that "lost" the
+      // template; the filename is the page variant's machine name.
+      warnings.push({
+        code: 'invalid_page_template_filename',
+        message: `Ignoring page template file "${filename}": its name (minus .json) must be a machine name (lowercase letters, digits, underscores).`,
+        path: absolutePageTemplatePath,
+      });
+      continue;
+    }
+
+    let label: string | null = null;
+    let status: boolean | null = null;
+    let isDefault = false;
+    try {
+      const authored = JSON.parse(
+        await fs.readFile(absolutePageTemplatePath, 'utf-8'),
+      ) as unknown;
+      if (
+        authored &&
+        typeof authored === 'object' &&
+        !Array.isArray(authored)
+      ) {
+        const values = authored as Record<string, unknown>;
+        label =
+          typeof values.label === 'string' && values.label.trim().length > 0
+            ? values.label
+            : null;
+        status = typeof values.status === 'boolean' ? values.status : null;
+        isDefault = values.default === true;
+      }
+    } catch {
+      // Validation reports unreadable or malformed page template files.
+    }
+    pageTemplates.push({
+      id: parsed.id,
+      label,
+      status,
+      isDefault,
+      path: absolutePageTemplatePath,
+      relativePath: projectRelativePath.startsWith('..')
+        ? normalizedRelativePath
+        : projectRelativePath,
+    });
+  }
+
   const sortedDirectories = [...byDirectory.keys()].sort();
 
   for (const relativeDirectoryRaw of sortedDirectories) {
@@ -317,7 +416,7 @@ export async function discoverCanvasProject(
       const metadataPath = path.resolve(absoluteDirectory, metadataFilename);
 
       const jsCandidates = await Promise.all(
-        JS_EXTENSIONS.map(async (extension) => {
+        entryExtensions.map(async (extension) => {
           const candidatePath = path.resolve(
             absoluteDirectory,
             `${componentBaseName}${extension}`,
@@ -334,15 +433,21 @@ export async function discoverCanvasProject(
         (candidate) => candidate.exists,
       );
 
-      if (existingJsCandidates.length > 1) {
+      // Destructured (the emptiness check follows) so consumers compiling
+      // with noUncheckedIndexedAccess see no undefined.
+      const [entryCandidate] = existingJsCandidates;
+
+      if (entryCandidate && existingJsCandidates.length > 1) {
         warnings.push({
           code: 'duplicate_definition',
-          message: `Multiple JavaScript entry files found for ${metadataFilename}. Using ${path.basename(existingJsCandidates[0].candidatePath)} by extension precedence.`,
+          message: `Multiple JavaScript entry files found for ${metadataFilename}. Using ${path.basename(entryCandidate.candidatePath)} by extension precedence.`,
           path: metadataPath,
         });
       }
 
-      if (existingJsCandidates.length === 0) {
+      // Callers pushing metadata only (requireJsEntry: false) keep entry-less
+      // components. Every other component requires an entry file.
+      if (!entryCandidate && requireJsEntry) {
         warnings.push({
           code: 'missing_js_entry',
           message: `Missing JavaScript entry file for ${metadataFilename}.`,
@@ -367,7 +472,7 @@ export async function discoverCanvasProject(
           path.relative(projectRoot, absoluteDirectory),
         ),
         metadataPath,
-        jsEntryPath: existingJsCandidates[0].candidatePath,
+        jsEntryPath: entryCandidate?.candidatePath ?? null,
         cssEntryPath,
       });
     }
@@ -376,6 +481,54 @@ export async function discoverCanvasProject(
   components.sort((a, b) => a.metadataPath.localeCompare(b.metadataPath));
   pages.sort((a, b) => a.path.localeCompare(b.path));
   contentTemplates.sort((a, b) => a.path.localeCompare(b.path));
+  pageTemplates.sort((a, b) => a.id.localeCompare(b.id));
+
+  // Invalid metadata is reported by consumers when they load it. Discovery
+  // remains available so editors and validation commands can surface those
+  // errors without stopping file watching or skipping the remaining files.
+  const validMetadataEntries = (
+    await Promise.all(
+      components.map(async (component) => {
+        try {
+          return {
+            component,
+            metadata: await loadComponentMetadata(component, projectRoot),
+          };
+        } catch (error) {
+          if (error instanceof ComponentMetadataValidationError) {
+            return null;
+          }
+          throw error;
+        }
+      }),
+    )
+  ).filter((entry) => entry !== null);
+  const duplicateWarnings = findDuplicateMachineNames(
+    validMetadataEntries.map(({ component }) => component),
+    validMetadataEntries.map(({ metadata }) => metadata),
+  );
+  warnings.push(...duplicateWarnings);
+
+  // Build componentSchemas index from loaded metadata.
+  const componentSchemas = new Map<string, DiscoveredComponentSchema>();
+  for (const { component, metadata } of validMetadataEntries) {
+    const colorPropNames = new Set<string>();
+    if (metadata.props?.properties) {
+      for (const [propName, propDef] of Object.entries(
+        metadata.props.properties,
+      )) {
+        if (
+          typeof propDef === 'object' &&
+          propDef !== null &&
+          '$ref' in propDef &&
+          propDef.$ref === COLOR_PROP_SCHEMA_REF
+        ) {
+          colorPropNames.add(propName);
+        }
+      }
+    }
+    componentSchemas.set(component.name, { colorPropNames });
+  }
 
   const result: DiscoveryResult = {
     componentRoot,
@@ -383,20 +536,18 @@ export async function discoverCanvasProject(
     components,
     pages,
     contentTemplates,
+    pageTemplates,
     warnings,
     stats: {
       scannedFiles:
         allCandidates.length +
         pageCandidates.length +
-        contentTemplateCandidates.length,
+        contentTemplateCandidates.length +
+        pageTemplateCandidates.length,
       ignoredFiles,
     },
+    componentSchemas,
   };
-
-  // Check for duplicate machine names across components.
-  const metadata = await loadComponentsMetadata(result);
-  const duplicateWarnings = findDuplicateMachineNames(components, metadata);
-  warnings.push(...duplicateWarnings);
 
   return result;
 }

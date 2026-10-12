@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Drupal\Tests\canvas\Kernel;
 
 use Drupal\canvas\ComponentSource\ComponentSourceManager;
-use Drupal\Component\Uuid\Php as UuidGenerator;
 use Drupal\canvas\ComponentTreeInputExtractor;
 use Drupal\canvas\Entity\Page;
+use Drupal\Component\Uuid\Php as UuidGenerator;
 use Drupal\Tests\canvas\Kernel\Traits\PageTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -147,7 +147,7 @@ final class ComponentTreeInputExtractorTest extends CanvasKernelTestBase {
         [
           'uuid' => $child_uuid,
           'component' => 'sdc.canvas_test_sdc.props-slots',
-          'parent' => $uuid,
+          'parent_uuid' => $uuid,
           'slot' => 'the_body',
           'inputs' => [
             'heading' => 'This is a slotted component!',

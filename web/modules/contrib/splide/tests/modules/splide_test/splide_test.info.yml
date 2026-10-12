@@ -8,7 +8,7 @@ dependencies:
   - blazy:blazy_test (>= 3.x)
   - splide:splide
 
-# Information added by Drupal.org packaging script on 2026-01-10
-version: '2.0.13'
+# Information added by Drupal.org packaging script on 2026-08-26
+version: '2.0.14'
 project: 'splide'
-datestamp: 1768036660
+datestamp: 1787767215

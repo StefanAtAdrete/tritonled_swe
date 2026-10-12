@@ -8,7 +8,9 @@ beforestart
 boromino
 ciphertext
 codegen
+connectability
 connectableend
+contenteditable
 connectablestart
 connectionindicator
 connectionline
@@ -18,12 +20,17 @@ desync
 ecatemplatedummy
 edgelabel
 edgeupdater
+ellipsize
+ellipsized
+ellipsizes
+firstline
 fontawesome
 greaterthan
 handleid
 handlepos
 inkscape
 inlinehilite
+insertable
 interactable
 jurgenhaas
 layouted
@@ -43,6 +50,7 @@ nopan
 noselect
 nowheel
 onpropertychange
+outdegree
 pannable
 passwordless
 pilcrow
@@ -69,3 +77,4 @@ unsub
 unvalidated
 uuidv
 zoomable
+zwsp

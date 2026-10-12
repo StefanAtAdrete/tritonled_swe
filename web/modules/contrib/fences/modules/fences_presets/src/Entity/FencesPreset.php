@@ -26,6 +26,7 @@ use Drupal\fences_presets\FencesPresetInterface;
  *       "add" = "Drupal\fences_presets\Form\FencesPresetForm",
  *       "edit" = "Drupal\fences_presets\Form\FencesPresetForm",
  *       "delete" = "Drupal\Core\Entity\EntityDeleteForm",
+ *       "duplicate" = "Drupal\fences_presets\Form\FencesPresetDuplicateForm",
  *     },
  *   },
  *   config_prefix = "fences_preset",
@@ -35,6 +36,7 @@ use Drupal\fences_presets\FencesPresetInterface;
  *     "add-form" = "/admin/structure/fences-preset/add",
  *     "edit-form" = "/admin/structure/fences-preset/{fences_preset}",
  *     "delete-form" = "/admin/structure/fences-preset/{fences_preset}/delete",
+ *     "duplicate-form" = "/admin/structure/fences-preset/{fences_preset}/duplicate"
  *   },
  *   entity_keys = {
  *     "id" = "id",
@@ -63,7 +65,7 @@ final class FencesPreset extends ConfigEntityBase implements FencesPresetInterfa
   /**
    * The ID.
    */
-  protected string $id;
+  protected ?string $id;
 
   /**
    * The label.

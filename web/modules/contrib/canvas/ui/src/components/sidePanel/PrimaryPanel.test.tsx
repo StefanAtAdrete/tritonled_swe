@@ -11,6 +11,10 @@ vi.mock('@/hooks/useHidePanelClasses', () => ({
   default: () => [],
 }));
 
+vi.mock('@/hooks/useCanvasHeadlessSettings', () => ({
+  useCanvasHeadlessSettings: () => undefined,
+}));
+
 vi.mock('@/utils/permissions', () => ({
   hasPermission: (...args: Parameters<typeof hasPermissionMock>) =>
     hasPermissionMock(...args),
@@ -20,12 +24,20 @@ vi.mock('@/features/brandKit/BrandKitPanel', () => ({
   default: () => <div>Brand kit panel content</div>,
 }));
 
+vi.mock('@/features/layout/preview/useHeadlessDraftSession', () => ({
+  useHeadlessDraftSession: vi.fn(),
+}));
+
 vi.mock('@/components/extensions/ExtensionsList', () => ({
   default: () => <div>Extensions list</div>,
 }));
 
 vi.mock('@/components/aiExtension/AiWizard', () => ({
   default: () => <div>AI wizard</div>,
+}));
+
+vi.mock('@/components/aiExtension/AiWizardDev', () => ({
+  default: () => <div>AI wizard dev</div>,
 }));
 
 vi.mock('@/utils/drupal-globals', () => ({

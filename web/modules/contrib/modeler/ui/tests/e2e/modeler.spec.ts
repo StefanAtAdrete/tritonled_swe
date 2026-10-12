@@ -25,17 +25,21 @@ test.describe('Workflow Modeler - Core Functionality', () => {
     test('should display existing nodes from model', async ({ page }) => {
       await modeler.goto();
 
-      // Model has 3 nodes (event_1, action_1, action_2)
+      // Backend model has 3 nodes (event_1, action_1, action_2).  edge_1 carries
+      // a condition that is PROMOTED to a condition node on load (issue
+      // #3589093), so the canvas renders 4 nodes.
       const nodeCount = await modeler.getNodeCount();
-      expect(nodeCount).toBe(3);
+      expect(nodeCount).toBe(4);
     });
 
     test('should display existing edges from model', async ({ page }) => {
       await modeler.goto();
 
-      // Model has 2 edges (one with condition, one without)
+      // Backend model has 2 edges (edge_1 with a condition, edge_2 without).
+      // Promotion splits the condition edge into two plain edges
+      // (event_1 -> cond, cond -> action_1), so the canvas renders 3 edges.
       const edgeCount = await modeler.getEdgeCount();
-      expect(edgeCount).toBe(2);
+      expect(edgeCount).toBe(3);
     });
   });
 
@@ -180,27 +184,33 @@ test.describe('Workflow Modeler - Keyboard Shortcuts', () => {
   });
 
   test.skip('should undo last action', async ({ page }) => {
-    // Undo requires undo stack which may not be available in isolated test
-    await modeler.selectNode('action_1');
+    // Undo requires undo stack which may not be available in isolated test.
+    // Counts are relative so they remain correct regardless of condition-node
+    // promotion (issue #3589093).
+    const initialCount = await modeler.getNodeCount();
+    await modeler.selectNode('action_2');
     await modeler.deleteSelected();
 
     const countAfterDelete = await modeler.getNodeCount();
-    expect(countAfterDelete).toBe(2);
+    expect(countAfterDelete).toBe(initialCount - 1);
 
     await modeler.undo();
 
     const countAfterUndo = await modeler.getNodeCount();
-    expect(countAfterUndo).toBe(3);
+    expect(countAfterUndo).toBe(initialCount);
   });
 
   test('should redo undone action', async ({ page }) => {
-    await modeler.selectNode('action_1');
+    // Use a leaf node (action_2) so deletion removes exactly one node.
+    // Counts are relative so condition-node promotion does not affect them.
+    const initialCount = await modeler.getNodeCount();
+    await modeler.selectNode('action_2');
     await modeler.deleteSelected();
     await modeler.undo();
     await modeler.redo();
 
     const finalCount = await modeler.getNodeCount();
-    expect(finalCount).toBe(2);
+    expect(finalCount).toBe(initialCount - 1);
   });
 
   test('should open search with Ctrl+F', async ({ page }) => {
@@ -289,6 +299,134 @@ test.describe('Workflow Modeler - Toolbar Actions', () => {
     // Position should have changed (unless already optimal)
     // This is a basic check - actual validation depends on layout algorithm
     expect(boxAfter).toBeDefined();
+  });
+});
+
+/**
+ * Parallel-edge routing — issue #3586864.
+ *
+ * When a new edge is added between two nodes that are already connected
+ * (directly or via a chain), the new edge must be routed sideways via
+ * `controlOffset` so it does not visually overlap the existing connection.
+ *
+ * These tests drive the public plugin API (`window.WorkflowModeler.api`)
+ * rather than the user-drag path, because programmatic drag-to-connect
+ * is unreliable in headless browsers (see undo-redo.spec.ts:260). The
+ * router itself runs in both code paths, so exercising it through the API
+ * gives the same coverage.
+ */
+test.describe('Workflow Modeler - Parallel Edge Routing', () => {
+  let modeler: ModelerPage;
+
+  test.beforeEach(async ({ page }) => {
+    await setupMocks(page);
+    modeler = new ModelerPage(page);
+    // Pre-create the WorkflowModeler global so Flow.tsx attaches the
+    // plugin API there when it mounts.
+    await page.addInitScript(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).WorkflowModeler = (window as any).WorkflowModeler || {};
+    });
+    await modeler.goto();
+  });
+
+  test('routes a new direct parallel edge with a sideways controlOffset', async ({ page }) => {
+    const initialEdgeCount = await modeler.getEdgeCount();
+
+    // Conditions are first-class nodes now (issue #3589093), so there are no
+    // condition edges to special-case here.  Use the plain direct edge
+    // action_1 → action_2 (edge_2) and add a parallel edge between the same
+    // pair so the router must spread them sideways via controlOffset.
+    const newEdgeId = await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      return api ? api.addEdge('action_1', 'action_2') : null;
+    });
+
+    expect(newEdgeId).toBeTruthy();
+    expect(await modeler.getEdgeCount()).toBe(initialEdgeCount + 1);
+
+    // Read both edges' controlOffset from the store via the API.
+    // The PluginEdge projection nests controlOffset under `data`.
+    const offsets = await page.evaluate((newId: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      const allEdges = api.getEdges();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const original = allEdges.find((e: any) => e.id === 'edge_2');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const created = allEdges.find((e: any) => e.id === newId);
+      return {
+        originalOffset: original?.data?.controlOffset ?? null,
+        newOffset: created?.data?.controlOffset ?? null,
+      };
+    }, newEdgeId as string);
+
+    expect(offsets.originalOffset).not.toBeNull();
+    expect(offsets.newOffset).not.toBeNull();
+    // Both edges have non-zero X offsets on opposite sides.
+    expect(offsets.originalOffset!.x).not.toBe(0);
+    expect(offsets.newOffset!.x).not.toBe(0);
+    expect(
+      Math.sign(offsets.originalOffset!.x) * Math.sign(offsets.newOffset!.x),
+    ).toBeLessThan(0);
+  });
+
+  test('does not add a controlOffset to a non-parallel edge', async ({ page }) => {
+    // Create a fresh node disconnected from the existing chain, then
+    // connect action_2 → newNode. There is no existing path between
+    // those two endpoints, so the router must not add any offset.
+    const newEdgeId = await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      const newNodeId = api.addNode({
+        plugin: 'message:set',
+        componentType: 4, // 4 = element
+        label: 'Independent Action',
+        position: { x: 1000, y: 200 },
+      });
+      return api.addEdge('action_2', newNodeId);
+    });
+
+    expect(newEdgeId).toBeTruthy();
+
+    const offset = await page.evaluate((id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const edge = api.getEdges().find((e: any) => e.id === id);
+      return edge?.data?.controlOffset ?? null;
+    }, newEdgeId as string);
+
+    // No collision means no offset (zero or undefined are both valid).
+    if (offset !== null) {
+      expect(offset.x).toBe(0);
+      expect(offset.y).toBe(0);
+    }
+  });
+
+  test('routes a bypass curve when source and target are connected via a chain', async ({ page }) => {
+    // event_1 → action_1 → action_2 is the existing chain.
+    // Add a new direct edge event_1 → action_2: it must bypass action_1
+    // sideways via a non-zero controlOffset.x.
+    const newEdgeId = await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      return api ? api.addEdge('event_1', 'action_2') : null;
+    });
+
+    expect(newEdgeId).toBeTruthy();
+
+    const offset = await page.evaluate((id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window as any).WorkflowModeler?.api;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const edge = api.getEdges().find((e: any) => e.id === id);
+      return edge?.data?.controlOffset ?? null;
+    }, newEdgeId as string);
+
+    expect(offset).not.toBeNull();
+    expect(offset!.x).not.toBe(0);
   });
 });
 

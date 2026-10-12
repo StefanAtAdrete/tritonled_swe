@@ -95,6 +95,31 @@ describe('tokenUtils', () => {
       const html = '<div>Hello <span class="config-token" data-token="[user:name]">name</span></div>';
       expect(convertHTMLToTokens(html)).toBe('Hello [user:name]');
     });
+
+    it('preserves native contenteditable block boundaries as newlines', () => {
+      const token = '<span class="config-token" data-token="[site:name]">name</span>';
+      expect(convertHTMLToTokens(`line1<div>${token}</div>`)).toBe('line1\n[site:name]');
+      expect(convertHTMLToTokens('<div>line1</div><div>X</div>')).toBe('line1\nX');
+      expect(convertHTMLToTokens('line1<div><br></div>')).toBe('line1\n');
+      expect(convertHTMLToTokens('<div>line1</div><div><br></div><div>X</div>'))
+        .toBe('line1\n\nX');
+    });
+
+    it('strips the trailing zero-width-space caret spacer after a trailing token (Issue B)', () => {
+      // A field ending in a token gets a ZWSP (\u200B) appended as a caret spot;
+      // it must NOT appear in the serialized value.
+      const html = 'Hello <span class="config-token" data-token="[user:name]">name</span>\u200B';
+      const out = convertHTMLToTokens(html);
+      expect(out).toBe('Hello [user:name]');
+      expect(out).not.toContain('\u200B');
+    });
+
+    it('strips zero-width-spaces wherever they appear', () => {
+      const html = '\u200B<span class="config-token" data-token="[a:b]">b</span>\u200Btext\u200B';
+      const out = convertHTMLToTokens(html);
+      expect(out).toBe('[a:b]text');
+      expect(out).not.toContain('\u200B');
+    });
   });
 
   describe('round-trip conversion', () => {

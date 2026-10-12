@@ -1,15 +1,16 @@
 /**
  * @file
  * Provides Splide extensions for Blazy.
+ *
+ * @todo remove if already taken care of by Blazy 4.x ObserverContext.
  */
 
-(function ($, Drupal, _ds) {
+(function ($, _ds) {
 
   'use strict';
 
   var Blazy = function (Splide, Components) {
     var root = Splide.root;
-    var _blazy = Drupal.blazy || {};
     var _firstView = true;
 
     return {
@@ -35,22 +36,26 @@
        *
        * @param {bool} ahead
        *   Whether to lazyload ahead (at move/ beforeChange event), or not.
+       *
+       * @todo revert if any issue in Blazy 4.x already taken care of by
+       * ObserverContext.
        */
       preload: function (ahead) {
-        if (!_blazy.init || _firstView) {
+        if (_firstView) {
           return;
         }
 
-        window.setTimeout(function () {
-          var blazy = '.b-lazy:not(.b-loaded)';
-          var visible = '.is-visible ' + blazy;
-          var el = $.find(root, blazy);
-          if ($.isElm(el)) {
-            var els = $.findAll(root, ahead ? blazy : visible);
-            if (els.length) {
-              _blazy.init.load(els);
-            }
-          }
+        setTimeout(function () {
+          // var blazy = '.b-lazy:not(.b-loaded)';
+          // var visible = '.is-visible ' + blazy;
+          // var el = $.find(root, blazy);
+
+          // if ($.isElm(el)) {
+          // var els = $.findAll(root, ahead ? blazy : visible);
+          // if (els.length) {
+          // _blazy.init.load(els);
+          // }
+          // }
 
           // Cleans up preloader if any named b-loader due to clones.
           var preloader = $.find(root, '.b-loaded ~ .b-loader');
@@ -64,4 +69,4 @@
     Blazy: Blazy
   });
 
-})(dBlazy, Drupal, dSplide);
+})(dBlazy, dSplide);

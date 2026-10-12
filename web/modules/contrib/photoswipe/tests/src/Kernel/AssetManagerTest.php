@@ -3,13 +3,16 @@
 namespace Drupal\Tests\photoswipe\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests asset manager.
  *
  * @coversClass \Drupal\photoswipe\PhotoswipeAssetsManager
- * @group Theme
  */
+#[Group('Theme')]
+#[RunTestsInSeparateProcesses]
 class AssetManagerTest extends KernelTestBase {
 
   /**

@@ -44,13 +44,14 @@
     "@storybook/react": "^8.6.15",
     "@storybook/react-vite": "^8.6.15",
     "@storybook/test": "^8.6.15",
-    "@storybook/test-runner": "^0.21.0",
+    "@storybook/test-runner": "^0.23.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/dompurify": "^3.0.5",
     "@types/jest": "^29.5.14",
     "@types/jest-axe": "^3.5.9",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
@@ -70,7 +71,6 @@
     "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^29.7.0",
     "js-yaml": "^4.1.0",
-    "@types/js-yaml": "^4.0.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
@@ -79,8 +79,11 @@
     "ts-jest": "^29.4.6",
     "tsx": "^4.7.0",
     "typescript": "^5.9.3",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.1",
     "wait-on": "^9.0.3",
     "zustand": "^4.4.7"
+  },
+  "overrides": {
+    "uuid": "$uuid"
   }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\PropExpressions\StructuredData;
 
+use Drupal\canvas\TypedData\BetterEntityDataDefinition;
 use Drupal\Component\Assertion\Inspector;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityInterface;
@@ -11,7 +12,6 @@ use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinitionInterface;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\canvas\TypedData\BetterEntityDataDefinition;
 
 final class FieldObjectPropsExpression implements EntityFieldBasedPropExpressionInterface, ObjectPropExpressionInterface {
 
@@ -37,7 +37,7 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
       return $expr instanceof FieldPropExpression || $expr instanceof ReferenceFieldPropExpression;
     }, $this->objectPropsToFieldProps));
     array_walk($objectPropsToFieldProps, function (EntityFieldBasedPropExpressionInterface $expr) {
-      $targets_same_field_item = $this->hasSameStartingPointAs($expr);
+      $targets_same_field_item = $this->getStartingPointKey() === $expr->getStartingPointKey();
       if (!$targets_same_field_item) {
         throw new \InvalidArgumentException(\sprintf(
           '`%s` is not a valid expression, because it does not map the same field item (entity type `%s`, field name `%s`, delta `%s`).',
@@ -62,7 +62,14 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
           (ScalarPropExpressionInterface&EntityFieldBasedPropExpressionInterface)|(ReferencePropExpressionInterface&EntityFieldBasedPropExpressionInterface) $expr,
         ) {
           $tail = match ($expr::class) {
-            ReferenceFieldPropExpression::class => $expr->referencer->getFieldPropertyName() . static::PREFIX_ENTITY_LEVEL . self::withoutExpressionTypePrefix((string) $expr->referenced),
+            ReferenceFieldPropExpression::class => $expr->referencer->getFieldPropertyName() . static::PREFIX_ENTITY_LEVEL . (
+              // A bundle-specific branch set already serializes without an
+              // expression-type prefix (`[branch][branch]`); a plain referenced
+              // expression carries one that must be stripped.
+              $expr->referenced instanceof ReferencedBundleSpecificBranches
+                ? (string) $expr->referenced
+                : self::withoutExpressionTypePrefix((string) $expr->referenced)
+            ),
             default => $expr->getFieldPropertyName(),
           };
           return \sprintf(
@@ -101,9 +108,16 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
     $object_mapping = mb_substr($object_mapping, 1, -1);
 
     $objectPropsToFieldTypeProps = [];
-    foreach (explode(',', $object_mapping) as $obj_prop_mapping) {
-      if (str_contains($obj_prop_mapping, self::SYMBOL_OBJECT_MAPPED_USE_PROP)) {
-        [$sdc_obj_prop_name, $field_instance_prop_name] = explode(self::SYMBOL_OBJECT_MAPPED_USE_PROP, $obj_prop_mapping);
+    foreach (self::splitObjectMapping($object_mapping) as $obj_prop_mapping) {
+      // The entry's own symbol is the FIRST one: a follow-reference (`↝`)
+      // entry whose referenced expression is itself an object contains `↠`
+      // (and possibly `↝`) deeper in the string. The explode() limit of 2
+      // splits the entry name off at that first symbol only, keeping deeper
+      // symbols intact in the remainder for recursive parsing.
+      $use_prop_pos = mb_strpos($obj_prop_mapping, self::SYMBOL_OBJECT_MAPPED_USE_PROP);
+      $follow_reference_pos = mb_strpos($obj_prop_mapping, self::SYMBOL_OBJECT_MAPPED_FOLLOW_REFERENCE);
+      if ($use_prop_pos !== FALSE && ($follow_reference_pos === FALSE || $use_prop_pos < $follow_reference_pos)) {
+        [$sdc_obj_prop_name, $field_instance_prop_name] = explode(self::SYMBOL_OBJECT_MAPPED_USE_PROP, $obj_prop_mapping, 2);
         $objectPropsToFieldTypeProps[$sdc_obj_prop_name] = new FieldPropExpression(
           $entity_data_definition,
           $field_name,
@@ -112,14 +126,32 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
         );
       }
       else {
-        [$sdc_obj_prop_name, $obj_prop_mapping_remainder] = explode(self::SYMBOL_OBJECT_MAPPED_FOLLOW_REFERENCE, $obj_prop_mapping);
+        [$sdc_obj_prop_name, $obj_prop_mapping_remainder] = explode(self::SYMBOL_OBJECT_MAPPED_FOLLOW_REFERENCE, $obj_prop_mapping, 2);
         [$field_instance_prop_name, $field_prop_ref_expr] = explode(self::PREFIX_ENTITY_LEVEL, $obj_prop_mapping_remainder, 2);
-        $referenced = StructuredDataPropExpression::fromString(self::PREFIX_EXPRESSION_TYPE . $field_prop_ref_expr);
-        \assert($referenced instanceof ReferenceFieldPropExpression || $referenced instanceof FieldPropExpression || $referenced instanceof FieldObjectPropsExpression);
-        $objectPropsToFieldTypeProps[$sdc_obj_prop_name] = new ReferenceFieldPropExpression(
-          new FieldPropExpression($entity_data_definition, $field_name, NULL, $field_instance_prop_name),
-          $referenced,
-        );
+        $referencer = new FieldPropExpression($entity_data_definition, $field_name, NULL, $field_instance_prop_name);
+        if (\str_starts_with($field_prop_ref_expr, self::PREFIX_BRANCH)) {
+          // A bundle-specific branch set: `↝entity␜[branch][branch]`. Each
+          // branch is a stand-alone entity-field expression rooted at a bundle.
+          // parseBranches() rejects nested branching.
+          $branch_expressions = \array_map(
+            fn (string $branch): StructuredDataPropExpressionInterface => StructuredDataPropExpression::fromString(self::PREFIX_EXPRESSION_TYPE . $branch),
+            self::parseBranches($field_prop_ref_expr),
+          );
+          // @phpstan-ignore argument.type
+          $referenced = new ReferencedBundleSpecificBranches(\array_combine(
+            \array_map(
+              // @phpstan-ignore argument.type
+              fn (EntityFieldBasedPropExpressionInterface $expr): string => $expr->getHostEntityDataDefinition()->getDataType(),
+              $branch_expressions,
+            ),
+            $branch_expressions,
+          ));
+        }
+        else {
+          $referenced = StructuredDataPropExpression::fromString(self::PREFIX_EXPRESSION_TYPE . $field_prop_ref_expr);
+          \assert($referenced instanceof ReferenceFieldPropExpression || $referenced instanceof FieldPropExpression || $referenced instanceof FieldObjectPropsExpression);
+        }
+        $objectPropsToFieldTypeProps[$sdc_obj_prop_name] = new ReferenceFieldPropExpression($referencer, $referenced);
       }
     }
 
@@ -129,6 +161,37 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
       $delta === '' ? NULL : (int) $delta,
       $objectPropsToFieldTypeProps
     );
+  }
+
+  /**
+   * Splits an object mapping on commas, ignoring those in nested expressions.
+   *
+   * A follow-reference (`↝`) entry's referenced expression may itself be a
+   * FieldObjectPropsExpression or contain bundle-specific branches, both of
+   * which use commas internally — only top-level commas separate entries.
+   *
+   * @return non-empty-list<string>
+   *   The individual `name↠prop` / `name↝reference` entry strings.
+   */
+  private static function splitObjectMapping(string $object_mapping): array {
+    $entries = [];
+    $depth = 0;
+    $current = '';
+    foreach (\mb_str_split($object_mapping) as $char) {
+      if ($char === ',' && $depth === 0) {
+        $entries[] = $current;
+        $current = '';
+        continue;
+      }
+      $depth += match ($char) {
+        self::PREFIX_OBJECT, self::PREFIX_BRANCH => 1,
+        self::SUFFIX_OBJECT, self::SUFFIX_BRANCH => -1,
+        default => 0,
+      };
+      $current .= $char;
+    }
+    $entries[] = $current;
+    return $entries;
   }
 
   public function validateSupport(EntityInterface|FieldItemInterface|FieldItemListInterface $entity): void {
@@ -173,6 +236,18 @@ final class FieldObjectPropsExpression implements EntityFieldBasedPropExpression
    */
   public function getObjectExpressions(): array {
     return $this->objectPropsToFieldProps;
+  }
+
+  /**
+   * Whether every object expression is a reference.
+   *
+   * (In string representation terms: only `↝`, no `↠`.)
+   */
+  public function isReferenceOnly(): bool {
+    return \array_all(
+      $this->objectPropsToFieldProps,
+      fn (EntityFieldBasedPropExpressionInterface $expr) => $expr instanceof ReferencePropExpressionInterface,
+    );
   }
 
 }

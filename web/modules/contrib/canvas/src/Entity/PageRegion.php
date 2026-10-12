@@ -4,16 +4,38 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Entity;
 
-use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\canvas\ClientSideRepresentation;
 use Drupal\canvas\Controller\ClientServerConversionTrait;
-use Drupal\canvas\Exception\ConstraintViolationException;
-use Drupal\canvas\Plugin\DisplayVariant\CanvasPageVariant;
-use Drupal\canvas\Plugin\Canvas\ComponentSource\BlockComponentDiscovery;
-use Drupal\Core\Entity\Attribute\ConfigEntityType;
 use Drupal\canvas\EntityHandlers\CanvasConfigEntityAccessControlHandler;
+use Drupal\canvas\Exception\ConstraintViolationException;
+use Drupal\canvas\Plugin\Canvas\ComponentSource\BlockComponentDiscovery;
+use Drupal\canvas\Plugin\DisplayVariant\CanvasPageVariant;
+use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItem;
 use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
+use Drupal\Core\Entity\Attribute\ConfigEntityType;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ThemeHandlerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Theme\ThemeManagerInterface;
 
+/**
+ * Defines one theme region's component tree.
+ *
+ * Page variants replaced theme-global regions (see ADR 0019). Regions have no
+ * HTTP API and are not editable. They render only as a backward-compatibility
+ * fallback when no page variant resolves so sites remain usable until the
+ * region-to-variant migration runs or a default page variant is created
+ * manually. Do not build new functionality on it.
+ *
+ * @deprecated in canvas:1.11.0 and is removed from canvas:2.0.0. Use
+ *   \Drupal\canvas\Entity\PageVariant instead.
+ *
+ * @phpcs:ignore Drupal.Commenting.Deprecated.DeprecatedWrongSeeUrlFormat
+ * @see https://git.drupalcode.org/project/canvas/-/work_items/3591806
+ * @see \Drupal\canvas\Entity\PageVariant
+ * @see docs/adr/0019-page-variants-replace-theme-global-regions.md
+ */
 #[ConfigEntityType(
   id: self::ENTITY_TYPE_ID,
   label: new TranslatableMarkup("Page region"),
@@ -39,9 +61,7 @@ use Drupal\canvas\Plugin\Field\FieldType\ComponentTreeItemList;
   ],
   constraints: [
     'ImmutableProperties' => [
-      'id',
-      'theme',
-      'region',
+      'properties' => ['id', 'theme', 'region'],
     ],
   ],
 )]
@@ -115,9 +135,12 @@ final class PageRegion extends ComponentTreeConfigEntityBase {
 
     $items = self::clientToServerTree($autoSaveData['layout'], $autoSaveData['model'], NULL, $validate);
 
-    $auto_saved_page_region = static::create([
-      'component_tree' => $items,
-    ] + $this->toArray());
+    $auto_saved_page_region = static::create($this->toArray())
+      // Auto-saves can only exist for existing entities.
+      ->enforceIsNew(FALSE)
+      // Ensure that sequence keys are retained when this PageRegion has been
+      // translated.
+      ->setComponentTree($items);
     if (!$validate) {
       return $auto_saved_page_region;
     }
@@ -143,6 +166,31 @@ final class PageRegion extends ComponentTreeConfigEntityBase {
   /**
    * {@inheritdoc}
    */
+  public function normalizeForClientSide(): ClientSideRepresentation {
+    $component_tree = [];
+    foreach ($this->getComponentTree() as $item) {
+      \assert($item instanceof ComponentTreeItem);
+      $values = \array_map(fn($property) => $property->getValue(), $item->getProperties(TRUE));
+      unset($values['parent_item'], $values['component']);
+      $values['inputs'] = $item->getInputs();
+      $component_tree[] = $values;
+    }
+
+    return ClientSideRepresentation::create(
+      values: [
+        'id' => $this->id(),
+        'theme' => $this->theme,
+        'region' => $this->region,
+        'status' => $this->status(),
+        'component_tree' => $component_tree,
+      ],
+      preview: NULL,
+    )->addCacheableDependency($this);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function calculateDependencies() {
     parent::calculateDependencies();
     $this->addDependency('theme', $this->theme);
@@ -157,7 +205,7 @@ final class PageRegion extends ComponentTreeConfigEntityBase {
    *   Page regions for the active theme.
    */
   public static function loadForActiveTheme(): array {
-    $theme = \Drupal::service('theme.manager')->getActiveTheme()->getName();
+    $theme = \Drupal::service(ThemeManagerInterface::class)->getActiveTheme()->getName();
     return self::loadForTheme($theme);
   }
 
@@ -168,20 +216,9 @@ final class PageRegion extends ComponentTreeConfigEntityBase {
     if (!$include_non_editable) {
       $properties['status'] = TRUE;
     }
-    $regions = \Drupal::service('entity_type.manager')->getStorage(self::ENTITY_TYPE_ID)->loadByProperties($properties);
+    $regions = \Drupal::service(EntityTypeManagerInterface::class)->getStorage(self::ENTITY_TYPE_ID)->loadByProperties($properties);
 
     return $regions;
-  }
-
-  /**
-   * @return array<string, \Drupal\canvas\Entity\PageRegion>
-   */
-  public static function loadForActiveThemeByClientSideId(): array {
-    $regions = self::loadForActiveTheme();
-    return array_combine(
-      \array_map(fn(PageRegion $r) => $r->get('region'), $regions),
-      $regions,
-    );
   }
 
   /**
@@ -220,14 +257,14 @@ final class PageRegion extends ComponentTreeConfigEntityBase {
    * @see \Drupal\canvas\Plugin\DisplayVariant\CanvasPageVariant::MAIN_CONTENT_REGION
    */
   public static function createFromBlockLayout(string $theme): array {
-    $theme_info = \Drupal::service('theme_handler')->getTheme($theme);
+    $theme_info = \Drupal::service(ThemeHandlerInterface::class)->getTheme($theme);
     $region_names = array_filter(
       \array_keys($theme_info->info['regions']),
       // No PageRegion config entity is allowed for the `content` region.
       fn ($s) => $s !== CanvasPageVariant::MAIN_CONTENT_REGION,
     );
 
-    $blocks = \Drupal::service('entity_type.manager')->getStorage('block')
+    $blocks = \Drupal::service(EntityTypeManagerInterface::class)->getStorage('block')
       ->loadByProperties([
         'theme' => $theme,
         'status' => TRUE,

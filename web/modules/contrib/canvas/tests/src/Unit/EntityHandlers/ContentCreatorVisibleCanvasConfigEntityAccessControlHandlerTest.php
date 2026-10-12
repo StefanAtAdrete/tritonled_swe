@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\canvas\Unit\EntityHandlers;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\DataProvider;
+use Drupal\canvas\Access\CanvasUiAccessCheck;
+use Drupal\canvas\Entity\BrandKit;
+use Drupal\canvas\Entity\Component;
+use Drupal\canvas\Entity\Folder;
+use Drupal\canvas\Entity\JavaScriptComponent;
+use Drupal\canvas\Entity\PageRegion;
+use Drupal\canvas\Entity\Pattern;
+use Drupal\canvas\EntityHandlers\ContentCreatorVisibleCanvasConfigEntityAccessControlHandler;
 use Drupal\Core\Access\AccessResultAllowed;
 use Drupal\Core\Access\AccessResultForbidden;
 use Drupal\Core\Access\AccessResultNeutral;
@@ -24,13 +29,10 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\canvas\Access\CanvasUiAccessCheck;
-use Drupal\canvas\Entity\Component;
-use Drupal\canvas\Entity\JavaScriptComponent;
-use Drupal\canvas\Entity\PageRegion;
-use Drupal\canvas\Entity\Pattern;
-use Drupal\canvas\EntityHandlers\ContentCreatorVisibleCanvasConfigEntityAccessControlHandler;
 use Drupal\Tests\UnitTestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests Drupal\canvas\EntityHandlers\ContentCreatorVisibleCanvasConfigEntityAccessControlHandler.
@@ -147,6 +149,16 @@ final class ContentCreatorVisibleCanvasConfigEntityAccessControlHandlerTest exte
       'id' => Component::ENTITY_TYPE_ID,
       'provider' => 'canvas',
       'config_prefix' => 'component',
+    ]));
+    $entityTypeManager->getDefinition(Folder::ENTITY_TYPE_ID)->willReturn(new ConfigEntityType([
+      'id' => Folder::ENTITY_TYPE_ID,
+      'provider' => 'canvas',
+      'config_prefix' => 'folder',
+    ]));
+    $entityTypeManager->getDefinition(BrandKit::ENTITY_TYPE_ID)->willReturn(new ConfigEntityType([
+      'id' => BrandKit::ENTITY_TYPE_ID,
+      'provider' => 'canvas',
+      'config_prefix' => 'brand_kit',
     ]));
     $canvasUiAccessCheck = $this->prophesize(CanvasUiAccessCheck::class);
     $sut = new ContentCreatorVisibleCanvasConfigEntityAccessControlHandler($entityType, $configManager, $entityTypeManager->reveal(), $canvasUiAccessCheck->reveal());

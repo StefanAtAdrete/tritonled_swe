@@ -1,20 +1,30 @@
 import chalk from 'chalk';
 import * as p from '@clack/prompts';
-import { discoverCanvasProject } from '@drupal-canvas/discovery';
+import {
+  detectHeadlessSdk,
+  discoverCanvasProject,
+} from '@drupal-canvas/discovery';
 
 import { getConfig } from '../config.js';
-import { createApiService, ensureAuthConfig } from '../services/api.js';
 import {
-  pluralize,
-  pluralizeComponent,
-  updateConfigFromOptions,
-  validateComponentOptions,
-} from '../utils/command-helpers';
-import { selectLocalComponents } from '../utils/component-selector.js';
-import { reportResults } from '../utils/report-results.js';
+  applyPageVariantCompatibility,
+  createApiService,
+  isUserAuthenticated,
+  supportsPageVariants,
+} from '../services/api.js';
+import { updateConfigFromOptions } from '../utils/command-helpers';
+import { printCommandIntro } from '../utils/command-intro.js';
+import {
+  COMMAND_RESULT_REPORT_OPTIONS,
+  reportResults,
+  splitFailedResultsByFile,
+} from '../utils/report-results.js';
+import { validateBrandKit } from '../utils/validate-brand-kit.js';
 import { validateContentTemplates } from '../utils/validate-content-template.js';
+import { validatePageTemplates } from '../utils/validate-page-variant.js';
 import { validatePages } from '../utils/validate-page.js';
-import { validateComponent } from '../utils/validate.js';
+import { validateComponents } from '../utils/validate.js';
+import { formatDiscoveryWarning } from './push.js';
 
 import type { Command } from 'commander';
 import type { ApiService } from '../services/api.js';
@@ -22,11 +32,29 @@ import type { Result } from '../types/Result.js';
 
 interface ValidateOptions {
   dir?: string;
-  all?: boolean;
-  components?: string;
-  yes?: boolean;
   fix?: boolean;
-  deprecated?: boolean;
+}
+
+async function createOptionalValidationApiService(): Promise<
+  ApiService | undefined
+> {
+  const config = getConfig();
+  if (!config.siteUrl) {
+    return undefined;
+  }
+  const hasClientCredentials =
+    Boolean(config.clientId) &&
+    Boolean(config.clientSecret) &&
+    Boolean(config.scope);
+  if (!isUserAuthenticated(config.siteUrl) && !hasClientCredentials) {
+    return undefined;
+  }
+  await applyPageVariantCompatibility(config.siteUrl);
+  try {
+    return await createApiService();
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -35,165 +63,150 @@ interface ValidateOptions {
 export function validateCommand(program: Command): void {
   program
     .command('validate')
-    .description('validate local components and pages')
+    .description('validate local components, pages, and the brand kit file')
     .option(
       '-d, --dir <directory>',
       'Component directory to validate the components in',
     )
     .option(
-      '-c, --components <names>',
-      'Specific component(s) to validate (comma-separated)',
-    )
-    .option('--all', 'Validate all components')
-    .option('-y, --yes', 'Skip confirmation prompts')
-    .option(
       '--fix',
       'Apply available automatic fixes for linting issues',
       false,
     )
-    .option(
-      '--deprecated',
-      'Validate using deprecated rules and component selection.',
-      false,
-    )
     .action(async (options: ValidateOptions) => {
       try {
-        p.intro(chalk.bold('Drupal Canvas CLI: validate'));
+        printCommandIntro('validate');
 
         // Update config with CLI options
         updateConfigFromOptions(options);
 
-        let componentDirectoriesToValidate: string[] = [];
-        let discoveryResult;
-
-        if (options.deprecated) {
-          // Validate options
-          validateComponentOptions(options);
-
-          // Default to --all when --yes is used without --components
-          const allFlag =
-            options.all || (options.yes && !options.components) || false;
-
-          // Select components to validate
-          const { directories } = await selectLocalComponents({
-            all: allFlag,
-            components: options.components,
-            skipConfirmation: options.yes,
-            selectMessage: 'Select components to validate',
-          });
-          componentDirectoriesToValidate = directories;
-        } else {
-          if (options.all) {
-            p.log.warn(
-              '--all option is deprecated and ignored unless used with the --deprecated flag.',
-            );
+        const config = getConfig();
+        const headlessSdkDetected = detectHeadlessSdk(process.cwd());
+        const discoveryResult = await discoverCanvasProject({
+          componentRoot: config.componentDir,
+          pagesRoot: config.pagesDir,
+          contentTemplatesRoot: config.contentTemplatesDir,
+          pageTemplatesRoot: config.pageTemplatesDir,
+          projectRoot: process.cwd(),
+          requireJsEntry: !headlessSdkDetected,
+        });
+        for (const warning of discoveryResult.warnings) {
+          p.log.warn(formatDiscoveryWarning(warning));
+        }
+        const results: Result[] = [];
+        const apiService = await createOptionalValidationApiService();
+        const pageVariantsSupported = await supportsPageVariants(
+          config.siteUrl,
+        );
+        let availablePageVariantIds: Set<string> | undefined;
+        if (apiService && pageVariantsSupported) {
+          try {
+            const remotePageVariants = await apiService.listPageVariants();
+            availablePageVariantIds = new Set([
+              ...Object.keys(remotePageVariants),
+              ...discoveryResult.pageTemplates.map((template) => template.id),
+            ]);
+          } catch {
+            // Server unreachable or does not support page variants yet.
           }
-          if (options.components) {
-            p.log.warn(
-              '--components option is deprecated and ignored unless used with the --deprecated flag.',
-            );
-          }
-
-          const config = getConfig();
-          discoveryResult = await discoverCanvasProject({
-            componentRoot: config.componentDir,
-            pagesRoot: config.pagesDir,
-            contentTemplatesRoot: config.contentTemplatesDir,
-            projectRoot: process.cwd(),
-          });
-          componentDirectoriesToValidate = discoveryResult.components.map(
-            (c) => c.directory,
-          );
         }
 
-        const componentPluralized = pluralizeComponent(
-          componentDirectoriesToValidate.length,
-        );
-
-        const results: Result[] = [];
-
         const s = p.spinner();
-        s.start(`Validating ${componentPluralized}`);
+        s.start('Validating components');
 
-        for (const componentDir of componentDirectoriesToValidate) {
-          const result = await validateComponent(
-            componentDir,
-            options.fix,
-            options.deprecated,
-          );
+        const { results: componentResults, warnings: validationWarnings } =
+          await validateComponents(discoveryResult, {
+            fix: options.fix,
+            apiService,
+            externalComponents: headlessSdkDetected,
+          });
+        for (const warning of validationWarnings) {
+          p.log.warn(warning);
+        }
+        for (const result of componentResults) {
           results.push({ ...result, itemType: 'Component' });
         }
 
-        s.stop(
-          chalk.green(
-            `Processed ${componentDirectoriesToValidate.length} ${componentPluralized}`,
-          ),
-        );
+        s.stop('Validated components', 0);
 
         if (discoveryResult && discoveryResult.pages.length > 0) {
           const pageSpinner = p.spinner();
-          pageSpinner.start(
-            `Validating ${discoveryResult.pages.length} ${pluralize(discoveryResult.pages.length, 'page')}`,
-          );
+          pageSpinner.start('Validating pages');
 
-          const { results: pageResults } = await validatePages(discoveryResult);
+          const { results: pageResults } = await validatePages(
+            discoveryResult,
+            { availablePageVariantIds },
+          );
           for (const result of pageResults) {
             results.push({ ...result, itemType: 'Page' });
           }
 
-          pageSpinner.stop(
-            chalk.green(
-              `Processed ${discoveryResult.pages.length} ${pluralize(discoveryResult.pages.length, 'page')}`,
-            ),
-          );
+          pageSpinner.stop('Validated pages', 0);
         }
 
         if (discoveryResult && discoveryResult.contentTemplates.length > 0) {
-          const ctCount = discoveryResult.contentTemplates.length;
           const ctSpinner = p.spinner();
-          ctSpinner.start(
-            `Validating ${ctCount} ${pluralize(ctCount, 'content template')}`,
-          );
-
-          let apiService: ApiService | undefined;
-          try {
-            await ensureAuthConfig();
-            apiService = await createApiService();
-          } catch {
-            // Auth not configured — draft validation will be skipped.
-          }
+          ctSpinner.start('Validating content templates');
 
           const { results: ctResults } = await validateContentTemplates(
             discoveryResult,
-            apiService ? { apiService } : undefined,
+            apiService ? { apiService, availablePageVariantIds } : undefined,
           );
           for (const result of ctResults) {
             results.push({ ...result, itemType: 'Content template' });
           }
 
-          ctSpinner.stop(
-            chalk.green(
-              `Processed ${ctCount} ${pluralize(ctCount, 'content template')}`,
-            ),
-          );
+          ctSpinner.stop('Validated content templates', 0);
         }
 
-        reportResults(results, 'Validation results', 'Item');
+        if (discoveryResult && discoveryResult.pageTemplates.length > 0) {
+          const pageTemplateSpinner = p.spinner();
+          pageTemplateSpinner.start('Validating page templates');
+
+          const { results: pageTemplateResults } =
+            await validatePageTemplates(discoveryResult);
+          for (const result of pageTemplateResults) {
+            results.push({ ...result, itemType: 'Page template' });
+          }
+
+          pageTemplateSpinner.stop('Validated page templates', 0);
+        }
+
+        const { results: brandKitResults } = await validateBrandKit(
+          process.cwd(),
+        );
+        if (brandKitResults.length > 0) {
+          const brandKitSpinner = p.spinner();
+          brandKitSpinner.start('Validating brand kit');
+          for (const result of brandKitResults) {
+            results.push({ ...result, itemType: 'Brand kit' });
+          }
+          brandKitSpinner.stop('Validated brand kit', 0);
+        }
+
+        reportResults(
+          splitFailedResultsByFile(results),
+          'Validation results',
+          'Item',
+          COMMAND_RESULT_REPORT_OPTIONS,
+        );
 
         const hasErrors = results.some((r) => !r.success);
         if (hasErrors) {
-          p.outro(`❌ Validation completed with errors`);
-          process.exit(1);
+          p.outro(`Validation failed`);
+          process.exitCode = 1;
+          return;
         }
 
-        p.outro(`✅ Validation completed`);
+        p.outro(`Validation completed`);
       } catch (error) {
         if (error instanceof Error) {
-          p.note(chalk.red(`Error: ${error.message}`));
+          p.log.error(chalk.red(`Error: ${error.message}`));
         } else {
-          p.note(chalk.red(`Unknown error: ${String(error)}`));
+          p.log.error(chalk.red(`Unknown error: ${String(error)}`));
         }
-        process.exit(1);
+        p.outro('Validation failed');
+        process.exitCode = 1;
       }
     });
 }

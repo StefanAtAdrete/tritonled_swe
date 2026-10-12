@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\canvas\Plugin\DataType;
 
+use Drupal\canvas\PropExpressions\StructuredData\Evaluator;
+use Drupal\canvas\PropExpressions\StructuredData\NegotiatedLanguage;
+use Drupal\canvas\PropExpressions\StructuredData\ReferencePropExpressionInterface;
+use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
+use Drupal\canvas\Utility\TypedDataHelper;
 use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\Plugin\DataType\EntityReference;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\GeneratedUrl;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\Attribute\DataType;
 use Drupal\Core\TypedData\Plugin\DataType\Uri;
-use Drupal\canvas\PropExpressions\StructuredData\Evaluator;
-use Drupal\canvas\PropExpressions\StructuredData\StructuredDataPropExpression;
 
 #[DataType(
   id: self::PLUGIN_ID,
@@ -69,27 +73,59 @@ class ComputedUrlWithQueryString extends Uri implements DependentPluginInterface
 
     $url_with_query_string = new GeneratedUrl();
 
+    $field_item_language = \Drupal::languageManager()->getLanguage($field_item->getLangcode());
+    \assert($field_item_language !== NULL);
+
     // Compute the URL and query string from the provided instructions.
     $this->cacheability = new CacheableMetadata();
-    $url = Evaluator::evaluate($field_item, $url_prop_expression, is_required: TRUE);
+    $url = Evaluator::evaluate($field_item, $url_prop_expression,
+      is_required: TRUE,
+      // @todo Use `NegotiatedLanguage::matchEntity($field_item->getRoot()->getEntity())` in https://git.drupalcode.org/project/canvas/-/work_items/3571785 — the `new CacheableMetadata()` here loses the host entity's cache tags.
+      language: new NegotiatedLanguage($field_item_language, new CacheableMetadata()),
+    );
     $url_with_query_string->addCacheableDependency($url);
+
+    // A deleted referenced entity legitimately resolves to NULL. Return the
+    // partially-built GeneratedUrl with the deleted entity's cache tag so the
+    // cached empty render is invalidated if the entity is restored.
+    if ($url->value === NULL) {
+      if ($url_prop_expression instanceof ReferencePropExpressionInterface) {
+        $reference_property = $field_item->get($url_prop_expression->getFieldPropertyName());
+        if ($reference_property instanceof EntityReference) {
+          $url_with_query_string->addCacheableDependency(TypedDataHelper::getDeletedReferencedEntityCacheability($reference_property));
+        }
+      }
+      return $url_with_query_string;
+    }
+
     \assert(\is_string($url->value));
     $url_components = UrlHelper::parse($url->value);
     foreach ($instructions['query_parameters'] as $query_parameter_name => $query_parameter_instruction) {
       $query_parameter = Evaluator::evaluate(
         $field_item,
         StructuredDataPropExpression::fromString($query_parameter_instruction),
-        is_required: TRUE,
+        // The URL above is required, but a query parameter is optional. The
+        // Evaluator treats a required expression that evaluates to NULL as
+        // inaccessible and throws. A query parameter may legitimately be NULL:
+        // for an SVG image, no derivative images exist, so the expression that
+        // computes `alternateWidths` yields NULL, and the parameter is omitted.
+        // @see \Drupal\canvas\PropExpressions\StructuredData\Evaluator
+        // @see \Drupal\canvas\TypedData\ImageDerivativeWithParametrizedWidth::computeValue()
+        is_required: FALSE,
+        // @todo Use `NegotiatedLanguage::matchEntity($field_item->getRoot()->getEntity())` in https://git.drupalcode.org/project/canvas/-/work_items/3571785 — the `new CacheableMetadata()` here loses the host entity's cache tags.
+        language: new NegotiatedLanguage($field_item_language, new CacheableMetadata()),
       );
       $url_with_query_string->addCacheableDependency($query_parameter);
+      if ($query_parameter->value === NULL) {
+        continue;
+      }
       $url_components['query'][$query_parameter_name] = $query_parameter->value;
     }
 
     // Assemble it.
-    $computed_url = \sprintf("%s?%s",
-      $url_components['path'],
-      UrlHelper::buildQuery($url_components['query']),
-    );
+    $computed_url = $url_components['query'] === []
+      ? $url_components['path']
+      : $url_components['path'] . '?' . UrlHelper::buildQuery($url_components['query']);
     if ($url_components['fragment'] !== '') {
       $computed_url .= '#' . $url_components['fragment'];
     }

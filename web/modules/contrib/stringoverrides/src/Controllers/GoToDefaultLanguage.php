@@ -5,7 +5,7 @@ namespace Drupal\stringoverrides\Controllers;
 use Drupal\Core\Controller\ControllerBase;
 
 /**
- * Class GoToDefaultLanguage.
+ * Redirects to the string overrides form for the default language.
  *
  * @package Drupal\stringoverrides\Controllers
  */
@@ -18,7 +18,7 @@ class GoToDefaultLanguage extends ControllerBase {
    *   Symfony redirect.
    */
   public function go() {
-    $language = \Drupal::languageManager()->getDefaultLanguage();
+    $language = $this->languageManager()->getDefaultLanguage();
     return $this->redirect('stringoverrides.translations_form', ['language' => $language->getId()]);
   }
 

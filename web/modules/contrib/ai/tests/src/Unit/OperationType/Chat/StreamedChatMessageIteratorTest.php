@@ -3,14 +3,14 @@
 namespace Drupal\Tests\ai\Unit\OperationType\Chat;
 
 use Drupal\Tests\UnitTestCase;
-use Drupal\Tests\ai\Mock\MockIterator;
-use Drupal\Tests\ai\Mock\MockStreamedChatIterator;
 use Drupal\ai\OperationType\Chat\ChatMessage;
 use Drupal\ai\OperationType\Chat\ChatOutput;
 use Drupal\ai\OperationType\Chat\StreamedChatMessage;
 use Drupal\ai\OperationType\Chat\StreamedChatMessageInterface;
 use Drupal\ai\Service\HostnameFilter;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\ai_test\Mock\MockIterator;
+use Drupal\ai_test\Mock\MockStreamedChatIterator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -24,7 +24,7 @@ class StreamedChatMessageIteratorTest extends UnitTestCase {
   /**
    * A MockStreamedChatIterator instance.
    *
-   * @var \Drupal\Tests\ai\Mock\MockStreamedChatIterator
+   * @var \Drupal\ai_test\Mock\MockStreamedChatIterator
    */
   private MockStreamedChatIterator $streamedChatMessage;
 
@@ -135,6 +135,8 @@ class StreamedChatMessageIteratorTest extends UnitTestCase {
     $chunk->setOutputTokenUsage(20);
     $chunk->setCachedTokenUsage(10);
     $chunk->setReasoningTokenUsage(5);
+    $chunk->setCachedWriteTokenUsage(15);
+    $chunk->setToolUseTokenUsage(8);
     $messages[] = $chunk;
     $message->setStreamChatMessages($messages);
     // Now iterate over the messages and check the tokens.
@@ -153,6 +155,8 @@ class StreamedChatMessageIteratorTest extends UnitTestCase {
     $this->assertEquals(20, $tokenUsage->output);
     $this->assertEquals(10, $tokenUsage->cached);
     $this->assertEquals(5, $tokenUsage->reasoning);
+    $this->assertEquals(15, $tokenUsage->cachedWrite);
+    $this->assertEquals(8, $tokenUsage->toolUse);
   }
 
 }

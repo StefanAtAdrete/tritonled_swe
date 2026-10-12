@@ -8,6 +8,7 @@ use Drupal\canvas\Entity\EntityConstraintViolationList;
 use Drupal\canvas\EventSubscriber\ApiExceptionSubscriber;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Validator\ConstraintViolationInterface;
@@ -67,7 +68,7 @@ class ApiControllerBase {
       return NULL;
     }
 
-    return new JsonResponse(status: 422, data: [
+    $data = [
       'errors' => \array_reduce($violationSets, static fn(array $carry, ConstraintViolationListInterface $violationList): array => [
         ...$carry,
         ...\array_map(static fn(ConstraintViolationInterface $violation) => ApiExceptionSubscriber::violationToJsonApiStyleErrorObject(
@@ -75,7 +76,49 @@ class ApiControllerBase {
           $violationList instanceof EntityConstraintViolationList ? $violationList->entity : NULL,
         ), \iterator_to_array($violationList)),
       ], []),
-    ]);
+    ];
+
+    // Look if any violation sets have the error code that indicates a conflict.
+    $conflict_code_found = \array_find($violationSets, static fn (ConstraintViolationListInterface $violationList) : bool =>
+      $violationList instanceof EntityConstraintViolationList && $violationList->findByCodes((string) ErrorCodesEnum::ItemEntityUpdatedExternally->value)->count() > 0
+    );
+
+    // If there are conflict errors use HTTP 409, otherwise use HTTP 422.
+    return new JsonResponse(
+      data: $data,
+      status: $conflict_code_found ? Response::HTTP_CONFLICT : Response::HTTP_UNPROCESSABLE_ENTITY
+    );
+  }
+
+  /**
+   * Creates a JSON:API-style error response containing a single error object.
+   *
+   * @param string $detail
+   *   The human-readable error description.
+   * @param string $pointer
+   *   The pointer to the source of the error: a request body member, or the
+   *   ID of the entity the request acts on.
+   * @param int $status
+   *   The HTTP status code.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   A JSON:API-style error response, with a top-level `errors` member that
+   *   contains a single `error` object.
+   *
+   * @see https://jsonapi.org/format/#error-objects
+   */
+  protected static function createJsonApiStyleErrorResponse(string $detail, string $pointer, int $status): JsonResponse {
+    return new JsonResponse(
+      data: [
+        'errors' => [
+          [
+            'detail' => $detail,
+            'source' => ['pointer' => $pointer],
+          ],
+        ],
+      ],
+      status: $status,
+    );
   }
 
 }

@@ -163,21 +163,13 @@ test.describe('Read-only mode', () => {
     test('should make metadata fields read-only', async () => {
       await modeler.openSettings();
 
-      // Label field should be read-only
-      const labelInput = modeler.getMetadataField('label');
-      await expect(labelInput).toHaveAttribute('readonly');
+      expect(await modeler.isMetadataFieldEditable('label')).toBe(false);
+      expect(await modeler.isMetadataFieldEditable('documentation')).toBe(false);
 
-      // Version field should be read-only
-      const versionInput = modeler.getMetadataField('version');
-      await expect(versionInput).toHaveAttribute('readonly');
-
-      // Documentation textarea should be read-only
-      const docField = modeler.getMetadataField('documentation');
-      await expect(docField).toHaveAttribute('readonly');
-
-      // Storage select should be disabled
-      const storageSelect = modeler.getMetadataField('storage');
-      await expect(storageSelect).toBeDisabled();
+      // Version and storage live in the collapsed Advanced group
+      await modeler.expandMetadataGroup('Advanced');
+      expect(await modeler.isMetadataFieldEditable('version')).toBe(false);
+      await expect(modeler.getMetadataField('storage')).toBeDisabled();
     });
 
     test('should hide Save button and show Close instead', async () => {
