@@ -43,5 +43,4 @@ jobs:
           PRODUCTION_PORT: ${{ secrets.PRODUCTION_PORT }}
         run: |
           port="${PRODUCTION_PORT:-22}"
-          ssh -p "$port" "$PRODUCTION_USER@$PRODUCTION_HOST" \
-            'bash -s --' "$GITHUB_SHA" < scripts/deploy-production.sh
+          ssh -p "$port" "$PRODUCTION_USER@$PRODUCTION_HOST" "deploy $GITHUB_SHA"

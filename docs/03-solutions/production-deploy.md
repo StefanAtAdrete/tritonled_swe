@@ -136,6 +136,8 @@ Environment: `production`
 
 Deploylogiken finns i `scripts/deploy-production.sh`. Workflowen finns i `.github/workflows/deploy-production.yml`.
 
+Den dedikerade publika nyckeln på VPS:en ska använda en tvingad command till `scripts/deploy-ssh-entrypoint.sh`, samt neka port forwarding, agent forwarding, X11 och PTY. Nyckeln kan då endast begära `deploy <commit-SHA>`. Entrypointen accepterar bara commits som ingår i `origin/main` och hämtar deployscriptet från exakt den committen.
+
 ## Drupal config är tillfälligt separerad
 
 Produktion har kvarvarande config-drift. Därför kör den automatiska deployen inte `drush cim` och stoppar helt om en deploy innehåller `config/sync`-ändringar.

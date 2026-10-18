@@ -26,6 +26,7 @@ Den här filen är projektets gemensamma instruktion för alla LLM-agenter. Verk
 - Kör aldrig generell `drush config:import` när `config:status` visar oförklarad drift.
 - Feed 21 (`tritonled_linled_products`) ska vara inaktiv tills importen har korrigerats och verifierats.
 - Produktionsdeploy sker endast via den manuella GitHub Actions-workflowen och endast från `main`.
+- GitHub Actions använder en dedikerad, command-begränsad SSH-nyckel; den får inte återanvända en personlig administrationsnyckel.
 - Deployworkflowen får inte kringgå spärren för `config/sync`.
 - Destruktiva databasåtgärder kräver aktuell backup och uttryckligt godkännande.
 
