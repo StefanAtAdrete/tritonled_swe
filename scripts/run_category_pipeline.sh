@@ -12,7 +12,7 @@ else
 fi
 
 CATEGORY="${1:-wall_light}"
-SKIP_MEDIA="${2:-}"
+SKIP_MEDIA="${2:---skip-media}"
 
 case "$CATEGORY" in
   wall_light)
@@ -72,6 +72,11 @@ fi
 
 echo "[1/5] Import prices via feed ${price_fid}"
 $DRUSH feeds:import "${price_fid}" -y
+
+if [ "$CATEGORY" = "wall_light" ]; then
+  echo "[1b/5] Sync wall_light price currency/number from CSV (per SKU)"
+  $DRUSH php:eval "\$csv='${PRICE_CSV}'; \$fs=\\Drupal::service('file_system'); \$real=\$fs->realpath(\$csv); if(!\$real || !file_exists(\$real)){echo 'csv missing\\n'; return;} \$rows=array_map('str_getcsv', file(\$real)); \$header=array_shift(\$rows); if(!is_array(\$header)){echo 'csv header missing\\n'; return;} \$idx=array_flip(\$header); \$storage=\\Drupal::entityTypeManager()->getStorage('commerce_product_variation'); \$updated=0; foreach(\$rows as \$r){ \$sku=trim((string)(\$r[\$idx['sku']]??'')); \$numRaw=trim((string)(\$r[\$idx['price_number']]??'')); \$cur=strtoupper(trim((string)(\$r[\$idx['price_currency']]??''))); if(\$sku===''||\$numRaw===''||\$cur==='') continue; if(!is_numeric(\$numRaw)) continue; \$list=\$storage->loadByProperties(['sku'=>\$sku]); if(!\$list) continue; \$v=reset(\$list); foreach(\$v->getTranslationLanguages() as \$lang=>\$obj){ \$t=\$v->hasTranslation(\$lang)?\$v->getTranslation(\$lang):\$v; if(\$t->hasField('price')){ \$t->set('price', ['number'=>(string)\$numRaw, 'currency_code'=>\$cur]); } } \$v->save(); \$updated++; } echo 'updated='.\$updated.'\\n';"
+fi
 
 if [ "$SKIP_MEDIA" = "--skip-media" ]; then
   echo "[2-4/5] Media steps skipped"

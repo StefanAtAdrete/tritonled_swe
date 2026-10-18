@@ -220,3 +220,8 @@ vendor/
 config/sync/ai_provider_openai.settings.yml
 config/sync/ai.settings.yml
 config/sync/system.performance.yml
+config/sync/key.key.mcp_token.yml
+
+# Production-local migration and diagnostic artifacts.
+/assorted_products.yml
+/tmp-db218/
