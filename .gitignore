@@ -8,6 +8,12 @@
 
 # Composer dependencies
 /vendor/
+/web/core/
+/web/modules/contrib/
+/web/profiles/contrib/
+/web/themes/contrib/
+/web/libraries/
+/drush/Commands/contrib/
 
 # Node dependencies  
 /node_modules/
@@ -80,7 +86,6 @@ Desktop.ini
 
 # Core
 /core/
-/web/core/
 
 # Core composer scaffold files (auto-generated)
 /web/.csslintrc

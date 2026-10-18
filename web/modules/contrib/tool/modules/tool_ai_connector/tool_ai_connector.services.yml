@@ -1,3 +1,0 @@
-services:
-  tool_ai_connector.schema_tools_property_converter:
-    class: Drupal\tool_ai_connector\SchemaToolsPropertyConverter

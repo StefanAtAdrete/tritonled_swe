@@ -1,6 +1,0 @@
-*.install text eol=lf
-*.md text eol=lf
-*.module text eol=lf
-*.php text eol=lf
-*.txt text eol=lf
-*.yml text eol=lf

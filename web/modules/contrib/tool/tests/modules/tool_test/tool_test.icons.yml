@@ -1,9 +1,0 @@
-tool_test:
-  label: 'Tool test icons'
-  description: 'Icons for testing the tool icon reference.'
-  extractor: path
-  config:
-    sources:
-      - icons/*.svg
-  template: >-
-    <img class="tool-test-icon" src="{{ source }}" width="{{ size|default(24) }}" height="{{ size|default(24) }}" alt=""/>

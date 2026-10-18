@@ -1,2 +1,0 @@
-services:
-  Drupal\views_bulk_operations_test\Hook\ViewsBulkOperationsTestHooks: ~

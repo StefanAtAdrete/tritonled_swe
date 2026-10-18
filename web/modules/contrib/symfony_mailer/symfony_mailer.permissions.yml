@@ -1,4 +1,0 @@
-administer mailer:
-  title: 'Administer Mailer Plus'
-  description: 'Manage Mailer Plus settings.'
-  restrict access: true

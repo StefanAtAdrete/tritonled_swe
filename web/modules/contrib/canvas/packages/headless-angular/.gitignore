@@ -1,3 +1,0 @@
-dist/
-# Previously generated local compatibility artifacts are not package sources.
-compat/

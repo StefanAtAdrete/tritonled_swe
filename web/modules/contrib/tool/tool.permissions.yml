@@ -1,9 +1,0 @@
-administer tool:
-  title: 'Administer tools'
-  description: 'Browse tool definitions and execute tools allowed for the current user through Tool Explorer. Tool execution may change site data and configuration.'
-  restrict access: true
-
-view tool information:
-  title: 'View tool information'
-  description: 'Browse tool definitions in Tool Explorer, including input, output, and configuration schemas.'
-  restrict access: true

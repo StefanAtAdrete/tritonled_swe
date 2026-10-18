@@ -1,9 +1,0 @@
-/**
- * @file
- * Detailed stylings are all yours, get yourself dirty.
- */
-.splide--skin--rounded .media,
-.splide--skin--rounded .slide__media {
-  overflow: hidden;
-  border-radius: 50%;
-}

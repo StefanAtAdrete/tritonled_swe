@@ -1,3 +1,0 @@
-services:
-  Drupal\eca_development\LibraryModelArtifacts:
-    arguments: ['@?plugin.manager.modeler_api.modeler']

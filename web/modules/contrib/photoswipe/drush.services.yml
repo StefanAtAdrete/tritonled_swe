@@ -1,6 +1,0 @@
-services:
-  photoswipe.commands:
-    class: \Drupal\photoswipe\Drush\Commands\PhotoswipeCommands
-    arguments: ['@http_client', '@file_system']
-    tags:
-      - { name: drush.command }

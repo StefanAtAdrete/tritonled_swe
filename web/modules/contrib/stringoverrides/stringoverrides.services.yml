@@ -1,6 +1,0 @@
-services:
-  string_translator.stringoverrides:
-    class: Drupal\stringoverrides\StringOverridesTranslation
-    arguments: ['@cache.default', '@config.factory']
-    tags:
-      - { name: string_translator, priority: 15 }

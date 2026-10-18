@@ -1,9 +1,0 @@
-anker
-Initialises
-lightbox
-pinterest
-pswp
-testfunction
-Zoomable
-zoomable
-photoswipe
