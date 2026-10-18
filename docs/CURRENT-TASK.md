@@ -2,8 +2,8 @@
 
 ## Deploy- och LLM-standardisering
 
-**Status**: Pågår
-**Branch**: `codex/deploy-standardization`
+**Status**: Slutförd 2026-10-18
+**Produktionscommit**: `2d91ffc61076b668e0ff632c5980702430889758`
 
 ### Mål
 
@@ -18,12 +18,18 @@
 - Lokal/CI-validering i `scripts/validate-project.sh`.
 - Manuell produktionsworkflow med backup, spärrar, smoketest och rollback.
 
-### Kvar
+### Verifierat
 
-1. Testa och merga PR.
-2. Skapa GitHub Environment `production` och lägga in dedikerade SSH-secrets.
-3. Köra första manuella deployen.
-4. Reconcila Drupal config-drift i en separat, backupad uppgift.
+- PR #4 och #5 mergade med grön CI.
+- GitHub Environment och command-begränsad deploynyckel aktiva.
+- Första manuella deployen lyckades.
+- Produktionsbackup validerad och live-smoketest godkänt.
+
+### Nästa prioritet
+
+1. Reconcila Drupal config-drift i en separat, backupad uppgift.
+2. Genomför fördjupad säkerhetsgranskning av deploykedjan.
+3. Testa rollback kontrollerat innan deployen får startas automatiskt vid merge.
 
 ---
 
