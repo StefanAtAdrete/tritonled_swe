@@ -619,6 +619,11 @@
       }
 
       function isOptionAvailable(option) {
+        // Keep discontinued/non-public options in the schema for traceability,
+        // but never expose them in the customer-facing configurator.
+        if (option.availability === 'not_offered' || option.public === false) {
+          return false;
+        }
         if (option.dependsOn && option.dependsOn.length > 0) {
           var allMet = option.dependsOn.every(function (c) {
             var val = selections[c.stepId];

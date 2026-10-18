@@ -1,0 +1,38 @@
+uuid: 6ef62ae9-c6ba-4406-ba99-263a8ffbaf82
+langcode: en
+status: true
+dependencies:
+  config:
+    - system.menu.account
+  module:
+    - block_class
+    - language
+    - system
+  theme:
+    - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: 'header-account-action header-action-mobile mt-3 pt-3 border-top'
+id: tritonled_radix_account_menu_mobile
+theme: tritonled_radix
+region: navbar_offcanvas
+weight: 10
+provider: null
+plugin: 'system_menu_block:account'
+settings:
+  id: 'system_menu_block:account'
+  label: 'User account menu'
+  label_display: '0'
+  provider: system
+  level: 1
+  depth: 1
+  expand_all_items: false
+visibility:
+  language:
+    id: language
+    negate: false
+    context_mapping:
+      language: '@language.current_language_context:language_interface'
+    langcodes:
+      sv: sv
+      en: en

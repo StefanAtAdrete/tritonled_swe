@@ -12,13 +12,13 @@ dependencies:
     - tritonled_radix
 third_party_settings:
   block_class:
-    classes: 'd-lg-flex align-items-center gap-2'
+    classes: 'header-account-action d-lg-flex align-items-center gap-2'
 _core:
   default_config_hash: gmxYWWHmgbe0Pnv8y48ZLSLH5mEHejOjAP6RLxUfdzU
 id: tritonled_radix_account_menu
 theme: tritonled_radix
-region: topbar_left
-weight: -6
+region: navbar_right
+weight: -12
 provider: null
 plugin: 'system_menu_block:account'
 settings:

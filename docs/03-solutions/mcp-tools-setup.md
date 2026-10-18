@@ -88,7 +88,7 @@ som mellanhand med `--allow-http` för lokala HTTP-URLs.
         "http://tritonled.ddev.site/_mcp_tools",
         "--allow-http",
         "--header",
-        "Authorization: Bearer mcp_tools.f2e4e9833b8f.FWC6D-cFcklxxIRr5CtBznpEaTjXgPBxHUt8fEBQJBA",
+        "Authorization: Bearer <REDACTED_TOKEN>",
         "--header",
         "Accept: application/json, text/event-stream"
       ]
@@ -108,7 +108,7 @@ som mellanhand med `--allow-http` för lokala HTTP-URLs.
 Testa endpointen manuellt:
 ```bash
 curl -X POST \
-  -H "Authorization: Bearer mcp_tools.f2e4e9833b8f.FWC6D-cFcklxxIRr5CtBznpEaTjXgPBxHUt8fEBQJBA" \
+  -H "Authorization: Bearer <REDACTED_TOKEN>" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","method":"initialize","id":1,"params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' \

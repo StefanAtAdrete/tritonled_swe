@@ -1,7 +1,0 @@
-services:
-  mcp_tools_views.views:
-    class: Drupal\mcp_tools_views\Service\ViewsService
-    arguments:
-      - '@entity_type.manager'
-      - '@mcp_tools.access_manager'
-      - '@mcp_tools.audit_logger'

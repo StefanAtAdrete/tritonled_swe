@@ -1,4 +1,6 @@
 settings:
+  default_form_required_label: 'Obligatoriskt fält'
+  default_confirmation_back_label: 'Tillbaka till formuläret'
   default_form_close_message: 'Tyvärr... Detta formulär är stängt för nya bidrag.'
   default_submit_button_label: Skicka
   default_reset_button_label: Återställ

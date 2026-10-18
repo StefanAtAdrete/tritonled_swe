@@ -1,0 +1,10 @@
+label: Offertförfrågan
+configuration:
+  panes:
+    'order_fields:checkout':
+      display_label: Offertuppgifter
+    completion_message:
+      message:
+        value: "Ditt offertnummer är [commerce_order:order_number].\r\nDu kan se offerten på din kontosida när du är inloggad.\r\nVi kontaktar dig så snart som möjligt. Tack för din förfrågan."
+    'order_fields:order_details':
+      display_label: Offertuppgifter

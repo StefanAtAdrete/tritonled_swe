@@ -54,3 +54,60 @@
   inset: 0;
   z-index: 1;
 }
+
+/* Startsida: jämförbara kort för armaturfamiljerna. */
+.triton-family-card {
+  position: relative;
+  background: var(--bs-white);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.triton-family-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.12) !important;
+}
+
+.triton-family-card .card-img-wrap {
+  background: var(--bs-gray-100);
+}
+
+.triton-family-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.triton-family-specs > div {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.triton-family-specs > div:nth-child(odd) {
+  padding-right: 0.75rem;
+  border-right: 1px solid var(--bs-border-color);
+}
+
+.triton-family-specs > div:nth-child(even) {
+  padding-left: 0.75rem;
+}
+
+.triton-family-specs > .triton-family-specs__wide {
+  grid-column: 1 / -1;
+  padding-right: 0;
+  padding-left: 0;
+  border-right: 0;
+}
+
+.triton-family-specs dt {
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.triton-family-specs dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}

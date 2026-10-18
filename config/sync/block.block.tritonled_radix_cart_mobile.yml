@@ -1,0 +1,31 @@
+uuid: 7eca03e7-9221-4df5-8d31-9ed60c536a20
+langcode: en
+status: true
+dependencies:
+  module:
+    - block_class
+    - commerce_cart
+    - system
+  theme:
+    - tritonled_radix
+third_party_settings:
+  block_class:
+    classes: 'header-cart-action header-action-mobile mt-2'
+id: tritonled_radix_cart_mobile
+theme: tritonled_radix
+region: navbar_offcanvas
+weight: 12
+provider: null
+plugin: commerce_cart
+settings:
+  id: commerce_cart
+  label: 'Get a quote'
+  label_display: '0'
+  provider: commerce_cart
+  dropdown: true
+  show_if_empty: true
+visibility:
+  request_path:
+    id: request_path
+    negate: false
+    pages: "/product/*\r\n/produkt/*"

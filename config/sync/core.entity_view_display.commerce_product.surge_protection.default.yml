@@ -147,7 +147,7 @@ third_party_settings:
                 entity: layout_builder.entity
               formatter:
                 type: commerce_add_to_cart
-                label: above
+                label: hidden
                 settings:
                   combine: true
                 third_party_settings: {  }
@@ -222,7 +222,7 @@ third_party_settings:
                 view_mode: view_mode
               formatter:
                 type: entity_reference_label
-                label: above
+                label: hidden
                 settings:
                   link: true
                 third_party_settings:

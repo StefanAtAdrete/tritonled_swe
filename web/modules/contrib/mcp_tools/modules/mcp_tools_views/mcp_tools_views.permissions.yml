@@ -1,4 +1,0 @@
-mcp_tools use views:
-  title: 'Use MCP views tools'
-  description: 'Create, update, delete, and manage views via MCP.'
-  restrict access: true
