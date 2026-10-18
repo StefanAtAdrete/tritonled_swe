@@ -1,6 +1,6 @@
 # TritonLED Documentation
 
-**Uppdaterad**: 2025-01-11
+**Uppdaterad**: 2026-10-18
 
 Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 
@@ -8,14 +8,14 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 
 ## 📚 Hur man använder denna dokumentation
 
-### För Claude (AI Assistant)
+### För alla LLM-agenter
 
 **Vid VARJE ny session:**
-1. Läs först: `/docs/00-START-HERE.md`
-2. Vid uppgift: Välj relevant beslutsträd från `/01-decision-trees/`
-3. Kolla: `/03-solutions/` om problemet lösts tidigare
-4. Presentera PLAN innan implementation
-5. Vänta på "OK" från Stefan
+1. Läs först: `/AGENTS.md`
+2. Läs `/docs/CURRENT-TASK.md` och senaste posten i `/docs/WORKLOG.md`
+3. Vid uppgift: välj relevant beslutsträd från `/01-decision-trees/`
+4. Kolla `/03-solutions/` om problemet lösts tidigare
+5. Dokumentera handoff enligt `/AGENTS.md`
 
 ### För Stefan (Utvecklare)
 
@@ -36,7 +36,10 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 ```
 /docs/
 ├── README.md                           ← Du är här
-├── 00-START-HERE.md                    ← LÄSES FÖRST (Claude)
+├── 00-START-HERE.md                    ← Äldre detaljerad sessionsguide
+├── CURRENT-TASK.md                     ← Aktuellt läge och nästa steg
+├── WORKLOG.md                          ← Append-only verifierad historik
+├── DECISIONS.md                        ← Bestående projektbeslut
 ├── DRUPAL-DECISION-TREE.md             ← Huvudbeslutsträd
 ├── SESSION-*.md                        ← Sessions-dokumentation
 │

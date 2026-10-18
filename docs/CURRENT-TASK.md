@@ -1,20 +1,29 @@
 # CURRENT TASK
 
-## TASK-057 — wall_light (DEFINE väntar godkännande)
+## Deploy- och LLM-standardisering
 
-**Parent**: TASK-056 (Category C Expansion Master)
-**Fil**: `/docs/tasks/task-057-wall-light.md`
+**Status**: Pågår
+**Branch**: `codex/deploy-standardization`
 
-### Status
-- DEFINE skriven, väntar Stefans godkännande
-- Fältstruktur kopieras från `floodlight`
-- Produktserier: WL183, WL195, WL199, WL186A/B (UpShine)
+### Mål
 
-### Nästa session startar här
-1. Stefan godkänner DEFINE i TASK-057
-2. Claude skriver PLAN (taxonomy-kommando, product type, variation type, feeds)
-3. Stefan kör kommandona
-4. CSV-mall skapas baserat på PDF-data
+- GitHub `main` ska vara kodens sanningskälla.
+- Produktion ska deployas manuellt och spårbart via GitHub Actions.
+- Olika LLM-agenter ska följa samma instruktioner och lämna samma typ av handoff.
+
+### Genomfört
+
+- Gemensam `AGENTS.md` samt tunna Claude/Gemini-ingångar.
+- Append-only `docs/WORKLOG.md` och `docs/DECISIONS.md`.
+- Lokal/CI-validering i `scripts/validate-project.sh`.
+- Manuell produktionsworkflow med backup, spärrar, smoketest och rollback.
+
+### Kvar
+
+1. Testa och merga PR.
+2. Skapa GitHub Environment `production` och lägga in dedikerade SSH-secrets.
+3. Köra första manuella deployen.
+4. Reconcila Drupal config-drift i en separat, backupad uppgift.
 
 ---
 

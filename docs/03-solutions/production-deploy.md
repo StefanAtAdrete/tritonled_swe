@@ -1,8 +1,8 @@
 # Production Deploy - TritonLED
 
 **Datum:** 2026-03-10  
-**Uppdaterad:** 2026-04-23
-**Status:** ✅ Klar — sajten live på preview.affarsfabriken.se
+**Uppdaterad:** 2026-10-18
+**Status:** Produktion på `https://tritonled.se`; standardiserad manuell GitHub Actions-deploy införs
 
 ---
 
@@ -93,7 +93,63 @@ vendor/bin/drush cr
 
 ---
 
-## Deploy-workflow (uppdatering) ← ANVÄND DENNA
+## Deploy-workflow ← ANVÄND DENNA
+
+GitHub `main` är kodens sanningskälla. Produktion deployas inte direkt från en lokal checkout.
+
+```text
+Lokal branch → Pull request → Quality → merge till main
+→ manuell GitHub Actions-workflow → backup → deploy → smoke test
+```
+
+### Starta deploy
+
+1. Säkerställ att PR är mergad och Quality är grön.
+2. Öppna GitHub Actions → **Deploy production**.
+3. Välj **Run workflow** på `main`.
+4. Godkänn GitHub Environment `production` om reviewer-skydd är aktiverat.
+
+Workflowen deployar exakt commit-SHA, inte "senaste råkade finnas".
+
+### Automatiska skydd
+
+- Endast manuell start från `main`.
+- En deploy åt gången.
+- Stoppar om produktionscheckouten är smutsig.
+- Stoppar om commitintervallet innehåller ändringar i `config/sync`.
+- Skapar Git-bundle och komprimerad databasdump före ändring.
+- Aktiverar underhållsläge under deploy.
+- Kör Composer, databasuppdateringar, cache rebuild och fem HTTP-smoketester.
+- Återställer kod och databas automatiskt om ett deploysteg misslyckas.
+
+### GitHub Environment och secrets
+
+Environment: `production`
+
+| Secret | Innehåll |
+|---|---|
+| `PRODUCTION_HOST` | VPS-hostnamn eller IP |
+| `PRODUCTION_USER` | Avgränsad SSH-användare |
+| `PRODUCTION_PORT` | SSH-port, normalt `22` |
+| `PRODUCTION_SSH_PRIVATE_KEY` | Dedikerad deploynyckel |
+| `PRODUCTION_SSH_KNOWN_HOSTS` | Verifierad host key-rad |
+
+Deploylogiken finns i `scripts/deploy-production.sh`. Workflowen finns i `.github/workflows/deploy-production.yml`.
+
+## Drupal config är tillfälligt separerad
+
+Produktion har kvarvarande config-drift. Därför kör den automatiska deployen inte `drush cim` och stoppar helt om en deploy innehåller `config/sync`-ändringar.
+
+Configändringar kräver tills vidare:
+
+1. databasbackup,
+2. granskning av `drush config:status`,
+3. riktad reconciliation,
+4. separat godkännande och verifiering.
+
+Spärren får tas bort först när produktionens aktiva config och Git är en verifierad baslinje.
+
+## Äldre manuell rutin (endast reservrutin)
 
 ```bash
 # 1. LOKALT — exportera config och pusha

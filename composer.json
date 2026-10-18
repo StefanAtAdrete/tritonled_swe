@@ -57,7 +57,7 @@
         "drupal/image_effects": "^5.0",
         "drupal/inline_entity_form": "^3.0@RC",
         "drupal/klaro": "^3.0",
-        "drupal/lb_tabs": "*",
+        "drupal/lb_tabs": "^3.0",
         "drupal/mcp": "^1.2",
         "drupal/media_bulk_upload": "^3.0",
         "drupal/menu_link_attributes": "^1.7",
