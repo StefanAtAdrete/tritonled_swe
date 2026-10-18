@@ -1,6 +1,8 @@
 # TritonLED - Sessionsstart Guide
 
-⚠️ **CLAUDE: LÄS DENNA FIL FÖRST VID VARJE SESSION**
+> Gemensamma och aktuella regler för alla LLM-agenter finns i `/AGENTS.md` och har företräde vid konflikt. Verktygsspecifika instruktioner längre ned är historisk dokumentation.
+
+⚠️ **ALLA AGENTER: LÄS `/AGENTS.md` FÖRST VID VARJE SESSION**
 
 **DÄREFTER**: Läs `/docs/CURRENT-TASK.md` (om den finns) för pågående uppgift
 
