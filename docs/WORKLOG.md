@@ -37,3 +37,14 @@ Append-only logg för arbete som faktiskt har genomförts. Planer och idéer hö
 - Verifierat: fylls i efter test.
 - Återstår: konfigurera GitHub Environment och SSH-hemligheter; verifiera första manuella deployen.
 - Ej verifierat: deployworkflowen mot produktion.
+
+## 2026-10-18 – Första standardiserade produktionsdeployen verifierad
+
+- Agent/modell: Codex
+- Task/PR: PR #4, PR #5, Actions run `39129837094`
+- Commit: `2d91ffc61076b668e0ff632c5980702430889758`
+- Miljö: GitHub Actions och produktion
+- Utfört: GitHub Environment `production` konfigurerades med en dedikerad SSH-nyckel. Nyckeln begränsades till `deploy <commit-SHA>` och commits som ingår i `origin/main`. Första manuella deployen kördes.
+- Verifierat: Actions-resultat success; produktions-HEAD matchar commit; Git-status ren; underhållsläge av; inga väntande databasuppdateringar; backupens Git-bundle och databasdump godkända; fem centrala URL:er svarar HTTP 200; DB218 har en produkt och fem skyddade variationer; feed 21 är inaktiv.
+- Återstår: reconcila Drupal config-drift i en separat, backupad uppgift och senare utföra fördjupad säkerhetsgranskning.
+- Ej verifierat: skarp rollback efter ett verkligt deployfel; endast rollbacklogik och backupunderlag är verifierade.
