@@ -113,17 +113,35 @@ body {
   display: none;
 }
 
-/* Cart-knapp — override btn-sm till standard btn-storlek */
-.topbar .cart-block--link__expand {
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
+/* Headeråtgärder — återanvändbara block, inte hårdkodade länkar i Twig. */
+.header-account-action .navbar-nav {
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-/* Topbar account menu — länkar på samma rad */
-.block--tritonled-radix-account-menu .navbar-nav {
-  flex-direction: row;
-  gap: 1rem;
-  align-items: center;
+.header-account-action .nav-link {
+  padding: 0.375rem 0.75rem !important;
+  border: 1px solid var(--bs-primary);
+  border-radius: var(--bs-border-radius);
+  color: var(--bs-primary) !important;
+  line-height: 1.5;
+}
+
+.header-account-action .nav-link::after {
+  display: none;
+}
+
+.header-account-action .nav-link:hover,
+.header-account-action .nav-link:focus {
+  color: var(--bs-white) !important;
+  background-color: var(--bs-primary);
+}
+
+/* Cart-knapp — override btn-sm till standard btn-storlek */
+.header-cart-action .cart-block--link__expand {
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
 }
 
 /* Offcanvas mobilmeny */
@@ -137,6 +155,13 @@ body {
 
 .offcanvas .nav-link::after {
   display: none;
+}
+
+.offcanvas .header-action-mobile .btn,
+.offcanvas .header-action-mobile .nav-link {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 /* Logotyp-bild */

@@ -3,7 +3,7 @@
  * @file
  * TritonLED front page template.
  *
- * topbar_right renderas INTE i offcanvas — Cart-block är desktop-only.
+ * Offcanvas renderar navbar_offcanvas (meny + återanvändbara headeråtgärder).
  */
 #}
 <div class="page">
@@ -40,7 +40,7 @@
         data-bs-toggle="offcanvas"
         data-bs-target="#navbarOffcanvas"
         aria-controls="navbarOffcanvas"
-        aria-label="Toggle navigation">
+        aria-label="{{ 'Toggle navigation'|t }}">
         <span class="navbar-toggler-icon"></span>
       </button>
 
@@ -52,14 +52,14 @@
         {% if page.navbar_left_2 %}
           {{ page.navbar_left_2 }}
         {% endif %}
-        {% if page.navbar_left_3 %}
-          <div class="ms-auto">
-            {{ page.navbar_left_3 }}
-          </div>
-        {% endif %}
-        {% if page.navbar_right %}
+        {% if page.navbar_left_3 or page.navbar_right %}
           <div class="ms-auto w-auto d-flex align-items-center gap-3">
-            {{ page.navbar_right }}
+            {% if page.navbar_left_3 %}
+              {{ page.navbar_left_3 }}
+            {% endif %}
+            {% if page.navbar_right %}
+              {{ page.navbar_right }}
+            {% endif %}
           </div>
         {% endif %}
       </div>
@@ -76,10 +76,10 @@
           {{ page.navbar_left_3 }}
         </div>
       {% endif %}
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ 'Close'|t }}"></button>
     </div>
     <div class="offcanvas-body">
-      {# navbar_offcanvas: huvudmeny + cart-länk (product/*) + kontakta oss #}
+      {# navbar_offcanvas: huvudmeny + återanvändbara konto-/kontakt-/offertblock #}
       {% if page.navbar_offcanvas %}
         {{ page.navbar_offcanvas }}
       {% endif %}

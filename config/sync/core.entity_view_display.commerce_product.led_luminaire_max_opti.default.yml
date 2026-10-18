@@ -236,7 +236,7 @@ third_party_settings:
             additional: {  }
           b336702c-9b32-4686-908b-051f1e0e913a:
             uuid: b336702c-9b32-4686-908b-051f1e0e913a
-            region: blb_region_col_1
+            region: blb_region_col_2
             configuration:
               id: 'field_block:commerce_product:led_luminaire_max_opti:body'
               label_display: '0'
@@ -256,7 +256,7 @@ third_party_settings:
                     fences_field_item_classes: ''
                     fences_label_tag: div
                     fences_label_classes: ''
-            weight: 7
+            weight: 1
             additional: {  }
           d1d6233c-f866-4f2a-9069-771b4112a0ee:
             uuid: d1d6233c-f866-4f2a-9069-771b4112a0ee

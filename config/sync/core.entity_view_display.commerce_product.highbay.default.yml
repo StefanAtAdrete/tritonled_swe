@@ -161,7 +161,7 @@ third_party_settings:
                 view_mode: view_mode
               formatter:
                 type: commerce_add_to_cart
-                label: above
+                label: hidden
                 settings:
                   combine: true
                 third_party_settings:

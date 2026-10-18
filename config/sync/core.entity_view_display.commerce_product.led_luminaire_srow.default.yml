@@ -20,7 +20,9 @@ dependencies:
     - views.view.featured_products
   module:
     - bootstrap_layout_builder
+    - fences
     - layout_builder
+    - text
     - tritonled_configurator
     - views
 third_party_settings:
@@ -212,6 +214,30 @@ third_party_settings:
                 h1_title: 0
                 object_fit_cover: 0
                 padding_3: 0
+          83b7be04-b544-4163-88fb-0b8f6dfca4d9:
+            uuid: 83b7be04-b544-4163-88fb-0b8f6dfca4d9
+            region: blb_region_col_2
+            configuration:
+              id: 'field_block:commerce_product:led_luminaire_srow:body'
+              label_display: '0'
+              context_mapping:
+                entity: layout_builder.entity
+              formatter:
+                type: text_default
+                label: hidden
+                settings: {  }
+                third_party_settings:
+                  fences:
+                    fences_field_tag: div
+                    fences_field_classes: ''
+                    fences_field_items_wrapper_tag: none
+                    fences_field_items_wrapper_classes: ''
+                    fences_field_item_tag: div
+                    fences_field_item_classes: ''
+                    fences_label_tag: div
+                    fences_label_classes: ''
+            weight: -1
+            additional: {  }
         third_party_settings: {  }
       -
         layout_id: 'bootstrap_layout_builder:blb_col_1'

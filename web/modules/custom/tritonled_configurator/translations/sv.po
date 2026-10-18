@@ -16,7 +16,7 @@ msgid "Length"
 msgstr "Längd"
 
 msgid "Driver"
-msgstr "Driver"
+msgstr "Drivdon"
 
 msgid "Connection"
 msgstr "Anslutning"
@@ -46,7 +46,7 @@ msgid "Color"
 msgstr "Färg"
 
 msgid "Chips"
-msgstr "Chips"
+msgstr "LED-chip"
 
 msgid "IP class"
 msgstr "IP-klass"
@@ -87,3 +87,45 @@ msgstr "Fel: @msg"
 
 msgid "Product added to cart."
 msgstr "Produkt tillagd i offerten."
+
+msgid "Average Lifetime"
+msgstr "Beräknad livslängd"
+
+msgid "Operating Temperature"
+msgstr "Drifttemperatur"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "IK Grade"
+msgstr "IK-klass"
+
+msgid "Certifications"
+msgstr "Certifieringar"
+
+msgid "Your shopping cart is empty."
+msgstr "Din offert är tom."
+
+msgid "Variations"
+msgstr "Varianter"
+
+msgid "Body"
+msgstr "Innehåll"
+
+msgid "Toggle navigation"
+msgstr "Öppna navigering"
+
+msgid "Close"
+msgstr "Stäng"
+
+msgid "Missing required fields: variationId, sku."
+msgstr "Obligatoriska uppgifter saknas."
+
+msgid "Variation not found: @id"
+msgstr "Produktvarianten kunde inte hittas: @id"
+
+msgid "No store found for product."
+msgstr "Produkten kunde inte läggas till i offerten."
+
+msgid "Could not add item to cart."
+msgstr "Produkten kunde inte läggas till i offerten."

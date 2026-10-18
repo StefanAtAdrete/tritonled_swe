@@ -64,7 +64,7 @@ class ConfiguratorCartController extends ControllerBase {
 
     if (!$data || empty($data['variationId']) || empty($data['sku'])) {
       return new JsonResponse([
-        'error' => 'Missing required fields: variationId, sku.',
+        'error' => (string) $this->t('Missing required fields: variationId, sku.'),
       ], 400);
     }
 
@@ -81,13 +81,13 @@ class ConfiguratorCartController extends ControllerBase {
 
     if (!$variation instanceof ProductVariationInterface) {
       return new JsonResponse([
-        'error' => 'Variation not found: ' . $variation_id,
+        'error' => (string) $this->t('Variation not found: @id', ['@id' => $variation_id]),
       ], 404);
     }
 
     $store = $variation->getProduct()->getStores()[0] ?? NULL;
     if (!$store) {
-      return new JsonResponse(['error' => 'No store found for product.'], 500);
+      return new JsonResponse(['error' => (string) $this->t('No store found for product.')], 500);
     }
 
     $cart = $this->cartProvider->getCart('default', $store)
@@ -107,7 +107,7 @@ class ConfiguratorCartController extends ControllerBase {
     $cart->save();
 
     if (!$order_item instanceof OrderItemInterface) {
-      return new JsonResponse(['error' => 'Could not add item to cart.'], 500);
+      return new JsonResponse(['error' => (string) $this->t('Could not add item to cart.')], 500);
     }
 
     if ($order_item->hasField('field_configurator_sku')) {
