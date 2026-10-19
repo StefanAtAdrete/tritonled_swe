@@ -40,6 +40,8 @@ Komplett dokumentation för TritonLED Drupal 11 e-handelsplattform.
 ├── CURRENT-TASK.md                     ← Aktuellt läge och nästa steg
 ├── WORKLOG.md                          ← Append-only verifierad historik
 ├── DECISIONS.md                        ← Bestående projektbeslut
+├── strategy/                           ← Affärs- och produktstrategi
+│   └── tritonled-service-moat.md       ← Tjänstevallgrav och manuell pilot
 ├── DRUPAL-DECISION-TREE.md             ← Huvudbeslutsträd
 ├── SESSION-*.md                        ← Sessions-dokumentation
 │

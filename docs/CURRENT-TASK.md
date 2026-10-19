@@ -1,5 +1,25 @@
 # CURRENT TASK
 
+## Tjänstevallgrav och masterlistor
+
+**Status**: Strategiförslag dokumenterat 2026-10-19
+**Dokument**: `docs/strategy/tritonled-service-moat.md`
+
+### Nästa beslut
+
+1. Välj första kundsegment för en manuell pilot.
+2. Välj fem verkliga kundförfrågningar och ett begränsat godkänt produktsortiment.
+3. Fastställ vem som godkänner teknisk data, prisbok och publicering.
+4. Testa Match → Verify → Ready manuellt innan mer automation byggs.
+
+### Inte beslutat
+
+- Slutligt tjänstenamn, prissättning eller garantivillkor.
+- Automatisk publicering från Excel/masterlista.
+- QuickCalc som slutlig verifieringsmetod.
+
+---
+
 ## Deploy- och LLM-standardisering
 
 **Status**: Slutförd 2026-10-18

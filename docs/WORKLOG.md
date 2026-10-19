@@ -48,3 +48,14 @@ Append-only logg för arbete som faktiskt har genomförts. Planer och idéer hö
 - Verifierat: Actions-resultat success; produktions-HEAD matchar commit; Git-status ren; underhållsläge av; inga väntande databasuppdateringar; backupens Git-bundle och databasdump godkända; fem centrala URL:er svarar HTTP 200; DB218 har en produkt och fem skyddade variationer; feed 21 är inaktiv.
 - Återstår: reconcila Drupal config-drift i en separat, backupad uppgift och senare utföra fördjupad säkerhetsgranskning.
 - Ej verifierat: skarp rollback efter ett verkligt deployfel; endast rollbacklogik och backupunderlag är verifierade.
+
+## 2026-10-19 – Tjänstevallgrav och masterlistestrategi dokumenterad
+
+- Agent/modell: Codex
+- Task/PR: strategidokumentation
+- Commit: se associerad PR för `codex/document-service-moat`
+- Miljö: dokumentation
+- Utfört: affärspositionering, tjänstepaketet Match/Verify/Ready/Care, masterlistans datalager, webbkonsekvenser, manuell pilot, mätetal och öppna beslut dokumenterades.
+- Verifierat: omvärldspremisser kontrollerades mot Elsäkerhetsverket, Naturvårdsverket, Upphandlingsmyndigheten och EU-kommissionen 2026-10-19.
+- Återstår: verksamhetsbeslut om målgrupp, erbjudande, ansvar, prissättning och pilotfall.
+- Ej verifierat: kundernas betalningsvilja, leveranslöften, serviceekonomi och faktisk konvertering.
