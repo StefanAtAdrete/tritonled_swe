@@ -59,3 +59,14 @@ Append-only logg för arbete som faktiskt har genomförts. Planer och idéer hö
 - Verifierat: omvärldspremisser kontrollerades mot Elsäkerhetsverket, Naturvårdsverket, Upphandlingsmyndigheten och EU-kommissionen 2026-10-19.
 - Återstår: verksamhetsbeslut om målgrupp, erbjudande, ansvar, prissättning och pilotfall.
 - Ej verifierat: kundernas betalningsvilja, leveranslöften, serviceekonomi och faktisk konvertering.
+
+## 2026-10-22 – Akuta PHP- och Drupal-säkerhetsuppdateringar förberedda
+
+- Agent/modell: Codex
+- Task/PR: akut säkerhetsuppdatering, branch `codex/security-2026-10-22`
+- Commit: se associerad PR
+- Miljö: VPS och ren lokal worktree från verifierad produktionscommit
+- Utfört: Hostinger-snapshot skapades. PHP 8.4 uppdaterades till 8.4.27 och PHP 8.3 till 8.3.36. Drupal core låstes till 11.4.11, `media_bulk_upload` till 3.0.6 och `simple_oauth` till 6.1.3.
+- Verifierat: PHP-FPM och nginx är aktiva, TritonLED svarar HTTP 200 och har databasanslutning, Composer-audit saknar säkerhetsråd och `scripts/validate-project.sh` passerar.
+- Återstår: merge till `main`, manuell produktionsdeploy och riktad liveverifiering av Drupal-uppdateringen.
+- Ej verifierat: Drupal 11.4.11 i produktion före slutförd deploy.
