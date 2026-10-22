@@ -63,10 +63,10 @@ Append-only logg för arbete som faktiskt har genomförts. Planer och idéer hö
 ## 2026-10-22 – Akuta PHP- och Drupal-säkerhetsuppdateringar förberedda
 
 - Agent/modell: Codex
-- Task/PR: akut säkerhetsuppdatering, branch `codex/security-2026-10-22`
-- Commit: se associerad PR
-- Miljö: VPS och ren lokal worktree från verifierad produktionscommit
-- Utfört: Hostinger-snapshot skapades. PHP 8.4 uppdaterades till 8.4.27 och PHP 8.3 till 8.3.36. Drupal core låstes till 11.4.11, `media_bulk_upload` till 3.0.6 och `simple_oauth` till 6.1.3.
-- Verifierat: PHP-FPM och nginx är aktiva, TritonLED svarar HTTP 200 och har databasanslutning, Composer-audit saknar säkerhetsråd och `scripts/validate-project.sh` passerar.
-- Återstår: merge till `main`, manuell produktionsdeploy och riktad liveverifiering av Drupal-uppdateringen.
-- Ej verifierat: Drupal 11.4.11 i produktion före slutförd deploy.
+- Task/PR: PR #8 och #9, Actions run `39727105022`
+- Commit: `e6ace3b5abace494bc53549bda1cc30eff41c862`
+- Miljö: VPS, GitHub Actions och produktion
+- Utfört: Hostinger-snapshot skapades. PHP 8.4 uppdaterades till 8.4.27 och PHP 8.3 till 8.3.36. Drupal core uppdaterades till 11.4.11, `media_bulk_upload` till 3.0.6 och `simple_oauth` till 6.1.3. Ett första deployförsök stoppades av saknad Git-metadata i source-installerade Composer-paket och återställdes automatiskt; deploykedjan kompletterades med riktad ominstallation och nästa körning lyckades.
+- Verifierat: ren produktionscheckout på angiven commit, underhållsläge av, PHP-FPM och nginx aktiva, databas ansluten, inga väntande databasuppdateringar, Composer-audit utan säkerhetsråd och fem centrala URL:er med HTTP 200.
+- Återstår: ingen akut säkerhetsåtgärd för den här incidenten.
+- Ej verifierat: separat intrångsanalys av historiska loggar; uppdateringen och kontrollerna visar inte i sig om tidigare exploatering skett.
