@@ -97,6 +97,14 @@ maintenance_enabled=1
 vendor/bin/drush cache:rebuild
 
 git merge --ff-only "$target_commit"
+
+mapfile -t stale_source_packages < <(php scripts/list-stale-source-packages.php)
+if (( ${#stale_source_packages[@]} > 0 )); then
+  printf 'Reinstalling stale source packages before Composer update:\n'
+  printf '  %s\n' "${stale_source_packages[@]}"
+  composer reinstall --prefer-dist --no-interaction "${stale_source_packages[@]}"
+fi
+
 composer install --no-dev --optimize-autoloader --no-interaction
 vendor/bin/drush updatedb -y
 vendor/bin/drush cache:rebuild
