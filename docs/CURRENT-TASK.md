@@ -2,7 +2,7 @@
 
 ## Akut PHP- och Drupal-säkerhetsuppdatering
 
-**Status**: Drupal-uppdatering validerad lokalt 2026-10-22, redo för PR och produktionsdeploy
+**Status**: Slutförd och verifierad i produktion 2026-10-22
 **Branch**: `codex/security-2026-10-22`
 
 ### Genomfört
@@ -13,11 +13,13 @@
 - `media_bulk_upload` låst till 3.0.6 och `simple_oauth` till 6.1.3.
 - Composer-audit och projektvalidering godkända utan säkerhetsråd.
 
-### Kvar
+### Verifierat
 
-1. Merga säkerhets-PR till `main`.
-2. Köra den manuella produktionsworkflowen.
-3. Verifiera Drupal-version, databasuppdateringar, ren Git-status och fem live-URL:er.
+- Produktionscommit `e6ace3b5abace494bc53549bda1cc30eff41c862` och ren Git-status.
+- Drupal 11.4.11, PHP 8.4.27, databas ansluten och inga väntande databasuppdateringar.
+- Composer-audit utan säkerhetsråd.
+- Startsida, svenska och engelska produktsidor, kontaktformulär och login svarar HTTP 200.
+- Underhållsläge av och ingen omstart krävs.
 
 ## Tjänstevallgrav och masterlistor
 
