@@ -1,5 +1,24 @@
 # CURRENT TASK
 
+## Akut PHP- och Drupal-säkerhetsuppdatering
+
+**Status**: Drupal-uppdatering validerad lokalt 2026-10-22, redo för PR och produktionsdeploy
+**Branch**: `codex/security-2026-10-22`
+
+### Genomfört
+
+- VPS-snapshot skapad före ändring.
+- PHP 8.4 uppdaterad till 8.4.27 och PHP 8.3 till 8.3.36 på VPS:en.
+- Drupal core låst till 11.4.11.
+- `media_bulk_upload` låst till 3.0.6 och `simple_oauth` till 6.1.3.
+- Composer-audit och projektvalidering godkända utan säkerhetsråd.
+
+### Kvar
+
+1. Merga säkerhets-PR till `main`.
+2. Köra den manuella produktionsworkflowen.
+3. Verifiera Drupal-version, databasuppdateringar, ren Git-status och fem live-URL:er.
+
 ## Tjänstevallgrav och masterlistor
 
 **Status**: Strategiförslag dokumenterat 2026-10-19
